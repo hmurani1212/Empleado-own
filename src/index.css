@@ -1,0 +1,316 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  body {
+    @apply bg-background text-customBlack-100 font-poppins;
+  }
+}
+
+@layer utilities {
+
+
+    .customSVG {
+            transform: rotate(-90deg);
+            /* Rotate to start from the top */
+        }
+
+    .customScroll::-webkit-scrollbar-thumb {
+        background-color: #AAAAAA !important;
+        width: 6px !important;
+        border-radius: 10px;
+    }
+
+    /* Styling for the scrollbar track (the non-draggable part) */
+    .customScroll::-webkit-scrollbar-track {
+        background-color: white;
+    }
+
+    /* Hide the scrollbar when not hovered */
+    .customScroll::-webkit-scrollbar {
+        width: 6px !important;
+        /* Adjust the size as needed */
+        height: 6px;
+        /* Adjust the size as needed */
+    }
+
+    .sideMenu::-webkit-scrollbar-thumb {
+        background-color: #AAAAAA !important;
+        width: 6px !important;
+        border-radius: 10px;
+    }
+    
+        /* Styling for the scrollbar track (the non-draggable part) */
+    .sideMenu::-webkit-scrollbar-track {
+        background-color: white;
+    }
+    
+        /* Hide the scrollbar when not hovered */
+    .sideMenu::-webkit-scrollbar {
+        width: 6px !important;
+        /* Adjust the size as needed */
+        height: 6px;
+        /* Adjust the size as needed */
+        display: none;
+    }
+    
+        /* Show the scrollbar on hover */
+    .sideMenu:hover::-webkit-scrollbar {
+        display: block;
+        width: 6px !important;
+    }
+    .customDrwerScroll::-webkit-scrollbar-thumb {
+        background-color: #AAAAAA !important;
+        width: 6px !important;
+        border-radius: 10px;
+    }
+    
+        /* Styling for the scrollbar track (the non-draggable part) */
+    .customDrwerScroll::-webkit-scrollbar-track {
+        background-color: white;
+    }
+    
+        /* Hide the scrollbar when not hovered */
+    .customDrwerScroll::-webkit-scrollbar {
+        width: 6px !important;
+        /* Adjust the size as needed */
+        height: 6px;
+        /* Adjust the size as needed */
+        display: none;
+    }
+    
+        /* Show the scrollbar on hover */
+    .customDrwerScroll:hover::-webkit-scrollbar {
+        display: block;
+        width: 6px !important;
+    }
+
+                
+
+    .bg-image-custom {
+        background-size: cover;
+        background-position: center center;
+        /* opacity: 0.4;
+        animation: rotateZoom 5s infinite alternate;
+        transition: all 1s ease; */
+    }
+
+    @keyframes rotateZoomOut {
+        0% {
+            transform: scale(1) rotate(0deg);
+            /* Start at normal size */
+        }
+
+        100% {
+
+    /* Custom slider styles for progress input */
+    .slider {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 8px;
+        border-radius: 4px;
+        background: #e5e7eb;
+        outline: none;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+
+    .slider:hover {
+        opacity: 1;
+    }
+
+    .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #3b82f6;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #3b82f6;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+            transform: scale(1.2) rotate(360deg);
+            /* End zoomed in after one full rotation */
+        }
+    }
+
+    .navLinkCustom.active{
+        color: white;
+        background: #3DA5F4;
+        transform: scale(1.1);
+        /* Add the scale effect */
+        transition: transform 0.3s ease-in-out;
+    }
+    .navLinkCustom:hover{
+        transform: scale(1.1);
+        background: #f4f4f4;
+        /* Add the scale effect */
+        transition: transform 0.2s ease-in-out;
+    }
+    .navLinkCustomAdmin.active{
+        color: #03a9f3;
+        background: #fafafa;
+        transform: scale(1.1);
+        /* Add the scale effect */
+        transition: transform 0.3s ease-in-out;
+    }
+    .navLinkCustomAdmin:hover{
+        transform: scale(1.1);
+        background: rgb(223, 218, 218);
+        color: #03a9f3;
+        /* Add the scale effect */
+        transition: transform 0.2s ease-in-out;
+    }
+
+    /* Employee profile scrollbar adjustments */
+    .employee-profile-page {
+        overflow: hidden !important;
+        background-color: #ffffff !important;
+    }
+
+    .employee-profile-page #root {
+        height: 100vh;
+    }
+
+    .employee-profile-scroll,
+    .employee-profile-scroll * {
+        scrollbar-width: none !important;
+        scrollbar-color: transparent transparent !important;
+    }
+
+    .employee-profile-scroll::-webkit-scrollbar,
+    .employee-profile-scroll *::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
+    }
+
+    .employee-profile-scroll::-webkit-scrollbar-track,
+    .employee-profile-scroll *::-webkit-scrollbar-track {
+        background-color: transparent !important;
+    }
+
+    .employee-profile-scroll::-webkit-scrollbar-thumb,
+    .employee-profile-scroll *::-webkit-scrollbar-thumb {
+        background-color: transparent !important;
+        border-radius: 10px;
+    }
+
+    /* Custom Calendar Styles */
+    .react-calendar {
+        border: none !important;
+        border-radius: 8px;
+        box-shadow: none;
+        font-family: "Poppins", sans-serif;
+    }
+
+    .react-calendar__tile {
+        border-radius: 4px;
+        margin: 1px;
+        font-size: 14px;
+    }
+
+    .react-calendar__tile--active {
+        background: #3b82f6 !important;
+        color: white !important;
+    }
+
+    .react-calendar__tile:hover {
+        background: #e5e7eb;
+    }
+
+    .react-calendar__navigation {
+        margin-bottom: 10px;
+    }
+
+    .react-calendar__navigation button {
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .react-calendar__navigation button:hover {
+        background: #f3f4f6;
+    }
+
+    
+}
+
+@layer utilities {
+    .editorjs-redactor {
+        @apply p-0 m-0 !important;
+    }
+
+    .editorjs-block-content {
+        @apply p-0 !important;
+    }
+
+    .editorjs-toolbar-content {
+        @apply p-0 !important;
+    }
+}
+
+*{
+    font-family: "Poppins", sans-serif !important;
+}
+
+@layer base {
+    h1 {
+        @apply text-4xl;
+        @apply font-bold;
+    }
+
+    h2 {
+        @apply text-3xl;
+        @apply font-bold;
+    }
+
+    h3 {
+        @apply text-2xl;
+        @apply font-bold;
+    }
+
+    h4 {
+        @apply text-xl;
+        @apply font-semibold;
+    }
+
+    h5 {
+        @apply text-base;
+        /*or text-lg */
+        @apply font-semibold;
+    }
+
+    h6 {
+        @apply text-sm;
+        @apply font-semibold;
+    }
+}
+
+/* Fix for leftover drawer overlay shadows - hide orphaned overlay elements */
+body > div[class*="overlay"]:not([role="dialog"]),
+body > div[style*="position: fixed"][style*="inset"]:not([role="dialog"]):not([aria-modal="true"]) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Ensure Material Tailwind Drawer overlays are properly cleaned up */
+body > div[class*="bg-black"][class*="bg-opacity"]:not([role="dialog"]) {
+    display: none !important;
+};
+
+/* application module print styles */

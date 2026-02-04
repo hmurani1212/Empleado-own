@@ -1,0 +1,2492 @@
+import React, { useState, useEffect } from "react";
+import {
+  Button,
+  Checkbox,
+  Typography,
+  Option,
+  Select,
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverHandler,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Textarea,
+} from "@material-tailwind/react";
+// import { BiSearch } from 'react-icons/bi'
+import { FaEye, FaTrash, FaCheck, FaEllipsisV } from "react-icons/fa";
+import CustomSelect from "../../Components/CustomSelect/CustomSelect";
+import useStore from "../../Store/store";
+import { gettingDepartmentsServices } from "../../services/__frequentApiServices";
+import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
+import { showToast } from "../../Components/Toaster/Toaster";
+import Calendar from "react-calendar";
+import ExportPayslip from "./ExportPayslip";
+import { useNavigate } from "react-router-dom";
+import payrollApi from "../../Model/Data/Payroll/Payroll";
+
+// Convert salary_month "0126" (MMYY) to "January/2026" - first 2 digits = month, last 2 = year (use current century)
+const formatSalaryMonthFTM = (salaryMonth) => {
+  if (!salaryMonth || typeof salaryMonth !== "string" || salaryMonth.length < 4) return "N/A";
+  const monthStr = salaryMonth.slice(0, 2);
+  const yearSuffix = salaryMonth.slice(-2);
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthNum = parseInt(monthStr, 10) || 1;
+  const monthName = monthNames[Math.min(monthNum - 1, 11)] || monthNames[0];
+  const currentCentury = String(new Date().getFullYear()).slice(0, 2);
+  const fullYear = `${currentCentury}${yearSuffix}`;
+  return `${monthName}/${fullYear}`;
+};
+
+// Default "All Branches" option for first load
+const ALL_BRANCHES_OPTION = { value: 0, label: "All Branches" };
+
+const MakingPayments = () => {
+  const navigate = useNavigate();
+  const [selectedAll, setSelectedAll] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState(ALL_BRANCHES_OPTION);
+  const [departments, setDepartments] = useState([
+    { value: 0, label: "All Departments" },
+  ]);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Main page filter states
+  const [mainFilter, setMainFilter] = useState(null);
+  const [mainStatus, setMainStatus] = useState(null);
+  const [mainEmployeeIdSearch, setMainEmployeeIdSearch] = useState("");
+  const [mainSelectedDate, setMainSelectedDate] = useState(null);
+  const [selectedMonthYear, setSelectedMonthYear] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  // Delete functionality states
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [allEmployees, setAllEmployees] = useState([]); // Store all employees for filtering
+  
+  // Pagination states
+  const [currentPageId, setCurrentPageId] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [accumulatedEmployees, setAccumulatedEmployees] = useState([]); // Store all loaded employees across pages
+
+  // Mark paid functionality states
+  const [markPaidDialog, setMarkPaidDialog] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentDetail, setPaymentDetail] = useState("");
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+
+  // Individual action dropdown states
+  const [openDropdowns, setOpenDropdowns] = useState({});
+  const [singleDeleteDialog, setSingleDeleteDialog] = useState(false);
+  const [singleMarkPaidDialog, setSingleMarkPaidDialog] = useState(false);
+  const [selectedPayslip, setSelectedPayslip] = useState(null);
+
+  // Get branches and payslips from store
+  const getAllBranchesPayroll = useStore(
+    (state) => state.getAllBranchesPayroll
+  );
+  const copyBranchesData = useStore((state) => state.copyBranchesData);
+  const gettingPayslips = useStore((state) => state.gettingPayslips);
+  const payslips = useStore((state) => state.payslips);
+  const totalPayslipsCount = useStore((state) => state.totalPayslipsCount);
+  const payslipsPagination = useStore((state) => state.payslipsPagination);
+  const deletingBulkPayslips = useStore((state) => state.deletingBulkPayslips);
+  const deleteSinglePayslip = useStore((state) => state.deleteSinglePayslip);
+  const markingInvoiceAsPaid = useStore((state) => state.markingInvoiceAsPaid);
+
+  // Global drawer functions
+  const openDrawer = useStore((state) => state.openDrawer);
+  // const closeDrawer = useStore((state) => state.closeDrawer)
+  const settingDrawerTitle = useStore((state) => state.settingDrawerTitle);
+  const settingDrawerSize = useStore((state) => state.settingDrawerSize);
+  const settingComponent = useStore((state) => state.settingComponent);
+
+  const handleSelectAll = () => {
+    const newSelectedAll = !selectedAll;
+    setSelectedAll(newSelectedAll);
+
+    // Update all employees' selected state and selected employees array
+    setEmployees((prevEmployees) => {
+      const updatedEmployees = prevEmployees.map((emp) => ({
+        ...emp,
+        selected: newSelectedAll,
+      }));
+
+      // Update selected employees array based on new state
+      if (newSelectedAll) {
+        setSelectedEmployees(updatedEmployees.map((emp) => emp.id));
+      } else {
+        setSelectedEmployees([]);
+      }
+
+      return updatedEmployees;
+    });
+  };
+
+  useEffect(() => {
+    console.log("employees", employees);
+  }, []);
+  const handleRowSelect = (employeeId) => {
+    setEmployees((prevEmployees) =>
+      prevEmployees.map((emp) =>
+        emp.id === employeeId ? { ...emp, selected: !emp.selected } : emp
+      )
+    );
+
+    setSelectedEmployees((prevSelected) => {
+      if (prevSelected.includes(employeeId)) {
+        return prevSelected.filter((id) => id !== employeeId);
+      } else {
+        return [...prevSelected, employeeId];
+      }
+    });
+  };
+
+  const handleDeleteMarked = () => {
+    // Check if there are any employees in the table
+    if (employees.length === 0) {
+      showToast("Payslips is not generated?", "error");
+      return;
+    }
+
+    // Check if any employees are selected
+    if (selectedEmployees.length === 0) {
+      showToast("Please select employees to delete", "error");
+      return;
+    }
+
+    // Open confirmation dialog
+    setDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      // Call API to delete payslips
+      const result = await deletingBulkPayslips(selectedEmployees);
+
+      if (result.success) {
+        // Clear selected employees
+        setSelectedEmployees([]);
+        setSelectedAll(false);
+
+        // Close dialog
+        setDeleteDialog(false);
+
+        // Show success message
+        showToast(
+          `Successfully deleted ${result.deletedCount} payslip(s)`,
+          "success"
+        );
+      } else {
+        // Show error message
+        showToast(result.error || "Failed to delete payslips", "error");
+        setDeleteDialog(false);
+      }
+    } catch (error) {
+      console.error("Error during delete confirmation:", error);
+      showToast("An error occurred while deleting payslips", "error");
+      setDeleteDialog(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle mark paid
+  const handleMarkPaid = () => {
+    // Check if there are any employees in the table
+    if (employees.length === 0) {
+      showToast("No payslips available", "error");
+      return;
+    }
+
+    // Check if any employees are selected
+    if (selectedEmployees.length === 0) {
+      showToast("Please select payslips to mark as paid", "error");
+      return;
+    }
+
+    // Open mark paid dialog
+    setPaymentMethod("");
+    setPaymentDetail("");
+    setMarkPaidDialog(true);
+  };
+
+  // Confirm mark paid
+  const confirmMarkPaid = async () => {
+    if (!paymentMethod) {
+      showToast("Please select a payment method", "error");
+      return;
+    }
+
+    setIsMarkingPaid(true);
+
+    try {
+      // Mark each selected payslip as paid
+      const results = await Promise.all(
+        selectedEmployees.map((id) =>
+          markingInvoiceAsPaid(id, paymentMethod, paymentDetail)
+        )
+      );
+
+      // Count successes
+      const successCount = results.filter((r) => r.success).length;
+      const failCount = results.length - successCount;
+
+      if (successCount > 0) {
+        showToast(
+          `Successfully marked ${successCount} payslip(s) as paid${
+            failCount > 0 ? `, ${failCount} failed` : ""
+          }`,
+          successCount === results.length ? "success" : "warning"
+        );
+
+        // Clear selections
+        setSelectedEmployees([]);
+        setSelectedAll(false);
+      } else {
+        showToast("Failed to mark payslips as paid", "error");
+      }
+
+      // Close dialog
+      setMarkPaidDialog(false);
+    } catch (error) {
+      console.error("Error marking payslips as paid:", error);
+      showToast("An error occurred while marking payslips as paid", "error");
+      setMarkPaidDialog(false);
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
+
+  // Export drawer handler
+  const handleExportClick = () => {
+    openDrawer();
+    settingDrawerTitle("Export Payslips");
+    settingDrawerSize("45vw");
+    settingComponent(<ExportPayslip />);
+  };
+
+  // Print All handler - Call bulk-details API with payslip IDs, then print
+  const handlePrintAllClick = async () => {
+    if (!payslips || payslips.length === 0) {
+      showToast("No payslips available to print", "error");
+      return;
+    }
+
+    try {
+      const payslipIds = payslips.map((p) => p.id);
+      const response = await payrollApi.getPayslipsBulkDetails(payslipIds);
+      const data = response?.data;
+      if (data?.STATUS !== "SUCCESSFUL" || !data?.DB_DATA?.payslips) {
+        showToast(data?.ERROR_DESCRIPTION || "Failed to load payslips for print", "error");
+        return;
+      }
+      const payslipsToPrint = data.DB_DATA.payslips;
+
+      // Create a temporary div for print content
+      const printContent = document.createElement("div");
+      printContent.innerHTML = `
+        <style>
+          @media print {
+            @page {
+              margin: 0;
+              size: A4;
+            }
+            body * {
+              visibility: hidden;
+            }
+            .print-content, .print-content * {
+              visibility: visible;
+            }
+            .print-content {
+              position: absolute;
+              padding-top: 35px;
+              left: 0;
+              top: 0;
+              width: 100%;
+            }
+            .sideMenu, .flex, .h-\\[calc\\(100vh-66px\\)\\], header, nav, button, .bg-\\[\\#8bc9f8\\] {
+              display: none !important;
+            }
+          }
+          .payslip-container {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+            font-family: Arial, sans-serif;
+            padding-top: 20px;
+            font-size: 14px;
+            padding: 20px;
+          }
+          .employee-header {
+            margin-bottom: 15px;
+          }
+          .employee-name {
+            font-size: 20px;
+            font-weight: medium;
+            margin-bottom: 10px;
+          }
+          .employee-details {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+          }
+          .employee-details > div {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+          }
+          .attendance-inline {
+            display: flex;
+            gap: 5px;
+          }
+          .holidays-inline {
+            display: flex;
+            gap: 5px;
+          }
+          .payslip-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 20px;
+          }
+          .payslip-title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: medium;
+            margin: 15px 0;
+            padding-bottom: 6px;
+            border-bottom: 0.5px solid #000;
+          }
+          .payment-detail-section, .deductions-section, .payable-section {
+            margin: 15px 0;
+            width: 100%;
+          }
+          .all-items {
+            margin: 15px 0;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+          }
+          .all-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e2e8f0;
+          }
+          .all-items-table th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+          }
+          .all-items-table td {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+            vertical-align: middle;
+          }
+          .all-items-table td + td {
+            border-left: 1px solid #e2e8f0; /* center vertical divider light */
+          }
+          .all-items-table .total-row td {
+            font-weight: 600;
+          }
+          .section-header {
+            text-align: center;
+            font-weight: medium;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 0;
+          }
+          .section-subheader {
+            text-align: center;
+            font-weight: medium;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #e2e8f0;
+          }
+          .payment-items, .deductions-items, .payable-items {
+            border: 1px solid #e2e8f0;
+            border-top: none;
+          }
+          .flex-item.total-row {
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          .flex-item.total-row .value {
+            border-left: 2px solid #000;
+          }
+          .flex-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          .flex-item .label {
+            flex: 1;
+            padding-right: 12px;
+            display: flex;
+            align-items: center;
+          }
+          .flex-item .value {
+            flex: 1;
+            padding-left: 12px;
+            border-left: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            text-align: left;
+          }
+          .flex-item:last-child {
+            border-bottom: 1px solid #e2e8f0;
+          }
+          .signatures {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+          }
+          .signature-line {
+            padding-top: 10px;
+            display: flex;
+            align-items: center;
+            width: 45%;
+          }
+          .signature-underline {
+            border-bottom: 1px solid #000;
+            min-width: 180px;
+            height: 20px;
+            margin-bottom: 6px;
+          }
+          .signature-label {
+            font-weight: 500;
+          }
+          .label {
+            font-weight: 500;
+          }
+          .value {
+            font-weight: 300;
+          }
+        </style>
+        <div class="print-content">
+          ${payslipsToPrint
+            .map((payslip) => {
+              // Extract employee data from payslips structure
+              const employee = payslip.wf_employee || {};
+
+              // Parse salary month (format: "1025" = Oct 2025)
+              const salaryMonth = payslip.salary_month || "";
+              const month =
+                salaryMonth.length >= 2 ? salaryMonth.slice(0, 2) : "10";
+              const year =
+                salaryMonth.length >= 4
+                  ? "20" + salaryMonth.slice(2)
+                  : new Date().getFullYear();
+              const monthNames = [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+              ];
+              const monthName = monthNames[parseInt(month) - 1] || "Oct";
+
+              // Calculate working hours and days
+              const totalWorkingHours = payslip.total_working
+                ? payslip.total_working / 3600
+                : 0;
+              const totalPresentHours = payslip.total_present
+                ? payslip.total_present / 3600
+                : 0;
+              // Use total_days from payslip_config (API value) if available, otherwise calculate from total_working
+              const totalDays =
+                payslip.payslip_config?.total_days !== undefined &&
+                payslip.payslip_config?.total_days !== null
+                  ? parseInt(payslip.payslip_config.total_days)
+                  : Math.round(totalWorkingHours / 8);
+              const presentDays = Math.round(totalPresentHours / 8);
+              const absentDays = totalDays - presentDays;
+
+              // Calculate salary data - use wf_employee.basic_pay when present (including 0), else rate
+              const basicSalary = payslip.wf_employee?.basic_pay != null ? parseFloat(payslip.wf_employee.basic_pay) : parseFloat(payslip.rate || 0);
+              const incentive = parseFloat(payslip.incentive || 0);
+              const totalPay = parseFloat(payslip.salary_amount || 0);
+              const netPayable = parseFloat(payslip.paid_amount || 0);
+
+              // Handle incentive_deduction_details (similar to IndividualPayslipPreview)
+              const incentiveDeductionArray = (() => {
+                if (
+                  payslip.incentive_deduction_details &&
+                  Array.isArray(payslip.incentive_deduction_details)
+                ) {
+                  return payslip.incentive_deduction_details.map((item) => ({
+                    id: item.id,
+                    amount: item.amount || item.details?.original_amount || 0,
+                    monthly_amount: item.details?.monthly_amount || 0,
+                    title: item.details?.title || "Incentive/Deduction",
+                    d_type:
+                      item.details?.d_type ||
+                      (item.type === "incen" ? "INCENTIVE" : "DEDUCTION"),
+                    description: item.details?.description || "",
+                    re_occuring: item.details?.re_occuring || "NO",
+                    start_date: item.details?.start_date,
+                    end_date: item.details?.end_date,
+                    status: item.details?.status || "0",
+                    ...item.details,
+                  }));
+                }
+                return [];
+              })();
+
+              // Calculate deductions from incentive_deduction_details
+              const deductionsFromIncentiveArray = incentiveDeductionArray
+                .filter((item) => item.d_type === "DEDUCTION")
+                .reduce(
+                  (sum, item) =>
+                    sum +
+                    parseFloat(
+                      item.monthly_amount > 0
+                        ? item.monthly_amount
+                        : item.amount || 0
+                    ),
+                  0
+                );
+
+              // Handle income_tax - preserve null, use 0 for calculations
+              const getIncomeTaxAmount = (incomeTax) => {
+                if (incomeTax === null) return null;
+                if (incomeTax === undefined || incomeTax === "") return null;
+                if (
+                  typeof incomeTax === "object" &&
+                  incomeTax.amount !== undefined
+                ) {
+                  return parseFloat(incomeTax.amount) || null;
+                }
+                return parseFloat(incomeTax) || null;
+              };
+
+              // Handle EOBI - preserve null, use 0 for calculations
+              const getEobiEmpContribution = (eobiRecord) => {
+                if (eobiRecord === null) return null;
+                if (eobiRecord === undefined || eobiRecord === "") return null;
+                if (
+                  typeof eobiRecord === "object" &&
+                  eobiRecord.emp_contribution !== undefined
+                ) {
+                  return parseFloat(eobiRecord.emp_contribution) || null;
+                }
+                return parseFloat(eobiRecord) || null;
+              };
+
+              // Handle Provident Fund - preserve null, use 0 for calculations
+              const getProvidentFundEmpContribution = (providentFund) => {
+                if (providentFund === null) return null;
+                if (providentFund === undefined || providentFund === "")
+                  return null;
+                if (
+                  typeof providentFund === "object" &&
+                  providentFund.emp_contribution !== undefined
+                ) {
+                  return parseFloat(providentFund.emp_contribution) || null;
+                }
+                return parseFloat(providentFund) || null;
+              };
+
+              const incomeTax = getIncomeTaxAmount(payslip.income_tax);
+              const incomeTaxForCalc = incomeTax === null ? 0 : incomeTax;
+              const eobi = getEobiEmpContribution(
+                payslip.eobi_record || payslip.eobi
+              );
+              const eobiForCalc = eobi === null ? 0 : eobi;
+              const pfEmployee = getProvidentFundEmpContribution(
+                payslip.provident_fund
+              );
+              const pfEmployeeForCalc = pfEmployee === null ? 0 : pfEmployee;
+              const otherDeductions = parseFloat(payslip.deduction || 0);
+
+              // Get calculated deductions from attendance_summary
+              const calculatedAbsenteeDeduction = payslip.attendance_summary
+                ?.calculated_absentee_deduction
+                ? parseFloat(
+                    payslip.attendance_summary.calculated_absentee_deduction
+                  )
+                : 0;
+              const calculatedLateDeduction = payslip.attendance_summary
+                ?.calculated_late_deduction
+                ? parseFloat(
+                    payslip.attendance_summary.calculated_late_deduction
+                  )
+                : 0;
+
+              // Attendance Deduction should be the sum of calculated_absentee_deduction and calculated_late_deduction
+              // If attendance_summary values exist, use their sum; otherwise fallback to att_deductions
+              const attendanceDeductionFromSummary =
+                calculatedAbsenteeDeduction + calculatedLateDeduction;
+              const attendanceDeduction =
+                attendanceDeductionFromSummary > 0
+                  ? attendanceDeductionFromSummary
+                  : parseFloat(payslip.att_deductions || 0);
+
+              // Calculate total deductions
+              // Note: attendanceDeduction already includes calculatedAbsenteeDeduction + calculatedLateDeduction, so don't add them separately
+              const totalDeductions =
+                attendanceDeduction +
+                deductionsFromIncentiveArray +
+                eobiForCalc +
+                pfEmployeeForCalc +
+                incomeTaxForCalc +
+                otherDeductions;
+
+              // Get incentives from incentive_deduction_details
+              const incentivesFromArray = incentiveDeductionArray
+                .filter((item) => item.d_type === "INCENTIVE")
+                .map((item) => ({
+                  title: item.title,
+                  amount: parseFloat(item.amount || 0),
+                }));
+
+              return `
+              <div class="payslip-container">
+                <div class="employee-header">
+                  <div class="employee-name">${employee.name || "N/A"}</div>
+                  <div class="employee-details">
+                    <div><span class="label">Employee ID :</span> <span class="value">${
+                      employee.emp_id || "N/A"
+                    }</span> <span class="label">Biometric ID :</span> <span class="value">${
+                employee.bio_id || "N/A"
+              }</span></div>
+                    <div><span class="label">Branch :</span> <span class="value">${
+                      employee.branch_name || "N/A"
+                    }</span></div>
+                    <div><span class="label">Department :</span> <span class="value">${
+                      employee.department_name || "N/A"
+                    }</span></div>
+                    <div><span class="label">Designation :</span> <span class="value">${
+                      employee.designation || "N/A"
+                    }</span></div>
+                    <div><span class="label">Generated on :</span> <span class="value">${
+                      payslip.timestamp
+                        ? new Date(payslip.timestamp * 1000).toLocaleDateString(
+                            "en-GB",
+                            { day: "numeric", month: "short", year: "numeric" }
+                          )
+                        : new Date().toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                    }</span></div>
+                    <div class="attendance-inline">
+                      <span class="label">Attendance :</span> 
+                      <span class="value">${
+                        payslip.attendance
+                          ? parseFloat(payslip.attendance).toFixed(2)
+                          : "0.00"
+                      }%, ${presentDays} days</span>
+                    </div>
+                    <div class="holidays-inline">
+                      <span class="label">+Holidays:</span> <span class="value">0 / 0 days</span>
+                    </div>
+                    <div class="holidays-inline">
+                      <span class="label">+Holidays:</span> <span class="value">0</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="payslip-details">
+                  <div><span class="label">Total days :</span> <span class="value">${totalDays}</span></div>
+                  <div><span class="label">Present days :</span> <span class="value">${presentDays}</span></div>
+                  <div><span class="label">Absent days :</span> <span class="value">${absentDays}</span></div>
+                  <div><span class="label">Leaves :</span> <span class="value">${
+                    payslip.leaves_encashable || 0
+                  }</span></div>
+                </div>
+                
+                <div class="payslip-title">Payslip for the month of ${monthName} ${year}</div>
+                
+                <table class="all-items-table">
+                  <thead>
+                    <tr>
+                      <th colspan="2">Payment detail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Basic Pay</td>
+                      <td>${basicSalary.toLocaleString()}/-</td>
+                    </tr>
+                    ${
+                      incentive > 0
+                        ? `<tr>
+                      <td>Incremented Amount</td>
+                      <td>${incentive.toLocaleString()}/-</td>
+                    </tr>`
+                        : ""
+                    }
+                    <tr class="total-row">
+                      <td>Total Pay</td>
+                      <td>${totalPay.toLocaleString()}/-</td>
+                    </tr>
+                    ${
+                      incentivesFromArray.length > 0
+                        ? `
+                    <tr>
+                      <th colspan="2">Extra Additions</th>
+                    </tr>
+                    ${incentivesFromArray
+                      .map(
+                        (inc) => `
+                    <tr>
+                      <td>${inc.title || "Incentive"}</td>
+                      <td>${inc.amount.toLocaleString()}/-</td>
+                    </tr>
+                    `
+                      )
+                      .join("")}
+                    `
+                        : ""
+                    }
+                    ${
+                      totalDeductions > 0
+                        ? `
+                    <tr>
+                      <th colspan="2">Deductions</th>
+                    </tr>
+                    ${
+                      incomeTax !== null && incomeTax > 0
+                        ? `
+                    <tr>
+                      <td>Income Tax</td>
+                      <td>${incomeTax.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}/-</td>
+                    </tr>
+                    `
+                        : ""
+                    }
+                    ${
+                      eobi !== null && eobi > 0
+                        ? `
+                    <tr>
+                      <td>EOBI</td>
+                      <td>${eobi.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}/-</td>
+                    </tr>
+                    `
+                        : ""
+                    }
+                    ${
+                      pfEmployee !== null && pfEmployee > 0
+                        ? `
+                    <tr>
+                      <td>Provident Fund</td>
+                      <td>${pfEmployee.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}/-</td>
+                    </tr>
+                    `
+                        : ""
+                    }
+                    ${
+                      calculatedAbsenteeDeduction > 0
+                        ? `
+                    <tr>
+                      <td>Calculated Absentee Deduction</td>
+                      <td>${calculatedAbsenteeDeduction.toLocaleString(
+                        undefined,
+                        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                      )}/-</td>
+                    </tr>
+                    `
+                        : ""
+                    }
+                    ${
+                      calculatedLateDeduction > 0
+                        ? `
+                    <tr>
+                      <td>Calculated Late Deduction</td>
+                      <td>${calculatedLateDeduction.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}/-</td>
+                    </tr>
+                    `
+                        : ""
+                    }
+                    ${
+                      attendanceDeduction > 0
+                        ? `
+                    <tr>
+                      <td>Attendance Deduction</td>
+                      <td>${attendanceDeduction.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}/-</td>
+                    </tr>
+                    `
+                        : ""
+                    }
+                    ${
+                      otherDeductions > 0
+                        ? `
+                    <tr>
+                      <td>Other Deductions</td>
+                      <td>${otherDeductions.toLocaleString()}/-</td>
+                    </tr>
+                    `
+                        : ""
+                    }
+                    ${incentiveDeductionArray
+                      .filter((item) => item.d_type === "DEDUCTION")
+                      .map(
+                        (item) => `
+                    <tr>
+                      <td>${item.title || "Deduction"}</td>
+                      <td>${parseFloat(
+                        item.monthly_amount > 0
+                          ? item.monthly_amount
+                          : item.amount || 0
+                      ).toLocaleString()}/-</td>
+                    </tr>
+                    `
+                      )
+                      .join("")}
+                    <tr class="total-row">
+                      <td>Total Deductions</td>
+                      <td>${totalDeductions.toLocaleString()}/-</td>
+                    </tr>
+                    `
+                        : ""
+                    }
+                    <tr>
+                      <th colspan="2">Payable</th>
+                    </tr>
+                    <tr>
+                      <td>Payable</td>
+                      <td>PKR ${netPayable.toLocaleString()}/-</td>
+                    </tr>
+                  </tbody>
+                </table>
+                
+                <div class="signatures">
+                  <div class="signature-line">
+                  <span class="signature-label">Officer signature</span>
+                    <div class="signature-underline"></div>
+                  </div>
+                  <div class="signature-line">
+                  <span class="signature-label">Employee signature</span>
+                    <div class="signature-underline"></div>
+                  </div>
+                </div>
+              </div>
+            `;
+            })
+            .join("")}
+        </div>
+      `;
+
+      // Append to body temporarily
+      document.body.appendChild(printContent);
+
+      // Print the content
+      window.print();
+
+      // Remove the temporary content after printing
+      setTimeout(() => {
+        document.body.removeChild(printContent);
+      }, 1000);
+    } catch (error) {
+      console.error("Error printing payslips:", error);
+      showToast("Error printing payslips", "error");
+    }
+  };
+
+  // Individual action handlers
+  const toggleDropdown = (payslipId) => {
+    setOpenDropdowns((prev) => {
+      // If the clicked dropdown is already open, close it
+      if (prev[payslipId]) {
+        return {};
+      }
+      // Otherwise, close all others and open only this one
+      return {
+        [payslipId]: true,
+      };
+    });
+  };
+
+  const handleViewPayslip = (employee) => {
+    // Find the original payslip data from the payslips array
+    const originalPayslip = payslips.find(
+      (p) => p.emp_id === employee.emp_id || p.id === employee.id
+    );
+
+    if (!originalPayslip) {
+      showToast("Payslip data not found", "error");
+      return;
+    }
+
+    // Transform the payslip data to match the required format
+    const employeeData = originalPayslip.wf_employee || {};
+
+    // Calculate working hours (convert seconds to hours)
+    const totalWorkingHours = originalPayslip.total_working
+      ? originalPayslip.total_working / 3600
+      : 0;
+    const totalPresentHours = originalPayslip.total_present
+      ? originalPayslip.total_present / 3600
+      : 0;
+
+    // Parse salary month (format: "1025" = Oct 2025)
+    const salaryMonth = originalPayslip.salary_month || "";
+    const month = salaryMonth.length >= 2 ? salaryMonth.slice(0, 2) : "10";
+    const year =
+      salaryMonth.length >= 4
+        ? "20" + salaryMonth.slice(2)
+        : new Date().getFullYear();
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const monthName = monthNames[parseInt(month) - 1] || "Oct";
+
+    // Calculate days (assuming 8 hours per day)
+    const totalDays = Math.round(totalWorkingHours / 8);
+    const presentDays = Math.round(totalPresentHours / 8);
+    const absentDays = totalDays - presentDays;
+
+    const payslipData = {
+      // Original payslip data fields (for IndividualPayslipPreview component)
+      id: originalPayslip.id,
+      name: employeeData.name || employee.name || "N/A",
+      employee_id: employeeData.emp_id || employee.emp_id || "N/A",
+      biometric_id: employeeData.bio_id || "N/A",
+      branch_name: employeeData.branch_name || selectedBranch?.label || "N/A",
+      department_name:
+        employeeData.department_name || selectedDepartment?.label || "N/A",
+      designation: employeeData.designation || "N/A",
+      generated_date: originalPayslip.timestamp
+        ? new Date(originalPayslip.timestamp * 1000).toISOString()
+        : new Date().toISOString(),
+      present_days: presentDays,
+      total_days: totalDays,
+      absent_days: absentDays,
+      leave_days: originalPayslip.leaves_encashable || 0,
+      earned_hours: totalPresentHours,
+      expected_hours: totalWorkingHours,
+      month: monthName,
+      year: year,
+      basic_salary: parseFloat(originalPayslip.rate || 0),
+      emp_salary: parseFloat(originalPayslip.salary_amount || 0),
+      total_pay:
+        parseFloat(originalPayslip.salary_amount || 0) +
+        parseFloat(originalPayslip.incentive || 0),
+      absentees_deduction: parseFloat(originalPayslip.att_deductions || 0),
+      income_tax: parseFloat(
+        originalPayslip.income_tax || originalPayslip.tax || 0
+      ),
+      eobi: parseFloat(
+        originalPayslip.eobi || originalPayslip.eobi_amount || 0
+      ),
+      provident_fund: parseFloat(
+        originalPayslip.provident_fund || originalPayslip.pf_amount || 0
+      ),
+      other_deductions: parseFloat(originalPayslip.deduction || 0),
+      net_salary: parseFloat(originalPayslip.paid_amount || 0),
+      payable_amount: parseFloat(originalPayslip.paid_amount || 0),
+      payment_method: originalPayslip.pay_method || "Cash",
+      status: originalPayslip.status || "due",
+
+      // Add the original API response fields that IndividualPayslipPreview expects
+      total_working: originalPayslip.total_working || 0,
+      total_present: originalPayslip.total_present || 0,
+      rate: originalPayslip.rate || 0,
+      salary_amount: originalPayslip.salary_amount || 0,
+      att_deductions: originalPayslip.att_deductions || 0,
+      deduction: originalPayslip.deduction || 0,
+      paid_amount: originalPayslip.paid_amount || 0,
+      pay_method: originalPayslip.pay_method || "Cash",
+      leaves_encashable: originalPayslip.leaves_encashable || 0,
+    };
+
+    // Close dropdown
+    setOpenDropdowns({});
+
+    // Navigate to individual payslip preview with payslip ID (data will be fetched from store or API)
+    navigate(`/individual-payslip-preview/${originalPayslip.id}`);
+  };
+
+  const handleDeleteSinglePayslip = (payslip) => {
+    setSelectedPayslip(payslip);
+    setSingleDeleteDialog(true);
+    setOpenDropdowns({}); // Close all dropdowns
+  };
+
+  const handleMarkSinglePaid = (payslip) => {
+    setSelectedPayslip(payslip);
+    setPaymentMethod("");
+    setPaymentDetail("");
+    setSingleMarkPaidDialog(true);
+    setOpenDropdowns({}); // Close all dropdowns
+  };
+
+  const confirmSingleDelete = async () => {
+    setLoading(true);
+    if (!selectedPayslip) return;
+
+    try {
+      const result = await deleteSinglePayslip(selectedPayslip.id);
+
+      if (result.success) {
+        showToast(
+          `Successfully deleted payslip for ${selectedPayslip.name}`,
+          "success"
+        );
+        setSingleDeleteDialog(false);
+        setSelectedPayslip(null);
+      } else {
+        showToast(result.error || "Failed to delete payslip", "error");
+        setSingleDeleteDialog(false);
+      }
+    } catch (error) {
+      console.error("Error deleting payslip:", error);
+      showToast("An error occurred while deleting payslip", "error");
+      setSingleDeleteDialog(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmSingleMarkPaid = async () => {
+    if (!selectedPayslip || !paymentMethod) return;
+
+    setIsMarkingPaid(true);
+
+    try {
+      const result = await markingInvoiceAsPaid(
+        selectedPayslip.id,
+        paymentMethod,
+        paymentDetail
+      );
+
+      if (result.success) {
+        showToast(
+          `Successfully marked payslip for ${selectedPayslip.name} as paid`,
+          "success"
+        );
+        setSingleMarkPaidDialog(false);
+        setSelectedPayslip(null);
+      } else {
+        showToast(result.error || "Failed to mark payslip as paid", "error");
+        setSingleMarkPaidDialog(false);
+      }
+    } catch (error) {
+      console.error("Error marking payslip as paid:", error);
+      showToast("An error occurred while marking payslip as paid", "error");
+      setSingleMarkPaidDialog(false);
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
+
+  // Load branches and payslips on component mount - All branches + current year (current month)
+  useEffect(() => {
+    if (
+      !copyBranchesData ||
+      !Array.isArray(copyBranchesData) ||
+      copyBranchesData.length === 0
+    ) {
+      getAllBranchesPayroll();
+    }
+
+    // Reset pagination state
+    setCurrentPageId(0);
+    setAccumulatedEmployees([]);
+
+    // First load: All branches + current year (current month in MMYY)
+    const now = new Date();
+    const currentMonthStr = String(now.getMonth() + 1).padStart(2, "0");
+    const currentYearStr = String(now.getFullYear()).slice(-2);
+    const initialParams = {
+      page: 0,
+      limit: 15,
+      branch_id: 0,
+      filter: "month",
+      search: `${currentMonthStr}${currentYearStr}`,
+    };
+    gettingPayslips(initialParams, true); // Force reload to get fresh data
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".dropdown-container")) {
+        setOpenDropdowns({});
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Helper function to transform payslips to employees
+  const transformPayslipsToEmployees = (payslipsData) => {
+    if (!payslipsData || !Array.isArray(payslipsData)) {
+      return [];
+    }
+    return payslipsData.map((payslip) => ({
+      id: payslip.id,
+      emp_id: payslip.emp_id ?? payslip.wf_employee?.emp_id ?? null,
+      name: payslip.wf_employee?.name || payslip.name || "N/A",
+      branch_id: payslip.branch_id || null,
+      department_id: payslip.department_id || null,
+      salary: `${payslip.salary_currency || "PKR"} ${parseFloat(
+        payslip.salary_amount || 0
+      ).toLocaleString()}`,
+      netSalary: `${payslip.salary_currency || "PKR"} ${parseFloat(
+        payslip.paid_amount || 0
+      ).toLocaleString()}`,
+      tada: `${payslip.salary_currency || "PKR"} ${parseFloat(
+        payslip.overtime_amount || 0
+      ).toLocaleString()}`,
+      medAllowance: "N/A", // Not available in API response, can be calculated from allowances if needed
+      incentives: `${payslip.salary_currency || "PKR"} ${parseFloat(
+        payslip.incentive || 0
+      ).toLocaleString()}`,
+      deductions: `${payslip.salary_currency || "PKR"} ${parseFloat(
+        payslip.deduction || 0
+      ).toLocaleString()}`,
+      salaryFTM: formatSalaryMonthFTM(payslip.salary_month),
+      status:
+        payslip.status === "due"
+          ? "Due"
+          : payslip.status === "paid"
+          ? "Paid"
+          : payslip.status,
+      selected: false,
+      // Add original payslip data for filtering
+      originalPayslip: payslip,
+    }));
+  };
+
+  // Update employees when payslips data changes
+  useEffect(() => {
+    if (payslips && Array.isArray(payslips)) {
+      const transformedEmployees = transformPayslipsToEmployees(payslips);
+      
+      // Since the ViewModel now handles appending for loadMore, 
+      // we just need to update the local state with all payslips
+      setAccumulatedEmployees(transformedEmployees);
+      setAllEmployees(transformedEmployees);
+      setEmployees(transformedEmployees);
+      
+      // Reset loading state if it was set
+      if (isLoadingMore) {
+        setIsLoadingMore(false);
+      }
+    } else {
+      // If no data, clear everything
+      setAllEmployees([]);
+      setEmployees([]);
+      setAccumulatedEmployees([]);
+      if (isLoadingMore) {
+        setIsLoadingMore(false);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payslips]);
+
+  // Update selectAll state when individual selections change
+  useEffect(() => {
+    if (employees.length === 0) {
+      setSelectedAll(false);
+    } else {
+      const allSelected = employees.every((emp) => emp.selected);
+      setSelectedAll(allSelected);
+    }
+  }, [employees]);
+
+  // Frontend filtering function
+  const applyFrontendFilters = () => {
+    let filteredEmployees = [...allEmployees];
+
+    // If no filter is selected, show all employees
+    if (!mainFilter?.value) {
+      setEmployees(filteredEmployees);
+      return;
+    }
+
+    // Employee ID/name search is handled by backend (filter=emp_id or emp_name, search=term) - no frontend filter
+
+    // Apply status filter
+    if (mainFilter.value === "status" && mainStatus?.value) {
+      filteredEmployees = filteredEmployees.filter(
+        (emp) => emp.status?.toLowerCase() === mainStatus.value.toLowerCase()
+      );
+    }
+
+    // Apply specific month filter
+    if (
+      mainFilter.value === "specific_month" &&
+      selectedMonth &&
+      selectedYear
+    ) {
+      // Convert selected month/year to MMYY format (e.g., "1025" for October 2025)
+      const monthStr = String(selectedMonth).padStart(2, "0");
+      const yearStr = String(selectedYear).slice(-2); // Get last 2 digits of year
+      const targetSalaryMonth = `${monthStr}${yearStr}`;
+
+      filteredEmployees = filteredEmployees.filter((emp) => {
+        const payslipSalaryMonth = emp.originalPayslip?.salary_month || "";
+        return payslipSalaryMonth === targetSalaryMonth;
+      });
+    }
+
+    setEmployees(filteredEmployees);
+  };
+
+  // Helper function to build filter params (overridePage = 0-based page when navigating to a specific page)
+  const buildFilterParams = (includePagination = false, overridePage = undefined) => {
+    const params = {};
+    
+    // Pagination params
+    if (overridePage !== undefined) {
+      params.page = overridePage;
+      params.limit = 15;
+    } else if (includePagination) {
+      params.page = currentPageId;
+      params.limit = 15;
+    } else {
+      // Reset pagination when filters change
+      params.page = 0;
+      params.limit = 15;
+    }
+
+    // Branch filter
+    if (
+      selectedBranch &&
+      (selectedBranch.value === 0 || selectedBranch.value)
+    ) {
+      params.branch_id = selectedBranch.value;
+    }
+
+    // Department filter
+    if (
+      selectedDepartment &&
+      (selectedDepartment.value === 0 || selectedDepartment.value)
+    ) {
+      params.department_id = selectedDepartment.value;
+    }
+
+    // Main filter - backend: emp_id when search is numeric, emp_name otherwise
+    if (mainFilter?.value === "status" && mainStatus?.value) {
+      params.filter = "status";
+      params.search = mainStatus.value;
+    } else if (
+      mainFilter?.value === "employee_id" &&
+      mainEmployeeIdSearch.trim()
+    ) {
+      const term = mainEmployeeIdSearch.trim();
+      params.filter = /^\d+$/.test(term) ? "emp_id" : "emp_name";
+      params.search = term;
+    } else if (mainFilter?.value === "specific_month" && mainSelectedDate) {
+      const month = String(mainSelectedDate.getMonth() + 1).padStart(2, "0");
+      const year = String(mainSelectedDate.getFullYear()).slice(-2);
+      params.filter = "month";
+      params.search = `${month}${year}`;
+    }
+
+    return params;
+  };
+
+  // Pagination helpers (same pattern as AttAdustmentRequest) - API uses 0-based page
+  const getPaginationData = () => {
+    const totalPages = payslipsPagination?.totalPages ?? 0;
+    const currentPageDisplay = currentPageId + 1; // 1-based for UI
+    const hasMore = payslipsPagination?.hasMore ?? false;
+    return {
+      currentPage: currentPageDisplay,
+      totalPages: Math.max(1, totalPages),
+      hasMore,
+    };
+  };
+
+  const goToNextPage = async () => {
+    if (isLoadingMore) return;
+    const paginationData = getPaginationData();
+    if (paginationData.currentPage < paginationData.totalPages) {
+      setIsLoadingMore(true);
+      const nextPage0Based = currentPageId + 1;
+      setCurrentPageId(nextPage0Based);
+      try {
+        const params = buildFilterParams(false, nextPage0Based);
+        await gettingPayslips(params, true);
+      } catch (error) {
+        showToast("Failed to load next page", "error");
+        setCurrentPageId(currentPageId);
+      } finally {
+        setIsLoadingMore(false);
+      }
+    }
+  };
+
+  const goToPreviousPage = async () => {
+    if (isLoadingMore) return;
+    if (currentPageId > 0) {
+      setIsLoadingMore(true);
+      const prevPage0Based = currentPageId - 1;
+      setCurrentPageId(prevPage0Based);
+      try {
+        const params = buildFilterParams(false, prevPage0Based);
+        await gettingPayslips(params, true);
+      } catch (error) {
+        showToast("Failed to load previous page", "error");
+        setCurrentPageId(currentPageId);
+      } finally {
+        setIsLoadingMore(false);
+      }
+    }
+  };
+
+  const goToPage = async (pageNumber) => {
+    if (isLoadingMore) return;
+    const targetPage1Based = parseInt(pageNumber, 10);
+    const targetPage0Based = targetPage1Based - 1;
+    const paginationData = getPaginationData();
+    if (targetPage1Based >= 1 && targetPage1Based <= paginationData.totalPages) {
+      setIsLoadingMore(true);
+      setCurrentPageId(targetPage0Based);
+      try {
+        const params = buildFilterParams(false, targetPage0Based);
+        await gettingPayslips(params, true);
+      } catch (error) {
+        showToast("Failed to load page", "error");
+        setCurrentPageId(currentPageId);
+      } finally {
+        setIsLoadingMore(false);
+      }
+    }
+  };
+
+  // Handle branch selection - build params with selectedOption so branch_id is sent on first select (state updates are async)
+  const handleBranchChange = async (selectedOption) => {
+    setSelectedBranch(selectedOption);
+    setSelectedDepartment(null); // Reset department when branch changes
+    setDepartments([{ value: 0, label: "All Departments" }]); // Clear departments list immediately
+
+    // Reset pagination when filter changes
+    setCurrentPageId(0);
+    setAccumulatedEmployees([]);
+
+    // Build params using the new selectedOption so branch_id is included on first selection
+    const params = { page: 0, limit: 15 };
+    if (selectedOption && (selectedOption.value === 0 || selectedOption.value)) {
+      params.branch_id = selectedOption.value;
+    }
+    // Add main filter params (backend expects filter + search)
+    if (mainFilter?.value === "status" && mainStatus?.value) {
+      params.filter = "status";
+      params.search = mainStatus.value;
+    } else if (mainFilter?.value === "employee_id" && mainEmployeeIdSearch.trim()) {
+      params.filter = "employee";
+      params.search = mainEmployeeIdSearch.trim();
+    } else if (mainFilter?.value === "specific_month" && mainSelectedDate) {
+      const month = String(mainSelectedDate.getMonth() + 1).padStart(2, "0");
+      const year = String(mainSelectedDate.getFullYear()).slice(-2);
+      params.filter = "month";
+      params.search = `${month}${year}`;
+    }
+
+    if (
+      selectedOption &&
+      (selectedOption.value === 0 || selectedOption.value)
+    ) {
+      try {
+        // Fetch departments for selected branch (0 for all branches)
+        const branchId = selectedOption.value === 0 ? 0 : selectedOption.value;
+        const departmentsData = await gettingDepartmentsServices(branchId);
+        setDepartments([
+          { value: 0, label: "All Departments" },
+          ...(departmentsData || []),
+        ]);
+
+        // Call API with params that include branch_id (no dependency on state update)
+        await gettingPayslips(params, true);
+      } catch (error) {
+        setDepartments([{ value: 0, label: "All Departments" }]);
+      }
+    } else {
+      // No branch selected - call API without branch_id
+      await gettingPayslips(params, true);
+    }
+  };
+
+  // Handle department selection
+  const handleDepartmentChange = async (selectedOption) => {
+    console.log("Department changed:", selectedOption);
+    setSelectedDepartment(selectedOption);
+
+    // Reset pagination when filter changes
+    setCurrentPageId(0);
+    setAccumulatedEmployees([]);
+
+    // Build params with all active filters
+    const params = buildFilterParams(false);
+    await gettingPayslips(params, true);
+  };
+
+  // Main page filter handlers
+  const handleMainFilterChange = async (selectedOption) => {
+    setMainFilter(selectedOption);
+    // Reset dependent fields when filter changes
+    setMainStatus(null);
+    setMainEmployeeIdSearch("");
+    setMainSelectedDate(null);
+    setSelectedMonthYear(null);
+    setSelectedYear(new Date().getFullYear());
+    setSelectedMonth(null);
+    setIsDatePickerOpen(false);
+
+    // Reset pagination when filter changes
+    setCurrentPageId(0);
+    setAccumulatedEmployees([]);
+
+    // If clearing the filter, reload with no main filter
+    if (!selectedOption || !selectedOption.value) {
+      const params = buildFilterParams(false);
+      await gettingPayslips(params, true);
+    } else {
+      // All main filters (employee_id, status, specific_month) are handled by backend - reload from API
+      const params = buildFilterParams(false);
+      await gettingPayslips(params, true);
+    }
+  };
+
+  const handleMainStatusChange = (selectedOption) => {
+    setMainStatus(selectedOption);
+    // Apply frontend filtering
+    applyFrontendFilters();
+  };
+
+  const handleMainDateSelect = async (date) => {
+    setMainSelectedDate(date);
+    
+    // Reset pagination when filter changes
+    setCurrentPageId(0);
+    setAccumulatedEmployees([]);
+    
+    // Reload from API with new date filter
+    const params = buildFilterParams(false);
+    await gettingPayslips(params, true);
+  };
+
+  const handleYearChange = (year) => {
+    setSelectedYear(year);
+    // Reset month when year changes
+    setSelectedMonth(null);
+    setSelectedMonthYear(null);
+  };
+
+  const handleMonthChange = async (month) => {
+    setSelectedMonth(month);
+    // Create a date object for the selected month/year
+    const date = new Date(selectedYear, month - 1, 1);
+    setSelectedMonthYear(date);
+    setMainSelectedDate(date);
+    // Close the date picker
+    setIsDatePickerOpen(false);
+    
+    // Reset pagination when filter changes
+    setCurrentPageId(0);
+    setAccumulatedEmployees([]);
+    
+    // Reload from API with new month filter
+    const params = buildFilterParams(false);
+    await gettingPayslips(params, true);
+  };
+
+  const handleClearMonthYear = () => {
+    setSelectedMonthYear(null);
+    setSelectedMonth(null);
+    setSelectedYear(new Date().getFullYear());
+    setIsDatePickerOpen(false);
+    applyFrontendFilters();
+  };
+
+  const handleThisMonth = async () => {
+    const today = new Date();
+    setSelectedYear(today.getFullYear());
+    setSelectedMonth(today.getMonth() + 1);
+    setSelectedMonthYear(today);
+    setMainSelectedDate(today);
+    setIsDatePickerOpen(false);
+    
+    // Reset pagination when filter changes
+    setCurrentPageId(0);
+    setAccumulatedEmployees([]);
+    
+    // Reload from API with current month filter
+    const params = buildFilterParams(false);
+    await gettingPayslips(params, true);
+  };
+
+  // Handle employee search via backend API (debounced)
+  useEffect(() => {
+    if (mainFilter?.value !== "employee_id") return;
+    const timeoutId = setTimeout(() => {
+      setCurrentPageId(0);
+      setAccumulatedEmployees([]);
+      const params = buildFilterParams(false);
+      gettingPayslips(params, true);
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mainEmployeeIdSearch, mainFilter]);
+
+  // Apply frontend filters when allEmployees changes
+  useEffect(() => {
+    if (allEmployees.length > 0) {
+      applyFrontendFilters();
+    }
+  }, [allEmployees]);
+
+  // Apply frontend filters when status or date changes
+  useEffect(() => {
+    if (
+      mainFilter?.value === "status" ||
+      mainFilter?.value === "specific_month"
+    ) {
+      applyFrontendFilters();
+    }
+  }, [
+    mainStatus,
+    mainSelectedDate,
+    selectedMonthYear,
+    selectedMonth,
+    selectedYear,
+    mainFilter,
+  ]);
+
+  // Prepare branch options
+  const branchOptions = [
+    { value: 0, label: "All Branches" },
+    ...(copyBranchesData && Array.isArray(copyBranchesData)
+      ? copyBranchesData.map((branch) => ({
+          value: branch.id,
+          label: branch.branch_name,
+        }))
+      : []),
+  ];
+
+  // const filterOptions = [
+  //   { value: 'all', label: 'All' },
+  //   { value: 'paid', label: 'Paid' },
+  //   { value: 'pending', label: 'Pending' }
+  // ]
+
+  // Main page filter options
+  const mainFilterOptions = [
+    { value: "status", label: "Filter by status" },
+    { value: "specific_month", label: "Specific month" },
+    { value: "employee_id", label: "Filter employee id/name" },
+  ];
+
+  const mainStatusOptions = [
+    { value: "paid", label: "Paid" },
+    { value: "due", label: "Due" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-4 lg:px-2 md:px-2 px-0">
+      {/* Filter and Action Bar - Added top margin for spacing */}
+      <div className="mt-10 space-y-4">
+        {/* Top Row: Action Buttons on the Right */}
+        <div className="flex justify-end">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              className="bg-[#FF4979] capitalize py-2 px-4 font-medium text-sm text-white rounded-[8px] text-[12px] font-Urbanist hover:drop-shadow-sm opacity-[70%]"
+              onClick={handleDeleteMarked}
+              disabled={loading}
+              loading={loading}
+            >
+              Delete Marked
+            </Button>
+            <Button
+              className="bg-[#0ACF97] capitalize py-2 px-4 font-medium text-sm text-white rounded-[8px] text-[12px] font-Urbanist hover:drop-shadow-sm opacity-[70%]"
+              onClick={handleMarkPaid}
+              disabled={isMarkingPaid}
+              loading={isMarkingPaid}
+            >
+              Mark Paid
+            </Button>
+            <Button
+              className="bg-bgBlue capitalize py-2 px-4 font-medium text-sm text-white rounded-[8px] text-[12px] font-Urbanist hover:drop-shadow-sm opacity-[70%]"
+              onClick={handleExportClick}
+            >
+              Export
+            </Button>
+            <Button
+              className="bg-[#FDA006] capitalize py-2 px-4 font-medium text-sm text-white rounded-[8px] text-[12px] font-Urbanist hover:drop-shadow-sm opacity-[70%]"
+              onClick={handlePrintAllClick}
+            >
+              Print All
+            </Button>
+          </div>
+        </div>
+
+        {/* Bottom Row: All Select Elements on the Left */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Filter by Branch Dropdown - Match dropdown list width */}
+          <div className="lg:w-[200px] md:w-[200px] w-full">
+            <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
+              Filter by branch
+            </label>
+            <CustomSelect
+              placeHolderTitle="Filter by branch"
+              value={selectedBranch}
+              options={branchOptions}
+              onChangeHandler={handleBranchChange}
+              customStyles={false}
+            />
+          </div>
+
+          {/* Department Dropdown - Match dropdown list width */}
+          <div className="lg:w-[200px] md:w-[200px] w-full">
+            <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
+              Filter by department
+            </label>
+            <CustomSelect
+              placeHolderTitle="Select department"
+              value={selectedDepartment}
+              options={departments}
+              onChangeHandler={handleDepartmentChange}
+              customStyles={false}
+              // disabled={!selectedBranch}
+            />
+          </div>
+
+          {/* Filter Dropdown - Increased Width */}
+          <div className="lg:w-[200px] md:w-[200px] w-full">
+            <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
+              Filter by
+            </label>
+            <CustomSelect
+              placeHolderTitle="Filter"
+              value={mainFilter}
+              options={mainFilterOptions}
+              onChangeHandler={handleMainFilterChange}
+              customStyles={false}
+              isSearchable={false}
+            />
+          </div>
+
+          {/* Status Dropdown - Inline with other selects */}
+          {mainFilter?.value === "status" && (
+            <div className="lg:w-[200px] md:w-[200px] w-full">
+              <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
+                Select Status
+              </label>
+              <CustomSelect
+                placeHolderTitle="Select Status"
+                value={mainStatus}
+                options={mainStatusOptions}
+                onChangeHandler={handleMainStatusChange}
+                customStyles={false}
+                isSearchable={false}
+              />
+            </div>
+          )}
+
+          {/* Month-Year Date Picker - Inline with other selects */}
+          {mainFilter?.value === "specific_month" && (
+            <div className="lg:w-[200px] md:w-[200px] w-full">
+              <div className="">
+                <label className="text-[#474747] text-[12px] font-medium font-Urbanist">
+                  Select Month & Year
+                </label>
+                <Popover
+                  placement="center"
+                  open={isDatePickerOpen}
+                  handler={setIsDatePickerOpen}
+                >
+                  <PopoverHandler>
+                    <Input
+                      label="Select Month & Year"
+                      color="#474747"
+                      value={
+                        selectedMonth && selectedYear
+                          ? `${new Date(
+                              selectedYear,
+                              selectedMonth - 1
+                            ).toLocaleDateString("en-US", {
+                              month: "long",
+                            })} ${selectedYear}`
+                          : ""
+                      }
+                      placeholder="Click to select month & year"
+                      readOnly
+                      className="cursor-pointer bg-white text-[#474747] text-[10px]"
+                    />
+                  </PopoverHandler>
+                  <PopoverContent className="p-4 lg:w-[200px] md:w-[200px] w-full">
+                    <div className="flex flex-col gap-4">
+                      {/* Year Selection - Scrollable */}
+                      <div className="border-b pb-3">
+                        <div className="text-sm font-medium text-gray-700 mb-2">
+                          Year
+                        </div>
+                        <div className="max-h-32 overflow-y-auto border rounded-md">
+                          {Array.from({ length: 10 }, (_, i) => {
+                            const year = new Date().getFullYear() - i;
+                            return (
+                              <button
+                                key={year}
+                                onClick={() => handleYearChange(year)}
+                                className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50 transition-colors ${
+                                  selectedYear === year
+                                    ? "bg-blue-100 text-blue-800 font-medium"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                {year}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Month Selection - Grid */}
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 mb-2">
+                          Month
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            "January",
+                            "February",
+                            "March",
+                            "April",
+                            "May",
+                            "June",
+                            "July",
+                            "August",
+                            "September",
+                            "October",
+                            "November",
+                            "December",
+                          ].map((month, index) => (
+                            <button
+                              key={month}
+                              onClick={() => handleMonthChange(index + 1)}
+                              className={`px-3 py-2 text-xs font-medium rounded-md transition-colors hover:bg-blue-50 ${
+                                selectedMonth === index + 1 &&
+                                selectedYear === new Date().getFullYear()
+                                  ? "bg-blue-500 text-white hover:bg-blue-600"
+                                  : selectedMonth === index + 1
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "text-gray-700 hover:text-blue-800"
+                              }`}
+                            >
+                              {month.substring(0, 3)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex justify-between pt-2 border-t">
+                        <button
+                          onClick={handleClearMonthYear}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          Clear
+                        </button>
+                        <button
+                          onClick={handleThisMonth}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          This month
+                        </button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          )}
+          {/* Employee ID/Name Search - Inline with other selects */}
+          {mainFilter?.value === "employee_id" && (
+            <div className="lg:w-[200px] md:w-[200px] w-full">
+              <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
+                Search by ID or Name
+              </label>
+              <Input
+                label="Search by ID or Name"
+                color="blue"
+                value={mainEmployeeIdSearch}
+                onChange={(e) => setMainEmployeeIdSearch(e.target.value)}
+                placeholder="Enter employee ID or name"
+                className="w-full h-[39px] px-3 text-black shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)] py-2 text-[12px] border-none outline-none rounded-[10px] bg-white text-left"
+              />
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <div className="p-2 bg-white rounded-[10px] drop-shadow-md w-full">
+        <div className="relative w-full overflow-auto customScroll">
+          <table className="min-w-full table-fixed text-center">
+          <colgroup>
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+    <col style={{ width: '8%' }} />
+  </colgroup>
+            <thead className="rounded-[8px] bg-[#F8F9FA] sticky top-[0px] z-20">
+              <tr className="rounded-[8px] bg-[#F8F9FA]">
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Checkbox
+                    color="blue"
+                    checked={selectedAll}
+                    onChange={handleSelectAll}
+                  />
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="#474747"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    Name
+                  </Typography>
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="blue-gray"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    Salary
+                  </Typography>
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="blue-gray"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    Net Salary
+                  </Typography>
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="blue-gray"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    TA/DA
+                  </Typography>
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="blue-gray"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    Med Allowance
+                  </Typography>
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="blue-gray"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    Incentives
+                  </Typography>
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="blue-gray"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    Deductions
+                  </Typography>
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="blue-gray"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    Salary FTM
+                  </Typography>
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="blue-gray"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    Status
+                  </Typography>
+                </th>
+                <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                  <Typography
+                    // variant="small"
+                    // color="blue-gray"
+                    className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                  >
+                    Action
+                  </Typography>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.length > 0 ? (
+                employees.map((employee, index) => {
+                  const isLast = index === employees.length - 1;
+                  const classes = isLast
+                    ? "px-[clamp(4px,0.8vw,12px)] py-4"
+                    : "px-[clamp(4px,0.8vw,12px)] py-4 border-b border-[#F2F2F9]";
+
+                  return (
+                    <tr key={employee.id} className={classes}>
+                      <td className="px-[clamp(4px,0.8vw,12px)] py-4">
+                        <Checkbox
+                          color="blue"
+                          checked={employee.selected}
+                          onChange={() => handleRowSelect(employee.id)}
+                        />
+                      </td>
+                      <td>
+                        <Typography
+                          // variant="small"
+                          // color="blue-gray"
+                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                        >
+                          {employee?.originalPayslip?.name}
+                        </Typography>
+                      </td>
+                      <td>
+                        <Typography
+                          // variant="small"
+                          // color="blue-gray"
+                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                        >
+                          {employee.salary}
+                        </Typography>
+                      </td>
+                      <td>
+                        <Typography
+                          // variant="small"
+                          // color="blue-gray"
+                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                        >
+                          {employee.netSalary}
+                        </Typography>
+                      </td>
+                      <td>
+                        <Typography
+                          // variant="small"
+                          // color="blue-gray"
+                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                        >
+                          {employee.tada}
+                        </Typography>
+                      </td>
+                      <td>
+                        <Typography
+                          // variant="small"
+                          // color="blue-gray"
+                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                        >
+                          PKR 0
+                        </Typography>
+                      </td>
+                      <td>
+                        <Typography
+                          // variant="small"
+                          // color="blue-gray"
+                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                        >
+                          {employee.incentives}
+                        </Typography>
+                      </td>
+                      <td>
+                        <Typography
+                          // variant="small"
+                          // color="blue-gray"
+                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                        >
+                          {employee.deductions}
+                        </Typography>
+                      </td>
+                      <td>
+                        <Typography
+                          // variant="small"
+                          // color="blue-gray"
+                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                        >
+                          {employee.salaryFTM}
+                        </Typography>
+                      </td>
+                      <td>
+                        <Typography
+                          // variant="small"
+                          // color="blue-gray"
+                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                        >
+                          <span
+                            className={`px-4 py-2 rounded-[7px] text-[clamp(10px,0.9vw,14px)] font-medium font-Urbanist ${
+                              employee.status?.toLowerCase() === "paid"
+                                ? "bg-[#DBFFF5] text-[#0ACF97]"
+                                : "bg-[#FFF0F4] text-[#FF4979]"
+                            }`}
+                          >
+                            {employee.status}
+                          </span>
+                        </Typography>
+                      </td>
+                      <td>
+                        <div className="relative dropdown-container">
+                          <Button
+                            className="bg-[#EFF8FF] border border-[#3DA5F4] capitalize px-3 py-2 font-normal text-[clamp(10px,0.8vw,13px)] flex items-center gap-1 text-[#3DA5F4] rounded-[7px]"
+                            size="sm"
+                            onClick={(e) => {
+                              // e.stopPropagation()
+                              toggleDropdown(employee.id);
+                            }}
+                          >
+                            <FaEllipsisV className="w-3 h-3" />
+                            Actions
+                          </Button>
+
+                          {/* Dropdown Menu */}
+                          {openDropdowns[employee.id] && (
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-[9999]">
+                              <div className="py-1">
+                                {/* View Button - Always visible */}
+                                <button
+                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                  onClick={(e) => {
+                                    // e.stopPropagation()
+                                    handleViewPayslip(employee);
+                                  }}
+                                >
+                                  <FaEye className="w-3 h-3 text-blue-600" />
+                                  View Payslip
+                                </button>
+
+                                {/* Delete Button - Always visible */}
+                                <button
+                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                  onClick={(e) => {
+                                    // e.stopPropagation()
+                                    handleDeleteSinglePayslip(employee);
+                                  }}
+                                >
+                                  <FaTrash className="w-3 h-3 text-red-600" />
+                                  Delete Payslip
+                                </button>
+
+                                {/* Mark Paid Button - Only for Due status */}
+                                {employee.status?.toLowerCase() === "due" && (
+                                  <button
+                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                    onClick={(e) => {
+                                      // e.stopPropagation()
+                                      handleMarkSinglePaid(employee);
+                                    }}
+                                  >
+                                    <FaCheck className="w-3 h-3 text-green-600" />
+                                    Mark as Paid
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="11" className="p-8 text-center">
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal"
+                    >
+                      No data found
+                    </Typography>
+                  </td>
+                </tr>
+              )}
+              {/* Pagination row - same pattern as AttAdustmentRequest */}
+              {employees && employees.length > 0 && (() => {
+                const paginationData = getPaginationData();
+                return paginationData.totalPages >= 1 && (
+                  <tr>
+                    <td colSpan={11} className="p-4 w-full" style={{ width: "100%" }}>
+                      <div className="w-full flex justify-center items-center gap-1">
+                        {/* Previous Button */}
+                        {paginationData.currentPage > 1 ? (
+                          <button
+                            title="Previous Page"
+                            className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={goToPreviousPage}
+                            disabled={isLoadingMore}
+                          >
+                            <span>‹</span>
+                            <span>Previous</span>
+                          </button>
+                        ) : (
+                          <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1">
+                            <span>‹</span>
+                            <span>Previous</span>
+                          </div>
+                        )}
+                        {/* Page Numbers */}
+                        <div className="flex items-center gap-1 flex-wrap justify-center">
+                          {paginationData.totalPages <= 10 ? (
+                            Array.from({ length: paginationData.totalPages }, (_, i) => i + 1).map((pageNum) => (
+                              <button
+                                key={pageNum}
+                                onClick={() => goToPage(pageNum)}
+                                disabled={isLoadingMore}
+                                className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  pageNum === paginationData.currentPage
+                                    ? "bg-[#1a73e8] text-white font-medium"
+                                    : "text-[#1a73e8] hover:bg-gray-100"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            ))
+                          ) : (
+                            (() => {
+                              const currentPage = paginationData.currentPage;
+                              const totalPages = paginationData.totalPages;
+                              const pages = [];
+                              pages.push(1);
+                              if (currentPage > 3) pages.push("ellipsis-start");
+                              const startPage = Math.max(2, currentPage - 1);
+                              const endPage = Math.min(totalPages - 1, currentPage + 1);
+                              for (let i = startPage; i <= endPage; i++) {
+                                if (i !== 1 && i !== totalPages) pages.push(i);
+                              }
+                              if (currentPage < totalPages - 2) pages.push("ellipsis-end");
+                              pages.push(totalPages);
+                              const uniquePages = [];
+                              const seen = new Set();
+                              pages.forEach((page) => {
+                                if (typeof page === "number" && !seen.has(page)) {
+                                  seen.add(page);
+                                  uniquePages.push(page);
+                                } else if (typeof page === "string") {
+                                  uniquePages.push(page);
+                                }
+                              });
+                              return uniquePages.map((page, index) => {
+                                if (page === "ellipsis-start" || page === "ellipsis-end") {
+                                  return (
+                                    <span
+                                      key={`ellipsis-${index}`}
+                                      className="px-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8]"
+                                    >
+                                      ...
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <button
+                                    key={page}
+                                    onClick={() => goToPage(page)}
+                                    disabled={isLoadingMore}
+                                    className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                      page === currentPage
+                                        ? "bg-[#1a73e8] text-white font-medium"
+                                        : "text-[#1a73e8] hover:bg-gray-100"
+                                    }`}
+                                  >
+                                    {page}
+                                  </button>
+                                );
+                              });
+                            })()
+                          )}
+                        </div>
+                        {/* Next Button */}
+                        {paginationData.currentPage < paginationData.totalPages ? (
+                          <button
+                            title="Next Page"
+                            className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={goToNextPage}
+                            disabled={isLoadingMore}
+                          >
+                            <span>Next</span>
+                            <span>›</span>
+                          </button>
+                        ) : (
+                          <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1">
+                            <span>Next</span>
+                            <span>›</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })()}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Footer */}
+      {/* <div className='flex justify-center items-center py-4'>
+        <div className='flex items-center gap-2 text-sm text-gray-500'>
+          <span>Powered by</span>
+          <span className='font-semibold text-blue-600'>Veevo Tech</span>
+        </div>
+      </div> */}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        openDialog={deleteDialog}
+        handleOpen={() => setDeleteDialog(false)}
+        handleConfirm={confirmDelete}
+        title="Confirm Delete"
+        message={`Are you sure you want to delete ${selectedEmployees.length} selected payslip(s)?`}
+      />
+
+      {/* Mark Paid Dialog */}
+      <Dialog
+        open={markPaidDialog}
+        handler={() => setMarkPaidDialog(false)}
+        size="sm"
+      >
+        <DialogHeader>
+          <Typography className="text-[#474747] font-Urbanist font-medium text-[16px]">
+            Mark Payslips as Paid
+          </Typography>
+        </DialogHeader>
+
+        <DialogBody className="space-y-4">
+          {/* Selected Count */}
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <Typography variant="small" color="blue-gray">
+              Selected Payslips:{" "}
+              <span className="font-medium font-Urbanist text-[14px] text-[#474747]">
+                {selectedEmployees.length}
+              </span>
+            </Typography>
+          </div>
+
+          {/* Payment Method Selector */}
+          <div>
+            <Typography
+              variant="small"
+              color="blue-gray"
+              className="mb-1 font-medium font-Urbanist text-[14px] text-[#474747]"
+            >
+              Payment Method <span className="text-red-500">*</span>
+            </Typography>
+            <Select
+              label="Select Payment Method"
+              color="blue"
+              value={paymentMethod}
+              onChange={(val) => setPaymentMethod(val)}
+            >
+              <Option value="cash">Cash</Option>
+              <Option value="bank_transfer">Bank Transfer</Option>
+              <Option value="cheque">Cheque</Option>
+              <Option value="online">Online Payment</Option>
+              <Option value="card">Credit/Debit Card</Option>
+            </Select>
+          </div>
+
+          {/* Payment Details */}
+          <div>
+            <Typography
+              variant="small"
+              color="blue-gray"
+              className="mb-1 font-medium font-Urbanist text-[14px] text-[#474747]"
+            >
+              Payment Details (Optional)
+            </Typography>
+            <Textarea
+              label="Enter payment details, reference number, or notes"
+              color="blue"
+              value={paymentDetail}
+              onChange={(e) => setPaymentDetail(e.target.value)}
+              rows={3}
+            />
+          </div>
+        </DialogBody>
+
+        <DialogFooter className="space-x-2">
+          <Button
+            // variant='outlined'
+            // color='red'
+            className="bg-[#FF4979] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer"
+            onClick={() => setMarkPaidDialog(false)}
+            disabled={isMarkingPaid}
+          >
+            Cancel
+          </Button>
+          <Button
+            // color='green'
+            className="bg-[#0ACF97] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer"
+            onClick={confirmMarkPaid}
+            disabled={isMarkingPaid || !paymentMethod}
+            loading={isMarkingPaid}
+          >
+            {isMarkingPaid ? "Processing..." : "Mark as Paid"}
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* Single Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        openDialog={singleDeleteDialog}
+        handleOpen={() => setSingleDeleteDialog(false)}
+        handleConfirm={confirmSingleDelete}
+        title="Confirm Delete"
+        message={`Are you sure you want to delete the payslip for ${selectedPayslip?.name}?`}
+      />
+
+      {/* Single Mark Paid Dialog */}
+      <Dialog
+        open={singleMarkPaidDialog}
+        handler={() => setSingleMarkPaidDialog(false)}
+        size="sm"
+      >
+        <DialogHeader>
+          <Typography className="text-[#474747] font-Urbanist font-medium text-[16px]">
+            Mark Payslip as Paid
+          </Typography>
+        </DialogHeader>
+
+        <DialogBody className="space-y-4">
+          {/* Employee Info */}
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <Typography variant="small" color="blue-gray">
+              Employee:{" "}
+              <span className="font-medium font-Urbanist text-[14px] text-[#474747]">
+                {selectedPayslip?.name}
+              </span>
+            </Typography>
+          </div>
+
+          {/* Payment Method Selector */}
+          <div>
+            <Typography
+              variant="small"
+              color="blue-gray"
+              className="mb-1 font-medium font-Urbanist text-[14px] text-[#474747]"
+            >
+              Payment Method <span className="text-red-500">*</span>
+            </Typography>
+            <Select
+              label="Select Payment Method"
+              color="blue"
+              value={paymentMethod}
+              onChange={(val) => setPaymentMethod(val)}
+            >
+              <Option value="cash">Cash</Option>
+              <Option value="bank_transfer">Bank Transfer</Option>
+              <Option value="cheque">Cheque</Option>
+              <Option value="online">Online Payment</Option>
+              <Option value="card">Credit/Debit Card</Option>
+            </Select>
+          </div>
+
+          {/* Payment Details */}
+          <div>
+            <Typography
+              variant="small"
+              color="blue-gray"
+              className="mb-1 font-medium font-Urbanist text-[14px] text-[#474747]"
+            >
+              Payment Details (Optional)
+            </Typography>
+            <Textarea
+              label="Enter payment details, reference number, or notes"
+              color="blue"
+              value={paymentDetail}
+              onChange={(e) => setPaymentDetail(e.target.value)}
+              rows={3}
+            />
+          </div>
+        </DialogBody>
+
+        <DialogFooter className="space-x-2">
+          <Button
+            // variant='outlined'
+            // color='red'
+            className="bg-[#FF4979] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer"
+            onClick={() => setSingleMarkPaidDialog(false)}
+            disabled={isMarkingPaid}
+          >
+            Cancel
+          </Button>
+          <Button
+            // color='green'
+            className="bg-[#0ACF97] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer"
+            onClick={confirmSingleMarkPaid}
+            disabled={isMarkingPaid || !paymentMethod}
+            loading={isMarkingPaid}
+          >
+            {isMarkingPaid ? "Processing..." : "Mark as Paid"}
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </div>
+  );
+};
+
+export default MakingPayments;

@@ -1,0 +1,675 @@
+import { useState } from "react"
+import performanceApi from "../../Model/Data/Performance/Performance"
+import { showToast } from "../../Components/Toaster/Toaster"
+import useStore from "../../Store/store"
+import { includeModuleData } from "../../services/__performanceServices"
+import { gettingDepartmentsServices, gettingEmployeeFrequentHit, gettingEmployesServices } from "../../services/__frequentApiServices"
+import { validateInput } from "../../Validation/CustomValidation"
+import { validateMultipleEmployeePRC, validateSingleEmployeePRCUpdate } from "../../Validation/Validation"
+import { formatDateYMD } from "../../services/__dateTimeServices"
+import { useDebounce } from "../../services/__debounceServices"
+import useDepartments from "../DepartmentsViewModel/DepartmentsServices"
+const usePRCServices = () => {
+    const deleteSinglePRC = useStore((state) => state.deleteSinglePRC)
+    const addNewRPC = useStore((state) => state.addNewRPC)
+    const updatePRC = useStore((state) => state.updatePRC)
+    const searchingPRC = useStore((state) => state.searchingPRC)
+    const gettingPRCData = useStore((state) => state.gettingPRCData)
+
+
+
+
+
+
+    const [PRCAddValue, setPRCAddValue] = useState({
+        show: false,
+        id: '',
+        name: '',
+        start_date: '',
+        end_date: '',
+        goal_rate: '',
+        competancy_rate: '',
+        branch: null,
+        department: null,
+        assigned_to: null,
+        review_day: '',
+        modulesType: includeModuleData.map(ele => ele.id),
+        branches: [],
+        branch_id: null,
+        departments: [],
+        department_id: null,
+        employees: [],
+        emp_id: null,
+        loading: false,
+        update: false,
+        selectedEmp: [], // Now supports multiple employees for creation
+        isMultipleEmployeeMode: false, // Flag to distinguish between create and update modes
+    })
+
+
+    const [viewPRC, setViewPRC] = useState({
+        show: false,
+        singleData: {}
+    })
+    const { getEmployeesByDeptId } = useDepartments();
+
+
+    // console.log("type", typeof handleEmpDetails)
+
+    const toggleAddPRC = async () => {
+        setPRCAddValue((prevState) => ({
+            ...prevState,
+            show: !prevState.show,
+            update: false,
+            id: '',
+            name: '',
+            start_date: '',
+            end_date: '',
+            goal_rate: prevState.show ? '' : '50', // Set default 50 when opening modal
+            competancy_rate: prevState.show ? '' : '50', // Set default 50 when opening modal
+            branch: null,
+            department: null,
+            assigned_to: null,
+            review_day: '',
+            modulesType: includeModuleData.map(ele => ele.id),
+            branch_id: null,
+            departments: [],
+            department_id: null,
+            employees: [],
+            emp_id: null,
+            selectedEmp: [],
+            isMultipleEmployeeMode: true, // Enable multiple employee selection for creation
+            // Don't load branches initially - load on demand
+            branches: []
+        }))
+    }
+
+    const [deleteValue, setDeleteValue] = useState({
+        show: false,
+        id: null,
+        loading: false
+    })
+
+
+
+    const handlePRCMenuList = (ele, menuItem) => {
+
+        // console.log(ele, menuItem)
+
+        switch (menuItem.id) {
+            case 1:
+
+                getSinglePRC(ele._id)
+
+                break
+            case 2:
+                setViewPRC((prevState) => ({
+                    ...prevState,
+                    singleData: ele,
+                    show: true
+                }))
+                break
+            case 3:
+
+                handleDelete(ele)
+
+                break
+
+            default:
+                break
+        }
+
+    }
+
+
+
+    function handleDelete(ele) {
+        setDeleteValue((prevState) => ({
+            ...prevState,
+            id: ele._id,
+            show: true,
+        }))
+    }
+
+
+    const toggleDeleteConfirmatio = () => {
+        setDeleteValue((prevState) => ({
+            ...prevState,
+            show: false,
+        }))
+    }
+
+
+    const confirmDelete = async () => {
+        setDeleteValue((prevState) => ({
+            ...prevState,
+            loading: true,
+        }))
+        try {
+
+            const response = await performanceApi.deletePRC(deleteValue.id)
+            console.log(response)
+            const responseData = response.data
+            if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+                deleteSinglePRC(deleteValue.id)
+                showToast('Review Cycle deleted successfully', 'success')
+                toggleDeleteConfirmatio()
+            }
+
+        } catch (err) {
+            console.log(err)
+        } finally {
+            setDeleteValue((prevState) => ({
+                ...prevState,
+                loading: false,
+            }))
+        }
+    }
+
+
+    const formatTimestampToDate = (timestamp) => {
+        if (!timestamp) return '';
+        
+        let date;
+        // If timestamp is a number
+        if (typeof timestamp === 'number') {
+            // If timestamp is in seconds (10 digits), convert to milliseconds
+            if (timestamp.toString().length === 10) {
+                date = new Date(timestamp * 1000);
+            } else {
+                // If timestamp is already in milliseconds (13 digits)
+                date = new Date(timestamp);
+            }
+        } else {
+            // If timestamp is a string, try to parse it
+            date = new Date(timestamp);
+        }
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            console.warn('Invalid timestamp:', timestamp);
+            return '';
+        }
+        
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const toggleViewPRC = () => {
+        setViewPRC((prevState) => ({
+            ...prevState,
+            show: !prevState.show
+        }))
+    }
+
+    const handleChangeRPC = (e) => {
+        const { name, value, checked, type } = e.target;
+
+        if (type === "checkbox") {
+            const moduleId = parseInt(value, 10); // Assuming value is module ID
+            setPRCAddValue((prevState) => {
+                const newModulesType = checked
+                    ? [...prevState.modulesType, moduleId] // Add if checked
+                    : prevState.modulesType.filter((id) => id !== moduleId); // Remove if unchecked
+                
+                // Auto-set percentages based on module selection
+                let newGoalRate = prevState.goal_rate;
+                let newCompetencyRate = prevState.competancy_rate;
+                
+                const isGoalSelected = newModulesType.includes(1);
+                const isCompetencySelected = newModulesType.includes(2);
+                
+                // If only one module is selected, set it to 100%
+                if (isGoalSelected && !isCompetencySelected) {
+                    newGoalRate = '100';
+                    newCompetencyRate = '';
+                } else if (!isGoalSelected && isCompetencySelected) {
+                    newGoalRate = '';
+                    newCompetencyRate = '100';
+                } else if (isGoalSelected && isCompetencySelected) {
+                    // If both are selected, set default 50-50
+                    newGoalRate = '50';
+                    newCompetencyRate = '50';
+                } else {
+                    // If none are selected, clear both
+                    newGoalRate = '';
+                    newCompetencyRate = '';
+                }
+                
+                return {
+                    ...prevState,
+                    modulesType: newModulesType,
+                    goal_rate: newGoalRate,
+                    competancy_rate: newCompetencyRate
+                };
+            });
+        } else {
+            // For Goal and Competency rate validation
+            if (name === "goal_rate" || name === "competancy_rate") {
+                const numValue = parseFloat(value) || 0;
+                
+                // Validate individual percentage (not greater than 100)
+                if (numValue > 100) {
+                    showToast(`${name === "goal_rate" ? "Goal" : "Competency"} percentage cannot exceed 100%`, 'error');
+                    return;
+                }
+                
+                // Get current values and module selection
+                const currentGoalRate = name === "goal_rate" ? numValue : parseFloat(PRCAddValue.goal_rate) || 0;
+                const currentCompetencyRate = name === "competancy_rate" ? numValue : parseFloat(PRCAddValue.competancy_rate) || 0;
+                const isGoalSelected = PRCAddValue.modulesType.includes(1);
+                const isCompetencySelected = PRCAddValue.modulesType.includes(2);
+                
+                // If both modules are selected, validate total percentage
+                if (isGoalSelected && isCompetencySelected) {
+                    const totalPercentage = currentGoalRate + currentCompetencyRate;
+                    if (totalPercentage > 100) {
+                        showToast("Total percentage (Goal + Competency) cannot exceed 100%", 'error');
+                        return;
+                    }
+                }
+            }
+            
+            // For other input types, update the corresponding field
+            setPRCAddValue((prevState) => ({
+                ...prevState,
+                [name]: value,
+            }));
+        }
+    }
+
+    const handleSelectAddPRC = async (select, field) => {
+        // console.log("This is slecet", select);
+        // console.log("This is field", field)
+        if (field === 'branch_id') {
+            // Load branches if not already loaded
+            if (PRCAddValue.branches.length === 0) {
+                const branchData = await gettingEmployeeFrequentHit()
+                setPRCAddValue((prevState) => ({
+                    ...prevState,
+                    branches: branchData.DB_DATA || []
+                }))
+            }
+            
+            const data = await gettingDepartmentsServices(select.value)
+            setPRCAddValue((prevState) => ({
+                ...prevState,
+                [field]: select,
+                departments: data,
+                employees: [],
+                department_id: null
+            }))
+
+        } if (field === 'department_id') {
+            const data = await getEmployeesByDeptId(select.value);
+            // console.log("employeeDataemployeeData", employeeData)
+            // const data = await gettingEmployesServices(select.value)
+            //    console.log('data', data)
+            setPRCAddValue((prevState) => ({
+                ...prevState,
+                [field]: select,
+                employees: data
+            }))
+        }
+
+        if (field === 'emp_id') {
+            // Check if employee is already selected
+            const isAlreadySelected = PRCAddValue.selectedEmp.some(emp => emp.value === select.value);
+            
+            if (isAlreadySelected) {
+                showToast('Employee already selected', 'warning');
+                return;
+            }
+
+            setPRCAddValue((prevState) => ({
+                ...prevState,
+                selectedEmp: [...prevState.selectedEmp, select], // Add to array for multiple selection
+                emp_id: null // Clear the employee selection after adding
+            }))
+            showToast('Employee Added', 'success')
+        }
+
+        else {
+
+            setPRCAddValue((prevState) => ({
+                ...prevState,
+                [field]: select
+            }));
+        }
+    }
+
+
+    const getSinglePRC = async (id) => {
+        try {
+            const response = await performanceApi.getSinglePRC(id)
+            const responseData = response.data
+            // console.log(response)
+            if (responseData.STATUS === "SUCCESSFUL") {
+                const dbData = responseData.DB_DATA
+                
+                // Handle new API response structure
+                const selectedEmpArray = dbData.employee_name ? [{
+                    value: dbData.employee_id || dbData.one_id,
+                    label: dbData.employee_name
+                }] : [];
+                
+                setPRCAddValue((prevState) => ({
+                    ...prevState,
+                    id: id,
+                    update: true,
+                    name: dbData.name,
+                    start_date: formatTimestampToDate(dbData.startDate),
+                    end_date: formatTimestampToDate(dbData.endDate),
+                    competancy_rate: dbData.competency_rate || 0,
+                    goal_rate: dbData.goal_rate || 0,
+                    branch_id: { value: dbData.branch, label: `Branch ${dbData.branch}` }, // Placeholder label
+                    department_id: { value: dbData.department, label: `Department ${dbData.department}` }, // Placeholder label
+                    selectedEmp: selectedEmpArray,
+                    review_day: formatTimestampToDate(dbData.closing_date),
+                    show: true,
+                    isMultipleEmployeeMode: false, // Disable multiple selection for updates
+                    // Don't load branches, departments, employees initially
+                    branches: [],
+                    departments: [],
+                    employees: []
+                }))
+            }
+        } catch (err) {
+            const error = err.response?.data?.ERROR_DESCRIPTION || 'Error fetching performance review'
+            showToast(error, 'error')
+            console.log(err)
+        }
+    }
+
+
+
+
+
+    const validatePRCForm = () => {
+        const { name, start_date, end_date, branch_id, department_id, selectedEmp, review_day, isMultipleEmployeeMode, goal_rate, competancy_rate, modulesType } = PRCAddValue
+        const nameValidation = validateInput('Name', name)
+        if (!nameValidation.isValid) {
+            return { isValid: false, message: nameValidation.message }
+        }
+        if (start_date === '') {
+            return { isValid: false, message: "Select Start Date" }
+
+        }
+        if (end_date === '') {
+            return { isValid: false, message: "Select End Date" }
+        }
+
+        if (!branch_id) {
+            return { isValid: false, message: "Select Branch" }
+        }
+        if (!department_id) {
+            return { isValid: false, message: "Select Department" }
+        }
+        
+        // Unified validation - require at least one employee for both create and update
+        if (!selectedEmp || selectedEmp.length === 0) {
+            return { isValid: false, message: "Select at least one Employee" }
+        }
+
+        if (review_day === '') {
+            return { isValid: false, message: "Select Closing Date" }
+        }
+
+        // Validate Goal and Competency percentages if modules are selected
+        if (modulesType && modulesType.length > 0) {
+            const goalPercentage = parseFloat(goal_rate) || 0;
+            const competencyPercentage = parseFloat(competancy_rate) || 0;
+            const totalPercentage = goalPercentage + competencyPercentage;
+            
+            const isGoalSelected = modulesType.includes(1);
+            const isCompetencySelected = modulesType.includes(2);
+
+            // If both modules are selected, they must sum to 100%
+            if (isGoalSelected && isCompetencySelected) {
+                if (goalPercentage === 0 && competencyPercentage === 0) {
+                    return { isValid: false, message: "Please enter Goal and Competency percentages" }
+                }
+
+                if (totalPercentage !== 100) {
+                    return { isValid: false, message: `Goal and Competency percentages must sum to 100%. Current total: ${totalPercentage}%` }
+                }
+            }
+            
+            // If only one module is selected, it should be 100%
+            if (isGoalSelected && !isCompetencySelected) {
+                if (goalPercentage !== 100) {
+                    return { isValid: false, message: `Goal percentage must be 100% when only Goal module is selected. Current: ${goalPercentage}%` }
+                }
+            }
+            
+            if (!isGoalSelected && isCompetencySelected) {
+                if (competencyPercentage !== 100) {
+                    return { isValid: false, message: `Competency percentage must be 100% when only Competency module is selected. Current: ${competencyPercentage}%` }
+                }
+            }
+
+            // Individual percentage validation
+            if (goalPercentage > 100 || competencyPercentage > 100) {
+                return { isValid: false, message: "Individual percentages cannot exceed 100%" }
+            }
+        }
+
+        return { isValid: true, message: '' }
+    }
+
+
+
+    const handleSubmitPRC = async () => {
+        const validation = validatePRCForm()
+        if (!validation.isValid) {
+            showToast(validation.message, 'error');
+            return
+        }
+
+        const { name, start_date, end_date, goal_rate, competancy_rate, branch_id, department_id, selectedEmp, review_day, isMultipleEmployeeMode } = PRCAddValue;
+        console.log("PRCAddValue", PRCAddValue)
+
+        // Prepare API data - always use array format for employee and assigned_to
+        const apiData = {
+            name: name,
+            start_date: start_date,
+            end_date: end_date,
+            goal_rate: parseInt(goal_rate) || 0,
+            competency_rate: parseInt(competancy_rate) || 0,
+            branch: parseInt(branch_id.value),
+            department: parseInt(department_id.value),
+            employee: selectedEmp.map(emp => emp.value.toString()), // Convert to string
+            assigned_to: selectedEmp.map(emp => emp.label), // Always array
+            review_day: review_day
+        };
+
+        // Validate with schema
+        try {
+            await validateMultipleEmployeePRC.validate(apiData);
+        } catch (validationError) {
+            showToast(validationError.message, 'error');
+            return;
+        }
+
+        setPRCAddValue((prevState) => ({
+            ...prevState,
+            loading: true
+        }))
+
+        try {
+            const response = await performanceApi.createMultipleEmployeePRC(apiData);
+            
+            const responseData = response.data;
+            // console.log('responseData.STATUS === "SUCCESSFUL"', responseData.STATUS === "SUCCESSFUL")
+            if (responseData.STATUS === "SUCCESSFUL") {
+                const newData = responseData.DB_DATA;
+                // console.log("newDatanewData", newData);
+                const new_added_RPC = {};
+                newData.map((PRC_DATA) => {
+                    new_added_RPC._id = PRC_DATA._id;
+                    new_added_RPC.goal_rate = PRC_DATA.goal_rate;
+                    new_added_RPC.competancy_rate = PRC_DATA.competancy_rate;
+                    new_added_RPC.branch = PRC_DATA.branch;
+                    new_added_RPC.employee_name = PRC_DATA.employee_name;
+                    new_added_RPC.endDate = PRC_DATA.endDate;
+                    new_added_RPC.review_day = PRC_DATA.review_day;
+                    new_added_RPC.name = PRC_DATA.name;
+                    new_added_RPC.department = PRC_DATA.department;
+                    new_added_RPC.startDate = PRC_DATA.startDate;
+                });
+                console.log("new_added_RPCnew_added_RPC", new_added_RPC)
+                addNewRPC(new_added_RPC)
+                showToast('Review Cycle Added successfully', 'success')
+                toggleAddPRC();
+            }
+        } catch (err) {
+            const error = err.response.data.ERROR_DESCRIPTION
+            showToast(error, 'error')
+        } finally {
+            setPRCAddValue((prevState) => ({
+                ...prevState,
+                loading: false
+            }))
+        }
+    }
+
+
+    const getValue = (val) => (typeof val === 'object' && val !== null ? val.value : val);
+    const getlabel = (val) => (typeof val === 'object' && val !== null ? val.label : val);
+
+
+    const handleUpdatePRC = async () => {
+        const validation = validatePRCForm()
+        if (!validation.isValid) {
+            showToast(validation.message, 'error');
+            return
+        }
+
+        const { id, name, start_date, end_date, goal_rate, competancy_rate, branch_id, department_id, selectedEmp, review_day } = PRCAddValue
+
+        // console.log("PRCAddValue", PRCAddValue);
+        // return
+        // For single employee update (always single for updates)
+        const apiData = {
+            name: name,
+            start_date: start_date,
+            end_date: end_date,
+            goal_rate: parseInt(goal_rate) || 0,
+            competency_rate: parseInt(competancy_rate) || 0,
+            branch: parseInt(branch_id.value),
+            department: parseInt(department_id.value),
+            employee: selectedEmp.length > 0 ? selectedEmp[0].value.toString() : "",
+            assigned_to: selectedEmp.length > 0 ? selectedEmp[0].label : "",
+            review_day: review_day
+        };
+
+        // Validate with update schema
+        try {
+            await validateSingleEmployeePRCUpdate.validate(apiData);
+        } catch (validationError) {
+            showToast(validationError.message, 'error');
+            return;
+        }
+
+        console.log("apiDataapiData", apiData)
+        // console.log(apiData)
+        setPRCAddValue((prevState) => ({
+            ...prevState,
+            loading: true
+        }))
+
+
+
+
+        try {
+            const response = await performanceApi.updatePRC(apiData, id)
+            console.log('response', response)
+            const responseData = response.data
+            if (responseData.STATUS === "SUCCESSFUL") {
+                const storeData = {
+                    _id: id,
+                    goal_rate: goal_rate,
+                    competancy_rate: competancy_rate,
+                    branch: getlabel(branch_id),
+                    endDate: Math.floor(new Date(end_date).getTime() / 1000),
+                    review_day: review_day,
+                    name: name,
+                    department: getlabel(department_id),
+                    employee_name: selectedEmp.length > 0 ? selectedEmp[0].label : "",
+                    employee_id: selectedEmp.length > 0 ? selectedEmp[0].value : "",
+                    startDate: Math.floor(new Date(start_date).getTime() / 1000),
+                }
+                updatePRC(storeData)
+                showToast('Review Cycle Updated successfully', 'success')
+                toggleAddPRC()
+                gettingPRCData(); // Refresh data after successful update
+            }
+
+        } catch (err) {
+            const error = err.response.data.ERROR_DESCRIPTION
+            showToast(error, 'error')
+        } finally {
+            setPRCAddValue((prevState) => ({
+                ...prevState,
+                loading: false
+            }))
+        }
+    }
+
+
+    const handleRemoveEmp = (data) => {
+        setPRCAddValue((prevState) => ({
+            ...prevState,
+            selectedEmp: prevState.selectedEmp.filter(emp => emp.value !== data.value)
+        }))
+    }
+
+
+
+    const [searchValue, setSearchValue] = useState({
+        name: ''
+    })
+    
+    const [searchLoading, setSearchLoading] = useState(false)
+
+
+    const debounceNoteSearch = useDebounce(async (value) => {
+        console.log('Searching for:', value)
+        setSearchLoading(true)
+        try {
+            await searchingPRC(value)
+        } finally {
+            setSearchLoading(false)
+        }
+    }, 800); // 800ms debounce time for better UX
+
+
+    const handlePRCSearch = (e) => {
+        const { name, value } = e.target
+        setSearchValue((prevState) => ({
+            ...prevState,
+            [name]: value
+        }))
+
+        debounceNoteSearch(value);
+    }
+
+
+
+
+
+    return {
+        PRCAddValue, toggleAddPRC, viewPRC, toggleViewPRC, handlePRCMenuList, deleteValue,
+        toggleDeleteConfirmatio, confirmDelete,
+        handleChangeRPC, handleSelectAddPRC,
+        handleSubmitPRC, handleRemoveEmp, handleUpdatePRC,
+        searchValue, handlePRCSearch, searchLoading
+
+    }
+
+}
+
+
+export default usePRCServices

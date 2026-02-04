@@ -1,0 +1,23 @@
+.circle2 {
+    /* Your regular styles here */
+    height: 80px;
+    width: 80px;
+    border-radius: 100%;
+    border: 6px solid #eaeaea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s; /* Add a transition for smooth hover effect */
+  
+    /* Define hover styles */
+    &:hover {
+      border:2px solid #eaeaea; 
+      /* Change to your desired hover background color */
+      /* Add any other hover styles you want here */
+    }
+    
+  }
+  &:hover .circle2:hover {
+    font-size: 20px;
+    color: rgb(61, 165, 244);
+  }
