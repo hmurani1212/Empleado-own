@@ -3,6 +3,7 @@ import { FaMoneyCheckAlt, FaUser, FaUserAltSlash, FaCalendarAlt } from "react-ic
 import { FaUserCheck } from "react-icons/fa6";
 import { BsFillSendFill } from 'react-icons/bs'
 import { RiCashFill } from 'react-icons/ri'
+import * as XLSX from 'xlsx';
 
 export const contractData = [
   { id: 1, name: 'Permanent' },
@@ -191,9 +192,6 @@ export const empActionList = [
 ]
 
 export const exportEmployeesToExcel = (employeesData) => {
-  // Import XLSX library
-  const XLSX = require('xlsx');
-
   // Define the columns for the table
   const columns = [
     'Employee ID',

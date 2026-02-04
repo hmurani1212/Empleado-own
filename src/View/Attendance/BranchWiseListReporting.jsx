@@ -7,6 +7,7 @@ import { Progress, Typography } from "@material-tailwind/react";
 import { convertSecondsToTime } from "../../services/__attendanceServices";
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { showToast } from "../../Components/Toaster/Toaster";
+import * as XLSX from 'xlsx';
 
 const BranchWiseListReporting = () => {
   const {
@@ -188,9 +189,7 @@ const BranchWiseListReporting = () => {
 
     try {
       setIsExporting(true);
-      // Import XLSX library
-      const XLSX = require("xlsx");
-
+      
       // Define the columns for the table (matching the Excel image)
       const columns = [
         "Employee ID",

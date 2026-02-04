@@ -568,7 +568,7 @@ const departmentsViewModel = (set, get) => ({
         await getEmployeeDetails(deptId)
 
         // Set the component to show employee details
-        const EmployeeDetails = require('../../View/Departments/EmployeeDetails').default
+        const { default: EmployeeDetails } = await import('../../View/Departments/EmployeeDetails.jsx')
         settingComponent(React.createElement(EmployeeDetails))
     },
 

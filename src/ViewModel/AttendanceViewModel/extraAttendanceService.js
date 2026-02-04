@@ -12,8 +12,6 @@ import { FaShoppingBasket } from "react-icons/fa";
 import { FaMoneyBill } from "react-icons/fa";
 import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaUsers } from "react-icons/fa";
-import { TbClockHour10Filled } from "react-icons/tb";
-import { RiCalendarScheduleFill } from "react-icons/ri";
 import { TbRotateClockwise } from "react-icons/tb";
 import { MdWatchLater } from "react-icons/md";
 import { HiCalendar } from "react-icons/hi";

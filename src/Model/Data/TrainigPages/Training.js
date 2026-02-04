@@ -1,4 +1,4 @@
-import { traininginstancemodeule, elephentinstance } from "../../base";
+import { traininginstancemodeule } from "../../base";
 
 const tarining_data = {
     getTrainigDate: function (data = {}) {

@@ -1,4 +1,4 @@
-const { Inboxinstancemodeule, traininginstancemodeule } = require("../../base");
+import { Inboxinstancemodeule, traininginstancemodeule } from "../../base.js";
 
 const InboxApiData = {
     get_inbox_data: function (page_no = 1, limit = 20) {

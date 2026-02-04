@@ -16,7 +16,7 @@ import { getAllMonths } from "../../services/__appServicesData";
 import { getAllYearsHire } from "../../services/__hireServices";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import { useNavigate } from "react-router";
-import debounce from "lodash/debounce";
+import { useDebounce } from "../../services/__debounceServices";
 const VacanciesList = () => {
   const {
     handleAllApps,
@@ -66,25 +66,18 @@ const VacanciesList = () => {
   });
 
   // Create a memoized debounced version of the search function
-  const debouncedSearch = useCallback(
-    debounce((searchText, currentFilters) => {
+  const debouncedSearch = useDebounce(
+    useCallback((searchText, currentFilters) => {
       const newFilters = { ...currentFilters, title: searchText };
       getVacanciesWithFilters(newFilters, 1); // Reset to page 1 on search
-    }, 500),
-    [] // Empty dependency array to prevent recreation
+    }, []),
+    500
   );
 
   // Initial load with default Active Vacancy filter
   useEffect(() => {
     getVacanciesWithFilters({ page: 1, status: "1" });
   }, []); // Empty dependency array - only run once on mount
-
-  // Cleanup the debounced function when the component unmounts
-  useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [debouncedSearch]);
 
   const getMonthShortName = (monthNumber) => {
     const monthNames = [

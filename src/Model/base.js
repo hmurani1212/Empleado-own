@@ -236,6 +236,8 @@ export const MobileAttendanceinstancemodule = axios.create({
 
 // Setup authentication interceptors for all instances
 // This will handle token expiration and authentication errors automatically
-setupAllAuthInterceptors();
+setupAllAuthInterceptors().catch(error => {
+  console.error('Failed to setup auth interceptors:', error);
+});
 
 export default axiosInstance;

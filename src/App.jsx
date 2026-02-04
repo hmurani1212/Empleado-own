@@ -49,7 +49,7 @@ const App = () => {
 
   // Show main layout only for non-login and non-career routes
   const showMainLayout = !isLogInRoute && !isCareerRoute;
-
+//test
   useEffect(() => {
     // Prevent duplicate processing on re-renders
     if (hasProcessedAuthRef.current) return;

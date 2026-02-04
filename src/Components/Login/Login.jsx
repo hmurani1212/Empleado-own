@@ -11,7 +11,7 @@ import { IoLogoGooglePlaystore } from 'react-icons/io5';
 import empLogo from '../../assets/images/empleado-logo.png'
 import { AnimatePresence, motion } from 'framer-motion'
 import { isTokenValid } from '../../Authentication/jwt_decode';
-const axios = require('axios');
+import axios from 'axios';
 
 const Login = () => {
   const navigate = useNavigate();

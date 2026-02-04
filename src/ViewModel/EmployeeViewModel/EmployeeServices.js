@@ -5,7 +5,7 @@ import { showToast } from "../../Components/Toaster/Toaster"
 import { format } from "date-fns"
 import { convertToYMD } from "../../services/EmpServices"
 import { useNavigate } from "react-router"
-import debounce from 'lodash/debounce'
+import { useDebounce } from "../../services/__debounceServices"
 import InactiveEmployeesDetails from "../../View/Employees/InactiveEmployeesDetails"
 import { executeApiCall, createApiKey } from "../../services/__apiManager"
 import departmentsApi from "../../Model/Data/Departments/Departments"
@@ -220,12 +220,12 @@ const useEmployees = () => {
     }
 
     // Create a memoized debounced version of getEmployeesWithFilters
-    const debouncedSearch = useCallback(
-        debounce((searchText) => {
+    const debouncedSearch = useDebounce(
+        useCallback((searchText) => {
             // Use the current status state and reset to page 1
             getEmployeesWithFilters({ text: searchText, status: currentEmployeeStatus, page: 1 });
-        }, 500),
-        [currentEmployeeStatus] // Include currentEmployeeStatus in dependencies
+        }, [currentEmployeeStatus]),
+        500
     );
 
     const handleChangeEmployees = (e) => {
@@ -237,13 +237,6 @@ const useEmployees = () => {
         resetPagination();
         debouncedSearch(value);
     };
-
-    // Cleanup the debounced function when the component unmounts
-    useEffect(() => {
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, [debouncedSearch]);
 
     // Load countries when component mounts
     useEffect(() => {

@@ -92,15 +92,15 @@ export const setupAuthInterceptor = (axiosInstance, instanceName = 'Unknown') =>
  * Setup authentication interceptors for all axios instances
  * This function should be called once during app initialization
  */
-export const setupAllAuthInterceptors = () => {
+export const setupAllAuthInterceptors = async () => {
     console.log('Setting up authentication interceptors for all axios instances...');
 
     // Import all axios instances dynamically to avoid circular dependencies
     let instances = [];
     
     try {
-        // Try to get instances from the base module
-        const baseModule = require('../Model/base');
+        // Try to get instances from the base module using dynamic import
+        const baseModule = await import('../../Model/base.js');
         instances = [
             { instance: baseModule.axiosInstance, name: 'Main API' },
             { instance: baseModule.performanceAxiosInstance, name: 'Performance API' },
@@ -118,7 +118,8 @@ export const setupAllAuthInterceptors = () => {
             { instance: baseModule.LeavePlannerinstancemodule, name: 'Leave Planner API' },
             { instance: baseModule.payRollinstancemodule, name: 'Payroll API' },
             { instance: baseModule.attencedenceInstence, name: 'Attendance API' },
-            { instance: baseModule.expenseAxiosInstance, name: 'Expense API' }
+            { instance: baseModule.expenseAxiosInstance, name: 'Expense API' },
+            { instance: baseModule.MobileAttendanceinstancemodule, name: 'Mobile Attendance API' }
         ];
     } catch (error) {
         console.error('Error importing axios instances:', error);
