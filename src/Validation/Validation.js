@@ -15,10 +15,14 @@ const newBranchFormValidation = object().shape({
                 .test('no-leading-spaces', 'Remove spaces from the start of Branch Address', value => !/^[\s]+/.test(value))
                 .test('no-leading-special-characters', "Group Address can't start with special characters", value => !/^[!@#$%^&*(),.?":{}|<>]/.test(value)),
         phone_no: string().required('Phone number is required')
-                .matches(/^\+/, 'Phone number must start with a plus sign')
-                .matches(/^\+\d+$/, 'Phone number must contain only digits')
-                .min(11, 'Phone number should be at least 12 digit')
-                .max(16, 'Phone number should not be more than 12 digit'),
+                .test('phone-format', 'Phone number must be in format +92xxxxxxxxxx or 0xxxxxxxxxx', (value) => {
+                        if (!value) return false;
+                        // Accept: +92 followed by exactly 10 digits (total 13 characters)
+                        // Accept: 0 followed by exactly 10 digits (total 11 characters)
+                        const validFormat1 = /^\+92\d{10}$/.test(value); // +923047949332
+                        const validFormat2 = /^0\d{10}$/.test(value); // 03047949332
+                        return validFormat1 || validFormat2;
+                }),
         email_address: string().required('Email is required')
                 .matches(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/, 'Invalid Email'),
         country: string().required('Country Required'),
@@ -39,10 +43,14 @@ const editBranchFormValidaion = object().shape({
                 .test('no-leading-spaces', 'Remove spaces from the start of Branch Address', value => !/^[\s]+/.test(value))
                 .test('no-leading-special-characters', "Group Address can't start with special characters", value => !/^[!@#$%^&*(),.?":{}|<>]/.test(value)),
         phone_no: string().required('Phone number is required')
-                .matches(/^\+/, 'Phone number must start with a plus sign')
-                .matches(/^\+\d+$/, 'Phone number must contain only digits')
-                .min(11, 'Phone number should be at least 12 digit')
-                .max(16, 'Phone number should not be more than 12 digits'),
+                .test('phone-format', 'Phone number must be in format +92xxxxxxxxxx or 0xxxxxxxxxx', (value) => {
+                        if (!value) return false;
+                        // Accept: +92 followed by exactly 10 digits (total 13 characters)
+                        // Accept: 0 followed by exactly 10 digits (total 11 characters)
+                        const validFormat1 = /^\+92\d{10}$/.test(value); // +923047949332
+                        const validFormat2 = /^0\d{10}$/.test(value); // 03047949332
+                        return validFormat1 || validFormat2;
+                }),
         country_id: string().required('Country ID is Required'),
         email_address: string().required('Country Required')
                 .matches(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/, 'Invalid Email'),

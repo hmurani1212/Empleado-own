@@ -20,13 +20,16 @@ const DepartmentsMain = () => {
   //   }
   // }, []);
 
-  const { empBranches, fetchingAllBranches } = useEmployees();
+  const { empBranches } = useEmployees();
+  const { allBranches, getBranchEmployeeList } = useDepartments();
 
-  useEffect(() => {
-    if (empBranches.length === 0) {
-      fetchingAllBranches();
-    }
-  }, []);
+  // Don't call API on component mount - let SideMenu handle it when user clicks Departments
+  // This prevents calling API on every page reload
+  // useEffect(() => {
+  //   if ((!allBranches || allBranches.length === 0) && (!empBranches || empBranches.length === 0)) {
+  //     getBranchEmployeeList();
+  //   }
+  // }, []);
 
   const location = useLocation();
 
@@ -56,10 +59,10 @@ const DepartmentsMain = () => {
               placeHolderTitle="Select Branch"
               value={
                 branchId
-                  ? empBranches?.find((branch) => branch.id === branchId)
+                  ? (allBranches && allBranches.length > 0 ? allBranches : empBranches)?.find((branch) => branch.id === branchId)
                     ? {
                         value: branchId,
-                        label: empBranches.find(
+                        label: (allBranches && allBranches.length > 0 ? allBranches : empBranches).find(
                           (branch) => branch.id === branchId
                         ).branch_name,
                       }
@@ -68,7 +71,9 @@ const DepartmentsMain = () => {
               }
               options={[
                 { value: "", label: "Select Branch" },
-                ...(empBranches?.map((branch) => ({
+                ...((allBranches && allBranches.length > 0 
+                  ? allBranches 
+                  : empBranches)?.map((branch) => ({
                   value: branch.id,
                   label: branch.branch_name,
                 })) || []),

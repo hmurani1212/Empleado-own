@@ -431,10 +431,9 @@ const useBranches = () => {
             branch_address: data.branch_address,
             phone_no: data.phone_no,
             email_address: data.email_address,
-            country_id: data.country_code,
+            country_id: data.country_id,
             currency: data.currency,
-            time_zone: data.time_zone,
-            country_id: data.country_id
+            time_zone: data.time_zone
         }
         try {
            // await validateEditData(editData);

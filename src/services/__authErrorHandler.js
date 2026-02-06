@@ -12,6 +12,7 @@ class AuthErrorHandler {
         this.pendingRequests = [];
         this.authErrorCodes = [
             'VTWE-401002', // Invalid or expired token
+            'ONEID-148736154', // OneID authentication error
             'USER_NOT_AUTHENTICATED',
             'TOKEN_EXPIRED',
             'INVALID_TOKEN',
@@ -64,46 +65,93 @@ class AuthErrorHandler {
             const errorCode = data.ERROR_CODE || data.error_code || data.code;
             const errorFilter = data.ERROR_FILTER || data.error_filter || data.filter;
             const errorDescription = data.ERROR_DESCRIPTION || data.error_description || data.message;
+            const statusValue = data.STATUS || data.status;
 
-            // Check if any of our known auth error codes match
+            // Priority 1: Check if STATUS is "ERROR" and ERROR_FILTER is USER_NOT_AUTHENTICATED
+            if (statusValue === 'ERROR' || statusValue === 'error') {
+                // If ERROR_FILTER is USER_NOT_AUTHENTICATED, it's definitely an auth error
+                if (errorFilter === 'USER_NOT_AUTHENTICATED') {
+                    console.log('🔴 Authentication error detected by ERROR_FILTER:', errorFilter);
+                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
+                    return true;
+                }
+                
+                // Check if any of our known auth error codes match
+                if (errorCode && this.authErrorCodes.includes(errorCode)) {
+                    console.log('🔴 Authentication error detected by error code:', errorCode);
+                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
+                    return true;
+                }
+
+                // Check error filter against auth codes
+                if (errorFilter && this.authErrorCodes.includes(errorFilter)) {
+                    console.log('🔴 Authentication error detected by error filter:', errorFilter);
+                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
+                    return true;
+                }
+            }
+
+            // Priority 2: Check if any of our known auth error codes match (regardless of STATUS)
             if (errorCode && this.authErrorCodes.includes(errorCode)) {
-                // console.log('Authentication error detected by error code:', errorCode);
+                console.log('🔴 Authentication error detected by error code:', errorCode);
+                console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
                 return true;
             }
 
-            // Check error filter
+            // Priority 3: Check error filter
             if (errorFilter && this.authErrorCodes.includes(errorFilter)) {
-                // console.log('Authentication error detected by error filter:', errorFilter);
+                console.log('🔴 Authentication error detected by error filter:', errorFilter);
+                console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
                 return true;
             }
 
-            // Check error description for common auth error patterns
+            // Priority 4: Check error description for common auth error patterns
             if (errorDescription && typeof errorDescription === 'string') {
                 const lowerDesc = errorDescription.toLowerCase();
                 if (lowerDesc.includes('token') && 
                     (lowerDesc.includes('expired') || lowerDesc.includes('invalid'))) {
-                    // console.log('Authentication error detected by description:', errorDescription);
+                    console.log('🔴 Authentication error detected by description:', errorDescription);
+                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
                     return true;
                 }
-                if (lowerDesc.includes('unauthorized') || lowerDesc.includes('not authenticated')) {
-                    // console.log('Authentication error detected by description:', errorDescription);
+                if (lowerDesc.includes('unauthorized') || 
+                    lowerDesc.includes('not authenticated') ||
+                    lowerDesc.includes('authentication failed') ||
+                    lowerDesc.includes('please login again')) {
+                    console.log('🔴 Authentication error detected by description:', errorDescription);
+                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
                     return true;
                 }
             }
         }
 
-        // Only check HTTP status codes if we haven't found specific error indicators
-        // This prevents false positives from business logic 401/403 errors
+        // Priority 5: Check HTTP status codes - if 401/403 with ERROR status, treat as auth error
         if (status === 401 || status === 403) {
-            // Additional check: if there's no specific error data, it might be a generic auth error
-            // But first verify if our token is actually expired
+            // If response has ERROR status and authentication-related data, it's an auth error
+            if (data && typeof data === 'object') {
+                const statusValue = data.STATUS || data.status;
+                const errorFilter = data.ERROR_FILTER || data.error_filter;
+                const errorCode = data.ERROR_CODE || data.error_code;
+                
+                // If STATUS is ERROR and has auth-related indicators, it's an auth error
+                if ((statusValue === 'ERROR' || statusValue === 'error') && 
+                    (errorFilter === 'USER_NOT_AUTHENTICATED' || 
+                     this.authErrorCodes.includes(errorCode) ||
+                     this.authErrorCodes.includes(errorFilter))) {
+                    console.log('🔴 Authentication error detected by 401/403 status with ERROR status:', status);
+                    console.log('📋 Error details:', { errorCode, errorFilter, statusValue, status });
+                    return true;
+                }
+            }
+            
+            // Additional check: if there's no specific error data, check if token is expired
             if (!data || (!data.ERROR_CODE && !data.error_code && !data.ERROR_FILTER && !data.error_filter)) {
                 // Check if our token is actually expired before treating this as auth error
                 if (!this.isTokenValid()) {
-                    console.log('Generic authentication error detected by status:', status, '- Token is expired');
+                    console.log('🔴 Generic authentication error detected by status:', status, '- Token is expired');
                     return true;
                 } else {
-                    console.log('Ignoring 401/403 error - Token is still valid, likely business logic error');
+                    console.log('ℹ️ Ignoring 401/403 error - Token is still valid, likely business logic error');
                     return false;
                 }
             }
@@ -167,7 +215,8 @@ class AuthErrorHandler {
      * @returns {string} - Error message
      */
     getAuthErrorMessage(error) {
-        if (!error || !error.response || !error.response.data) {
+        if (!error || !error.response || !
+            error.response.data) {
             return 'Your session has expired. Please login again.';
         }
 
@@ -187,33 +236,71 @@ class AuthErrorHandler {
      */
     redirectToLogin(reason = 'Session expired') {
         if (this.isRedirecting) {
+            console.log('⚠️ Redirect already in progress, skipping duplicate redirect');
             return; // Prevent multiple redirects
         }
 
+        console.log('🔄 Starting redirect to login page...');
         this.isRedirecting = true;
         
         try {
             // Clear any pending API calls
+            console.log('🛑 Cancelling pending API requests...');
             this.pendingRequests.forEach(request => {
                 if (request && request.cancel) {
-                    request.cancel('Authentication error - redirecting to login');
+                    try {
+                        request.cancel('Authentication error - redirecting to login');
+                    } catch (e) {
+                        // Ignore cancel errors
+                    }
                 }
             });
             this.pendingRequests = [];
 
             // Clear auth data
+            console.log('🧹 Clearing authentication data...');
             this.clearAuthData();
 
-            // Redirect to login after a short delay
+            // Update Zustand store state asynchronously (non-blocking)
+            // Use dynamic import to avoid circular dependencies
+            import('../Store/store').then(storeModule => {
+                const useStore = storeModule.default;
+                if (useStore && useStore.getState) {
+                    const setAuthenticationState = useStore.getState().setAuthenticationState;
+                    if (setAuthenticationState) {
+                        setAuthenticationState(false, false);
+                        console.log('✅ Store state updated');
+                    }
+                }
+            }).catch(err => {
+                // Store update is optional, continue with redirect
+                console.warn('⚠️ Could not update store state (non-critical):', err);
+            });
+
+            // Force immediate redirect - use replace to prevent back button issues
+            console.log('🚀 Redirecting to login page now...');
+            console.log('📍 Current URL:', window.location.href);
+            console.log('📍 Target URL: /login');
+            
+            // Use window.location.replace for immediate redirect (doesn't add to history)
+            window.location.replace('/login');
+            
+            // Fallback: if replace doesn't work, use href
             setTimeout(() => {
-                // Use window.location for a hard redirect to ensure clean state
-                window.location.href = '/login';
-            }, 1500);
+                if (window.location.pathname !== '/login') {
+                    console.warn('⚠️ Replace failed, trying href redirect...');
+                    window.location.href = '/login';
+                }
+            }, 100);
 
         } catch (error) {
-            console.error('Error during redirect to login:', error);
+            console.error('❌ Error during redirect to login:', error);
             // Fallback: immediate redirect
-            window.location.href = '/login';
+            try {
+                window.location.replace('/login');
+            } catch (e) {
+                window.location.href = '/login';
+            }
         }
     }
 
@@ -224,22 +311,31 @@ class AuthErrorHandler {
      * @returns {Promise} - Rejected promise
      */
     handleAuthError(error, config = {}) {
-        console.warn('Authentication error detected:', {
-            url: config.url || 'Unknown',
-            method: config.method || 'Unknown',
+        const errorDetails = {
+            url: config.url || error.config?.url || 'Unknown',
+            method: config.method || error.config?.method || 'Unknown',
             status: error.response?.status,
             errorCode: error.response?.data?.ERROR_CODE,
             errorFilter: error.response?.data?.ERROR_FILTER,
             errorDescription: error.response?.data?.ERROR_DESCRIPTION
-        });
+        };
+
+        console.warn('🔴 ========== AUTHENTICATION ERROR DETECTED ==========');
+        console.warn('🔴 Error Details:', errorDetails);
+        console.warn('🔴 ================================================');
 
         // Show error message to user
-        this.showAuthErrorMessage(error);
+        try {
+            this.showAuthErrorMessage(error);
+        } catch (e) {
+            console.error('Error showing toast message:', e);
+        }
 
-        // Redirect to login
+        // Redirect to login immediately (synchronous operation)
+        // This must happen synchronously, not in a promise chain
         this.redirectToLogin();
 
-        // Return rejected promise
+        // Return rejected promise (but redirect already happened)
         return Promise.reject(error);
     }
 

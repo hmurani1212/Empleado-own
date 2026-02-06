@@ -16,7 +16,6 @@ const branchesViewModel2 = (set, get) => ({
     branchEdit: [],
     timeZoneBranches: [],
     empSuggestions: [],
-    deleteBranch: [],
     close_new_branch: [],
     brnachAdminData: {},
    

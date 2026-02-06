@@ -492,8 +492,7 @@ const ListNotices = () => {
 
               <CustomDialog
                 openDialog={openViewDialog}
-                handleOpenDialog={handleView}
-                handleOpen={() => setOpenViewDialog(false)}
+                handleOpen={handleView}
                 title={"View Notice Detail"}
                 compo={<NoticesView />}
                 showBtns={false}

@@ -49,7 +49,10 @@ const CreateNew = () => {
       const departmentId = data.dept_id || data.deptt_id;
       
       // Load departments for the selected branch
-      gettingSubBranches(departmentId);
+      // gettingSubBranches expects branch_id as parameter, not departmentId
+      if (data.branch_id) {
+        gettingSubBranches(data.branch_id);
+      }
       
       // console.log('data.overtime_pay', data.overtime_pay)
       const branch = policyBranches.find((ele) => ele.id === data.branch_id);

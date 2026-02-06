@@ -70,7 +70,11 @@ export const setupAuthInterceptor = (axiosInstance, instanceName = 'Unknown') =>
 
             // Check if this is an authentication error
             if (authErrorHandler.isAuthenticationError(error)) {
-                return authErrorHandler.handleAuthError(error, error.config);
+                console.log(`🔴 Auth error detected in ${instanceName}, handling...`);
+                // Handle auth error - this will redirect immediately
+                authErrorHandler.handleAuthError(error, error.config || {});
+                // Return rejected promise (redirect already happened)
+                return Promise.reject(error);
             }
 
             // For non-auth errors, just reject the promise

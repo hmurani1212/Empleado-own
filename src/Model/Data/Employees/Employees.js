@@ -529,16 +529,6 @@ const employeesApi = {
             }
         })
     },
-    addLicenseType: function (data) {
-        return axiosInstance.request({
-            method: 'POST',
-            url: '/processors/set_data.php',
-            data: {
-                operation: 'set_license_type',
-                ...data
-            }
-        })
-    },
     gettingRefBranches: function () {
         return axiosInstancecoremodule.request({
             method: 'GET',

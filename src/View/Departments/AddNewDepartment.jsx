@@ -12,10 +12,16 @@ import { FaCheck } from "react-icons/fa6";
 import useDepartments from "../../ViewModel/DepartmentsViewModel/DepartmentsServices";
 
 function AddNewDepartment() {
-  const { allBranches, dep_data } = useDepartments();
+  const { allBranches, dep_data, getBranchEmployeeList } = useDepartments();
   // console.log("allBranches", allBranches);
-  // useEffect((
-  // ) => {select_ap()}, []);
+  
+  useEffect(() => {
+    // Fetch branches when component mounts
+    if (!allBranches || allBranches.length === 0) {
+      getBranchEmployeeList();
+    }
+  }, []);
+  
   // console.log("dep_datadep_data", dep_data);
   return (
     <form>

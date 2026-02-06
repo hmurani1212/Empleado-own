@@ -7,93 +7,20 @@ import {
 } from "../../services/__hrPoliciesServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 
-// Floating Label Wrapper for CustomSelect
-const FloatingLabelSelect = ({
-  label,
-  value,
-  options,
-  onChangeHandler,
-  placeHolderTitle,
-  cStyle = false,
-}) => {
-  // More robust value checking
-  const hasValue =
-    value &&
-    ((typeof value === "object" &&
-      (value.value !== undefined || value.label !== undefined)) ||
-      (typeof value === "string" && value.trim() !== "") ||
-      (typeof value === "number" && value !== 0));
+// CSS to hide --:-- placeholder in time inputs
+const timeInputStyle = `
+  input[type="time"]:invalid::-webkit-datetime-edit-text,
+  input[type="time"]:invalid::-webkit-datetime-edit-hour-field,
+  input[type="time"]:invalid::-webkit-datetime-edit-minute-field {
+    color: transparent;
+  }
+  input[type="time"]:focus::-webkit-datetime-edit-text,
+  input[type="time"]:focus::-webkit-datetime-edit-hour-field,
+  input[type="time"]:focus::-webkit-datetime-edit-minute-field {
+    color: #474747;
+  }
+`;
 
-  return (
-    <div className={`relative ${hasValue ? "bottom-1" : ""}`}>
-      <label
-        className={`absolute left-3 transition-all duration-200 pointer-events-none ${
-          hasValue
-            ? "top-0 text-[10px] text-blue-500 bg-white px-1 -translate-y-1/2"
-            : "top-3 text-[12px] text-[#698592]"
-        }`}
-      >
-        {label}
-      </label>
-      <div className={hasValue ? "pt-2" : ""}>
-        <CustomSelect
-          placeHolderTitle={placeHolderTitle}
-          value={value}
-          options={options}
-          onChangeHandler={onChangeHandler}
-          cStyle={cStyle}
-        />
-      </div>
-    </div>
-  );
-};
-
-// Floating Label Wrapper for Input fields
-const FloatingLabelInput = ({
-  label,
-  value,
-  onChange,
-  name,
-  type = "text",
-  placeholder,
-  className = "",
-  min,
-  max,
-  step,
-  containerProps,
-  ...props
-}) => {
-  // Check if input has a value
-  const hasValue = value !== undefined && value !== null && value !== "";
-  // Only show floating label when there's a value (not when placeholder is shown)
-  const showLabel = hasValue;
-
-  return (
-    <div className="relative">
-      {showLabel && (
-        <label
-          className="absolute left-3 top-0 text-[10px] text-blue-500 bg-white px-1 -translate-y-1/2 z-10 transition-all duration-200 pointer-events-none"
-        >
-          {label}
-        </label>
-      )}
-      <div className={showLabel ? "pt-2" : ""}>
-        <input
-          type={type}
-          placeholder={showLabel ? "" : placeholder}
-          name={name}
-          value={value || ""}
-          onChange={onChange}
-          className={className}
-          min={min}
-          max={max}
-          step={step}
-          {...props}
-        />
-      </div>
-    </div>
-  );
-};
 
 const WorkingHours = (props) => {
   const {
@@ -129,12 +56,15 @@ const WorkingHours = (props) => {
 
   return (
     <div className="flex flex-col gap-5 w-full">
+      <style>{timeInputStyle}</style>
       <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-2 w-full">
         <div className="md:col-span-4 lg:col-span-4">
-          <FloatingLabelInput
-            label="Shift Start Time"
+          <label className="text-[12px] font-Urbanist font-medium px-2 text-[#474747] mb-1 block">
+            Shift start time
+          </label>
+          <input
             type="time"
-            placeholder="Shift Start Time"
+            placeholder="Shift start time"
             name="startTime"
             onChange={handleChange}
             value={newhrPolicesValues.startTime}
@@ -142,8 +72,10 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="md:col-span-4 lg:col-span-4">
-          <FloatingLabelInput
-            label="Late Coming Leniency Time"
+          <label className="text-[12px] font-Urbanist font-medium px-2 text-[#474747] mb-1 block">
+            Late Coming Leniency Time
+          </label>
+          <input
             type="number"
             placeholder="Late Coming Leniency Time"
             name="leniencyTime"
@@ -154,8 +86,10 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="md:col-span-4 lg:col-span-4">
-          <FloatingLabelSelect
-            label="Early Arrival Policy"
+          <label className="text-[12px] font-Urbanist font-medium px-2 text-[#474747] mb-1 block">
+            Early Arrival Policy
+          </label>
+          <CustomSelect
             placeHolderTitle="Select Arrival Policy"
             value={newhrPolicesValues?.arivalPolicy}
             options={earlyArivalData?.map((ele) => ({
@@ -171,10 +105,12 @@ const WorkingHours = (props) => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-2 w-full">
         <div className="md:col-span-4 lg:col-span-4">
-          <FloatingLabelInput
-            label="Shift Closing Time"
+          <label className="text-[12px] font-Urbanist font-medium px-2 text-[#474747] mb-1 block">
+            Shift end time
+          </label>
+          <input
             type="time"
-            placeholder="Shift Closing Time"
+            placeholder="Shift end time"
             name="endTime"
             value={newhrPolicesValues.endTime}
             onChange={handleChange}
@@ -182,8 +118,10 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="md:col-span-4  lg:col-span-4">
-          <FloatingLabelSelect
-            label="Force Timeout"
+          <label className="text-[12px] font-Urbanist font-medium px-2 text-[#474747] mb-1 block">
+            Force Timeout
+          </label>
+          <CustomSelect
             placeHolderTitle="Force Timeout"
             value={newhrPolicesValues?.forceTimeOut}
             options={forceTimeOutHrs?.map((ele) => ({
@@ -197,8 +135,10 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="md:col-span-4 lg:col-span-4">
-          <FloatingLabelSelect
-            label="Timeout Policy"
+          <label className="text-[12px] font-Urbanist font-medium px-2 text-[#474747] mb-1 block">
+            Timeout Policy
+          </label>
+          <CustomSelect
             placeHolderTitle="Timeout Policy"
             value={newhrPolicesValues?.timeOutPolicy}
             options={timeOutPlicy?.map((ele) => ({
@@ -215,8 +155,10 @@ const WorkingHours = (props) => {
 
       <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-2 w-full">
         <div className="md:col-span-4 lg:col-span-4">
-          <FloatingLabelInput
-            label="Late Minute Monthly Bucket"
+          <label className="text-[12px] font-Urbanist font-medium px-2 text-[#474747] mb-1 block">
+            Late Minute Monthly Bucket
+          </label>
+          <input
             type="number"
             placeholder="Late Minute Monthly Bucket"
             name="lateMinutBuket"
@@ -228,8 +170,10 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="md:col-span-4 lg:col-span-4">
-          <FloatingLabelInput
-            label="Late Comers Penalty"
+          <label className="text-[12px] font-Urbanist font-medium px-2 text-[#474747] mb-1 block">
+            Late Comers Penalty
+          </label>
+          <input
             type="number"
             placeholder="Late Comers Penalty"
             name="lateComerPenalty"
@@ -275,10 +219,13 @@ const WorkingHours = (props) => {
                     </span>
                   </td>
                   <td className="px-4 py-2">
+                    <label className="text-[12px] font-Urbanist font-medium text-[#474747] mb-1 block">
+                      Shift start time
+                    </label>
                     <input
                       className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                       type="time"
-                      placeholder="Start Time"
+                      placeholder="Shift start time"
                       color="blue"
                       value={item.startTime}
                       onChange={(e) =>
@@ -287,10 +234,13 @@ const WorkingHours = (props) => {
                     />
                   </td>
                   <td className="px-4 py-2">
+                    <label className="text-[12px] font-Urbanist font-medium text-[#474747] mb-1 block">
+                      Shift end time
+                    </label>
                     <input
                       className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                       type="time"
-                      placeholder="End Time"
+                      placeholder="Shift end time"
                       color="blue"
                       value={item.endTime}
                       onChange={(e) =>

@@ -181,7 +181,10 @@ const useCreatePolicies = () => {
     if (field === 'branch') {
       // If "All Branches" is selected (value: 0), fetch all departments
       // Otherwise, fetch departments for the specific branch
-      gettingSubBranches(selectedOption.value)
+      // Only call gettingSubBranches if selectedOption.value is defined and not null
+      if (selectedOption && selectedOption.value !== undefined && selectedOption.value !== null) {
+        gettingSubBranches(selectedOption.value)
+      }
       setnewHrPolicesValues((prevState) => ({
         ...prevState,
         [field]: selectedOption
