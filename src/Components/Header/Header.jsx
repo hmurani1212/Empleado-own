@@ -192,8 +192,8 @@ function Header() {
     <Navbar fullWidth className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-md px-4 py-3 shadow-sm transition-all">
       <div className="flex items-center justify-between gap-4">
         
-        {/* LEFT SECTION: LOGO & TOGGLER */}
-        <div className="flex items-center gap-4">
+        {/* LEFT SECTION: LOGO, TOGGLER & ADMIN TOOLS */}
+        <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
              {/* Mobile Toggle */}
             <div className="cursor-pointer block lg:hidden p-1 rounded-md hover:bg-gray-100 transition-colors">
@@ -229,36 +229,46 @@ function Header() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* MIDDLE SECTION: Admin Info (Biometrics) */}
-        {userRole === 'Admin' && (
-          <div className="hidden xl:flex items-center gap-6 text-sm text-gray-500 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
-             <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-600">Machines:</span>
-                <span className="bg-blue-100 text-brand-600 px-2 py-0.5 rounded text-xs font-semibold">{liveBiometricDevices.allCount || 0}</span>
+          {/* Admin Info (Biometrics) & Support - Moved to Left */}
+          {userRole === 'Admin' && (
+             <div className="hidden xl:flex items-center gap-3 ml-4">
+                {/* Machines & Live Status - Unified Sleek Pill */}
+                <div 
+                  className="flex items-center bg-gray-50/50 hover:bg-gray-50 transition-all duration-300 rounded-full px-4 py-1.5 border border-gray-200/60 shadow-sm group/stats cursor-pointer"
+                  onClick={() => setShowLiveBiometricDevices(true)}
+                >
+                   {/* Machines */}
+                   <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Machines</span>
+                      <span className="text-xs font-bold text-gray-700">{liveBiometricDevices.allCount || 0}</span>
+                   </div>
+                   
+                   {/* Divider */}
+                   <div className="h-3 w-px bg-gray-300 mx-3 group-hover/stats:bg-gray-400 transition-colors"></div>
+
+                   {/* Live Status */}
+                   <div className="flex items-center gap-2 group/live">
+                      <div className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      </div>
+                      <span className="text-xs font-bold text-gray-700 group-hover/live:text-green-600 transition-colors">{liveBiometricDevices.liveCount || 0}</span>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider group-hover/live:text-green-600/70 transition-colors">Live</span>
+                   </div>
+                </div>
+
+                {/* Support Info - Clean Text with Icon */}
+                <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 text-gray-400 hover:text-brand-600 transition-colors duration-300 cursor-default">
+                    <BsQuestionCircle size={14} className="text-gray-400" />
+                    <span className="text-[11px] font-semibold tracking-wide font-poppins">Support: <span className="text-gray-600 font-bold">+92-304-1118333</span></span>
+                </div>
              </div>
-             <div className="h-4 w-px bg-gray-300"></div>
-             <div 
-               className="flex items-center gap-2 cursor-pointer hover:text-brand-600 transition-colors" 
-               onClick={() => setShowLiveBiometricDevices(true)}
-             >
-                <span className="font-medium">Live:</span>
-                <span className="bg-green-100 text-green-600 px-2 py-0.5 rounded text-xs font-semibold">{liveBiometricDevices.liveCount || 0}</span>
-             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* RIGHT SECTION: ACTIONS & PROFILE */}
         <div className="flex items-center gap-3 md:gap-5">
-          
-          {/* Support / Help (Admin) */}
-          {userRole === 'Admin' && (
-             <div className="hidden lg:flex flex-col items-end mr-2">
-                <span className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Support</span>
-                <span className="text-xs font-bold text-gray-700 font-poppins">+92-304-1118333</span>
-             </div>
-          )}
 
           <div className="flex items-center gap-2">
             {/* Messages */}

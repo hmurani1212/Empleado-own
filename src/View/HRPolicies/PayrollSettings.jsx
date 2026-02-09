@@ -5,90 +5,18 @@ import {
   MonthSelection,
   shortDays,
 } from "../../services/__hrPoliciesServices";
-import { Input, Option, Select } from "@material-tailwind/react";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
-
-// Floating Label Wrapper for Input fields
-const FloatingLabelInput = ({
-  label,
-  value,
-  onChange,
-  name,
-  type = "text",
-  placeholder,
-  className = "",
-  min,
-  max,
-  step,
-  required,
-  ...props
-}) => {
-  // Check if input has a value
-  const hasValue = value !== undefined && value !== null && value !== "";
-  // Only show floating label when there's a value (not when placeholder is shown)
-  const showLabel = hasValue;
-
-  return (
-    <div className="relative">
-      {showLabel && (
-        <label
-          className="absolute left-3 top-0 text-[10px] text-blue-500 bg-white px-1 -translate-y-1/2 z-10 transition-all duration-200 pointer-events-none"
-        >
-          {label}
-        </label>
-      )}
-      <div className={showLabel ? "pt-2" : ""}>
-        <input
-          type={type}
-          placeholder={showLabel ? "" : placeholder}
-          name={name}
-          value={value || ""}
-          onChange={onChange}
-          className={className}
-          min={min}
-          max={max}
-          step={step}
-          required={required}
-          {...props}
-        />
-      </div>
-    </div>
-  );
-};
-
-// Floating Label Wrapper for CustomSelect
-const FloatingLabelSelect = ({
-  label,
-  value,
-  options,
-  onChangeHandler,
-  placeHolderTitle,
-  cStyle = false,
-}) => {
-  return (
-    <div className="relative">
-      <CustomSelect
-        placeHolderTitle={placeHolderTitle}
-        value={value}
-        options={options}
-        onChangeHandler={onChangeHandler}
-        cStyle={cStyle}
-      />
-    </div>
-  );
-};
 
 const PayrollSettings = (props) => {
   const { handleSelectChange, newhrPolicesValues, handleChange } = props;
-  console.log("newhrPolicesValues", newhrPolicesValues);
+  
   return (
-    <div className="flex flex-col items-center gap-3 space-y-2">
-      <div className="w-[34rem]">
-        <label className="text-[12px] font-Urbanist font-medium px-2 text-[#474747]">
+    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+      <div className="w-full">
+        <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
           Payslip Generation Type
         </label>
-        <FloatingLabelSelect
-          label="Payslip Generation Type"
+        <CustomSelect
           placeHolderTitle="Select Payslip Generation Type"
           value={newhrPolicesValues?.generationType}
           options={generationTypeData?.map((ele) => ({
@@ -101,126 +29,125 @@ const PayrollSettings = (props) => {
           cStyle={false}
         />
       </div>
-      <div className="flex items-center justify-center gap-1">
-        <div>
-          <span className="text-[11px]">From</span>
-        </div>
-        <div className="w-24">
-          <FloatingLabelSelect
-            label="Select Day"
-            placeHolderTitle="Select Day"
-            value={newhrPolicesValues?.dayFrom}
-            options={days?.map((ele) => ({ value: ele, label: ele }))}
-            onChangeHandler={(selectedOption) =>
-              handleSelectChange(selectedOption, "dayFrom")
-            }
-            cStyle={false}
-          />
-        </div>
-        <div>
-          <span className="text-[11px]">Of</span>
-        </div>
-        <div className="w-32">
-          <FloatingLabelSelect
-            label="Select Month"
-            placeHolderTitle="Select Month"
-            value={newhrPolicesValues?.selectedMonth}
-            options={MonthSelection?.map((ele) => ({
-              value: ele.value,
-              label: ele.title,
-            }))}
-            onChangeHandler={(selectedOption) =>
-              handleSelectChange(selectedOption, "selectedMonth")
-            }
-            cStyle={false}
-          />
-        </div>
-        <div>
-          <span className="text-[11px]">To</span>
-        </div>
-        <div className="w-24">
-          <FloatingLabelSelect
-            label="Select Day"
-            placeHolderTitle="Select Day"
-            value={newhrPolicesValues?.dayTo}
-            options={(newhrPolicesValues.selectedMonth?.value === "current"
-              ? shortDays
-              : days
-            ).map((ele) => ({ value: ele, label: ele }))}
-            onChangeHandler={(selectedOption) =>
-              handleSelectChange(selectedOption, "dayTo")
-            }
-            cStyle={false}
-          />
-        </div>
-        <div>
-          <span className="text-[11px]">
-            of{" "}
-            {newhrPolicesValues.selectedMonth?.value === "current"
-              ? "Next"
-              : "Current"}{" "}
-            Month
-          </span>
+
+      <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+        <label className="text-sm font-medium text-gray-700 font-poppins mb-4 block text-center">
+            Payroll Cycle
+        </label>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+            <span className="text-xs font-medium text-gray-500 font-poppins">From</span>
+            <div className="w-24">
+            <CustomSelect
+                placeHolderTitle="Day"
+                value={newhrPolicesValues?.dayFrom}
+                options={days?.map((ele) => ({ value: ele, label: ele }))}
+                onChangeHandler={(selectedOption) =>
+                handleSelectChange(selectedOption, "dayFrom")
+                }
+                cStyle={false}
+            />
+            </div>
+            <span className="text-xs font-medium text-gray-500 font-poppins">Of</span>
+            <div className="w-36">
+            <CustomSelect
+                placeHolderTitle="Month"
+                value={newhrPolicesValues?.selectedMonth}
+                options={MonthSelection?.map((ele) => ({
+                value: ele.value,
+                label: ele.title,
+                }))}
+                onChangeHandler={(selectedOption) =>
+                handleSelectChange(selectedOption, "selectedMonth")
+                }
+                cStyle={false}
+            />
+            </div>
+            <span className="text-xs font-medium text-gray-500 font-poppins">To</span>
+            <div className="w-24">
+            <CustomSelect
+                placeHolderTitle="Day"
+                value={newhrPolicesValues?.dayTo}
+                options={(newhrPolicesValues.selectedMonth?.value === "current"
+                ? shortDays
+                : days
+                ).map((ele) => ({ value: ele, label: ele }))}
+                onChangeHandler={(selectedOption) =>
+                handleSelectChange(selectedOption, "dayTo")
+                }
+                cStyle={false}
+            />
+            </div>
+            <span className="text-xs font-medium text-gray-500 font-poppins bg-blue-50 text-blue-600 px-2 py-1 rounded-md">
+            of {newhrPolicesValues.selectedMonth?.value === "current" ? "Next" : "Current"} Month
+            </span>
         </div>
       </div>
-      {/* Show Off Days input - always visible on step 2, not conditional on generationType */}
-      <div className="w-[34rem]">
-        <FloatingLabelInput
-          label="Off Days Allowed Per Month"
-          placeholder="Off Days Allowed Per Month"
+
+      <div className="w-full">
+        <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
+          Off Days Allowed Per Month
+        </label>
+        <input
+          placeholder="e.g. 2"
           name="offDayAllowedMonth"
           type="number"
           value={newhrPolicesValues.offDayAllowedMonth}
           onChange={handleChange}
           required
           min="0"
-          className='bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]'
+          className='w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-gray-400'
         />
       </div>
 
       {/* Show additional fields only for Hourly Base (3) */}
       {newhrPolicesValues.generationType?.value === 3 && (
-        <>
-          <div className="w-[34rem]">
-            <FloatingLabelInput
-              label="Required Working Hours"
-              placeholder="Required Working Hours"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up border-t border-gray-100 pt-6">
+          <div className="w-full">
+            <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
+              Required Working Hours
+            </label>
+            <input
+              placeholder="e.g. 8"
               name="reqWorkingHrs"
               type="number"
               value={newhrPolicesValues.reqWorkingHrs}
               onChange={handleChange}
               required
               min="0"
-              className='bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]'
+              className='w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-gray-400'
             />
           </div>
-          <div className="w-[34rem]">
-            <FloatingLabelInput
-              label="Required Minutes"
-              placeholder="Required Working Minutes"
+          <div className="w-full">
+            <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
+              Required Minutes
+            </label>
+            <input
+              placeholder="e.g. 30"
               name="reqMinutes"
               type="number"
               value={newhrPolicesValues.reqMinutes}
               onChange={handleChange}
               required
               min="0"
-              className='bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]'
+              className='w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-gray-400'
             />
           </div>
-          <div className="w-[34rem]">
-            <FloatingLabelInput
-              label="Max Shift Retaining Hours"
-              placeholder="Max Shift Retaining Hours"
+          <div className="w-full md:col-span-2">
+            <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
+              Max Shift Retaining Hours
+            </label>
+            <input
+              placeholder="e.g. 12"
               name="shiftRetHrs"
               type="number"
               value={newhrPolicesValues.shiftRetHrs}
               onChange={handleChange}
               required
               min="0"
-              className='bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]'
+              className='w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-gray-400'
             />
           </div>
-        </>
+        </div>
       )}
     </div>
   );

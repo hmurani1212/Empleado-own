@@ -67,11 +67,13 @@ const useNotice = () => {
 
     const handleAddNoticeBranch = (name, event)=>{
     
-        const noticeDeptId = event;
+        // Handle both direct values (Material Tailwind) and objects (CustomSelect/React-Select)
+        const value = event?.value !== undefined ? event.value : event;
+        const noticeDeptId = value;
 
         setAddNoticeValue ((prevState)=>({
             ...prevState,
-            [name] : event,
+            [name] : event, // Keep original event (object/value) for UI state
         }))
 
         if(name === 'branch_id'){
@@ -94,7 +96,7 @@ const useNotice = () => {
             setEmployeeOptions([]);
             
             // Fetch employees from the selected department
-            fetchEmployeesByDepartment(event);
+            fetchEmployeesByDepartment(noticeDeptId);
         }
     }
 
@@ -337,23 +339,25 @@ const useNotice = () => {
         }
 
         // Handle branch selection
-        if(addNoticeValue.branch_id) {
-            if(addNoticeValue.branch_id === '0') {
+        const branchVal = addNoticeValue.branch_id?.value !== undefined ? addNoticeValue.branch_id.value : addNoticeValue.branch_id;
+        if(branchVal) {
+            if(String(branchVal) === '0') {
                 // For "All Branches", send 0
                 data.branch_id = 0;
             } else {
-                data.branch_id = addNoticeValue.branch_id;
+                data.branch_id = branchVal;
             }
         }
 
         // Handle department selection
-        if(addNoticeValue.deptt_id) {
-            if(addNoticeValue.deptt_id === '0') {
+        const deptVal = addNoticeValue.deptt_id?.value !== undefined ? addNoticeValue.deptt_id.value : addNoticeValue.deptt_id;
+        if(deptVal) {
+            if(String(deptVal) === '0') {
                 // For "All Departments", send 0
                 data.deptt_id = 0;
             } else {
                 // For specific department
-                data.deptt_id = addNoticeValue.deptt_id;
+                data.deptt_id = deptVal;
             }
         }
 
@@ -374,22 +378,22 @@ const useNotice = () => {
         }
 
         // Validate branch selection
-        if (!addNoticeValue.branch_id || addNoticeValue.branch_id === '') {
+        if (!branchVal || branchVal === '') {
             showToast('Please select the branch', 'error');
             return;
         }
 
         // Validate department selection
-        if (!addNoticeValue.deptt_id || addNoticeValue.deptt_id === '') {
+        if (!deptVal || deptVal === '') {
             showToast('Please select the department', 'error');
             return;
         }
 
         // Validate if department has employees (only for specific departments, not "All Departments")
         // Skip this validation if user is targeting a specific employee
-        if (addNoticeValue.deptt_id !== '0' && addNoticeValue.deptt_id !== 0 && 
+        if (deptVal !== '0' && deptVal !== 0 && 
             (!addNoticeValue.emp_id || !addNoticeValue.emp_id.value)) {
-            const hasEmployees = await validateDepartmentHasEmployees(addNoticeValue.deptt_id);
+            const hasEmployees = await validateDepartmentHasEmployees(deptVal);
             if (!hasEmployees) {
                 showToast('Notice are not created for this department', 'error');
                 return;

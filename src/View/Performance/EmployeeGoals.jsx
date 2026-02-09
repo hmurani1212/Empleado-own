@@ -1,4 +1,4 @@
-import { Typography, Badge, Progress, Button } from "@material-tailwind/react";
+import { Typography, Badge, Progress, Button, Menu, MenuHandler, MenuList, MenuItem } from "@material-tailwind/react";
 import React, { useEffect, useState } from "react";
 import {
   FaEye,
@@ -9,6 +9,7 @@ import {
   FaCalendarAlt,
   FaArrowRight,
   FaStar,
+  FaClipboardList
 } from "react-icons/fa";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import useStore from "../../Store/store";
@@ -22,6 +23,7 @@ import EmployeeFeedback from "./EmployeeFeedback";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import performanceApi from "../../Model/Data/Performance/Performance";
 import { showToast } from "../../Components/Toaster/Toaster";
+import { motion, AnimatePresence } from "framer-motion";
 
 const EmployeeGoals = () => {
   const location = useLocation();
@@ -64,7 +66,6 @@ const EmployeeGoals = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState(null);
   const [employeeProfile, setEmployeeProfile] = useState(null);
-  const [selectedGoal, setSelectedGoal] = useState(null);
 
   const toggleMenu = (index, isOpen) => {
     setOpenMenu((prevOpenMenu) => ({
@@ -93,18 +94,12 @@ const EmployeeGoals = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Check if click is outside any dropdown menu
       const isClickInsideDropdown = event.target.closest(".dropdown-menu");
       if (!isClickInsideDropdown) {
-        // Close all open menus
         setOpenMenu({});
       }
     };
-
-    // Add event listener to document
     document.addEventListener("mousedown", handleClickOutside);
-
-    // Cleanup event listener on component unmount
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -112,7 +107,6 @@ const EmployeeGoals = () => {
 
   const handleBackToGoals = () => {
     clearEmployeeGoals();
-    // Clear the profile state to return to the main goals table
     if (handleCloseProfile) {
       handleCloseProfile();
     }
@@ -169,7 +163,6 @@ const EmployeeGoals = () => {
   };
 
   const handleEyeIconClick = () => {
-    // Hide the Performance Review Cycle when eye icon is clicked
     if (setShowReviewCycle) {
       setShowReviewCycle(false);
     }
@@ -177,40 +170,28 @@ const EmployeeGoals = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "0":
-        return "red";
-      case "1":
-        return "blue";
-      case "2":
-        return "green";
-      default:
-        return "gray";
+      case "0": return "red";
+      case "1": return "blue";
+      case "2": return "green";
+      default: return "gray";
     }
   };
 
   const getStatusText = (status) => {
     switch (status) {
-      case "0":
-        return "Not Started";
-      case "1":
-        return "In Progress";
-      case "2":
-        return "Completed";
-      default:
-        return "Unknown";
+      case "0": return "Not Started";
+      case "1": return "In Progress";
+      case "2": return "Completed";
+      default: return "Unknown";
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "0":
-        return "⭕";
-      case "1":
-        return "✅";
-      case "2":
-        return "✅";
-      default:
-        return "❓";
+      case "0": return "⭕";
+      case "1": return "⏳";
+      case "2": return "✅";
+      default: return "❓";
     }
   };
 
@@ -220,7 +201,7 @@ const EmployeeGoals = () => {
       stars.push(
         <span
           key={i}
-          className={`cursor-pointer transition-colors ${
+          className={`cursor-pointer transition-colors text-lg ${
             i <= rating ? "text-yellow-400" : "text-gray-300"
           } hover:text-yellow-400`}
           onClick={() =>
@@ -248,103 +229,54 @@ const EmployeeGoals = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-6 py-2 pb-1">
+    <div className="flex flex-col gap-6">
       {/* Employee Profile Header */}
       {employeeProfile && (
-        <div className="bg-white rounded-lg  shadow-lg border">
-          {/* Top Header */}
-          {/* <div className="flex items-center justify-between mb-6">
-                        <Typography variant="h4" color="blue-gray" className="font-bold">
-                            Performance Management
-                        </Typography>
-                        <button 
-                            onClick={handleBackToGoals}
-                            className="text-gray-500 hover:text-gray-700 text-xl"
-                        >
-                            ✕
-                        </button>
-                    </div> */}
-
-          {/* Employee Info Section */}
-
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           {/* Review Cycle Section */}
-          <div className="flex items-center gap-4 mb-6">
-            <Typography
-              variant="h6"
-              color="blue-gray"
-              className="font-semibold"
-            >
-              Review Cycle
-            </Typography>
-            <div className="flex-1 max-w-xs">
-              <CustomSelect
-                placeHolderTitle="Select Review Cycle"
-                cStyle={true}
-                value={goalsValue.performance_id}
-                options={goalsValue.performance?.map((ele) => ({
-                  value: ele._id,
-                  label: ele.name,
-                }))}
-                onChangeHandler={handleSelectGoals}
-              />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+            <div className="flex items-center gap-4">
+               <div className="w-64">
+                 <CustomSelect
+                    placeHolderTitle="Select Review Cycle"
+                    value={goalsValue.performance_id}
+                    options={goalsValue.performance?.map((ele) => ({
+                      value: ele._id,
+                      label: ele.name,
+                    }))}
+                    onChangeHandler={handleSelectGoals}
+                    customStyles={false}
+                  />
+               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <FaUser className="text-blue-500" />
-              <Typography
-                variant="small"
-                color="blue-gray"
-                className="font-normal"
-              >
-                Goal - for {employeeProfile.name}
-              </Typography>
-            </div>
-            <div className="flex items-center gap-2">
-              <FaCalendarAlt className="text-gray-500" />
-              <Typography variant="small" color="gray" className="font-normal">
-                Start Date: 2023-01-02
-              </Typography>
-              <FaArrowRight className="text-gray-400" />
-              <Typography variant="small" color="gray" className="font-normal">
-                Deadline: 2003-06-0
-              </Typography>
+            
+            <div className="flex items-center gap-6 text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                <div className="flex items-center gap-2">
+                  <FaCalendarAlt className="text-blue-500" />
+                  <span className="font-medium">Start: 2023-01-02</span>
+                </div>
+                <FaArrowRight className="text-gray-300" size={12} />
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Deadline: 2023-06-01</span>
+                </div>
             </div>
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex border-b border-gray-200 mb-6">
-            <button
-              onClick={() => handleTabChange && handleTabChange("goals")}
-              className={`px-6 py-3 font-medium transition-colors ${
-                currentView === "goals"
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Goals
-            </button>
-            <button
-              onClick={() => handleTabChange && handleTabChange("competency")}
-              className={`px-6 py-3 font-medium transition-colors ${
-                currentView === "competency"
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Competency
-            </button>
-            <button
-              onClick={() => handleTabChange && handleTabChange("feedback")}
-              className={`px-6 py-3 font-medium transition-colors ${
-                currentView === "feedback"
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Feedback
-            </button>
-            <button className="px-6 py-3 text-gray-500 hover:text-gray-700 font-medium">
-              History
-            </button>
+          <div className="flex gap-1 border-b border-gray-100 pb-1">
+            {["goals", "competency", "feedback", "history"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => handleTabChange && handleTabChange(tab)}
+                className={`px-6 py-2.5 text-sm font-medium rounded-t-xl transition-all relative ${
+                  currentView === tab
+                    ? "text-blue-600 bg-blue-50/50 border-b-2 border-blue-600"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                } capitalize`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -353,201 +285,155 @@ const EmployeeGoals = () => {
       {currentView === "goals" && (
         <>
           {/* Back Navigation and Add Goal Button */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <Button
               variant="text"
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
               onClick={handleBackToGoals}
             >
-              <FaArrowRight className="text-sm rotate-180" />
+              <FaArrowRight className="text-sm rotate-180" /> Back to List
             </Button>
 
-            <CustomButton
-              title="Add Goal"
-              onClick={() => {
-                handleAddGoal();
-              }}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-            />
-            {/* <Button
-                            variant="filled"
-                            color="blue"
-                            onClick={() => {
-                                console.log('Add Goal button clicked');
-                                console.log('Current addGoalValue:', addGoalValue);
-                                toggleAddGoal();
-                            }}
-                            className="bg-blue-400 hover:bg-blue-500"
-                        >
-                            Add Goal
-                        </Button> */}
+            <Button
+              className="bg-bgBlue text-white shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
+              onClick={handleAddGoal}
+            >
+              Add Goal
+            </Button>
           </div>
 
           {/* Goals Table */}
-          <div className="bg-white rounded-[10px] drop-shadow-md p-2">
-            <div className="h-[calc(100vh-100px)] overflow-auto customScroll">
-              <table className="w-full text-center">
-                <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
+              <table className="min-w-full table-auto text-center">
+                <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
                   <tr>
                     {tableHeader?.map((head, i) => (
-                      <th key={i} className="bg-[#F8F9FA] p-4">
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-medium leading-none text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
+                      <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
+                        <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
                           {head}
                         </Typography>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
-                  {employeeGoalsData?.map((goal, i) => {
-                    const isLast = i === employeeGoalsData?.length - 1;
-                    const classes = isLast
-                      ? "p-4"
-                      : "p-4 border-b border-[#F2F2F9]";
-
-                    return (
-                      <tr key={i}>
-                        <td className={classes}>
-                          <Typography
-                            // variant="small"
-                            // color="blue-gray"
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                          >
-                            {goal.name}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // variant="small"
-                            // color="blue-gray"
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                          >
-                            {goal.descriptions}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-20">
-                              <Progress value={goal.progress} color="blue" />
-                            </div>
-                            <Typography className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
-                              {goal.progress}% progress
-                            </Typography>
-                          </div>
-                        </td>
-                        <td className={classes}>
-                          <button
-                            type="button"
-                            className="text-blue-500 cursor-pointer hover:text-blue-700 transition-colors text-[clamp(12px,0.9vw,14px)]"
-                            onClick={() =>
-                              handleOpenCommentsDrawer &&
-                              handleOpenCommentsDrawer(goal)
-                            }
-                            title="View comments"
-                          >
-                            💬
-                          </button>
-                        </td>
-                        <td className={classes}>
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-[clamp(10px,0.8vw,12px)] text-[#474747] font-Urbanist font-normal">
-                              {getStatusIcon(goal.status)}
-                            </span>
-                            <Badge color={getStatusColor(goal.status)}>
-                              {getStatusText(goal.status)}
-                            </Badge>
-                          </div>
-                        </td>
-                        <td className={classes}>
-                          <div className="relative flex items-center justify-center">
-                            <button
-                              onClick={() => toggleMenu(i, !openMenu[i])}
-                              className="flex items-center gap-2 px-3 py-1 text-[clamp(10px,0.9vw,12px)] bg-gray-100 hover:bg-gray-200 rounded border"
+                <tbody className="divide-y divide-gray-50">
+                  {employeeGoalsData?.map((goal, i) => (
+                    <motion.tr 
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.05 }}
+                      className="hover:bg-blue-50/30 transition-colors group"
+                    >
+                      <td className="p-4">
+                        <Typography className="text-sm font-semibold text-gray-900 font-poppins">
+                          {goal.name}
+                        </Typography>
+                      </td>
+                      <td className="p-4">
+                        <Typography className="text-sm text-gray-600 font-poppins max-w-xs truncate mx-auto">
+                          {goal.descriptions}
+                        </Typography>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-col items-center gap-1 w-32 mx-auto">
+                          <Progress value={goal.progress} color="blue" size="sm" className="bg-blue-50" />
+                          <span className="text-xs font-medium text-blue-600">{goal.progress}%</span>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <button
+                          type="button"
+                          className="text-gray-400 hover:text-blue-500 transition-colors p-2 rounded-full hover:bg-blue-50"
+                          onClick={() => handleOpenCommentsDrawer && handleOpenCommentsDrawer(goal)}
+                          title="View comments"
+                        >
+                          💬
+                        </button>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <Badge color={getStatusColor(goal.status)} className="px-2 py-1 rounded-md shadow-none">
+                            {getStatusText(goal.status)}
+                          </Badge>
+                        </div>
+                      </td>
+                      <td className="p-4 relative">
+                        <Menu placement="bottom-end">
+                          <MenuHandler>
+                            <Button
+                              variant="text"
+                              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-all shadow-sm normal-case text-gray-700"
                             >
-                              Action
-                              <FaChevronDown className="text-xs" />
-                            </button>
-                            {openMenu[i] && (
-                              <div className={`dropdown-menu absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded shadow-lg z-30 ${i<=5 ? "top-full" : "bottom-full"}`}>
-                                <button
-                                  onClick={() => handleRatingClick(goal)}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                                >
-                                  <FaStar className="text-yellow-500" />
-                                  Rating
-                                </button>
-                                <button
-                                  onClick={() => handleEditGoal(goal)}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                                >
-                                  <FaEdit className="text-blue-500" />
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    handleViewGoal(goal);
-                                    handleEyeIconClick();
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                                >
-                                  <FaEye className="text-green-500" />
-                                  View
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteGoal(goal)}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                                >
-                                  <FaTrash className="text-red-500" />
-                                  Delete
-                                </button>
-                              </div>
-                            )}
+                              Action <FaChevronDown className="text-[10px]" />
+                            </Button>
+                          </MenuHandler>
+                          <MenuList className="min-w-[140px] p-1 border border-gray-100 rounded-xl shadow-xl z-[9999]">
+                            <MenuItem 
+                              onClick={() => handleRatingClick(goal)} 
+                              className="flex items-center gap-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-gray-900"
+                            >
+                              <FaStar className="text-yellow-500" /> Rating
+                            </MenuItem>
+                            <MenuItem 
+                              onClick={() => handleEditGoal(goal)} 
+                              className="flex items-center gap-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-gray-900"
+                            >
+                              <FaEdit className="text-blue-500" /> Edit
+                            </MenuItem>
+                            <MenuItem 
+                              onClick={() => { handleViewGoal(goal); handleEyeIconClick(); }} 
+                              className="flex items-center gap-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-gray-900"
+                            >
+                              <FaEye className="text-green-500" /> View
+                            </MenuItem>
+                            <MenuItem 
+                              onClick={() => handleDeleteGoal(goal)} 
+                              className="flex items-center gap-2 text-xs font-medium text-red-600 hover:bg-red-50 hover:text-red-700"
+                            >
+                              <FaTrash /> Delete
+                            </MenuItem>
+                          </MenuList>
+                        </Menu>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center justify-center gap-0.5">
+                          {renderStars(goal.rating, goal)}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                  
+                  {employeeGoalsData?.length === 0 && (
+                    <tr>
+                      <td colSpan={tableHeader.length} className="p-12 text-center text-gray-400">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+                            <FaClipboardList className="text-3xl text-gray-300" />
                           </div>
-                        </td>
-                        <td className={classes}>
-                          <div className="flex items-center justify-center">
-                            {renderStars(goal.rating, goal)}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <Typography className="font-medium font-poppins">No goals found for this employee</Typography>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-
-              {employeeGoalsData?.length === 0 && (
-                <div className="text-center py-8">
-                  <Typography variant="h6" color="gray" className="font-normal">
-                    No goals found for this employee
-                  </Typography>
-                </div>
-              )}
             </div>
           </div>
         </>
       )}
 
-      {/* Competency View */}
       {currentView === "competency" && (
-        <div className="text-center py-8">
-          <Typography variant="h6" color="gray" className="font-normal">
+        <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
+          <Typography color="gray" className="font-medium font-poppins">
             Competency view will be handled by EmployeeCompetency component
           </Typography>
         </div>
       )}
 
-      {/* Feedback View */}
       {currentView === "feedback" && <EmployeeFeedback />}
 
-      {/* Modals */}
-      {console.log(
-        "Modal rendering check - addGoalValue.show:",
-        addGoalValue.show
-      )}
       {addGoalValue.show && (
         <PortalDrawer
           open={addGoalValue.show}
@@ -570,19 +456,12 @@ const EmployeeGoals = () => {
               />
             )
           }
-          title={
-            addGoalValue.view
-              ? "View Goal"
-              : addGoalValue.update
-              ? "Edit Goal"
-              : "Add Goal"
-          }
+          title={addGoalValue.view ? "View Goal" : addGoalValue.update ? "Edit Goal" : "Add Goal"}
           closeDrawer={toggleAddGoal}
           widthSize={addGoalValue.view ? 700 : 550}
         />
       )}
 
-      {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         openDialog={showDeleteDialog}
         handleOpen={toggleDeleteDialog}

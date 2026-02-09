@@ -118,13 +118,10 @@ function MedicalApp(props = {}) {
   }
 
   return (
-    <>
-      {/* Salary Template Section */}
+    <div className='w-full'>
+      <h3 className='text-base sm:text-lg font-semibold text-gray-800 mb-4 sm:mb-6 font-poppins'>Medical Allowance Application</h3>
 
-      <div className='w-full bg-white p-4 sm:p-6 rounded-xl sm:rounded-lg shadow-md'>
-        <h3 className='text-base sm:text-lg font-semibold text-gray-800 mb-4 sm:mb-6'>Medical Allowance Application</h3>
-
-        <form onSubmit={handleMedicalApplication} className='flex flex-col gap-4 sm:gap-6'>
+      <form onSubmit={handleMedicalApplication} className='flex flex-col gap-4 sm:gap-6'>
           <div className='w-full'>
             <Input
               color="blue"
@@ -230,15 +227,14 @@ function MedicalApp(props = {}) {
             <Button
               type="submit"
               color="blue"
-              className='px-6 py-2 rounded-lg capitalize font-medium text-sm'
+              className='px-6 py-2 rounded-lg capitalize font-medium text-sm font-poppins bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/40'
               size="lg"
             >
               Submit
             </Button>
           </div>
         </form>
-      </div>
-    </>
+    </div>
   )
 }
 

@@ -1,15 +1,26 @@
-import { Button, MenuItem, Typography, Spinner } from '@material-tailwind/react'
+import { Button, MenuItem, Typography } from '@material-tailwind/react'
 import React from 'react'
-import { formatTimestamp } from '../Branches/utils'
 import useHRPolicies from '../../ViewModel/HRPoliciesViewModel/HRPoliciesServices'
 import { FaChevronDown } from "react-icons/fa";
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import ConfirmationDialog from '../../Components/ConfirmationDialog/ConfirmationDialog';
 import formatTime from '../../services/__hrPoliciesServices';
 import useDropdownService from '../../services/__dropDownHoverService';
-import CustomButton from '../../Components/CustomButton/CustomButton';
-import { formatDate } from 'date-fns';
 import { formatDateDMY } from '../../services/__dateTimeServices';
+import { HiOutlineDocumentText } from "react-icons/hi";
+
+const SkeletonRow = () => (
+  <tr className="animate-pulse border-b border-gray-100">
+    <td className="p-4"><div className="h-4 w-12 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-16 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-28 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-16 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-8 w-20 bg-gray-200 rounded mx-auto"></div></td>
+  </tr>
+);
 
 const PoliciesList = (props) => {
 
@@ -17,23 +28,23 @@ const PoliciesList = (props) => {
   const { triggerRefs, getDropdownPosition } = useDropdownService()
   const { openMenu, openDialog, hrPolicyStatusValue, handleHrPolicyStatus, handleStatusHrPolicy, toggleMenuHrPolicies, handleMenuItemsHrPolicies, hrPoliciesItems } = useHRPolicies()
 
-  const data = ['PID', 'Policy Name', 'Timings', 'Expiry', 'Payroll Generation Type', 'Overtime', 'Created Date', 'Actions']
+  const data = ['PID', 'Policy Name', 'Timings', 'Status', 'Payroll Generation', 'Overtime', 'Created Date', 'Actions']
+  
   return (
-    <div className='bg-white rounded-[10px] p-2 drop-shadow-md'>
-      <div className='relative w-full min-h-[calc(100vh-100px)] overflow-auto customScroll'>
-      <table className="min-w-full table-fixed text-center">
-      <colgroup>
-    <col span="8" />
-  </colgroup>
-      <thead className='sticky top-0 z-20 bg-[#F8F9FA] rounded-[8px]'>
+    <div className='bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>
+      <div className='relative w-full min-h-[calc(100vh-250px)] overflow-auto customScroll'>
+      <table className="min-w-full table-auto text-center">
+      <thead className='sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100'>
         <tr>
           {data?.map((head, i) => (
             <th
               key={i}
-              className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4"
+              className={`p-4 first:pl-6 last:pr-6 whitespace-nowrap ${
+                head === "Policy Name" ? "text-left" : "text-center"
+              }`}
             >
               <Typography
-                className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins"
               >
                 {head}
               </Typography>
@@ -42,307 +53,289 @@ const PoliciesList = (props) => {
         </tr>
 
       </thead>
-      <tbody>
-        {allHrpolicies.length > 0 ? (
+      <tbody className="divide-y divide-gray-50">
+        {props.loading ? (
+          // Show 8 skeleton rows while loading
+          Array.from({ length: 8 }).map((_, index) => (
+            <SkeletonRow key={index} />
+          ))
+        ) : allHrpolicies.length > 0 ? (
           allHrpolicies?.map((policy, index) => {
-            const isLast = index === allHrpolicies.length - 1;
-            const classes = isLast ? "px-[clamp(4px,0.8vw,12px)] py-4" : "px-[clamp(4px,0.8vw,12px)] py-4 border-b border-[#F2F2F9]"
+            
             return (
-              <tr key={index}>
-                <td className={classes}>
-                  <Typography
-                    className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                  >
-                    {policy.id}
+              <motion.tr 
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="hover:bg-blue-50/30 transition-colors group"
+              >
+                <td className="p-4 first:pl-6">
+                  <Typography className="text-sm font-medium text-gray-500 font-poppins">
+                    #{policy.id}
                   </Typography>
                 </td>
 
-                <td className={classes}>
-                  <Typography
-                    className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                  >
-                    {policy.policy_name}
-                  </Typography>
+                <td className="p-4 text-left">
+                  <div className="flex items-center gap-3">
+                      {/* <div className="p-2 bg-blue-50 rounded-lg text-blue-500 group-hover:bg-blue-100 transition-colors">
+                        <HiOutlineDocumentText size={18} />
+                      </div> */}
+                      <Typography className="text-sm font-semibold text-gray-900 font-poppins">
+                        {policy.policy_name}
+                      </Typography>
+                  </div>
                 </td>
 
-                <td className={classes}>
-                  <Typography
-                    className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                  >
-                    <span>{formatTime(policy.starting_time)} - {formatTime(policy.closing_time)}</span>
-                  </Typography>
+                <td className="p-4">
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                      {formatTime(policy.starting_time)} - {formatTime(policy.closing_time)}
+                    </span>
+                  </div>
                 </td>
 
-                <td className={classes}>
-                  <Typography
-                    className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                  >
-                    {policy.status === '0' ? 'Expired' : 'Valid'}
-
-                  </Typography>
+                <td className="p-4">
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                    policy.status === '0' 
+                      ? 'bg-red-50 text-red-600 border border-red-100' 
+                      : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                  }`}>
+                    {policy.status === '0' ? 'Inactive' : 'Active'}
+                  </span>
                 </td>
 
-                <td className={classes}>
-                  <Typography
-                    className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                  >
+                <td className="p-4">
+                  <Typography className="text-sm text-gray-600 font-poppins">
                     {policy.payroll === 1 || policy.payroll === '1' ? 'Time Base' :
                       policy.payroll === 2 || policy.payroll === '2' ? 'Attendance Base' :
                         policy.payroll === 3 || policy.payroll === '3' ? 'Hourly Base' : 'Unknown'}
                   </Typography>
                 </td>
 
-                <td className={classes}>
-                  <Typography
-                    className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                  >
-                    {policy.vertime_pay}
+                <td className="p-4">
+                  <Typography className="text-sm text-gray-600 font-poppins">
+                    {policy.vertime_pay || '-'}
                   </Typography>
                 </td>
 
-                <td className={classes}>
-                  <Typography
-                    className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                  >
+                <td className="p-4">
+                  <Typography className="text-xs text-gray-500 font-poppins">
                     {formatDateDMY(policy.creation_time)}
                   </Typography>
                 </td>
 
 
-                <td className={classes}>
+                <td className="p-4 last:pr-6 relative">
                   <div
                     ref={(el) => (triggerRefs.current[index] = el)}
                     onMouseEnter={() => toggleMenuHrPolicies(index, true)} onMouseLeave={() => toggleMenuHrPolicies(index, false)}
-                    className='relative flex items-center justify-center'>
+                    className='relative inline-block'>
                     <Button
-
-                      className='flex items-center justify-center gap-1 sm:gap-2 capitalize font-normal text-[clamp(10px,0.8vw,13px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[8px] sm:px-[10px] py-[4px] sm:py-[5px]'
-                      variant="outlined"
+                      className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
+                      variant="text"
                     >
                       Action
                       <FaChevronDown
-                        strokeWidth={2.5}
-                        className={`transition-transform transform ${openMenu[index] ? "rotate-180" : ""}`}
+                        size={10}
+                        className={`transition-transform duration-200 ${openMenu[index] ? "rotate-180" : ""}`}
                       />
                     </Button>
 
+                    <AnimatePresence>
                     {openMenu[index] && (
-                      <div
-                      className={`border border-gray-200 rounded-lg absolute z-[99999] bg-white w-[200px] left-[-120px] shadow-lg mt-0 ${index<=5 ? "top-full" : "bottom-full"}`}
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-48 right-0 ${
+                          getDropdownPosition(index) === "top" ? "bottom-full mb-2" : "top-full mt-2"
+                        }`}
                       >
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.2 }}
-                        >
 
-                          <ul className="flex w-full flex-col gap-1">
+                          <ul className="flex flex-col py-1">
                             {/* Edit - First */}
-                            <MenuItem className='flex items-center justify-between' onClick={() => handleMenuItemsHrPolicies(1, policy)}>
-                              <Typography variant="small">Edit</Typography>
-                              <span>{hrPoliciesItems.find(item => item.title === 'Edit').icon}</span>
-                            </MenuItem>
-
+                            <li className="px-1">
+                              <button className='w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors' onClick={() => handleMenuItemsHrPolicies(1, policy)}>
+                                Edit
+                                <span className="text-gray-400">{hrPoliciesItems.find(item => item.title === 'Edit').icon}</span>
+                              </button>
+                            </li>
+                            
                             {/* View - Second */}
-                            <MenuItem className='flex items-center justify-between' onClick={() => handleMenuItemsHrPolicies(2, policy)}>
-                              <Typography variant="small">View</Typography>
-                              <span>{hrPoliciesItems.find(item => item.title === 'View').icon}</span>
-                            </MenuItem>
-
+                            <li className="px-1">
+                              <button className='w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors' onClick={() => handleMenuItemsHrPolicies(2, policy)}>
+                                View
+                                <span className="text-gray-400">{hrPoliciesItems.find(item => item.title === 'View').icon}</span>
+                              </button>
+                            </li>
+                            
                             {/* Policy Used By - Third */}
-                            <MenuItem className='flex items-center justify-between' onClick={() => handleMenuItemsHrPolicies(5, policy)}>
-                              <Typography variant="small">Policy Used By</Typography>
-                              <span>{hrPoliciesItems.find(item => item.title === 'Policy Used By').icon}</span>
-                            </MenuItem>
-
+                            <li className="px-1">
+                              <button className='w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors' onClick={() => handleMenuItemsHrPolicies(5, policy)}>
+                                Policy Used By
+                                <span className="text-gray-400">{hrPoliciesItems.find(item => item.title === 'Policy Used By').icon}</span>
+                              </button>
+                            </li>
+                            
                             {/* Copy - Fourth */}
-                            <MenuItem className='flex items-center justify-between' onClick={() => handleMenuItemsHrPolicies(6, policy)}>
-                              <Typography variant="small">Copy</Typography>
-                              <span>{hrPoliciesItems.find(item => item.title === 'Copy').icon}</span>
-                            </MenuItem>
+                            <li className="px-1">
+                              <button className='w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors' onClick={() => handleMenuItemsHrPolicies(6, policy)}>
+                                Copy
+                                <span className="text-gray-400">{hrPoliciesItems.find(item => item.title === 'Copy').icon}</span>
+                              </button>
+                            </li>
+
+                            <div className="h-px bg-gray-100 my-1 mx-2"></div>
 
                             {/* Delete/Deactivate - Last */}
-                            {policy.status === 'EXPIRED' ?
+                            {policy.status === '0' ? // Assuming '0' is inactive/expired based on render logic above
                               (
-                                <MenuItem className='flex items-center justify-between' onClick={() => handleMenuItemsHrPolicies(3, policy.id, 1)}>
-                                  <Typography variant="small">Activate</Typography>
-                                  <span>{hrPoliciesItems.find(item => item.title === 'Activate').icon}</span>
-                                </MenuItem>
+                                <li className="px-1">
+                                  <button className='w-full text-left px-3 py-2 text-xs font-medium text-green-600 hover:bg-green-50 flex items-center justify-between rounded-lg transition-colors' onClick={() => handleMenuItemsHrPolicies(3, policy.id, 1)}>
+                                    Activate
+                                    <span>{hrPoliciesItems.find(item => item.title === 'Activate').icon}</span>
+                                  </button>
+                                </li>
                               ) :
                               (
-                                <MenuItem className='flex items-center justify-between' onClick={() => handleMenuItemsHrPolicies(3, policy.id, 0)}>
-                                  <Typography variant="small">Deactivate</Typography>
-                                  <span>{hrPoliciesItems.find(item => item.title === 'Deactivate').icon}</span>
-                                </MenuItem>
+                                <li className="px-1">
+                                  <button className='w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center justify-between rounded-lg transition-colors' onClick={() => handleMenuItemsHrPolicies(3, policy.id, 0)}>
+                                    Deactivate
+                                    <span>{hrPoliciesItems.find(item => item.title === 'Deactivate').icon}</span>
+                                  </button>
+                                </li>
                               )
                             }
                           </ul>
-                        </motion.div>
-                      </div>
+                      </motion.div>
                     )}
+                    </AnimatePresence>
                   </div>
                 </td>
 
-              </tr>
+              </motion.tr>
             )
           })
 
         ) : (
           <tr>
-            <td colSpan={data.length} className="p-2 text-center">
-              No Data Found
+            <td colSpan={data.length} className="p-12 text-center text-gray-400">
+              <div className="flex flex-col items-center justify-center">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                  <HiOutlineDocumentText className="w-8 h-8 text-gray-300" />
+                </div>
+                <Typography color="gray" className="font-medium font-poppins">
+                  No Policies Found
+                </Typography>
+                <Typography className="text-sm text-gray-400 mt-1 font-poppins">
+                  Try adjusting your search or filters
+                </Typography>
+              </div>
             </td>
           </tr>
         )}
 
       </tbody>
+      </table>
+      </div>
 
       {/* Google-style Pagination */}
       {allHrpolicies?.length > 0 && paginationData && paginationData.totalPages > 1 && (
-        <tfoot>
-          <tr>
-            <td colSpan={data.length} className="p-4 w-full">
-              <div className="w-full flex justify-center items-center gap-1">
-                {/* Previous Button */}
-                {paginationData.currentPage > 1 ? (
-                  <button
-                    title="Previous Page"
-                    className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={onPreviousPage}
-                    disabled={isLoadingMore}
-                  >
-                    <span>‹</span>
-                    <span>Previous</span>
-                  </button>
-                ) : (
-                  <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1">
-                    <span>‹</span>
-                    <span>Previous</span>
-                  </div>
-                )}
+          <div className="w-full flex justify-center items-center gap-2 mt-6 mb-2 pb-4">
+            {/* Previous Button */}
+            <button
+              title="Previous Page"
+              disabled={paginationData.currentPage <= 1 || isLoadingMore}
+              className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                paginationData.currentPage > 1
+                  ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                  : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+              }`}
+              onClick={onPreviousPage}
+            >
+              ‹
+            </button>
+            
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1.5">
+              {(() => {
+                const currentPage = paginationData.currentPage;
+                const totalPages = paginationData.totalPages;
                 
-                {/* Page Numbers */}
-                <div className="flex items-center gap-1">
-                  {(() => {
-                    const currentPage = paginationData.currentPage;
-                    const totalPages = paginationData.totalPages;
-                    
-                    // If 10 or fewer pages, show all pages (like Google)
-                    if (totalPages <= 10) {
-                      return Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                        <button
-                          key={pageNum}
-                          onClick={() => onGoToPage(pageNum)}
-                          disabled={isLoadingMore}
-                          className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                            pageNum === currentPage
-                              ? 'bg-[#1a73e8] text-white font-medium'
-                              : 'text-[#1a73e8] hover:bg-gray-100'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      ));
-                    }
-                    
-                    // For more than 10 pages, show with ellipsis
-                    const pages = [];
-                    pages.push(1);
-                    
-                    if (currentPage > 3) {
-                      pages.push('ellipsis-start');
-                    }
-                    
-                    const startPage = Math.max(2, currentPage - 1);
-                    const endPage = Math.min(totalPages - 1, currentPage + 1);
-                    
-                    for (let i = startPage; i <= endPage; i++) {
-                      if (i !== 1 && i !== totalPages) {
-                        pages.push(i);
-                      }
-                    }
-                    
-                    if (currentPage < totalPages - 2) {
-                      pages.push('ellipsis-end');
-                    }
-                    
-                    pages.push(totalPages);
-                    
-                    // Remove duplicates
-                    const uniquePages = [];
-                    const seen = new Set();
-                    pages.forEach(page => {
-                      if (typeof page === 'number' && !seen.has(page)) {
-                        seen.add(page);
-                        uniquePages.push(page);
-                      } else if (typeof page === 'string') {
-                        uniquePages.push(page);
-                      }
-                    });
-                    
-                    return uniquePages.map((page, index) => {
-                      if (page === 'ellipsis-start' || page === 'ellipsis-end') {
-                        return (
-                          <span key={`ellipsis-${index}`} className="px-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8]">
-                            ...
-                          </span>
-                        );
-                      }
-                      
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => onGoToPage(page)}
-                          disabled={isLoadingMore}
-                          className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                            page === currentPage
-                              ? 'bg-[#1a73e8] text-white font-medium'
-                              : 'text-[#1a73e8] hover:bg-gray-100'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      );
-                    });
-                  })()}
-                </div>
-                
-                {/* Next Button */}
-                {paginationData.currentPage < paginationData.totalPages ? (
+                // Helper to render page button
+                const renderPageButton = (page) => (
                   <button
-                    title="Next Page"
-                    className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={onNextPage}
+                    key={page}
+                    onClick={() => onGoToPage(page)}
                     disabled={isLoadingMore}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                      page === currentPage
+                        ? 'bg-bgBlue text-white shadow-md shadow-blue-500/20'
+                        : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                    }`}
                   >
-                    <span>Next</span>
-                    <span>›</span>
+                    {page}
                   </button>
-                ) : (
-                  <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1">
-                    <span>Next</span>
-                    <span>›</span>
-                  </div>
-                )}
-              </div>
-            </td>
-          </tr>
-        </tfoot>
+                );
+
+                // If 7 or fewer pages, show all pages
+                if (totalPages <= 7) {
+                  return Array.from({ length: totalPages }, (_, i) => i + 1).map(renderPageButton);
+                }
+                
+                // For more than 7 pages, show with ellipsis
+                const pages = [];
+                pages.push(renderPageButton(1));
+                
+                if (currentPage > 3) {
+                  pages.push(<span key="ellipsis-start" className="text-gray-400 px-1 text-xs">...</span>);
+                }
+                
+                const startPage = Math.max(2, currentPage - 1);
+                const endPage = Math.min(totalPages - 1, currentPage + 1);
+                
+                for (let i = startPage; i <= endPage; i++) {
+                  pages.push(renderPageButton(i));
+                }
+                
+                if (currentPage < totalPages - 2) {
+                  pages.push(<span key="ellipsis-end" className="text-gray-400 px-1 text-xs">...</span>);
+                }
+                
+                pages.push(renderPageButton(totalPages));
+                
+                return pages;
+              })()}
+            </div>
+            
+            {/* Next Button */}
+            <button
+              title="Next Page"
+              disabled={paginationData.currentPage >= paginationData.totalPages || isLoadingMore}
+              className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                paginationData.currentPage < paginationData.totalPages
+                  ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                  : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+              }`}
+              onClick={onNextPage}
+            >
+              ›
+            </button>
+          </div>
       )}
-
-      <ConfirmationDialog
-        openDialog={openDialog}
-        handleOpen={handleStatusHrPolicy}
-        handleConfirm={() => handleHrPolicyStatus()}
-        title={hrPolicyStatusValue.pstatus === 0 ? 'Confirm Deactivation' : 'Confirm Activation'}
-        message={hrPolicyStatusValue.pstatus === 0 ? 'Are you sure to deactivate this policy?' : 'Are you sure to activate this policy?'}
-
+        
+         <ConfirmationDialog 
+                openDialog = {openDialog}
+                handleOpen = {handleStatusHrPolicy}
+                handleConfirm={() => handleHrPolicyStatus()} 
+                title = {hrPolicyStatusValue.pstatus === 0 ? 'Confirm Deactivation' : 'Confirm Activation'}
+                message = {`Are you sure to ${hrPolicyStatusValue.pstatus === 0 ? 'deactivate' : 'activate'} this policy?`}
       />
-
-      </table>
+            
     </div>
-    </div>
+  
   )
 }
 

@@ -2,18 +2,18 @@ import { Typography, Button } from "@material-tailwind/react";
 import React, { useEffect } from "react";
 import { BiSearch } from "react-icons/bi";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
-import CustomButton from "../../Components/CustomButton/CustomButton";
 import useCometencyServices from "../../ViewModel/PerformnaceViewModel/competencyServices";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import AddCompetency from "./AddCompetency";
 import EmployeeCompetency from "./EmployeeCompetency";
-import { FaEye, FaArrowLeft } from "react-icons/fa6";
+import { FaEye, FaPlus, FaClipboardList } from "react-icons/fa6";
 import {
   Outlet,
   useLocation,
   useOutletContext,
   useNavigate,
 } from "react-router";
+import { motion } from "framer-motion";
 
 const Competency = () => {
   const {
@@ -31,7 +31,6 @@ const Competency = () => {
     deleteCompteny,
     handleSubmitAddCompetency,
     handleRemoveEmp,
-    handleSubComptency,
   } = useCometencyServices();
 
   // Get the profile view handler from the parent component
@@ -39,8 +38,7 @@ const Competency = () => {
     handleProfileView,
     currentView,
     showProfile,
-    selectedEmployeeId,
-    competencyData,
+    competencyData: competencyDataFromContext,
   } = useOutletContext() || {};
 
   const tableHeader = [
@@ -51,14 +49,8 @@ const Competency = () => {
     "Actions",
   ];
 
-  console.log("showProfile showProfile", competencyData);
-
   const location = useLocation();
   const navigate = useNavigate();
-
-  const handleBackToPerformance = () => {
-    navigate("/performance");
-  };
 
   const handleProfileClick = async (employeeId) => {
     try {
@@ -71,8 +63,6 @@ const Competency = () => {
     }
   };
 
-  // {location.pathname.includes('detail_card') ? (<Outlet />) :
-
   useEffect(() => {
     gettingPRCSelect();
   }, []);
@@ -83,156 +73,129 @@ const Competency = () => {
         <Outlet />
       ) : showProfile &&
         currentView === "competency" &&
-        competencyData &&
-        competencyData.length > 0 ? (
+        competencyDataFromContext &&
+        competencyDataFromContext.length > 0 ? (
         <EmployeeCompetency />
       ) : (
-        <>
-          <div className="flex flex-col gap-6 py-2">
-            <div className="flex items-end justify-between">
-              <div className="flex gap-2">
-                <div className="w-64">
-                  <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">
-                    Performance
-                  </label>
-                  <CustomSelect
-                    placeHolderTitle="Performance"
-                    cStyle={true}
-                    value={competencyValue.performance_id}
-                    options={[
-                      { value: null, label: "All" },
-                      ...competencyValue.performance?.map((ele) => ({
-                        value: ele._id,
-                        label: ele.name,
-                      })),
-                    ]}
-                    onChangeHandler={(selectedOption) =>
-                      handleSelectCompetency(selectedOption, "performance_id")
-                    }
-                  />
-                </div>
-                <div className="relative w-64">
-                  <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">
-                    Search Employee
-                  </label>
-                  <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-1/2 mt-3 right-3 -translate-y-2/4">
-                    <span>
-                      <BiSearch />
-                    </span>
-                  </div>
-                  <input
-                    className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                    placeholder="Search Employee"
-                    name="name"
-                    value={competencyValue.searchText}
-                    onChange={(e) => handleSearchCompetency(e.target.value)}
-                  />
-                </div>
+        <div className="flex flex-col gap-6">
+          {/* Controls Bar */}
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+              <div className="w-full md:w-64">
+                <CustomSelect
+                  placeHolderTitle="Filter by Performance"
+                  value={competencyValue.performance_id}
+                  options={[
+                    { value: null, label: "All Cycles" },
+                    ...competencyValue.performance?.map((ele) => ({
+                      value: ele._id,
+                      label: ele.name,
+                    })),
+                  ]}
+                  onChangeHandler={(selectedOption) =>
+                    handleSelectCompetency(selectedOption, "performance_id")
+                  }
+                  customStyles={false}
+                />
               </div>
-              <div>
-                <CustomButton
-                  className="bg-[#8bc9f8]"
-                  title="Create New Competency"
-                  onClick={handleAddCompetency}
+
+              <div className="relative w-full md:w-64">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <BiSearch className="text-gray-400 text-lg" />
+                </div>
+                <input
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400 text-gray-700"
+                  placeholder="Search Employee..."
+                  name="name"
+                  value={competencyValue.searchText}
+                  onChange={(e) => handleSearchCompetency(e.target.value)}
                 />
               </div>
             </div>
-            <div className="bg-white rounded-[10px] drop-shadow-md p-2">
-              <div className="h-[calc(100vh-100px)] overflow-auto customScroll">
-                <table className="w-full text-center">
-                  <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
-                    <tr>
-                      {tableHeader?.map((head, i) => (
-                        <th key={i} className="bg-[#F8F9FA] p-4">
-                          <Typography
-                            // variant="small"
-                            // color="blue-gray"
-                            className="font-medium leading-none text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                          >
-                            {/* {head} */}
-                            {head}
-                          </Typography>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {comptencyData?.map((ele, i) => {
-                      const isLast = i === comptencyData?.length - 1;
-                      const classes = isLast
-                        ? "p-4"
-                        : "p-4 border-b border-[#F2F2F9]";
 
-                      return (
-                        <tr key={i}>
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                            >
-                              {ele.employee_id}
-                            </Typography>
-                          </td>
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                            >
-                              {ele.employee_name}
-                            </Typography>
-                          </td>
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                            >
-                              {ele.total_competency}
-                            </Typography>
-                          </td>
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                            >
-                              {ele.total_score}
-                            </Typography>
-                          </td>
-                          <td
-                            className={`${classes} flex items-center justify-center`}
-                          >
-                            <span
-                              className="text-primary-100 cursor-pointer"
-                              onClick={() =>
-                                handleProfileClick(ele.employee_id)
-                              }
-                            >
-                              <FaEye />
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            <Button
+              className="bg-bgBlue text-white shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
+              onClick={handleAddCompetency}
+            >
+              <FaPlus size={12} /> Create Competency
+            </Button>
+          </div>
 
-                {comptencyData?.length === 0 && (
-                  <div className="text-center py-8">
-                    <Typography
-                      variant="h6"
-                      color="gray"
-                      className="font-normal"
+          {/* Table */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
+              <table className="min-w-full table-auto text-center">
+                <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
+                  <tr>
+                    {tableHeader?.map((head, i) => (
+                      <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
+                        <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
+                          {head}
+                        </Typography>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {comptencyData?.map((ele, i) => (
+                    <motion.tr 
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.05 }}
+                      className="hover:bg-blue-50/30 transition-colors group"
                     >
-                      No competencies found
-                    </Typography>
-                  </div>
-                )}
-              </div>
+                      <td className="p-4">
+                        <span className="text-xs font-medium text-gray-500 font-poppins bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                          #{ele.employee_id}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <Typography className="text-sm font-semibold text-gray-900 font-poppins">
+                          {ele.employee_name}
+                        </Typography>
+                      </td>
+                      <td className="p-4">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-600 border border-purple-100">
+                          {ele.total_competency} Scales
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <Typography className="text-sm font-medium text-gray-700 font-poppins">
+                          {ele.total_score}
+                        </Typography>
+                      </td>
+                      <td className="p-4">
+                        <Button
+                          variant="text"
+                          className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                          onClick={() => handleProfileClick(ele.employee_id)}
+                        >
+                          <FaEye size={18} />
+                        </Button>
+                      </td>
+                    </motion.tr>
+                  ))}
+
+                  {comptencyData?.length === 0 && (
+                    <tr>
+                      <td colSpan={tableHeader.length} className="p-12 text-center text-gray-400">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+                            <FaClipboardList className="text-3xl text-gray-300" />
+                          </div>
+                          <Typography color="gray" className="font-medium font-poppins">
+                            No competencies found
+                          </Typography>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
+
           {addCompetencyValue.show && (
             <PortalDrawer
               open={addCompetencyValue.show}
@@ -253,7 +216,7 @@ const Competency = () => {
               widthSize={600}
             />
           )}
-        </>
+        </div>
       )}
     </>
   );

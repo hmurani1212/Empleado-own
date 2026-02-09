@@ -1,20 +1,25 @@
 import React from 'react';
+import { Typography } from "@material-tailwind/react";
 
 const EmployeeFooter = () => {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <div className="w-full mt-8">
-      <div className="flex justify-center items-center py-4">
-        <div className="flex items-center space-x-2 text-gray-400">
-          <span className="text-sm">Powered by Veevo Tech</span>
+    <footer className="w-full py-6 mt-8">
+      <div className="flex flex-col items-center justify-center gap-2">
+        <div className="w-full h-px bg-gray-100 max-w-7xl mx-auto mb-4"></div>
+        <div className="flex items-center gap-2 text-gray-400 opacity-80 hover:opacity-100 transition-opacity">
+          <Typography variant="small" className="font-normal text-xs font-poppins">
+            Powered by Veevo Tech &copy; {currentYear}
+          </Typography>
           <img 
             src="https://emp-beta.veevotech.com/emp/assets/img/vt-logo.svg" 
             alt="Veevo Tech Logo" 
-            className="h-4 w-auto"
+            className="h-3 w-auto grayscale opacity-50"
           />
         </div>
       </div>
-      <div className="w-full h-px bg-gray-300"></div>
-    </div>
+    </footer>
   );
 };
 

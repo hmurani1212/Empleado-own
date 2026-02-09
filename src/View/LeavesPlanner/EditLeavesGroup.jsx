@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button, Input } from '@material-tailwind/react'
 import leavesPlannerApi from '../../Model/Data/LeavesPlanner/LeavesPlanner'
-import { useState } from 'react'
 import { showToast } from '../../Components/Toaster/Toaster'
-
+import { Loader2 } from 'lucide-react'
 
 const EditLeavesGroup = (props) => {
     const {data, closeDrawer, UpdateLeaveGroup} = props
@@ -35,7 +34,6 @@ const EditLeavesGroup = (props) => {
         [name]:value
       }))
     }
-
 
     
     const validateForm = ()=>{
@@ -69,7 +67,6 @@ const EditLeavesGroup = (props) => {
         console.log(editDataLeave)
         const validate = validateForm()
         if(validate){
-
         
           try {
               setIsLoading(true)
@@ -97,29 +94,35 @@ const EditLeavesGroup = (props) => {
     } 
 
   return (
-    <>
-    {/* Tooba */}
-    <form onSubmit={handleEditLeaveGroup}>
-        <div className='flex flex-col gap-4' >
-
-            <div className='w-100 pt-5'>
-                <Input label='Edit Group Name' color='blue' name='group_title' value={addGroupValues.group_title} onChange={handleChange} />
-            </div>
-
-            <div>
-              <Button 
-                type='submit' 
-                className='bg-blue-300 py-[10px] capitalize'
-                loading={isLoading}
-                disabled={isLoading}
-              > 
-                Submit
-              </Button>
+    <div className='p-6 h-full flex flex-col'>
+    <form onSubmit={handleEditLeaveGroup} className="flex flex-col gap-6 h-full">
+        <div className='flex flex-col gap-5 flex-1'>
+            <div className='flex flex-col gap-2'>
+                <label className="text-sm font-semibold text-gray-700 font-poppins">Group Name</label>
+                <Input 
+                    color='blue' 
+                    className='!border !border-gray-200 bg-white text-gray-900 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-blue-500 focus:!border-t-blue-500 focus:ring-blue-500/10 rounded-lg'
+                    labelProps={{
+                        className: "hidden",
+                    }}
+                    name='group_title' 
+                    value={addGroupValues.group_title} 
+                    onChange={handleChange} 
+                />
             </div>
         </div>
+
+        <div className='mt-auto pt-6 border-t border-gray-100 flex justify-end gap-3'>
+            <Button 
+                type='submit' 
+                className='font-poppins font-medium capitalize bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/40 min-w-[120px] flex items-center justify-center py-2.5 rounded-xl'
+                disabled={isLoading}
+            > 
+                {isLoading ? <Loader2 className='animate-spin w-4 h-4' /> : 'Update Group'}
+            </Button>
+        </div>
     </form>
-    </>
-    
+    </div>
   )
 }
 

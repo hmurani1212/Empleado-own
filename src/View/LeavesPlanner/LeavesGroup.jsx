@@ -4,7 +4,7 @@ import { Button, MenuItem, Switch, Typography } from "@material-tailwind/react";
 import useLeavesPlanner from "../../ViewModel/LeavePlannerViewModel/LeavePlannerServices";
 import { FaEye, FaChevronDown } from "react-icons/fa";
 import { Outlet, useLocation } from "react-router";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
@@ -59,53 +59,26 @@ const LeavesGroup = () => {
   function formatTimestamp(unixTimestamp) {
     if (!unixTimestamp) return "N/A";
 
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
     let timestamp = unixTimestamp;
-
-    // Handle different timestamp formats
     if (typeof timestamp === "string") {
-      // If it's an ISO string, convert to Unix timestamp
       const dateObj = new Date(timestamp);
       timestamp = Math.floor(dateObj.getTime() / 1000);
     } else if (typeof timestamp === "number") {
-      // If timestamp is in milliseconds (13 digits), convert to seconds
       if (timestamp.toString().length === 13) {
         timestamp = Math.floor(timestamp / 1000);
       }
     }
 
-    // Ensure timestamp is a valid number
     if (isNaN(timestamp) || timestamp <= 0) {
       return "N/A";
     }
 
-    // Convert seconds to milliseconds for JS Date
     const date = new Date(timestamp * 1000);
-
-    // Validate the date
     if (isNaN(date.getTime())) {
       return "N/A";
     }
 
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-
-    return `${day} ${month}, ${year}`;
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   return (
@@ -113,14 +86,13 @@ const LeavesGroup = () => {
       {location.pathname.includes("viewLeaves") ? (
         <Outlet />
       ) : (
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex flex-col w-52">
-                <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Select Branch</label>
-                {/* <label className="text-[#698592] text-[12px] mb-1">Branch</label> */}
+        <div className="flex flex-col gap-6">
+          {/* Controls Bar */}
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+              <div className="w-full md:w-56">
                 <CustomSelect
-                  placeHolderTitle="All Branches"
+                  placeHolderTitle="Filter by Branch"
                   value={selectedBranch}
                   options={[
                     { value: "all", label: "All branches" },
@@ -134,120 +106,103 @@ const LeavesGroup = () => {
                     selectBranchHandler(selectedOption.value);
                   }}
                   customStyles={false}
-                  optionFontSize={11}
                 />
               </div>
 
-              <div className="relative min-w-[220px]">
-                <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Search by name</label>
-                <div className="relative">
-                  <BiSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg" />
-                  <input
-                    className="w-full rounded-[10px] px-3 pr-10 text-sm h-[37px] outline-none border-none text-[12px] text-[#474747] bg-white shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                    placeholder="Search by name"
-                    name="search"
-                    onChange={handleLeavesChange}
-                  />
+              <div className="relative w-full md:w-64">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <BiSearch className="text-gray-400 text-lg" />
                 </div>
+                <input
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400 text-gray-700"
+                  placeholder="Search groups..."
+                  name="search"
+                  onChange={handleLeavesChange}
+                />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
+                <span className="text-sm font-medium text-gray-600">Paid Leaves</span>
                 <Switch
                   color="blue"
-                  label="Paid Leaves"
                   checked={type}
                   onChange={handleChangeToggle}
+                  className="h-full w-full checked:bg-[#3da5f4]"
+                  containerProps={{
+                    className: "w-11 h-6",
+                  }}
+                  circleProps={{
+                    className: "before:hidden left-0.5 border-none",
+                  }}
                 />
               </div>
             </div>
 
-            <CustomButton
-              className="bg-[#8bc9f8]"
-              title="Add New Group"
+            <Button
+              className="bg-bgBlue text-white shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all w-full lg:w-auto flex justify-center"
               onClick={addLeaveGroupDrawer}
-            />
+            >
+              Add New Group
+            </Button>
           </div>
 
-          <div className="bg-white rounded-[10px] drop-shadow-md p-2">
-            <div className="min-h-[calc(100vh-100px)] overflow-auto customScroll">
-              <table className="min-w-full table-fixed text-center">
-              <colgroup>
-    <col span="6" />
-  </colgroup>
-                <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
+          {/* Table */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
+              <table className="min-w-full table-auto text-center">
+                <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
                   <tr>
                     {data?.map((head, i) => (
-                      <th key={i} className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
-                        >
+                      <th key={i} className={`p-4 first:pl-6 last:pr-6 whitespace-nowrap ${head === 'Group Title' ? 'text-left' : ''}`}>
+                        <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
                           {head}
                         </Typography>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-50">
                   {allLeavesGroup && allLeavesGroup.length > 0 ? (
                     allLeavesGroup.map((leave, index) => {
                       if (!leave) return null;
-                      const isLast = index === allLeavesGroup.length - 1;
-                      const classes = isLast
-                        ? "px-[clamp(4px,0.8vw,12px)] py-4"
-                        : "px-[clamp(4px,0.8vw,12px)] py-4 border-b border-[#F2F2F9]";
                       return (
-                        <tr key={index}>
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                            >
-                              {leave.id}
-                            </Typography>
+                        <motion.tr 
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="hover:bg-blue-50/30 transition-colors group"
+                        >
+                          <td className="p-4">
+                            <span className="text-xs font-medium text-gray-500 font-poppins bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                              #{leave.id}
+                            </span>
                           </td>
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                            >
+                          <td className="p-4 text-left">
+                            <Typography className="text-sm font-semibold text-gray-900 font-poppins">
                               {leave.group_title || leave.name}
                             </Typography>
                           </td>
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                            >
+                          <td className="p-4">
+                            <Typography className="text-xs text-gray-500 font-poppins">
                               {formatTimestamp(leave.creation_time)}
                             </Typography>
                           </td>
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                            >
-                              {leave.defined_leaves_count || 0}
-                            </Typography>
+                          <td className="p-4">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100">
+                              {leave.defined_leaves_count || 0} Types
+                            </span>
                           </td>
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal flex justify-center w-full text-[#474747] font-Urbanist text-[clamp(10px,0.8vw,13px)] capitalize"
+                          <td className="p-4">
+                            <Button
+                              variant="text"
+                              className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                              onClick={() => handleLeaveView(leave.id)}
                             >
-                              <FaEye
-                                className="border-solid border-2 border-[#8bc9f8] p-[3px] text-[27px] text-[#8bc9f8] cursor-pointer"
-                                onClick={() => handleLeaveView(leave.id)}
-                              />
-                            </Typography>
+                              <FaEye size={18} />
+                            </Button>
                           </td>
-                          <td className={classes}>
+                          <td className="p-4 relative">
                             <div
                               ref={(el) => {
                                 if (el && triggerRefs.current) {
@@ -255,101 +210,78 @@ const LeavesGroup = () => {
                                 }
                               }}
                               onMouseEnter={() => toggleMenuLeaves(index, true)}
-                              onMouseLeave={() =>
-                                toggleMenuLeaves(index, false)
-                              }
-                              className="relative flex items-center justify-center w-full"
+                              onMouseLeave={() => toggleMenuLeaves(index, false)}
+                              className="relative inline-block"
                             >
                               <Button
-                                className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px]"
-                                variant="outlined"
+                                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
+                                variant="text"
                               >
                                 Action
                                 <FaChevronDown
-                                  strokeWidth={2.5}
-                                  className={`transition-transform transform ${
-                                    openMenu && openMenu[index]
-                                      ? "rotate-180"
-                                      : ""
+                                  size={10}
+                                  className={`transition-transform duration-200 ${
+                                    openMenu && openMenu[index] ? "rotate-180" : ""
                                   }`}
                                 />
                               </Button>
 
-                              {openMenu && openMenu[index] && (
-                                <div
-                                  className={`border border-gray-200 rounded-lg absolute z-[99999] bg-white w-[130px] left-[-20px] shadow-lg mt-0 ${index<=5 ? "top-full" : "bottom-full"}`}
-                                  style={{ position: "absolute" }}
-                                >
+                              <AnimatePresence>
+                                {openMenu && openMenu[index] && (
                                   <motion.div
-                                    initial={{
-                                      opacity: 0,
-                                      y:
-                                        getDropdownPosition(index) === "top"
-                                          ? -50
-                                          : 50,
-                                    }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{
-                                      opacity: 0,
-                                      y:
-                                        getDropdownPosition(index) === "top"
-                                          ? -50
-                                          : 50,
-                                    }}
-                                    transition={{ duration: 0.2 }}
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                    className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-40 right-0 ${
+                                      index >= allLeavesGroup.length - 3 ? "bottom-full mb-2" : "top-full mt-2"
+                                    }`}
                                   >
-                                    <ul className="flex w-full flex-col">
-                                      {leavesNoticesItems &&
-                                        leavesNoticesItems.length > 0 &&
-                                        leavesNoticesItems.map(
-                                          (menuItem) =>
-                                            menuItem && (
-                                              <MenuItem
-                                                className="flex items-center justify-between"
-                                                key={menuItem.id}
-                                                onClick={() =>
-                                                  handleMenuItemsLeaves(
-                                                    menuItem.id,
-                                                    leave
-                                                  )
-                                                }
-                                              >
-                                                <Typography variant="small">
-                                                  {menuItem.title}
-                                                </Typography>
-                                                <span>{menuItem.icon}</span>
-                                              </MenuItem>
-                                            )
-                                        )}
+                                    <ul className="flex flex-col py-1">
+                                      {leavesNoticesItems?.map((menuItem) => (
+                                        <li className="px-1" key={menuItem.id}>
+                                          <button
+                                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                                            onClick={() => handleMenuItemsLeaves(menuItem.id, leave)}
+                                          >
+                                            {menuItem.title}
+                                            <span className="text-gray-400">{menuItem.icon}</span>
+                                          </button>
+                                        </li>
+                                      ))}
                                     </ul>
                                   </motion.div>
-                                </div>
-                              )}
+                                )}
+                              </AnimatePresence>
                             </div>
                           </td>
-                        </tr>
+                        </motion.tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={data.length} className="p-2 text-center">
-                        No record found
+                      <td colSpan={data.length} className="p-12 text-center text-gray-400">
+                        <div className="flex flex-col items-center justify-center">
+                          <Typography color="gray" className="font-medium font-poppins">
+                            No leave groups found
+                          </Typography>
+                        </div>
                       </td>
                     </tr>
                   )}
                 </tbody>
-
-                <ConfirmationDialog
-                  openDialog={openDialogLeaves}
-                  handleOpen={handleDeleteLeavesDialog}
-                  handleConfirm={() => handleDeleteGroups()}
-                  title="Confirm Delete"
-                  message="Are you sure you want to Delete this group?"
-                  loading={isDeletingGroup}
-                />
               </table>
             </div>
           </div>
+
+          <ConfirmationDialog
+            openDialog={openDialogLeaves}
+            handleOpen={handleDeleteLeavesDialog}
+            handleConfirm={() => handleDeleteGroups()}
+            title="Confirm Delete"
+            message="Are you sure you want to Delete this group?"
+            loading={isDeletingGroup}
+          />
         </div>
       )}
     </>

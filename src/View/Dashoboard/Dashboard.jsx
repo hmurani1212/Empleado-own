@@ -318,11 +318,11 @@ function Dashboard() {
                         {ele.icon}
                       </span>
                     </div>
-                    <div className="flex-1 flex flex-col text-white">
-                      <span className="text-3xl font-bold tracking-tight">
+                    <div className="flex-1 flex flex-col text-white min-w-0">
+                      <span className="text-2xl md:text-3xl font-bold tracking-tight">
                         {ele.count}
                       </span>
-                      <span className="text-sm font-medium opacity-90">
+                      <span className="text-xs md:text-sm font-medium opacity-90 whitespace-nowrap truncate" title={ele.title}>
                         {ele.title}
                       </span>
                     </div>
@@ -350,11 +350,11 @@ function Dashboard() {
                   >
                     <CardBody className="w-full h-full flex flex-col justify-between p-0">
                       <div className="w-full flex items-start justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-gray-500">
+                        <div className="flex flex-col min-w-0 pr-2">
+                          <span className="text-xs md:text-sm font-medium text-gray-500 whitespace-nowrap truncate" title={ele.title}>
                             {ele.title}
                           </span>
-                          <span className="text-2xl font-bold text-gray-800 mt-1">
+                          <span className="text-xl md:text-2xl font-bold text-gray-800 mt-1">
                             {ele.count}
                           </span>
                         </div>
@@ -442,28 +442,27 @@ function Dashboard() {
                   <span className="bg-red-50 text-red-500 text-xs px-2 py-1 rounded-full font-medium">Action Required</span>
                 </div>
                 {empCheckListData?.DB_DATA && empCheckListData.DB_DATA.length > 0 ? (
-                  <div className="h-80 overflow-y-auto customScroll">
-                    <table className="w-full text-left border-collapse">
+                  <div className="h-80 overflow-auto customScroll">
+                    <table className="w-full text-left border-collapse min-w-[500px]">
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                           {pendingCheckListHeaders.map((head, i) => (
-                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                               {head}
                             </th>
                           ))}
-                          <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {empCheckListData.DB_DATA.map((ele, index) => (
                           <tr key={index} className="hover:bg-gray-50/80 transition-colors">
-                            <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+                            <td className="px-6 py-4 text-sm text-gray-700 font-medium whitespace-nowrap">
                               {ele.emp_name}
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
+                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                               {ele.emp_id}
                             </td>
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-6 py-4 text-center whitespace-nowrap">
                               <button
                                 className="text-xs bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white px-4 py-1.5 rounded-md transition-all font-medium"
                                 onClick={() => handleViewEmp(ele)}
@@ -545,28 +544,27 @@ function Dashboard() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
                   </div>
                 ) : oldEmployeesData.length > 0 ? (
-                  <div className="h-80 overflow-y-auto customScroll">
-                    <table className="w-full text-left border-collapse">
+                  <div className="h-80 overflow-auto customScroll">
+                    <table className="w-full text-left border-collapse min-w-[500px]">
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                           {meet_greetHeaders.map((head, i) => (
-                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                               {head}
                             </th>
                           ))}
-                          <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {oldEmployeesData.map((ele, index) => (
                           <tr key={index} className="hover:bg-gray-50/80 transition-colors">
-                            <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+                            <td className="px-6 py-4 text-sm text-gray-700 font-medium whitespace-nowrap">
                               {ele.name}
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
+                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                               {ele.emp_id}
                             </td>
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-6 py-4 text-center whitespace-nowrap">
                               <button
                                 onClick={() => handleGreetClick(ele)}
                                 className="text-xs bg-purple-50 text-purple-600 hover:bg-purple-500 hover:text-white px-4 py-1.5 rounded-md transition-all font-medium border border-purple-100 hover:border-purple-500"
@@ -599,12 +597,12 @@ function Dashboard() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
                   </div>
                 ) : upcommingHolidays && upcommingHolidays.length > 0 ? (
-                  <div className="h-80 overflow-y-auto customScroll">
-                    <table className="w-full text-left border-collapse">
+                  <div className="h-80 overflow-auto customScroll">
+                    <table className="w-full text-left border-collapse min-w-[500px]">
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                           {upcommingHolidaysHeaders.map((head, i) => (
-                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                               {head}
                             </th>
                           ))}
@@ -613,7 +611,7 @@ function Dashboard() {
                       <tbody className="divide-y divide-gray-100">
                         {upcommingHolidays.map((ele, index) => (
                           <tr key={index} className="hover:bg-gray-50/80 transition-colors">
-                            <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+                            <td className="px-6 py-4 text-sm text-gray-700 font-medium whitespace-nowrap">
                               {ele.branch_name}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
@@ -622,7 +620,7 @@ function Dashboard() {
                             <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                               {ele.to}
                             </td>
-                            <td className="px-6 py-4 text-sm font-medium text-brand-600">
+                            <td className="px-6 py-4 text-sm font-medium text-brand-600 whitespace-nowrap">
                               {ele.description}
                             </td>
                           </tr>

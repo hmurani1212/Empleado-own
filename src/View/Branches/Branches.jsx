@@ -8,6 +8,7 @@ import CustomDrawer from '../../Components/CustomDrawer/CustomDrawer'
 import CreateNewBranch from './CreateNewBranch'
 import BranchesList from './BranchesList'
 import CustomButton from '../../Components/CustomButton/CustomButton'
+import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import '../../index.css'
 
 
@@ -31,51 +32,61 @@ const Branches = () => {
 
   return (
     <>
-      <div className='flex justify-between lg:px-2 md:px-2 px-0 py-2'>
-        <span className='text-[20px] text-[#474747] text-center font-Urbanist font-semibold'>Branch Management</span>
-      </div>
-
-      <div>
-        <div className='w-full'>
-          <div className='py-6 lg:px-2 md:px-2 px-0 space-y-4'>
-            <div className='relative w-90 min-w-[200px] flex lg:flex-row md:flex-row flex-col lg:items-end md:items-end items-start gap-3 justify-between'>
-              <div className='flex lg:flex-row md:flex-row flex-col gap-3'>
-                <div className='lg:w-[200px] md:w-[200px] w-full'>
-                  <label className='text-[12px] text-[#474747] font-Urbanist font-medium px-2'>Select Status</label>
-                  <Select labelProps={{className: 'hidden'}} className='h-[38px] text-[12px] text-[#474747] font-Urbanist bg-white outline-none border-none drop-shadow-md '  onChange={(val) => statusBranch(val)} value={currentFilterStatus.toString()}>
-                    {branchStatus?.map((ele) => (
-                      <Option value={`${ele.status}`} key={ele.id}>{ele.title}</Option>
-                    ))}
-                  </Select>
-                </div>
-                <div className='lg:w-[200px] md:w-[200px] w-full'>
-                  <label className='text-[12px] text-[#474747] font-Urbanist font-medium px-2'>Search Branch</label>
-                  <div className="relative w-full min-w-[200px] h-[38px] bg-white rounded-[7px] px-3 drop-shadow-md ">
-                    <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-2/4 right-3 -translate-y-2/4">
-                      <span>
-                        <BiSearch />
-                      </span>
-                    </div>
-                    <input
-                      className="w-full h-full bg-transparent text-[#474747] border-none outline-none text-[12px] font-Urbanist rounded-[7px]"
-                      placeholder="Search Branch" name='searchBranch' onChange={handleChangeBranch} />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <CustomButton title='Create New Branch' onClick={creatingNewBranch} />
-              </div>
-
+      <div className="min-h-screen bg-gray-50/50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header Section */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 font-poppins">
+                Branch Management
+              </h1>
+              <p className="text-sm text-gray-500 font-poppins mt-1">
+                Manage your organization's branches and locations
+              </p>
             </div>
-            <BranchesList
-              data={data}
-              loading={isLoading}
-              gettingAllBranchesNew={gettingAllBranchesNew}
-              branchesAll={branchesAllnew}
-              formatPhoneNumberTable={formatPhoneNumberTable}
-              currentFilterStatus={currentFilterStatus}
-            />
+            
+            <div className='flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full lg:w-auto'>
+               <div className='w-full md:w-48'>
+                  <CustomSelect 
+                    placeHolderTitle="Select Status"
+                    value={branchStatus.find(status => status.status === currentFilterStatus) ? { value: currentFilterStatus, label: branchStatus.find(status => status.status === currentFilterStatus).title } : null}
+                    options={branchStatus.map(ele => ({ value: ele.status, label: ele.title }))}
+                    onChangeHandler={(option) => statusBranch(option.value)}
+                    customStyles={false}
+                  />
+               </div>
+
+               <div className="relative w-full md:w-64 h-[42px] bg-white rounded-xl border border-gray-200 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <BiSearch className="text-gray-400 text-lg" />
+                  </div>
+                  <input
+                    type="text"
+                    className="w-full h-full bg-transparent text-sm text-gray-700 font-poppins pl-10 pr-4 rounded-xl focus:outline-none placeholder:text-gray-400"
+                    placeholder="Search Branch..."
+                    name='searchBranch' 
+                    onChange={handleChangeBranch} 
+                  />
+               </div>
+
+               <CustomButton 
+                 title='Create New Branch' 
+                 onClick={creatingNewBranch} 
+                 className="bg-bgBlue text-white hover:bg-blue-600 px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 font-medium transition-all flex items-center justify-center gap-2 h-[42px] w-full md:w-auto"
+               >
+                 <span className="text-lg">+</span> Create New Branch
+               </CustomButton>
+            </div>
           </div>
+
+          <BranchesList
+            data={data}
+            loading={isLoading}
+            gettingAllBranchesNew={gettingAllBranchesNew}
+            branchesAll={branchesAllnew}
+            formatPhoneNumberTable={formatPhoneNumberTable}
+            currentFilterStatus={currentFilterStatus}
+          />
         </div>
       </div>
 
@@ -88,8 +99,6 @@ const Branches = () => {
         title="Create New Branch"
         widthSize={620}
       />
-
-
     </>
   )
 }

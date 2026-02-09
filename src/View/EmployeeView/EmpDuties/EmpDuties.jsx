@@ -1,7 +1,9 @@
-import { Typography } from '@material-tailwind/react'
 import React, { useEffect } from 'react'
+import { Typography, Card, CardBody, Chip } from '@material-tailwind/react'
 import useStore from '../../../Store/store'
 import noRecordFound from '../../../assets/employee_side_images/no record found.gif';
+import { motion } from 'framer-motion';
+import { FaCalendarAlt, FaCheck, FaTimes, FaHourglassHalf } from 'react-icons/fa';
 
 const tableHeader = [
   "Title", "Description", "Frequency", "Effective From", "Enforced Till", "Status"
@@ -21,7 +23,7 @@ const EmpDuties = () => {
   const formatDate = (timestamp) => {
     if (!timestamp) return '-'
     try {
-      const date = new Date(timestamp * 1000) // Convert from seconds to milliseconds
+      const date = new Date(timestamp * 1000) 
       return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -35,13 +37,13 @@ const EmpDuties = () => {
   const getStatusInfo = (status) => {
     switch (status?.toLowerCase()) {
       case 'zero':
-        return { text: 'Pending', color: 'bg-[#FFF1D9] text-[#FDA006]' }
+        return { text: 'Pending', color: 'amber', icon: <FaHourglassHalf /> }
       case 'one':
-        return { text: 'Approved', color: 'bg-[#DBFFF5] text-[#0ACF97]' }
+        return { text: 'Approved', color: 'green', icon: <FaCheck /> }
       case 'two':
-        return { text: 'Rejected', color: 'bg-[#FFF0F4] text-[#FF4979]' }
+        return { text: 'Rejected', color: 'red', icon: <FaTimes /> }
       default:
-        return { text: 'Unknown', color: 'bg-gray-100 text-gray-800' }
+        return { text: 'Unknown', color: 'gray', icon: null }
     }
   }
 
@@ -50,133 +52,114 @@ const EmpDuties = () => {
     return `Every ${duration} ${unit}${duration > 1 ? 's' : ''}`
   };
   
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300 } }
+  };
 
   return (
-    <div className='flex flex-col gap-10 p-2'>
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className='flex flex-col gap-6 p-4 md:p-6 min-h-screen bg-gray-50/50 font-poppins'
+    >
         
-      {/* <div className='space-y-4'>
-        <span className='text-[18px]'>Employee Job Description</span>
-        <div className='p-2 border border-customGray-100 rounded-lg'>
-          <span className='text-[14px] text-customBlack-100'>
-            Job Description is Not Assigned Yet.
-          </span>
+      {/* Header */}
+      <motion.div variants={itemVariants} className='flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-gray-100'>
+        <div>
+           <h1 className='text-2xl font-bold text-gray-800'>Extra Duties</h1>
+           <p className='text-sm text-gray-500 mt-1'>View your assigned extra responsibilities</p>
         </div>
-      </div> */}
+      </motion.div>
       
-      <div className='space-y-4'>
-        <span className='text-[18px]'>Employee Extra Duties Assigned</span>
-        
-        {loading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="text-gray-500">Loading duties...</div>
-          </div>
-        ) : (
-          <div className='bg-white p-4 rounded-[10px] drop-shadow-md w-full overflow-x-auto'>
-            <table className="w-[100%] min-w-max text-left">
-              <thead className='sticky top-[-9px]'>
-                <tr>
-                  {tableHeader?.map((head, i) => (
-                    <th
-                      key={i}
-                      className="bg-[#F8F9FA] p-4"
-                    >
-                      <Typography
-                        variant="small"
-                        color="#292929"
-                        className="font-medium leading-none opacity-80 font-Urbanist capitalize"
-                      >
-                        {head}
-                      </Typography>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {employeeDuties?.duties?.length > 0 ? (
-                  employeeDuties.duties.map((duty, index) => (
-                    <tr key={duty.id || index} className="hover:bg-gray-50">
-                      <td className="p-4 border-b border-gray-200">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {duty.title || '-'}
-                        </Typography>
-                      </td>
-                      <td className="p-4 border-b border-gray-200">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {duty.description || '-'}
-                        </Typography>
-                      </td>
-                      <td className="p-4 border-b border-gray-200">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {formatFrequency(duty.repetition_unit, duty.repetition_duration)}
-                        </Typography>
-                      </td>
-                      <td className="p-4 border-b border-gray-200">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {formatDate(duty.effective_from)}
-                        </Typography>
-                      </td>
-                      <td className="p-4 border-b border-gray-200">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {formatDate(duty.enforce_till)}
-                        </Typography>
-                      </td>
-                      <td className="p-4 border-b border-gray-200">
-                        {(() => {
-                          const statusInfo = getStatusInfo(duty.acceptance_status)
-                          return (
-                            <span
-                              className={`px-2 py-1 text-xs rounded-[7px] font-medium inline-block w-[80px] text-center ${statusInfo.color}`}
-                            >
-                              {statusInfo.text}
-                            </span>
-                          )
-                        })()}
-                      </td>
-                    </tr>
-                  ))
+      <motion.div variants={itemVariants}>
+        <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+            <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                <h3 className="text-lg font-bold text-gray-800">Assigned Duties</h3>
+            </div>
+            
+            <CardBody className="p-0 overflow-x-auto">
+                {loading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+                  </div>
                 ) : (
-                  <tr>
-                    <td colSpan={6} className="p-4">
-                      <div className="flex flex-col items-center justify-center gap-2 text-center">
-                          <img src={noRecordFound} alt="No record found" className='w-80' />
-                          <span className="text-[#292929] font-medium text-[16px]">
-                            No duties found!
-                          </span>
-                      </div>
-                    </td>
-                  </tr>
+                  <table className="w-full min-w-max text-left">
+                    <thead>
+                      <tr className="bg-gray-50/50 border-b border-gray-200">
+                        {tableHeader?.map((head, i) => (
+                          <th key={i} className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            {head}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {employeeDuties?.duties?.length > 0 ? (
+                        employeeDuties.duties.map((duty, index) => (
+                          <tr key={duty.id || index} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="p-4">
+                                <span className="font-semibold text-gray-800">{duty.title || '-'}</span>
+                            </td>
+                            <td className="p-4">
+                                <p className="text-sm text-gray-600 max-w-xs truncate" title={duty.description}>{duty.description || '-'}</p>
+                            </td>
+                            <td className="p-4">
+                                <span className="text-sm font-medium text-brand-600 bg-brand-50 px-2 py-1 rounded-lg">
+                                    {formatFrequency(duty.repetition_unit, duty.repetition_duration)}
+                                </span>
+                            </td>
+                            <td className="p-4 text-sm text-gray-600">
+                                {formatDate(duty.effective_from)}
+                            </td>
+                            <td className="p-4 text-sm text-gray-600">
+                                {formatDate(duty.enforce_till)}
+                            </td>
+                            <td className="p-4">
+                              {(() => {
+                                const statusInfo = getStatusInfo(duty.acceptance_status)
+                                return (
+                                  <Chip
+                                    variant="ghost"
+                                    size="sm"
+                                    value={statusInfo.text}
+                                    color={statusInfo.color}
+                                    icon={statusInfo.icon}
+                                    className="rounded-full px-2"
+                                  />
+                                )
+                              })()}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="p-8 text-center">
+                            <div className="flex flex-col items-center justify-center gap-3">
+                                <img src={noRecordFound} alt="No record found" className='w-40 opacity-80 mix-blend-multiply' />
+                                <span className="text-gray-500 font-medium">
+                                  No extra duties assigned yet!
+                                </span>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-      
-      {/* <div className='space-y-4'>
-        <span className='text-[18px]'>Designation wise Duties</span>
-        
-      </div> */}
-    </div>
+            </CardBody>
+        </Card>
+      </motion.div>
+    </motion.div>
   )
 }
 

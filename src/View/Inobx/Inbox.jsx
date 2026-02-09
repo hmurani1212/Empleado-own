@@ -2,13 +2,14 @@ import React, { useEffect, useState, useRef } from "react";
 import useInboxServives from "../../ViewModel/InboxViewModel/inboxServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { BiSearch } from "react-icons/bi";
-import { HiMail, HiCheckCircle, HiXCircle, HiUser } from "react-icons/hi";
-import { BsCheckAll, BsEnvelope } from "react-icons/bs";
+import { HiMail, HiCheckCircle, HiXCircle, HiUser, HiEye, HiOutlineEye } from "react-icons/hi";
+import { BsCheckAll, BsEnvelope, BsCheckCircleFill, BsXCircleFill } from "react-icons/bs";
 import ApplicationInfo from "./ApplicationInfo";
 import Chat from "./Chat";
 import { getUserData } from "../../Authentication/jwt_decode";
 import useSocket from "../../Components/useSocket/useSocket";
 import { showToast } from "../../Components/Toaster/Toaster";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Avatar component with fallback to user icon
 const UserAvatar = ({ src, alt, className, showOnlineIndicator = false, showUnreadIndicator = false }) => {
@@ -30,15 +31,17 @@ const UserAvatar = ({ src, alt, className, showOnlineIndicator = false, showUnre
           loading="lazy"
         />
       ) : (
-        <div className={`${className} bg-gray-200 flex items-center justify-center`}>
-          <HiUser className={`${iconSize} text-gray-500`} />
+        <div className={`${className} bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center`}>
+          <HiUser className={`${iconSize} text-gray-400`} />
         </div>
       )}
       {showOnlineIndicator && (
-        <span className="absolute bottom-0 right-0 h-2 w-2 bg-green-500 rounded-full border-2 border-white"></span>
+        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full border-2 border-white shadow-sm ring-1 ring-green-100"></span>
       )}
       {showUnreadIndicator && (
-        <span className="absolute -top-0.5 -right-0.5 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
+        <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-blue-500 rounded-full border-2 border-white shadow-sm flex items-center justify-center">
+            <span className="h-1.5 w-1.5 bg-white rounded-full"></span>
+        </span>
       )}
     </div>
   );
@@ -763,31 +766,54 @@ const Inbox = () => {
 
 
   return (
-    <div className="h-[calc(100vh-65px)] bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden flex flex-col">
-      <div className="flex-1 min-h-0 p-2 md:p-4 overflow-hidden flex flex-col">
+    <div className="h-[calc(100vh-65px)] bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-100 overflow-hidden flex flex-col font-poppins relative">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-400/5 blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-400/5 blur-[100px]"></div>
+      </div>
+
+      <div className="flex-1 min-h-0 p-3 md:p-6 overflow-hidden flex flex-col relative z-10">
+      <AnimatePresence mode="wait">
       {/* Application Info Full Page View */}
       {showApplicationInfo && selectedApplicationData ? (
-        <div className="h-full bg-white rounded-xl overflow-hidden shadow-lg">
+        <motion.div 
+          key="application-info"
+          initial={{ opacity: 0, y: 20, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.98 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="h-full bg-white/80 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl border border-white/50 relative"
+        >
           <ApplicationInfo
             data={application_data}
             isLoading={isLoadingApplicationDetails}
             onClose={handleCloseApplicationInfo}
           />
-        </div>
+        </motion.div>
       ) : (
         /* Regular Inbox Layout */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full flex-1 min-h-0">
+        <motion.div 
+          key="inbox-layout"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full flex-1 min-h-0"
+        >
           {/* Left Column - Inbox List */}
-          <div className="lg:col-span-4 bg-white rounded-xl overflow-hidden flex flex-col border border-gray-200 shadow-lg h-full">
+          <div className="lg:col-span-4 bg-white/70 backdrop-blur-xl rounded-2xl overflow-hidden flex flex-col border border-white/60 shadow-xl h-full transition-all duration-300">
             {/* Header */}
-            <div className="p-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-white rounded-lg shadow-sm">
-                  <HiMail className="text-customBlue text-[18px]" />
+            <div className="p-4 border-b border-gray-100/50 bg-white/50 backdrop-blur-md sticky top-0 z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-gradient-to-br from-customBlue to-blue-600 rounded-xl shadow-lg shadow-blue-500/20 text-white">
+                  <HiMail className="text-[20px]" />
                 </div>
-                <h2 className="text-customBlack-100 font-semibold text-[16px] md:text-[18px]">
+                <h2 className="text-gray-800 font-bold text-[18px] tracking-tight">
                   Inbox
                 </h2>
+                <div className="ml-auto bg-blue-50 text-customBlue px-2.5 py-0.5 rounded-full text-xs font-semibold border border-blue-100">
+                  {filteredInboxData?.length || 0}
+                </div>
               </div>
 
               {/* Filters - Full Width in Flex */}
@@ -798,20 +824,48 @@ const Inbox = () => {
                     customStyles={{
                       control: (base) => ({
                         ...base,
-                        fontSize: '1px',
-                        minHeight: '32px',
-                        border: '2px solid #E5E7EB',
-                        borderRadius: '8px',
+                        fontSize: '13px',
+                        minHeight: '36px',
+                        backgroundColor: 'white',
+                        border: '1px solid rgba(229, 231, 235, 0.8)',
+                        borderRadius: '10px',
                         width: '100%',
                         boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                        padding: '2px 4px',
+                        padding: '0 2px',
                         '&:hover': {
-                          border: '2px solid #3da5f4',
+                          borderColor: '#3da5f4',
+                          boxShadow: '0 0 0 2px rgba(61, 165, 244, 0.1)',
                         },
                       }),
-                      option: (base) => ({
+                      menu: (base) => ({
                         ...base,
-                        fontSize: '1px',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        zIndex: 50,
+                        border: '1px solid #f3f4f6',
+                      }),
+                      option: (base, state) => ({
+                        ...base,
+                        fontSize: '13px',
+                        fontWeight: state.isSelected ? '600' : '400',
+                        backgroundColor: state.isSelected ? '#3da5f4' : state.isFocused ? '#f0f9ff' : 'white',
+                        color: state.isSelected ? 'white' : '#374151',
+                        cursor: 'pointer',
+                        padding: '8px 12px',
+                        ':active': {
+                          backgroundColor: '#3da5f4',
+                          color: 'white',
+                        },
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        color: '#1f2937', // Dark gray for better visibility
+                        fontWeight: '500',
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: '#9ca3af',
                       }),
                     }}
                   options={readStatusFilterOptions}
@@ -829,20 +883,48 @@ const Inbox = () => {
                     customStyles={{
                       control: (base) => ({
                         ...base,
-                        fontSize: '1px',
-                        minHeight: '32px',
-                        border: '2px solid #E5E7EB',
-                        borderRadius: '8px',
+                        fontSize: '13px',
+                        minHeight: '36px',
+                        backgroundColor: 'white',
+                        border: '1px solid rgba(229, 231, 235, 0.8)',
+                        borderRadius: '10px',
                         width: '100%',
                         boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                        padding: '2px 4px',
+                        padding: '0 2px',
                         '&:hover': {
-                          border: '2px solid #3da5f4',
+                          borderColor: '#3da5f4',
+                          boxShadow: '0 0 0 2px rgba(61, 165, 244, 0.1)',
                         },
                       }),
-                      option: (base) => ({
+                      menu: (base) => ({
                         ...base,
-                        fontSize: '1px',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        zIndex: 50,
+                        border: '1px solid #f3f4f6',
+                      }),
+                      option: (base, state) => ({
+                        ...base,
+                        fontSize: '13px',
+                        fontWeight: state.isSelected ? '600' : '400',
+                        backgroundColor: state.isSelected ? '#3da5f4' : state.isFocused ? '#f0f9ff' : 'white',
+                        color: state.isSelected ? 'white' : '#374151',
+                        cursor: 'pointer',
+                        padding: '8px 12px',
+                        ':active': {
+                          backgroundColor: '#3da5f4',
+                          color: 'white',
+                        },
+                      }),
+                      singleValue: (base) => ({
+                        ...base,
+                        color: '#1f2937', // Dark gray for better visibility
+                        fontWeight: '500',
+                      }),
+                      placeholder: (base) => ({
+                        ...base,
+                        color: '#9ca3af',
                       }),
                     }}
                     options={readTypeFilterOptions}
@@ -857,78 +939,98 @@ const Inbox = () => {
 
               {/* Search and Mark All Read Button */}
               <div className="flex items-center gap-2">
-                <div className="flex-1 relative">
-                  <BiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <div className="flex-1 relative group">
+                  <BiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-customBlue transition-colors" size={18} />
                   <input
                     type="text"
-                    placeholder="Search by name..."
+                    placeholder="Search..."
                     value={searchTerm}
                     onChange={handleSearchChange}
-                    className="w-full pl-9 pr-3 py-1.5 border-2 border-gray-200 rounded-lg text-customBlack-100 text-[14px] focus:outline-none focus:border-customBlue focus:ring-2 focus:ring-customBlue/20 transition-all shadow-sm"
+                    className="w-full pl-9 pr-3 py-2 bg-gray-50/50 border border-gray-200/50 rounded-xl text-gray-700 text-[13px] focus:outline-none focus:bg-white focus:border-customBlue focus:ring-2 focus:ring-customBlue/10 transition-all placeholder:text-gray-400"
                   />
                 </div>
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={handleMarkAllRead}
-                  className="px-3 py-1.5 bg-gradient-to-r from-customBlue to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all text-[13px] font-medium whitespace-nowrap shadow-md hover:shadow-lg flex items-center gap-1.5"
+                  className="px-3 py-2 bg-white border border-blue-100 text-customBlue rounded-xl hover:bg-blue-50 transition-all text-[12px] font-semibold whitespace-nowrap shadow-sm hover:shadow-md flex items-center gap-1.5"
                 >
-                  <BsCheckAll className="text-[14px]" />
-                  Mark All Read
-                </button>
+                  <BsCheckAll className="text-[16px]" />
+                  Mark Read
+                </motion.button>
               </div>
             </div>
 
             {/* Inbox List */}
-            <div className="flex-1 overflow-auto customDrwerScroll" ref={inboxListRef}>
+            <div className="flex-1 overflow-auto customDrwerScroll p-2 space-y-1" ref={inboxListRef}>
               {isLoadingInbox ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="animate-spin rounded-full h-10 w-10 border-3 border-customBlue border-t-transparent"></div>
-                    <p className="text-gray-500 text-sm">Loading messages...</p>
+                <div className="flex flex-col items-center justify-center h-48 gap-4">
+                  <div className="relative">
+                    <div className="w-12 h-12 border-4 border-gray-100 rounded-full"></div>
+                    <div className="absolute top-0 left-0 w-12 h-12 border-4 border-customBlue rounded-full border-t-transparent animate-spin"></div>
                   </div>
+                  <p className="text-gray-400 text-sm font-medium animate-pulse">Syncing messages...</p>
                 </div>
               ) : filteredInboxData?.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64 text-center p-6">
-                  <div className="p-4 bg-gray-100 rounded-full mb-4">
-                    <BsEnvelope className="text-gray-400 text-4xl" />
-                  </div>
-                  <p className="text-gray-500 text-[16px] font-medium">No messages found</p>
-                  <p className="text-gray-400 text-[14px] mt-1">Try adjusting your filters</p>
+                  <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="p-6 bg-blue-50/50 rounded-full mb-4 ring-1 ring-blue-100"
+                  >
+                    <BsEnvelope className="text-customBlue/40 text-5xl" />
+                  </motion.div>
+                  <p className="text-gray-800 text-[16px] font-semibold">No messages found</p>
+                  <p className="text-gray-400 text-[13px] mt-1 max-w-[200px]">We couldn't find any messages matching your filters.</p>
                 </div>
               ) : (
-                <div className="p-2">
+                <div className="pb-2">
+                  <AnimatePresence>
                   {filteredInboxData?.map((story, index) => {
                     const isSelected = selectedStory && selectedStory.story_id === story.story_id;
                     const isUnread = hasUnreadMessages(story);
                     
                     return (
-                      <div
+                      <motion.div
                         key={story.story_id || story._id || index}
-                        className={`group flex items-center gap-2 p-2 mb-1 rounded-lg cursor-pointer transition-all duration-200 ${
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.05 }}
+                        className={`group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 relative overflow-hidden ${
                           isSelected 
-                            ? 'bg-gradient-to-r from-customBlue/10 to-blue-50 border-2 border-customBlue shadow-md' 
+                            ? 'bg-blue-50/80 border-blue-200 shadow-md' 
                             : isUnread
-                            ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm hover:shadow-md'
-                            : 'bg-white border border-gray-100 hover:border-gray-200 shadow-sm hover:shadow-md'
-                        }`}
+                            ? 'bg-white border-transparent hover:bg-gray-50 shadow-sm hover:shadow-md'
+                            : 'bg-transparent border-transparent hover:bg-white/60 hover:shadow-sm'
+                        } border`}
                         onClick={() => handleStoryClick(story)}
                       >
-                        <div className="relative flex-shrink-0">
+                         {/* Selection Indicator Bar */}
+                         {isSelected && (
+                          <motion.div 
+                            layoutId="activeIndicator"
+                            className="absolute left-0 top-0 bottom-0 w-1 bg-customBlue"
+                          />
+                        )}
+                        
+                        <div className="relative flex-shrink-0 ml-1">
                           <UserAvatar
                             src={story.emp_image}
                             alt={story.emp_name || story.full_name}
-                            className="h-10 w-10 md:h-11 md:w-11 object-cover rounded-full overflow-hidden ring-2 ring-white shadow-sm"
+                            className={`h-11 w-11 object-cover rounded-full ring-2 ${isSelected ? 'ring-customBlue shadow-md' : 'ring-white shadow-sm'} transition-all`}
                             showUnreadIndicator={isUnread}
                           />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-0.5">
-                            <h4 className={`font-semibold text-[13px] md:text-[14px] truncate ${
-                              isSelected ? 'text-customBlue' : 'text-gray-900'
+                            <h4 className={`font-semibold text-[14px] truncate ${
+                              isSelected ? 'text-gray-900' : isUnread ? 'text-gray-900' : 'text-gray-700'
                             }`}>
                               {story.emp_name || story.full_name || 'Unknown Employee'}
                             </h4>
-                            <span className={`text-[10px] md:text-[11px] whitespace-nowrap ml-2 ${
-                              isSelected ? 'text-customBlue' : 'text-gray-500'
+                            <span className={`text-[10px] whitespace-nowrap ml-2 font-medium ${
+                              isSelected ? 'text-customBlue' : 'text-gray-400'
                             }`}>
                               {new Date(story.entry_time).toLocaleDateString('en-US', {
                                 month: 'short',
@@ -937,40 +1039,41 @@ const Inbox = () => {
                               })}
                             </span>
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className={`text-[11px] md:text-[12px] truncate ${
-                              isSelected ? 'text-gray-600' : 'text-gray-500'
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={`text-[12px] truncate max-w-[85%] ${
+                              isSelected ? 'text-gray-600' : isUnread ? 'text-gray-800 font-medium' : 'text-gray-500'
                             }`}>
                               {story?.title?.replace('_', ' ')}
                             </span>
                             {isUnread && (
-                              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-medium rounded-full">
-                                New
-                              </span>
+                              <span className="h-2 w-2 rounded-full bg-customBlue shadow-sm shadow-customBlue/30"></span>
                             )}
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
+                  </AnimatePresence>
 
                   {/* Load More Button */}
                   {hasMorePages && (
-                    <div className="p-2 text-center">
-                      <button
+                    <div className="p-4 text-center">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={loadMoreInboxData}
                         disabled={isLoadingMoreInbox}
-                        className="px-4 py-1.5 bg-gradient-to-r from-customBlue to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-[12px] font-medium shadow-sm hover:shadow-md"
+                        className="px-5 py-2 bg-white border border-gray-200 text-gray-600 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-[12px] font-semibold shadow-sm hover:shadow-md w-full"
                       >
                         {isLoadingMoreInbox ? (
-                          <div className="flex items-center gap-1.5">
-                            <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                            Loading...
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="animate-spin rounded-full h-3 w-3 border-2 border-gray-400 border-t-transparent"></div>
+                            Loading more...
                           </div>
                         ) : (
-                          'Load More'
+                          'Load Older Messages'
                         )}
-                      </button>
+                      </motion.button>
                     </div>
                   )}
                 </div>
@@ -981,29 +1084,42 @@ const Inbox = () => {
 
 
           {/* Right Column - Chat Interface */}
-          {showChat && selectedStory && (
-            <div className="lg:col-span-8 h-full border border-gray-200 rounded-xl overflow-hidden bg-white flex flex-col shadow-lg" style={{ marginTop: '0px' }}>
+          {showChat && selectedStory ? (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+              className="lg:col-span-8 h-full bg-white/80 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/60 shadow-xl flex flex-col"
+            >
               {/* Chat Header */}
-              <div className="flex items-center justify-between p-2 border-b border-gray-200 bg-gradient-to-r from-white to-gray-50 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <UserAvatar
-                    src={selectedStory?.emp_image}
-                    alt={selectedStory?.emp_name || selectedStory?.full_name}
-                    className="h-8 w-8 md:h-10 md:w-10 object-cover rounded-full overflow-hidden ring-2 ring-customBlue/20 shadow-sm"
-                    showOnlineIndicator={true}
-                  />
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100/50 bg-white/60 backdrop-blur-md flex-shrink-0 z-20 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <UserAvatar
+                      src={selectedStory?.emp_image}
+                      alt={selectedStory?.emp_name || selectedStory?.full_name}
+                      className="h-10 w-10 md:h-12 md:w-12 object-cover rounded-full ring-2 ring-white shadow-md"
+                      showOnlineIndicator={true}
+                    />
+                  </div>
                   <div>
-                    <h3 className="text-gray-900 font-semibold text-[14px] md:text-[15px]">
+                    <h3 className="text-gray-900 font-bold text-[16px]">
                       {selectedStory?.emp_name || selectedStory?.full_name || 'Unknown Employee'}
                     </h3>
-                    <p className="text-gray-500 text-[11px] md:text-[12px] flex items-center gap-1">
-                      <span className="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                      {selectedStory?.type?.replace('_', " ")} • {new Date(selectedStory?.entry_time).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </p>
+                    <div className="flex items-center gap-2 text-[12px]">
+                      <span className="px-2 py-0.5 bg-gray-100/80 rounded text-gray-600 font-medium border border-gray-200/50">
+                        {selectedStory?.type?.replace('_', " ")}
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-gray-500">
+                         {new Date(selectedStory?.entry_time).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1013,94 +1129,102 @@ const Inbox = () => {
                     switch (story_status) {
                       case 'ACCEPTED':
                         return (
-                          <div className="flex items-center gap-3">
-                            <button
-                              className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
+                          <div className="flex items-center gap-2">
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-amber-600 hover:text-amber-700 bg-amber-50/80 hover:bg-amber-100 backdrop-blur-sm rounded-xl shadow-sm border border-amber-100/50 transition-all"
                               onClick={() => handleViewApplication(selectedStory)}
                               title="View Application"
                             >
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                              </svg>
-                            </button>
-                            <span className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-[10px] font-semibold px-2 py-1 rounded-full border border-green-200 shadow-sm flex items-center gap-1">
-                              <HiCheckCircle className="text-green-600 text-[12px]" />
+                              <HiOutlineEye className="w-5 h-5" />
+                            </motion.button>
+                            <span className="bg-green-50/80 backdrop-blur-sm text-green-700 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-green-200/50 shadow-sm flex items-center gap-1.5">
+                              <BsCheckCircleFill className="text-green-500 text-[12px]" />
                               ACCEPTED
                             </span>
                           </div>
                         );
                       case 'REJECTED':
                         return (
-                          <div className="flex items-center gap-3">
-                            <button
-                              className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
+                          <div className="flex items-center gap-2">
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-amber-600 hover:text-amber-700 bg-amber-50/80 hover:bg-amber-100 backdrop-blur-sm rounded-xl shadow-sm border border-amber-100/50 transition-all"
                               onClick={() => handleViewApplication(selectedStory)}
                               title="View Application"
                             >
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                              </svg>
-                            </button>
-                            <span className="bg-gradient-to-r from-red-100 to-rose-100 text-red-800 text-[10px] font-semibold px-2 py-1 rounded-full border border-red-200 shadow-sm flex items-center gap-1">
-                              <HiXCircle className="text-red-600 text-[12px]" />
+                              <HiOutlineEye className="w-5 h-5" />
+                            </motion.button>
+                            <span className="bg-red-50/80 backdrop-blur-sm text-red-700 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-red-200/50 shadow-sm flex items-center gap-1.5">
+                              <BsXCircleFill className="text-red-500 text-[12px]" />
                               REJECTED
                             </span>
                           </div>
                         );
                       case 'PENDING':
                         return (
-                          <div className="flex items-center gap-3">
-                            <button
-                              className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
+                          <div className="flex items-center gap-2">
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
                               onClick={() => handleViewApplication(selectedStory)}
                               title="View Application"
                             >
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                              </svg>
-                            </button>
-                            <button 
-                              className="p-1.5 text-green-600 hover:text-green-700 transition-all bg-green-50 hover:bg-green-100 rounded-lg shadow-sm hover:shadow-md" 
+                              <HiOutlineEye className="w-5 h-5" />
+                            </motion.button>
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-green-600 hover:text-green-700 bg-green-50/80 hover:bg-green-100 backdrop-blur-sm rounded-xl shadow-sm border border-green-100/50 transition-all" 
                               onClick={() => handleApprove(selectedStory.story_id)}
                               title="Approve"
                             >
                               <HiCheckCircle className="w-5 h-5" />
-                            </button>
-                            <button 
-                              className="p-1.5 text-red-600 hover:text-red-700 transition-all bg-red-50 hover:bg-red-100 rounded-lg shadow-sm hover:shadow-md" 
+                            </motion.button>
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-red-600 hover:text-red-700 bg-red-50/80 hover:bg-red-100 backdrop-blur-sm rounded-xl shadow-sm border border-red-100/50 transition-all" 
                               onClick={() => handleReject(selectedStory.story_id)}
                               title="Reject"
                             >
                               <HiXCircle className="w-5 h-5" />
-                            </button>
+                            </motion.button>
                           </div>
                         );
                       default:
                         return (
-                          <div className="flex items-center gap-3">
-                            <button
-                              className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
+                          <div className="flex items-center gap-2">
+                             <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-amber-600 hover:text-amber-700 bg-amber-50/80 hover:bg-amber-100 backdrop-blur-sm rounded-xl shadow-sm border border-amber-100/50 transition-all"
                               onClick={() => handleViewApplication(selectedStory)}
                               title="View Application"
                             >
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                              </svg>
-                            </button>
-                            <button 
-                              className="p-1.5 text-green-600 hover:text-green-700 transition-all bg-green-50 hover:bg-green-100 rounded-lg shadow-sm hover:shadow-md" 
+                              <HiOutlineEye className="w-5 h-5" />
+                            </motion.button>
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-green-600 hover:text-green-700 bg-green-50/80 hover:bg-green-100 backdrop-blur-sm rounded-xl shadow-sm border border-green-100/50 transition-all" 
                               onClick={() => handleApprove(selectedStory.story_id)}
                               title="Approve"
                             >
                               <HiCheckCircle className="w-5 h-5" />
-                            </button>
-                            <button 
-                              className="p-1.5 text-red-600 hover:text-red-700 transition-all bg-red-50 hover:bg-red-100 rounded-lg shadow-sm hover:shadow-md" 
+                            </motion.button>
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-red-600 hover:text-red-700 bg-red-50/80 hover:bg-red-100 backdrop-blur-sm rounded-xl shadow-sm border border-red-100/50 transition-all" 
                               onClick={() => handleReject(selectedStory.story_id)}
                               title="Reject"
                             >
                               <HiXCircle className="w-5 h-5" />
-                            </button>
+                            </motion.button>
                           </div>
                         );
                     }
@@ -1126,15 +1250,15 @@ const Inbox = () => {
                     if (!matchedUser) {
                       return (
                         <div className="flex items-center gap-3">
-                          <button
-                            className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
                             onClick={() => handleViewApplication(selectedStory)}
                             title="View Application"
                           >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                            </svg>
-                          </button>
+                            <HiOutlineEye className="w-5 h-5" />
+                          </motion.button>
                         </div>
                       );
                     }
@@ -1143,15 +1267,15 @@ const Inbox = () => {
                     if (isUserReceiver) {
                       return (
                         <div className="flex items-center gap-3">
-                          <button
-                            className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
-                            onClick={() => handleViewApplication(selectedStory)}
-                            title="View Application"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                            </svg>
-                          </button>
+                           <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
+                              onClick={() => handleViewApplication(selectedStory)}
+                              title="View Application"
+                            >
+                              <HiOutlineEye className="w-5 h-5" />
+                            </motion.button>
                         </div>
                       );
                     }
@@ -1165,30 +1289,34 @@ const Inbox = () => {
                     // If user is receiver (but not the initiator) and their status is PENDING, show Accept/Reject buttons
                     if (isPending) {
                       return (
-                        <div className="flex items-center gap-3">
-                          <button
-                            className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
-                            onClick={() => handleViewApplication(selectedStory)}
-                            title="View Application"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                            </svg>
-                          </button>
-                          <button 
-                            className="p-1.5 text-green-600 hover:text-green-700 transition-all bg-green-50 hover:bg-green-100 rounded-lg shadow-sm hover:shadow-md" 
+                        <div className="flex items-center gap-2">
+                           <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
+                              onClick={() => handleViewApplication(selectedStory)}
+                              title="View Application"
+                            >
+                              <HiOutlineEye className="w-5 h-5" />
+                            </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="p-2 text-green-600 hover:text-green-700 bg-green-50/80 hover:bg-green-100 backdrop-blur-sm rounded-xl shadow-sm border border-green-100/50 transition-all" 
                             onClick={() => handleApprove(selectedStory.story_id)}
                             title="Approve"
                           >
                             <HiCheckCircle className="w-5 h-5" />
-                          </button>
-                          <button 
-                            className="p-1.5 text-red-600 hover:text-red-700 transition-all bg-red-50 hover:bg-red-100 rounded-lg shadow-sm hover:shadow-md" 
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="p-2 text-red-600 hover:text-red-700 bg-red-50/80 hover:bg-red-100 backdrop-blur-sm rounded-xl shadow-sm border border-red-100/50 transition-all" 
                             onClick={() => handleReject(selectedStory.story_id)}
                             title="Reject"
                           >
                             <HiXCircle className="w-5 h-5" />
-                          </button>
+                          </motion.button>
                         </div>
                       );
                     }
@@ -1196,18 +1324,18 @@ const Inbox = () => {
                     // If user's status is ACCEPTED, show accepted badge
                     if (isAccepted) {
                       return (
-                        <div className="flex items-center gap-3">
-                          <button
-                            className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
-                            onClick={() => handleViewApplication(selectedStory)}
-                            title="View Application"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                            </svg>
-                          </button>
-                          <span className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-[10px] font-semibold px-2 py-1 rounded-full border border-green-200 shadow-sm flex items-center gap-1">
-                            <HiCheckCircle className="text-green-600 text-[12px]" />
+                        <div className="flex items-center gap-2">
+                           <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
+                              onClick={() => handleViewApplication(selectedStory)}
+                              title="View Application"
+                            >
+                              <HiOutlineEye className="w-5 h-5" />
+                            </motion.button>
+                          <span className="bg-green-50/80 backdrop-blur-sm text-green-700 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-green-200/50 shadow-sm flex items-center gap-1.5">
+                            <BsCheckCircleFill className="text-green-500 text-[12px]" />
                             ACCEPTED
                           </span>
                         </div>
@@ -1217,18 +1345,18 @@ const Inbox = () => {
                     // If user's status is REJECTED, show rejected badge
                     if (isRejected) {
                       return (
-                        <div className="flex items-center gap-3">
-                          <button
-                            className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
-                            onClick={() => handleViewApplication(selectedStory)}
-                            title="View Application"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                            </svg>
-                          </button>
-                          <span className="bg-gradient-to-r from-red-100 to-rose-100 text-red-800 text-[10px] font-semibold px-2 py-1 rounded-full border border-red-200 shadow-sm flex items-center gap-1">
-                            <HiXCircle className="text-red-600 text-[12px]" />
+                        <div className="flex items-center gap-2">
+                           <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
+                              onClick={() => handleViewApplication(selectedStory)}
+                              title="View Application"
+                            >
+                              <HiOutlineEye className="w-5 h-5" />
+                            </motion.button>
+                          <span className="bg-red-50/80 backdrop-blur-sm text-red-700 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-red-200/50 shadow-sm flex items-center gap-1.5">
+                            <BsXCircleFill className="text-red-500 text-[12px]" />
                             REJECTED
                           </span>
                         </div>
@@ -1238,15 +1366,15 @@ const Inbox = () => {
                     // Default: only show view button
                     return (
                       <div className="flex items-center gap-3">
-                        <button
-                          className="p-1.5 text-amber-600 hover:text-amber-700 transition-all bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm hover:shadow-md"
-                          onClick={() => handleViewApplication(selectedStory)}
-                          title="View Application"
-                        >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                          </svg>
-                        </button>
+                         <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
+                              onClick={() => handleViewApplication(selectedStory)}
+                              title="View Application"
+                            >
+                              <HiOutlineEye className="w-5 h-5" />
+                            </motion.button>
                       </div>
                     );
                   })()
@@ -1256,7 +1384,7 @@ const Inbox = () => {
               </div>
 
               {/* Chat Component */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden bg-white/40">
                 <Chat
                   messages={chatMessages}
                   isLoading={isLoadingMessages}
@@ -1271,48 +1399,47 @@ const Inbox = () => {
                   story_link={story_link}
                   shouldAutoScroll={shouldAutoScroll}
                 />
-
-
               </div>
-            </div>
-          )}
-
-          {/* Chat Placeholder - Show when no chat is active */}
-          {!showChat && (
-            <>
-              {/* Desktop View */}
-              <div className="hidden lg:flex lg:col-span-8 h-full border border-gray-200 rounded-xl overflow-hidden bg-gradient-to-br from-white to-gray-50 items-center justify-center shadow-lg">
-                <div className="text-center p-8">
-                  <div className="mb-6 flex justify-center">
-                    <div className="p-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full">
-                      <HiMail className="text-6xl text-customBlue" />
+            </motion.div>
+          ) : (
+            /* Chat Placeholder */
+             <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               className="hidden lg:flex lg:col-span-8 h-full bg-white/60 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/50 shadow-lg items-center justify-center relative"
+             >
+                {/* Decorative background elements */}
+                <div className="absolute top-10 right-10 w-20 h-20 bg-blue-400/10 rounded-full blur-2xl"></div>
+                <div className="absolute bottom-10 left-10 w-32 h-32 bg-purple-400/10 rounded-full blur-3xl"></div>
+                
+                <div className="text-center p-8 relative z-10 max-w-md">
+                  <motion.div 
+                    initial={{ scale: 0.8, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="mb-8 flex justify-center"
+                  >
+                    <div className="p-8 bg-gradient-to-br from-white to-blue-50 rounded-[2rem] shadow-xl ring-1 ring-white/60 relative">
+                      <div className="absolute inset-0 bg-blue-400/5 rounded-[2rem] blur-sm"></div>
+                      <HiMail className="text-7xl text-customBlue relative z-10" />
+                      
+                      {/* Floating dots decoration */}
+                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white shadow-sm animate-bounce delay-100"></div>
+                      <div className="absolute -bottom-1 -left-1 w-6 h-6 bg-purple-400 rounded-full border-2 border-white shadow-sm animate-bounce delay-300"></div>
                     </div>
-                  </div>
-                  <h3 className="text-gray-700 text-xl font-semibold mb-2">
-                    Select a Conversation
+                  </motion.div>
+                  <h3 className="text-gray-800 text-2xl font-bold mb-3 tracking-tight">
+                    Welcome to Inbox
                   </h3>
-                  <p className="text-gray-500 text-sm">
-                    Choose a message from the inbox to start chatting
+                  <p className="text-gray-500 text-[15px] leading-relaxed">
+                    Select a conversation from the list to start chatting or view application details.
                   </p>
                 </div>
-              </div>
-              {/* Mobile View */}
-              <div className="lg:hidden col-span-1 h-full border border-gray-200 rounded-xl overflow-hidden bg-gradient-to-br from-white to-gray-50 flex items-center justify-center shadow-lg">
-                <div className="text-center p-6">
-                  <div className="mb-4 flex justify-center">
-                    <div className="p-4 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full">
-                      <HiMail className="text-4xl text-customBlue" />
-                    </div>
-                  </div>
-                  <p className="text-gray-600 text-sm font-medium">
-                    Select a conversation
-                  </p>
-                </div>
-              </div>
-            </>
+              </motion.div>
           )}
-        </div>
+        </motion.div>
           )}
+      </AnimatePresence>
       </div>
     </div>
   );

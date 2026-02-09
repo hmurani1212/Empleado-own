@@ -1,119 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { BiSearch } from "react-icons/bi";
-import { Checkbox, Option, Select } from "@material-tailwind/react";
+import { Checkbox } from "@material-tailwind/react";
 import useHRPolicies from "../../ViewModel/HRPoliciesViewModel/HRPoliciesServices";
 import PoliciesList from "./PoliciesList";
 import PoliciesGrid from "./PoliciesGrid";
 import { FaListUl } from "react-icons/fa";
 import { IoGrid } from "react-icons/io5";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
-
-// Custom Branch Select Component with Animations
-const CustomBranchSelect = ({ label, value, options, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const selectedOption = options.find((option) => option.value === value) || {
-    label: "All Branches",
-  };
-
-  const handleToggle = () => {
-    if (isAnimating) return;
-
-    setIsAnimating(true);
-    if (isOpen) {
-      setIsOpen(false);
-      setTimeout(() => setIsAnimating(false), 200);
-    } else {
-      setIsOpen(true);
-      setTimeout(() => setIsAnimating(false), 200);
-    }
-  };
-
-  const handleSelect = (optionValue) => {
-    onChange(optionValue);
-    setIsAnimating(true);
-    setIsOpen(false);
-    setTimeout(() => setIsAnimating(false), 200);
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isOpen && !event.target.closest(".custom-branch-select")) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
-
-  return (
-    <div className="relative custom-branch-select">
-      <div className="relative">
-        <button
-          type="button"
-          className={`w-full h-[38px] px-3 py-2 text-[12px] rounded-[8px] bg-white text-left focus:outline-none focus:ring-0 focus:border-none drop-shadow-sm text-[#474747] font-Urbanist font-normal border-none transition-all duration-200 ease-out transform`}
-          //      ${
-          //     isOpen
-          //         ? 'border-blue-500 shadow-lg scale-[1.01]'
-          //         : 'border-gray-300 hover:border-gray-400 hover:shadow-sm hover:scale-[1.005]'
-          // }`}
-          onClick={handleToggle}
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-            backgroundPosition: "right 0.5rem center",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "1.5em 1.5em",
-            paddingRight: "2.5rem",
-            transform: isOpen ? "scale(1.01)" : "scale(1)",
-            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-          }}
-        >
-          {selectedOption.label}
-        </button>
-
-        {/* Floating Label */}
-        <label className="absolute -top-2 left-2 bg-white px-1 text-xs text-gray-500">
-          {label}
-        </label>
-
-        {/* Animated Dropdown */}
-        <div
-          className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden ${
-            isOpen
-              ? "opacity-100 visible transform scale-100 translate-y-0"
-              : "opacity-0 invisible transform scale-95 -translate-y-2"
-          } transition-all duration-200 ease-out`}
-          style={{
-            maxHeight: isOpen ? "400px" : "0px",
-            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-          }}
-        >
-          <div className="py-1 max-h-96 overflow-y-auto">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={`w-full px-3 py-2 text-sm text-left hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150 ${
-                  value === option.value
-                    ? "bg-blue-100 text-blue-700 font-medium"
-                    : "text-gray-700"
-                }`}
-                onClick={() => handleSelect(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+import CustomSelect from "../../Components/CustomSelect/CustomSelect";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ManagePolicies = () => {
   const {
@@ -148,26 +43,41 @@ const ManagePolicies = () => {
   } = useHRPolicies();
 
   const { empBranches, fetchingAllBranches } = useEmployees();
+  const [initialLoading, setInitialLoading] = useState(true);
+  
   useEffect(() => {
-    if (!mountPolicies) {
-      getAllHrPolicies();
-    }
-    // Always fetch branches when component mounts
-    fetchingAllBranches();
+    const fetchData = async () => {
+      // Always fetch branches when component mounts
+      fetchingAllBranches();
+      
+      if (!mountPolicies) {
+        setInitialLoading(true);
+        try {
+          await getAllHrPolicies();
+        } catch (error) {
+          console.error("Error fetching policies:", error);
+        } finally {
+          setInitialLoading(false);
+        }
+      } else {
+        setInitialLoading(false);
+      }
+    };
+    
+    fetchData();
   }, []);
+
   return (
-    <>
-      <div className="flex flex-col gap-3">
-        <div className="flex items-end justify-between">
-          <div className="flex lg:flex-row md:flex-row flex-col lg:items-end md:items-end items-start gap-3">
-            <div className="w-[200px]">
-              <label className="text-[12px] text-[#474747] font-Urbanist font-medium px-2">
-                Filter by Branch
-              </label>
-              <CustomBranchSelect
-                className="text-[12px] text-[#474747] font-Urbanist font-medium outline-none border-none drop-shadow-sm bg-white focus:outline-none focus:ring-0 focus:border-none focus:border-0"
-                // label="Filter by Branch"
-                value={filterValuesHr?.branchName || ""}
+    <div className="space-y-6">
+      {/* Controls Bar */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row items-center justify-between gap-4">
+        
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+            {/* Branch Filter */}
+            <div className="w-full md:w-56">
+              <CustomSelect
+                placeHolderTitle="Filter by Branch"
+                value={filterValuesHr?.branchName ? { value: filterValuesHr.branchName, label: filterValuesHr.branchName } : null}
                 options={[
                   { value: "", label: "All Branches" },
                   ...(empBranches?.map((ele) => ({
@@ -176,106 +86,117 @@ const ManagePolicies = () => {
                     id: ele.id,
                   })) || []),
                 ]}
-                onChange={(selectedValue) => {
-                  if (selectedValue === "") {
+                onChangeHandler={(selectedOption) => {
+                  if (!selectedOption || selectedOption.value === "") {
                     handleFilterChangePolicy("branchName", "");
                   } else {
                     const selectedBranch = empBranches?.find(
-                      (branch) => branch.branch_name === selectedValue
+                      (branch) => branch.branch_name === selectedOption.value
                     );
                     handleFilterChangePolicy("branchName", selectedBranch);
                   }
                 }}
+                customStyles={false}
               />
             </div>
 
-            <div className="w-[200px]">
-              <label className="text-[12px] text-[#474747] font-Urbanist font-medium px-2">
-                Search by name
-              </label>
-              <div className="relative w-full min-w-[200px] h-[38px] bg-white rounded-[7px] px-3 drop-shadow-sm ">
-                <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-2/4 right-3 -translate-y-2/4">
-                  <span>
-                    <BiSearch />
-                  </span>
+            {/* Search Bar */}
+            <div className="relative w-full md:w-64 h-[42px] bg-gray-50 rounded-xl border border-gray-200 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <BiSearch className="text-gray-400 text-lg" />
                 </div>
                 <input
-                  className="w-full h-full bg-transparent text-[#474747] border-none outline-none text-[12px] font-Urbanist rounded-[7px]"
-                  placeholder="Search Branch"
+                  type="text"
+                  className="w-full h-full bg-transparent text-sm text-gray-700 font-poppins pl-10 pr-4 rounded-xl focus:outline-none placeholder:text-gray-400"
+                  placeholder="Search policies..."
                   value={hrPolicySearch?.search || ""}
                   name="search"
                   onChange={handlePoliciesChange}
                 />
-              </div>
             </div>
-
-            <div className="text-[14px] text-[#474747] font-Urbanist font-medium">
-              <Checkbox
-                color="blue"
-                label="Inactive policies"
-                checked={isChecked}
-                onChange={(e) => statusPolicies(e.target.checked)}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 pr-2">
-            <span
-              className="cursor-pointer text-[#9B9B9B]"
-              style={{ color: listViewHr ? "#3DA5F4" : "" }}
-              onClick={handleListToggleHr}
-            >
-              <FaListUl />
-            </span>
-            <span
-              className="cursor-pointer text-[#9B9B9B]"
-              style={{ color: listViewHr ? "" : "#3DA5F4" }}
-              onClick={handleGridToggle}
-            >
-              <IoGrid />
-            </span>
-          </div>
         </div>
 
-        {listViewHr ? (
-          <div>
-            <div
-              className="customScroll"
-              ref={hrPoliciesScrollRef}
-            >
-              <PoliciesList
-                allHrpolicies={allPolicies}
-                hasMore={hasMore}
-                isLoadingMore={isLoadingMore}
-                onLoadMore={handleLoadMore}
-                onNextPage={goToNextPage}
-                onPreviousPage={goToPreviousPage}
-                onGoToPage={goToPage}
-                paginationData={getPaginationData()}
+        <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-end">
+            {/* Inactive Checkbox */}
+            <div className="flex items-center">
+              <Checkbox
+                color="blue"
+                label={
+                  <span className="font-poppins text-sm font-medium text-gray-600">
+                    Inactive Policies
+                  </span>
+                }
+                checked={isChecked}
+                onChange={(e) => statusPolicies(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500/20"
               />
             </div>
-          </div>
-        ) : (
-          <div>
-            <div
-              className="customScroll"
-              style={{ overflowY: "auto", height: "calc(100vh - 98px)" }}
-            >
-              <PoliciesGrid
-                allHrpolicies={allPolicies}
-                hasMore={hasMore}
-                isLoadingMore={isLoadingMore}
-                onLoadMore={handleLoadMore}
-                onNextPage={goToNextPage}
-                onPreviousPage={goToPreviousPage}
-                onGoToPage={goToPage}
-                paginationData={getPaginationData()}
-              />
+
+            {/* View Toggle */}
+            <div className="bg-gray-100/50 p-1 rounded-lg border border-gray-200 flex items-center gap-1">
+                <button
+                  onClick={handleListToggleHr}
+                  className={`p-2 rounded-md transition-all duration-200 ${
+                    listViewHr 
+                      ? "bg-white text-bgBlue shadow-sm" 
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                  title="List View"
+                >
+                  <FaListUl size={16} />
+                </button>
+                <button
+                  onClick={handleGridToggle}
+                  className={`p-2 rounded-md transition-all duration-200 ${
+                    !listViewHr 
+                      ? "bg-white text-bgBlue shadow-sm" 
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                  title="Grid View"
+                >
+                  <IoGrid size={16} />
+                </button>
             </div>
-          </div>
-        )}
+        </div>
       </div>
-    </>
+
+      {/* Content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={listViewHr ? "list" : "grid"}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {listViewHr ? (
+            <PoliciesList
+              allHrpolicies={allPolicies}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+              loading={initialLoading}
+              onLoadMore={handleLoadMore}
+              onNextPage={goToNextPage}
+              onPreviousPage={goToPreviousPage}
+              onGoToPage={goToPage}
+              paginationData={getPaginationData()}
+            />
+          ) : (
+            <PoliciesGrid
+              allHrpolicies={allPolicies}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+              loading={initialLoading}
+              onLoadMore={handleLoadMore}
+              onNextPage={goToNextPage}
+              onPreviousPage={goToPreviousPage}
+              onGoToPage={goToPage}
+              paginationData={getPaginationData()}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 };
 

@@ -2,6 +2,19 @@ import { Typography, Card, CardBody, Avatar, Progress } from '@material-tailwind
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronDownIcon } from '@heroicons/react/24/outline'
+import { FlagIcon, LightBulbIcon, ChatBubbleLeftRightIcon, ClockIcon } from '@heroicons/react/24/solid'
+import noRecordFound from '../../../assets/employee_side_images/no record found.gif';
+
+const SkeletonRow = () => (
+  <tr className="animate-pulse border-b border-gray-100">
+    <td className="py-4 px-4"><div className="h-4 w-32 bg-gray-200 rounded"></div></td>
+    <td className="py-4 px-4"><div className="h-2 w-full bg-gray-200 rounded-full"></div></td>
+    <td className="py-4 px-4"><div className="h-4 w-24 bg-gray-200 rounded"></div></td>
+    <td className="py-4 px-4"><div className="h-6 w-16 bg-gray-200 rounded-full"></div></td>
+    <td className="py-4 px-4"><div className="h-4 w-20 bg-gray-200 rounded"></div></td>
+    <td className="py-4 pl-4"><div className="h-8 w-16 bg-gray-200 rounded"></div></td>
+  </tr>
+);
 import { gettingEmployeePerformance, deleteEmployeeGoal, toggleEmployeeGoalStatus } from "../../../ViewModel/EmpViewModel/EmpPerformanceViewModel/EmpPerformance"
 import CustomSelect from "../../../Components/CustomSelect/CustomSelect"
 import CustomDrawer from "../../../Components/CustomDrawer/CustomDrawer"
@@ -313,81 +326,150 @@ const EmpPerformance = () => {
       {/* Employee Info Card */}
       <Card className="w-full">
         <CardBody className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <Avatar
-              src={avatarSrc}
-              alt="Employee Photo"
-              size="lg"
-              className="border border-gray-300"
-            />
-            <div>
-              <Typography variant="h4" color="[#292929]" className="font-medium text-[18px]">
-                {employeeName || "—"}
-              </Typography>
-              <Typography variant="h6" color="[#292929]" className="font-normal opacity-70 text-[14px]">
-                {[designation, department].filter(Boolean).join(" (") + (designation && department ? ")" : "") || "—"}
-              </Typography>
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-50/50 via-white to-transparent p-6 mb-8 border border-blue-50/50">
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-100/30 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+              <div className="flex items-center gap-5">
+                <div className="p-1 bg-white rounded-full shadow-sm">
+                  <Avatar
+                    src={avatarSrc}
+                    alt="Employee Photo"
+                    size="xl"
+                    className="border-2 border-white shadow-sm"
+                  />
+                </div>
+                <div>
+                  <Typography variant="h4" className="font-bold text-gray-900 text-[22px] mb-1">
+                    {employeeName || "—"}
+                  </Typography>
+                  <div className="flex items-center gap-2 flex-wrap">
+                     {designation && (
+                       <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[12px] font-medium border border-blue-100">
+                          {designation}
+                       </span>
+                     )}
+                     {designation && department && <span className="text-gray-400 text-sm">•</span>}
+                     <Typography variant="small" className="font-normal text-gray-500">
+                        {department || "—"}
+                     </Typography>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4 lg:gap-8 bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-white/60">
+                <div className="flex items-center gap-3">
+                  <Typography variant="small" color="blue-gray" className="font-medium text-xs uppercase tracking-wide opacity-70">
+                    Review Cycle
+                  </Typography>
+                  <div className="w-48">
+                    <CustomSelect
+                      placeHolderTitle="All Review Cycles"
+                      value={selectedCycle}
+                      options={[{ label: "All Review Cycles", value: "" }, ...cycles]}
+                      onChangeHandler={handleCycleChange}
+                      isSearchable={false}
+                      customStyles={{
+                        control: (base) => ({
+                          ...base,
+                          minHeight: '32px',
+                          fontSize: '13px',
+                          border: '1px solid #e5e7eb',
+                          boxShadow: 'none',
+                          backgroundColor: 'white',
+                          borderRadius: '8px',
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 50,
+                          fontSize: '13px',
+                        })
+                      }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="h-8 w-px bg-gray-200 hidden md:block"></div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-50 text-blue-500 rounded-lg">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <Typography variant="small" className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
+                      Timeline
+                    </Typography>
+                    <Typography variant="small" color="blue-gray" className="font-medium text-xs">
+                      {startText} <span className="text-gray-400 mx-1">→</span> {endText}
+                    </Typography>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Review Cycle Section */}
-          <div className="flex items-center gap-4 mb-6">
-            <Typography variant="h6" color="[#292929]" className="font-medium text-[16px]">
-              Review Cycle
-            </Typography>
-            <div className="flex items-center gap-2">
-              <div className="w-52">
-                <CustomSelect
-                  placeHolderTitle="All Review Cycles"
-                  value={selectedCycle}
-                  options={[{ label: "All Review Cycles", value: "" }, ...cycles]}
-                  onChangeHandler={handleCycleChange}
-                  isSearchable={false}
-                />
+          {/* Performance Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 mt-2">
+            {/* Goals Stat */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50/30 border border-blue-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+              <div className="p-2.5 rounded-lg bg-white text-blue-500 shadow-sm">
+                <FlagIcon className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-2">
-                <Typography variant="small" color="blue-gray">
-                  {selectedCycle?.label || "All Review Cycles"}
+              <div>
+                <Typography variant="small" className="font-bold text-gray-900 text-lg leading-none mb-0.5">
+                  {perfData?.Goal?.length || 0}
                 </Typography>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                </svg>
+                <Typography variant="small" className="font-medium text-gray-500 text-xs">
+                  Total Goals
+                </Typography>
               </div>
             </div>
-          </div>
 
-          {/* Date Range */}
-          <div className="mb-6">
-            <Typography variant="small" color="blue-gray" className="opacity-70">
-              Start Date: {startText} → Deadline: {endText}
-            </Typography>
-          </div>
+            {/* Competency Stat */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50/30 border border-amber-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+              <div className="p-2.5 rounded-lg bg-white text-amber-500 shadow-sm">
+                <LightBulbIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <Typography variant="small" className="font-bold text-gray-900 text-lg leading-none mb-0.5">
+                  {perfData?.competency?.length || 0}
+                </Typography>
+                <Typography variant="small" className="font-medium text-gray-500 text-xs">
+                  Competencies
+                </Typography>
+              </div>
+            </div>
 
-          {/* Performance Stats (placeholders for now) */}
-          <div className="flex items-center gap-6 mb-6">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              <Typography variant="small" color="blue-gray" className="font-semibold">0</Typography>
+            {/* Feedback Stat */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-50/30 border border-purple-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+              <div className="p-2.5 rounded-lg bg-white text-purple-500 shadow-sm">
+                <ChatBubbleLeftRightIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <Typography variant="small" className="font-bold text-gray-900 text-lg leading-none mb-0.5">
+                  {perfData?.Feedback?.length || 0}
+                </Typography>
+                <Typography variant="small" className="font-medium text-gray-500 text-xs">
+                  Feedback
+                </Typography>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-              </svg>
-              <Typography variant="small" color="blue-gray" className="font-semibold">0</Typography>
-            </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-              </svg>
-              <Typography variant="small" color="blue-gray" className="font-semibold">0</Typography>
-            </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0z" clipRule="evenodd" />
-              </svg>
-              <Typography variant="small" color="blue-gray" className="font-semibold">0</Typography>
+
+            {/* History Stat */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-teal-50/30 border border-teal-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+              <div className="p-2.5 rounded-lg bg-white text-teal-500 shadow-sm">
+                <ClockIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <Typography variant="small" className="font-bold text-gray-900 text-lg leading-none mb-0.5">
+                  {perfData?.history?.length || 0}
+                </Typography>
+                <Typography variant="small" className="font-medium text-gray-500 text-xs">
+                  History
+                </Typography>
+              </div>
             </div>
           </div>
 
@@ -438,14 +520,25 @@ const EmpPerformance = () => {
                 {/* Goals Table */}
                 <div className="w-full overflow-visible">
                   {loading ? (
-                    <div className="flex justify-center items-center py-8">
-                      <Typography variant="small" color="blue-gray" className="opacity-70">
-                        Loading goals...
-                      </Typography>
+                    <div className="w-full overflow-x-auto">
+                      <table className="min-w-full text-center table-fixed">
+                        <thead>
+                          <tr>
+                            {['Goal', 'Progress', 'Comment', 'Status', 'Rating', 'Action'].map((h, i) => (
+                              <th key={h} className={`border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 ${i===0 ? 'w-1/4' : ''}`}>
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">{h}</Typography>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...Array(5)].map((_, i) => <SkeletonRow key={i} />)}
+                        </tbody>
+                      </table>
                     </div>
                   ) : (
                     <>
-                      <div className="w-full overflow-x-auto">
+                      <div className="w-full overflow-visible">
                       <table className="min-w-full text-center table-fixed">
                     <thead>
                       <tr>
@@ -516,9 +609,16 @@ const EmpPerformance = () => {
                                  </Typography>
                                </td>
                                <td className="py-4 px-4 border-b border-blue-gray-50 text-center">
-                                 <Typography variant="small" className={`font-normal ${getStatusColor(g.status)}`}>
-                                   {getStatusText(g.status)}
-                                 </Typography>
+                                 <div className="flex justify-center">
+                                   <div className={`px-3 py-1 rounded-full text-xs font-medium w-fit ${
+                                     g.status === '0' ? 'bg-amber-50 text-amber-600' :
+                                     g.status === '1' ? 'bg-blue-50 text-blue-600' :
+                                     g.status === '2' ? 'bg-green-50 text-green-600' :
+                                     'bg-gray-50 text-gray-600'
+                                   }`}>
+                                     {getStatusText(g.status)}
+                                   </div>
+                                 </div>
                                </td>
                                <td className="py-4 px-4 border-b border-blue-gray-50 text-center">
                                      <div className="flex items-center justify-center gap-1">
@@ -545,7 +645,7 @@ const EmpPerformance = () => {
                                       </button>
                                       
                                       {openDropdown === g._id && (
-                                        <div className={`absolute ${shouldOpenUp ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-[9999]`}>
+                                        <div className={`absolute ${shouldOpenUp ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-[99] min-w-[120px]`}>
                                           <button
                                             onClick={() => handleEditGoal(g)}
                                             className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100"
@@ -575,8 +675,14 @@ const EmpPerformance = () => {
                         })()
                       ) : (
                         <tr>
-                          <td colSpan={6} className="p-8 text-center text-gray-500">
-                            No goals found
+                          <td colSpan={6} className="py-12 text-center text-gray-400">
+                            <div className="flex flex-col items-center justify-center">
+                              <img src={noRecordFound} alt="No record found" className='w-40 opacity-70 mix-blend-multiply mb-4' />
+                              <Typography color="gray" className="font-medium">No goals found</Typography>
+                              <Typography variant="small" color="blue-gray" className="opacity-60 mt-1">
+                                Add your first goal to get started
+                              </Typography>
+                            </div>
                           </td>
                         </tr>
                       )}
@@ -592,96 +698,219 @@ const EmpPerformance = () => {
             
             {activeTab === "competency" && (
               <div className="p-0 mt-6">
-                {loading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <Typography variant="small" color="blue-gray" className="opacity-70">
-                      Loading competencies...
-                    </Typography>
-                  </div>
-                ) : (
-                  <>
-                {perfData?.competency?.length ? (
-                  <div className="flex flex-col gap-3">
-                    {perfData.competency.map((c, i) => (
-                      <div key={c._id || i} className="flex items-center justify-between border-b pb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-blue-500">🔎</span>
-                          <Typography variant="small" color="#292929" className="font-medium">{c.competency || '—'}</Typography>
-                        </div>
-                        <div className="flex items-center gap-1 text-yellow-500">
-                          {/* simple star visualization based on rating (0-5 expected), fallback 0 */}
-                          {Array.from({ length: 5 }).map((_, idx) => (
-                            <span key={idx}>{idx < (Number(c.rating) || 0) ? '★' : '☆'}</span>
+                {/* Competency Table */}
+                <div className="w-full overflow-x-auto">
+                  {loading ? (
+                    <div className="w-full overflow-x-auto">
+                      <table className="min-w-full text-center table-fixed">
+                        <thead>
+                          <tr>
+                            {['Competency', 'Rating', 'Score'].map((h, i) => (
+                              <th key={h} className={`border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 ${i===0 ? 'w-1/2' : 'w-1/4'}`}>
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">{h}</Typography>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...Array(5)].map((_, i) => (
+                            <tr key={i} className="animate-pulse border-b border-gray-100">
+                              <td className="py-4 px-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
+                              <td className="py-4 px-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
+                              <td className="py-4 px-4"><div className="h-4 w-20 bg-gray-200 rounded mx-auto"></div></td>
+                            </tr>
                           ))}
-                        </div>
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-full overflow-visible">
+                        <table className="min-w-full text-center table-fixed">
+                          <thead>
+                            <tr>
+                              <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-1/2 text-left pl-8">
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Competency</Typography>
+                              </th>
+                              <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-1/4">
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Rating</Typography>
+                              </th>
+                              <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-1/4">
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Score</Typography>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {perfData?.competency?.length ? (
+                              perfData.competency.map((c, i) => (
+                                <tr key={c._id || i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                  <td className="py-4 px-4 text-left pl-8">
+                                    <div className="flex items-center gap-3">
+                                      <div className="p-2 bg-blue-50 rounded-lg">
+                                        <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                      </div>
+                                      <div>
+                                        <Typography variant="small" color="blue-gray" className="font-medium">
+                                          {c.competency || '—'}
+                                        </Typography>
+                                        <Typography variant="small" className="text-gray-400 text-[10px]">
+                                          Competency Assessment
+                                        </Typography>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <div className="flex items-center justify-center gap-1">
+                                      {Array.from({ length: 5 }).map((_, idx) => (
+                                        <span key={idx} className={`text-lg ${idx < (Number(c.rating) || 0) ? 'text-yellow-400' : 'text-gray-200'}`}>★</span>
+                                      ))}
+                                    </div>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <div className="flex items-center justify-center gap-3">
+                                      <Progress value={(Number(c.rating) || 0) * 20} size="sm" color="blue" className="bg-blue-50 w-24" />
+                                      <Typography variant="small" className="text-xs font-medium text-blue-600 w-8">
+                                        {(Number(c.rating) || 0) * 20}%
+                                      </Typography>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={3} className="py-12 text-center text-gray-400">
+                                  <div className="flex flex-col items-center justify-center">
+                                    <img src={noRecordFound} alt="No record found" className='w-40 opacity-70 mix-blend-multiply mb-4' />
+                                    <Typography color="gray" className="font-medium">No competency items found</Typography>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <Typography color="blue-gray" className="text-center py-8">No competency items</Typography>
-                    )}
-                    
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
             )}
             
             {activeTab === "feedback" && (
               <div className="p-0 mt-6">
-                {loading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <Typography variant="small" color="blue-gray" className="opacity-70">
-                      Loading feedback...
-                              </Typography>
-                            </div>
-                ) : (
-                  <>
-                    <div className="space-y-6">
-                      {/* Feedback Items */}
-                      {perfData?.Feedback?.length ? (
-                        <div className="space-y-3">
-                          {perfData.Feedback.map((feedback, index) => {
-                            const formatDate = (timestamp) => {
-                              if (!timestamp) return '—';
-                              try {
-                                const date = new Date(timestamp * 1000);
-                                return date.toLocaleDateString();
-                              } catch {
-                                return '—';
-                              }
-                            };
+                {/* Feedback Table */}
+                <div className="w-full overflow-x-auto">
+                  {loading ? (
+                    <div className="w-full overflow-x-auto">
+                      <table className="min-w-full text-center table-fixed">
+                        <thead>
+                          <tr>
+                            {['From', 'Date', 'Type', 'Comment'].map((h, i) => (
+                              <th key={h} className={`border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 ${i===3 ? 'w-[40%]' : 'w-[20%]'}`}>
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">{h}</Typography>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...Array(5)].map((_, i) => (
+                            <tr key={i} className="animate-pulse border-b border-gray-100">
+                              <td className="py-4 px-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
+                              <td className="py-4 px-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
+                              <td className="py-4 px-4"><div className="h-6 w-16 bg-gray-200 rounded-full mx-auto"></div></td>
+                              <td className="py-4 px-4"><div className="h-4 w-40 bg-gray-200 rounded mx-auto"></div></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-full overflow-visible">
+                        <table className="min-w-full text-center table-fixed">
+                          <thead>
+                            <tr>
+                              <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-[25%] text-left pl-8">
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">From</Typography>
+                              </th>
+                              <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-[15%]">
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Date</Typography>
+                              </th>
+                              <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-[15%]">
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Type</Typography>
+                              </th>
+                              <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-[45%] text-left">
+                                <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Comment</Typography>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {perfData?.Feedback?.length ? (
+                              perfData.Feedback.map((feedback, index) => {
+                                const formatDate = (timestamp) => {
+                                  if (!timestamp) return '—';
+                                  try {
+                                    const date = new Date(timestamp * 1000);
+                                    return date.toLocaleDateString();
+                                  } catch {
+                                    return '—';
+                                  }
+                                };
 
-                            return (
-                              <div key={feedback._id || index} className="border-l-4 border-blue-500 pl-4 py-2">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Typography variant="small" color="blue-gray" className="font-medium">
-                                        {feedback.employee_name || 'Unknown'} to Me
-                              </Typography>
-                              <Typography variant="small" color="blue-gray" className="opacity-60 text-xs">
+                                return (
+                                  <tr key={feedback._id || index} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                    <td className="py-4 px-4 text-left pl-8">
+                                      <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-purple-50 rounded-lg">
+                                          <ChatBubbleLeftRightIcon className="w-5 h-5 text-purple-500" />
+                                        </div>
+                                        <Typography variant="small" color="blue-gray" className="font-medium">
+                                          {feedback.employee_name || 'Unknown'}
+                                        </Typography>
+                                      </div>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                      <Typography variant="small" color="blue-gray" className="font-normal">
                                         {formatDate(feedback.entry_time)}
-                              </Typography>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                      <div className={`w-2 h-2 rounded-full ${feedback.thumb === '1' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                              <Typography variant="small" color="blue-gray" className="text-sm">
+                                      </Typography>
+                                    </td>
+                                    <td className="py-4 px-4">
+                                      <div className="flex justify-center">
+                                        <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
+                                          feedback.thumb === '1' 
+                                            ? 'bg-green-50 text-green-600 border-green-100' 
+                                            : 'bg-red-50 text-red-600 border-red-100'
+                                        }`}>
+                                          <div className={`w-2 h-2 rounded-full ${feedback.thumb === '1' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                          {feedback.thumb === '1' ? 'Positive' : 'Negative'}
+                                        </span>
+                                      </div>
+                                    </td>
+                                    <td className="py-4 px-4 text-left">
+                                      <Typography variant="small" color="blue-gray" className="font-normal text-gray-600 line-clamp-2">
                                         {feedback.comment || '—'}
-                              </Typography>
-                            </div>
-                          </div>
-                        </div>
+                                      </Typography>
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            ) : (
+                              <tr>
+                                <td colSpan={4} className="py-12 text-center text-gray-400">
+                                  <div className="flex flex-col items-center justify-center">
+                                    <img src={noRecordFound} alt="No record found" className='w-40 opacity-70 mix-blend-multiply mb-4' />
+                                    <Typography color="gray" className="font-medium">No feedback received</Typography>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
                       </div>
-                            );
-                          })}
-                      </div>
-                      ) : (
-                        <Typography color="blue-gray" className="text-center py-8">No feedback found</Typography>
-                    )}
-                  </div>
-
-                  </>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
             )}
             
@@ -697,30 +926,30 @@ const EmpPerformance = () => {
                     </div>
                   ) : (
                     <>
-                  <table className="minw-full text-left table-fixed">
+                  <table className="min-w-full text-left table-fixed">
                     <thead>
                       <tr>
-                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-1/4">
+                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-[25%]">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
                             Name of Review Cycle
                           </Typography>
                         </th>
-                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-1/6">
+                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-[15%]">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
                             Start Date
                           </Typography>
                         </th>
-                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-1/6">
+                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-[15%]">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
                             End Date
                           </Typography>
                         </th>
-                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-1/4">
+                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-[22.5%]">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
                             Goal Progress
                           </Typography>
                         </th>
-                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-1/4">
+                        <th className="border-b border-blue-gray-50 bg-blue-gray-50 p-3 w-[22.5%]">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
                             Competency Progress
                           </Typography>
@@ -787,8 +1016,11 @@ const EmpPerformance = () => {
                         })
                       ) : (
                         <tr>
-                          <td colSpan={5} className="p-8 text-center text-gray-500">
-                            No history records found
+                          <td colSpan={5} className="py-12 text-center text-gray-400">
+                            <div className="flex flex-col items-center justify-center">
+                              <img src={noRecordFound} alt="No record found" className='w-40 opacity-70 mix-blend-multiply mb-4' />
+                              <Typography color="gray" className="font-medium">No history records found</Typography>
+                            </div>
                           </td>
                         </tr>
                       )}

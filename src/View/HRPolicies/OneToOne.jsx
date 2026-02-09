@@ -1,11 +1,4 @@
-import {
-  Button,
-  Checkbox,
-  Input,
-  Option,
-  Select,
-  Typography,
-} from "@material-tailwind/react";
+import { Checkbox, Typography, Button } from "@material-tailwind/react";
 import React, { useEffect } from "react";
 import useHRPolicies from "../../ViewModel/HRPoliciesViewModel/HRPoliciesServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
@@ -20,15 +13,18 @@ const OneToOne = (props) => {
     handleOneToOnePolicy,
   } = props;
   const { gettingPolicyForSwap, allPoliciesForSwap } = useHRPolicies();
-  console.log("allPoliciesForSwap", allPoliciesForSwap);
+
   useEffect(() => {
     gettingPolicyForSwap();
   }, []);
+
   return (
-    <form onSubmit={handleOneToOnePolicy} className="flex flex-col gap-4 p-3">
-      <div className="flex items-center gap-10 w-full">
-        <div className="w-[450px] flex flex-col">
-          <label className="text-[#474747] font-medium font-Urbanist text-[12px] px-2">
+    <form onSubmit={handleOneToOnePolicy} className="flex flex-col gap-6">
+      
+      {/* Policy Selection */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700 font-poppins">
             Choose Current Policy
           </label>
           <CustomSelect
@@ -44,8 +40,8 @@ const OneToOne = (props) => {
             customStyles={false}
           />
         </div>
-        <div className="w-[450px] flex flex-col">
-          <label className="text-[#474747] font-medium font-Urbanist text-[12px] px-2">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700 font-poppins">
             Choose Policy to Swap with
           </label>
           <CustomSelect
@@ -58,124 +54,124 @@ const OneToOne = (props) => {
             onChangeHandler={(selectedOption) =>
               handleSelectChange(selectedOption, "swapPolicy")
             }
-            // onChangeHandler={handleSelectChange}
             customStyles={false}
           />
         </div>
       </div>
-      <div className="flex gap-10">
-        <div className="w-[450px] flex flex-col">
-          <label className="text-[#474747] font-medium font-Urbanist text-[12px] px-2">
-            Swap Scheduling (Optional)
-          </label>
-          <input
-            type="date"
-            placeholder="Effective From"
-            color="blue"
-            name="effectiveFromDate"
-            className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-            value={swapPolicyValue.effectiveFromDate}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="w-[450px] flex flex-col">
-          <label className="text-[#474747] font-medium font-Urbanist text-[12px] px-2">
-            Time
-          </label>
-          <input
-            type="time"
-            label="Time"
-            color="blue"
-            name="effectiveFromTime"
-            className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-            value={swapPolicyValue.effectiveFromTime}
-            onChange={handleChange}
-          />
-        </div>
-      </div>
-      <div className="flex flex-col">
-        <label className="text-blue-500">Rollback (Optional)</label>
-        <span className="text-[11px] overflow-hidden">
-          If you want the policy to be reverted back after a time period, then
-          specify the rollback date and time below
-        </span>
-      </div>
-      <div className="flex gap-10">
-        <div className="w-[450px] flex flex-col">
-          <label className="text-[#474747] font-medium font-Urbanist px-2 text-[12px]">
-            Rollback Date
-          </label>
-          <input
-            type="date"
-            placeholder="Rollback Date"
-            color="blue"
-            className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-            name="rollBackDate"
-            onChange={handleChange}
-            value={swapPolicyValue.rollBackDate}
-          />
-        </div>
-        <div className="w-[450px] flex flex-col">
-          <label className="text-[#474747] font-medium font-Urbanist text-[12px] px-2">
-            Time
-          </label>
-          <input
-            type="time"
-            placeholder="Time"
-            color="blue"
-            name="rollBackTime"
-            className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-            onChange={handleChange}
-            value={swapPolicyValue.rollBackTime}
-          />
+
+      {/* Swap Scheduling */}
+      <div className="border-t border-gray-100 pt-6">
+        <div className="flex flex-col gap-4">
+            <label className="text-sm font-semibold text-gray-900 font-poppins">
+                Swap Scheduling <span className="text-gray-400 font-normal">(Optional)</span>
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                    <label className="text-xs font-medium text-gray-600 font-poppins">Effective From</label>
+                    <input
+                        type="date"
+                        name="effectiveFromDate"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
+                        value={swapPolicyValue.effectiveFromDate}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div className="flex flex-col gap-2">
+                    <label className="text-xs font-medium text-gray-600 font-poppins">Time</label>
+                    <input
+                        type="time"
+                        name="effectiveFromTime"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
+                        value={swapPolicyValue.effectiveFromTime}
+                        onChange={handleChange}
+                    />
+                </div>
+            </div>
         </div>
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="text-blue-500">Make Swap Policy Recursive</label>
-        <Checkbox
-          color="blue"
-          size="sm"
-          name="checkBox"
-          checked={swapPolicyValue.checkBox === 1}
-          onChange={handleCheckbox}
-          label={
-            <Typography className="text-[12px]">Is Recursive Swap</Typography>
-          }
-        />
-      </div>
-      {swapPolicyValue.checkBox == 1 && (
-        <div className="w-[450px] flex flex-col">
-          <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-            Recursive After
-          </label>
-          <input
-            placeholder="Number of Days to"
-            color="blue"
-            className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-            type="number"
-            name="days"
-            onChange={handleChange}
-            value={swapPolicyValue.days}
-            containerProps={{ className: "min-w-[320px]" }}
-          />
+
+      {/* Rollback Section */}
+      <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100">
+        <div className="flex flex-col gap-1 mb-4">
+            <label className="text-sm font-semibold text-blue-600 font-poppins">Rollback Configuration</label>
+            <span className="text-xs text-gray-500 font-poppins">
+            Specify a rollback date/time to automatically revert the policy swap after a period.
+            </span>
         </div>
-      )}
-      <div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-2">
+            <label className="text-xs font-medium text-gray-600 font-poppins">Rollback Date</label>
+            <input
+                type="date"
+                name="rollBackDate"
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
+                onChange={handleChange}
+                value={swapPolicyValue.rollBackDate}
+            />
+            </div>
+            <div className="flex flex-col gap-2">
+            <label className="text-xs font-medium text-gray-600 font-poppins">Rollback Time</label>
+            <input
+                type="time"
+                name="rollBackTime"
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
+                onChange={handleChange}
+                value={swapPolicyValue.rollBackTime}
+            />
+            </div>
+        </div>
+      </div>
+
+      {/* Recursive Options */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center">
+            <Checkbox
+            color="blue"
+            className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500/20"
+            containerProps={{ className: "p-0 mr-2" }}
+            name="checkBox"
+            checked={swapPolicyValue.checkBox === 1}
+            onChange={handleCheckbox}
+            label={
+                <Typography className="text-sm font-medium text-gray-700 font-poppins">Make Swap Policy Recursive</Typography>
+            }
+            />
+        </div>
+        
+        {swapPolicyValue.checkBox == 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
+                <div className="flex flex-col gap-2">
+                <label className="text-xs font-medium text-gray-600 font-poppins">Recursive After (Days)</label>
+                <input
+                    placeholder="e.g. 7"
+                    type="number"
+                    name="days"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
+                    onChange={handleChange}
+                    value={swapPolicyValue.days}
+                />
+                </div>
+            </div>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="pt-4 flex justify-end">
         {swapPolicyValue.loading ? (
           <Button
-            className="px-2 py-2 text-[13px] text-semibold capitalize bg-[#8bc9f8] text-white"
-            loading
+            className="bg-bgBlue/80 px-8 py-2.5 rounded-xl capitalize font-poppins text-sm flex items-center gap-2"
+            disabled
           >
-            Loading
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Processing...
           </Button>
         ) : (
           <CustomButton
             type="submit"
-            title="Swap Policy"
-            className="px-2 py-2 text-[13px] text-semibold capitalize bg-[#8bc9f8] text-white"
-          >
-            Swap Policy
-          </CustomButton>
+            title="Confirm Swap"
+            className="bg-bgBlue px-8 py-2.5 rounded-xl capitalize font-poppins text-sm shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all"
+          />
         )}
       </div>
     </form>

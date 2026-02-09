@@ -1,4 +1,4 @@
-import { Button, Input } from '@material-tailwind/react'
+import { Button, Input, Typography } from '@material-tailwind/react'
 import React, { useEffect, useState } from 'react'
 import useHRPolicies from '../../ViewModel/HRPoliciesViewModel/HRPoliciesServices'
 import SubmitButton from '../../Components/SubmitButton/SubmitButton'
@@ -156,26 +156,39 @@ const EditPolicy = (props) => {
   }
 
 
-
-
-
   return (
-    <>
-      <form onSubmit={handleEditPolicy}>
-        <div className='flex flex-col space-y-4'>
+      <form onSubmit={handleEditPolicy} className="p-6 flex flex-col h-full">
+        <div className='flex flex-col space-y-6 flex-1'>
           <div>
-            <Input label='Policy Name' color='blue' value={policiesValues.policy_name} name='policy_name' onChange={handleChangeEditPolicy} />
+            <Typography variant="small" color="blue-gray" className="mb-2 font-semibold font-poppins">
+              Policy Name <span className="text-red-500">*</span>
+            </Typography>
+            <Input 
+              placeholder='Enter Policy Name' 
+              value={policiesValues.policy_name} 
+              name='policy_name' 
+              onChange={handleChangeEditPolicy} 
+              className="!border-t-blue-gray-200 focus:!border-bgBlue font-poppins"
+              labelProps={{
+                className: "before:content-none after:content-none",
+              }}
+            />
           </div>
 
-          <div>
-            <span className='text-[10px]'>
-              Due to the employees registered against this policy the Other attributes of the policy can't be edited since changing policy data may cause the existing attendance to be invalidated and corrupted
-            </span>
+          <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+            <Typography variant="small" className="text-blue-800 font-poppins text-xs leading-relaxed">
+              <span className="font-semibold block mb-1">Note:</span>
+              Due to the employees registered against this policy, other attributes of the policy cannot be edited. Changing policy data may cause the existing attendance to be invalidated and corrupted.
+            </Typography>
           </div>
+
           {shouldShowLeaveGroup &&
             <div>
+              <Typography variant="small" color="blue-gray" className="mb-2 font-semibold font-poppins">
+                Leave Management Group
+              </Typography>
               <CustomSelect
-                placeHolderTitle='Leave Management Group'
+                placeHolderTitle='Select Leave Group'
                 value={policiesValues?.group}
                 options={leaveGroupsList}
                 onChangeHandler={(selectedOption) => handleSelectChange(selectedOption, 'group')}
@@ -183,21 +196,25 @@ const EditPolicy = (props) => {
               />
             </div>
           }
+        </div>
 
-          <div>
-            {policiesValues.loading
-              ?
-
-              <Button color='blue' loading >Loading</Button>
-              :
-
-              <SubmitButton />
-            }
-          </div>
+        <div className="pt-6 mt-6 border-t border-gray-100">
+            {policiesValues.loading ? (
+              <Button 
+                className="w-full bg-bgBlue/80 font-poppins capitalize text-sm flex items-center justify-center gap-2" 
+                disabled
+              >
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Updating...
+              </Button>
+            ) : (
+               <SubmitButton 
+                 title="Update Policy" 
+                 className="w-full bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/30 font-poppins capitalize text-sm"
+               />
+            )}
         </div>
       </form>
-
-    </>
   )
 }
 

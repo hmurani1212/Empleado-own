@@ -1,5 +1,5 @@
-import { Input, Button } from "@material-tailwind/react";
-import React, { useEffect, useState } from "react";
+import { Input, Button, Typography } from "@material-tailwind/react";
+import React, { useEffect, useState, useMemo } from "react";
 import useBranches from "../../ViewModel/BranchesViewModel/BranchesServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import branchesApi from "../../Model/Data/Branches/Branches";
@@ -8,21 +8,18 @@ import { showToast } from "../../Components/Toaster/Toaster";
 import BranchesServices2 from "../../ViewModel/Brach2ViewModel/BranchesServices2";
 import useStore from "../../Store/store";
 import useBranches2 from '../../ViewModel/Brach2ViewModel/BranchesServices2';
+
 function EditBranchForm(props) {
   const { data, branchID } = props;
-  const { allCountries, handleEditBranch } = useBranches();
-  const {gettingAllBranchesNew, markBranchAdmin} = useBranches2()
-  // console.log("allCountriesallCountries", allCountries)
+  const { allCountries } = useBranches();
+  const { handleEditBranch } = useBranches2();
   const closeDrawer = useStore((state) => state.closeDrawer);
-  // const gettingAllBranchesNew = useStore((state) => state.gettingAllBranchesNew);
   const [isLoading, setIsLoading] = useState(false);
-  const { branchesAllNew } = BranchesServices2();
-  // console.log('branch name', newBranchValues)
-  // console.log('selected country', selectedCountry)
 
   useEffect(() => {
     handleBranchTimeZone(data.country_id);
   }, []);
+  
   const [newBranchValues, setNewBranchValues] = useState({
     branch_name: data?.branch_name || "",
     branch_address: data?.address || "",
@@ -30,12 +27,22 @@ function EditBranchForm(props) {
     email_address: data?.email_add || "",
     country_code: data?.country_id || "",
     currency: data?.currency || "",
+    time_zone: data?.time_zone || ""
   });
+
+  const isFormValid = useMemo(() => {
+    return (
+      newBranchValues.branch_name?.trim() !== '' &&
+      newBranchValues.branch_address?.trim() !== '' &&
+      newBranchValues.phone_no?.trim() !== '' &&
+      newBranchValues.email_address?.trim() !== '' &&
+      newBranchValues.country_code &&
+      newBranchValues.currency?.trim() !== ''
+    );
+  }, [newBranchValues]);
 
   const handleNewBranch = (e) => {
     const { name, value } = e.target;
-    // console.log("name, value", name, value);
-
     setNewBranchValues((prevState) => ({
       ...prevState,
       [name]: value,
@@ -44,7 +51,6 @@ function EditBranchForm(props) {
 
   const handleSelect = (selectedOption, field) => {
     const fieldValue = selectedOption.value || selectedOption;
-    // console.log("selectedOption", selectedOption);
     handleBranchTimeZone(selectedOption.value);
 
     if (field === "country_code") {
@@ -53,7 +59,6 @@ function EditBranchForm(props) {
       );
       const currency = selectedCountry ? selectedCountry.currency : "";
       const timeZone = selectedCountry ? selectedCountry.zone_name : "";
-      // console.log("timeZone", timeZone);
       setNewBranchValues((prevState) => ({
         ...prevState,
         [field]: fieldValue,
@@ -71,13 +76,9 @@ function EditBranchForm(props) {
   const [timeZoneData, setTimeZoneData] = useState([]);
   const handleBranchTimeZone = async (id) => {
     const data = { id: id };
-    // console.log("id", id);
-
     try {
       const response = await branchesApi.getBranchTimeZone(data);
-
       const respTimeZoneData = await response.data;
-      // console.log("time zone", respTimeZoneData);
 
       if (response.status === 200 && respTimeZoneData.STATUS === "SUCCESSFUL") {
         setTimeZoneData(respTimeZoneData.TIME_ZONE);
@@ -86,7 +87,6 @@ function EditBranchForm(props) {
           ...prevState,
           time_zone: timeZone,
         }));
-        // setTimeZoneData(data.TIME_ZONE)
       }
     } catch (error) {
       console.log(error);
@@ -104,11 +104,9 @@ function EditBranchForm(props) {
     return value;
   };
 
-
-
   const updtae_branch = async (e) => {
     e.preventDefault();
-    // gettingAllBranchesNew();
+    setIsLoading(true);
     const editData = {
       id: branchID,
       branch_name: newBranchValues.branch_name,
@@ -117,165 +115,161 @@ function EditBranchForm(props) {
       email_address: newBranchValues.email_address,
       country_id: newBranchValues.country_code,
       currency: newBranchValues.currency,
+      time_zone: newBranchValues.time_zone
     };
-    handleEditBranch(editData)
+    
+    try {
+      await handleEditBranch(editData);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  // const handleEditBranch = async (e) => {
-  //   e.preventDefault();
-
-  //   const editData = {
-  //     id: branchID,
-  //     branch_name: newBranchValues.branch_name,
-  //     branch_address: newBranchValues.branch_address,
-  //     phone_no: newBranchValues.phone_no,
-  //     email_address: newBranchValues.email_address,
-  //     country_id: newBranchValues.country_code,
-  //     currency: newBranchValues.currency,
-  //   };
-
-  //   try {
-  //     await validateEditData(editData);
-  //     setIsLoading(true);
-  //     const response = await branchesApi.editBranch(editData);
-  //     const respEditData = await response.data;
-
-  //     if (respEditData.STATUS === "SUCCESSFUL") {
-  //       // Refresh the branches list to get latest data
-  //       await gettingAllBranchesNew({ page: 1 });
-
-  //       showToast("Branch updated successfully", "success");
-  //       closeDrawer();
-  //     } else {
-  //       showToast("Failed to update branch", "error");
-  //       // closeDrawer();
-  //     }
-  //   } catch (error) {
-  //     console.error("Error updating branch:", error);
-  //     showToast(error?.message || "Failed to update branch", "error");
-  //     closeDrawer();
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  // const validateEditData = async (formData) => {
-  //   const fields = Object.keys(formData);
-
-  //   for (const field of fields) {
-  //     try {
-  //       await editBranchFormValidaion.validateAt(field, formData);
-  //     } catch (error) {
-  //       throw error;
-  //     }
-  //   }
-  // };
-
   return (
-    <>
-      <div className="w-90">
-        <form className="" onSubmit={updtae_branch}>
-          <div className="flex flex-col gap-4">
+    <div className='p-6'>
+      <form className='flex flex-col gap-6' onSubmit={updtae_branch}>
+        <div className="grid grid-cols-1 gap-6">
             <div>
+              <Typography variant="small" color="blue-gray" className="mb-2 font-medium font-poppins">
+                Branch Name <span className="text-red-500">*</span>
+              </Typography>
               <Input
-                required
-                label="Enter Branch Name*"
+                size="lg"
+                placeholder="e.g. Head Office"
+                className="!border-t-blue-gray-200 focus:!border-blue-500 font-poppins"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
                 value={newBranchValues.branch_name}
                 name="branch_name"
                 onChange={handleNewBranch}
               />
             </div>
+
             <div>
+              <Typography variant="small" color="blue-gray" className="mb-2 font-medium font-poppins">
+                Branch Address <span className="text-red-500">*</span>
+              </Typography>
               <Input
-                required
-                label="Enter Branch Address*"
+                size="lg"
+                placeholder="e.g. 123 Main St, City, Country"
+                className="!border-t-blue-gray-200 focus:!border-blue-500 font-poppins"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
                 value={newBranchValues.branch_address}
                 name="branch_address"
                 onChange={handleNewBranch}
               />
             </div>
 
-            <div>
-              <Input
-                required
-                label="Enter Phone No*"
-                value={formatPhoneNumber("phone_no", newBranchValues.phone_no)}
-                name="phone_no"
-                onChange={handleNewBranch}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Typography variant="small" color="blue-gray" className="mb-2 font-medium font-poppins">
+                    Phone Number <span className="text-red-500">*</span>
+                  </Typography>
+                  <Input
+                    size="lg"
+                    placeholder="e.g. +1 234 567 8900"
+                    className="!border-t-blue-gray-200 focus:!border-blue-500 font-poppins"
+                    labelProps={{
+                      className: "before:content-none after:content-none",
+                    }}
+                    value={formatPhoneNumber("phone_no", newBranchValues.phone_no)}
+                    name="phone_no"
+                    onChange={handleNewBranch}
+                  />
+                </div>
+
+                <div>
+                  <Typography variant="small" color="blue-gray" className="mb-2 font-medium font-poppins">
+                    Email Address <span className="text-red-500">*</span>
+                  </Typography>
+                  <Input
+                    size="lg"
+                    type="email"
+                    placeholder="e.g. branch@company.com"
+                    className="!border-t-blue-gray-200 focus:!border-blue-500 font-poppins"
+                    labelProps={{
+                      className: "before:content-none after:content-none",
+                    }}
+                    value={newBranchValues.email_address}
+                    name="email_address"
+                    onChange={handleNewBranch}
+                  />
+                </div>
             </div>
 
-            <div>
-              <Input
-                required
-                label="Enter Email Address*"
-                value={newBranchValues.email_address}
-                name="email_address"
-                onChange={handleNewBranch}
-              />
-            </div>
-
-            <div>
-              <label className="text-[#7a929e]">Select Country*</label>
-
-              <CustomSelect
-                required
-                placeHolderTitle="Country"
-                value={
-                  allCountries?.find(
-                    (country) => country.id === newBranchValues.country_code
-                  )
-                    ? {
-                      value: `${newBranchValues.country_code}`,
-                      label: allCountries.find(
-                        (country) =>
-                          country.id === newBranchValues.country_code
-                      ).country_name,
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Typography variant="small" color="blue-gray" className="mb-2 font-medium font-poppins">
+                    Country <span className="text-red-500">*</span>
+                  </Typography>
+                  <CustomSelect
+                    placeHolderTitle="Country"
+                    value={
+                      allCountries?.find(
+                        (country) => country.id === newBranchValues.country_code
+                      )
+                        ? {
+                          value: `${newBranchValues.country_code}`,
+                          label: allCountries.find(
+                            (country) =>
+                              country.id === newBranchValues.country_code
+                          ).country_name,
+                        }
+                        : newBranchValues.country_code
                     }
-                    : newBranchValues.country_code
-                }
-                options={allCountries?.map((country) => ({
-                  value: `${country.id}`,
-                  label: country.country_name,
-                }))}
-                onChangeHandler={(selectedOption) =>
-                  handleSelect(selectedOption, "country_code")
-                }
-                customStyle={false}
-              />
-            </div>
+                    options={allCountries?.map((country) => ({
+                      value: `${country.id}`,
+                      label: country.country_name,
+                    }))}
+                    onChangeHandler={(selectedOption) =>
+                      handleSelect(selectedOption, "country_code")
+                    }
+                    customStyle={false}
+                  />
+                </div>
 
-            <div>
-              <Input
-                required
-                label="Enter Currency*"
-                value={newBranchValues.currency}
-                onChange={handleNewBranch}
-              />
+                <div>
+                  <Typography variant="small" color="blue-gray" className="mb-2 font-medium font-poppins">
+                    Currency <span className="text-red-500">*</span>
+                  </Typography>
+                  <Input
+                    size="lg"
+                    placeholder="e.g. USD"
+                    className="!border-t-blue-gray-200 focus:!border-blue-500 font-poppins"
+                    labelProps={{
+                      className: "before:content-none after:content-none",
+                    }}
+                    value={newBranchValues.currency}
+                    name='currency'
+                    onChange={handleNewBranch}
+                    readOnly
+                  />
+                </div>
             </div>
+        </div>
 
-
-            <div>
-              {isLoading ? (
-                <Button
-                  className="bg-blue-300 py-[10px] capitalize"
-                  loading={true}
-                >
-                  Loading
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  className="bg-blue-300 py-[10px] capitalize"
-                >
-                  Submit
-                </Button>
-              )}
-            </div>
-          </div>
-        </form>
-      </div>
-    </>
+        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+           <Button
+              variant="text"
+              color="gray"
+              onClick={closeDrawer}
+              className="font-poppins normal-case"
+            >
+              Cancel
+            </Button>
+            <Button
+              type='submit'
+              className={`font-poppins normal-case px-6 ${isFormValid ? 'bg-bgBlue shadow-blue-500/20' : 'bg-blue-200 shadow-none'}`}
+              disabled={!isFormValid || isLoading}
+            >
+              {isLoading ? 'Updating...' : 'Update Branch'}
+            </Button>
+        </div>
+      </form>
+    </div>
   );
 }
 

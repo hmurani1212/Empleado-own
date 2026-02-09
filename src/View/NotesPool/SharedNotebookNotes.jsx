@@ -4,7 +4,7 @@ import { BiCalendar, BiSearch, BiArrowBack, BiPlus } from 'react-icons/bi'
 import { IoMdMore } from 'react-icons/io'
 import { hexToRGBA, titleNameAlpha } from '../../services/appServices'
 import { formatDateDMY, formatDateDM } from '../../services/__dateTimeServices'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { MenuItem, Typography } from '@material-tailwind/react'
 import useStore from '../../Store/store'
 import CustomDialog from '../../Components/CustomDialog/CustomDialog'
@@ -31,13 +31,10 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
     notebook_id: notebook?._id || notebook?.id,
     loading: false,
   })
-  // CRITICAL: Store shared_links on mount to preserve permissions even after API updates notebook data
   const [preservedPermissions, setPreservedPermissions] = useState(null)
 
-  // Get starred notes functionality from store
   const { starredNotes, handleStarClick, isStarred, initializeStarredNotes, isStarredNotesInitialized } = useStore()
 
-  // Get note handler for viewing and editing notes
   const { 
     editorData, 
     handleNoteHandler, 
@@ -48,20 +45,16 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
     handleNoteMenuList
   } = useNoteHandler()
 
-  // Get shared notebook notes from store
   const { gettingSharedNotebookNotes, sharedNotebookNotes, searchingSharedNotebookNotes, toggleMenuValue, openMenuValue } = useNotesPoolServices()
 
-  // Dropdown service for positioning
   const { getDropdownPosition, triggerRefs } = useDropdownService()
 
-  // CRITICAL: Preserve permissions from shared_links on mount
   useEffect(() => {
     if (notebook?.shared_links?.[0]?.permissions) {
       setPreservedPermissions(notebook.shared_links[0].permissions)
     }
   }, [notebook?._id])
 
-  // Fetch notes for the shared notebook
   useEffect(() => {
     if (notebook && notebook._id) {
       setLoading(true)
@@ -69,14 +62,12 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
     }
   }, [notebook])
 
-  // Initialize starred notes
   useEffect(() => {
     if (!isStarredNotesInitialized) {
       initializeStarredNotes()
     }
   }, [isStarredNotesInitialized, initializeStarredNotes])
 
-  // Handle search
   useEffect(() => {
     searchingSharedNotebookNotes(searchValue)
   }, [searchValue])
@@ -87,13 +78,10 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
     handleNoteHandler(note)
   }
 
-
-
   const handleStarClickWrapper = (note, e) => {
     handleStarClick(note, e)
   }
 
-  // Check if notebook has notes_addition permission
   const hasNotesAdditionPermission = () => {
     if (!preservedPermissions) return false;
     return preservedPermissions?.allow_notes_addition === 1 || 
@@ -101,7 +89,6 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
            preservedPermissions?.allow_notes_addition === true;
   }
 
-  // Check if notebook has write permission (using allow_view as write permission)
   const hasWritePermission = () => {
     if (!preservedPermissions) return false;
     return preservedPermissions?.allow_view === 1 || 
@@ -157,9 +144,7 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
         const insertedData = data.DB_DATA;
         showToast('Note Added Successfully', 'success');
         handleCloseAddNote();
-        // Refresh notes list
         gettingSharedNotebookNotes(notebook._id || notebook.id);
-        // Open the newly created note in editor
         setSelectedNote(insertedData);
         getNoteData(insertedData);
       } else {
@@ -174,71 +159,57 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
     }
   }
 
-
-  // Notes are already filtered by the store's search function - SAFE CHECK
   const filteredNotes = Array.isArray(sharedNotebookNotes) ? sharedNotebookNotes : []
 
   return (
-    <div className='flex flex-col gap-6 py-2 pb-1 pl-2 pr-4'>
+    <div className='flex flex-col gap-6 py-2 pb-6 pl-2 pr-4'>
       {/* Header with back button */}
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
         <div className='flex items-center gap-3'>
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className='p-2 hover:bg-gray-100 rounded-md transition-colors flex items-center justify-center'
+              className='p-2.5 hover:bg-gray-100 rounded-xl transition-colors flex items-center justify-center text-gray-500 hover:text-gray-800'
               title="Back to notebooks"
             >
-              <BiArrowBack className='text-xl text-[#474747]' />
+              <BiArrowBack className='text-xl' />
             </button>
           )}
-          <span className='w-8 h-8 p-2 bg-[#8bc9f8] text-white rounded-md'>
-            <FaBook />
-          </span>
-          <div>
-            <span className='text-[20px]'>{notebook?.notebook_name}</span>
+          <div className="flex items-center gap-3">
+            <span className='w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-500 rounded-xl shadow-sm'>
+                <FaBook className='text-lg' />
+            </span>
+            <div>
+                <span className='text-xl font-bold text-gray-800'>{notebook?.notebook_name}</span>
+                <p className="text-xs text-gray-500">Shared Notebook</p>
+            </div>
           </div>
         </div>
-        <div className='flex items-center gap-3 text-[#698592] text-[12px]'>
-          <span>Total Notes</span>
-          <span>{sharedNotebookNotes?.length || 0}</span>
+
+        <div className='flex items-center gap-4'>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-gray-100 shadow-sm">
+                <span className="text-xs text-gray-500">Total:</span>
+                <span className="text-sm font-bold text-gray-800">{sharedNotebookNotes?.length || 0}</span>
+             </div>
+
+            {/* Search */}
+            <div className="relative w-full md:w-[250px] h-[40px] bg-white rounded-xl border border-gray-100 shadow-sm transition-all focus-within:shadow-md focus-within:border-blue-100">
+                <div className="absolute grid w-8 h-full place-items-center text-gray-400 right-0">
+                <BiSearch />
+                </div>
+                <input
+                className="w-full h-full bg-transparent text-gray-700 border-none outline-none text-sm font-medium px-4 rounded-xl placeholder:text-gray-400"
+                placeholder="Search Notes..." 
+                name='searchBranch' 
+                value={searchValue} 
+                onChange={(e) => setSearchValue(e.target.value)} 
+                />
+            </div>
         </div>
       </div>
 
-      {/* Search */}
-
-      {/* <div className="relative w-96 h-9">
-        <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-2/4 right-3 -translate-y-2/4">
-          <span>
-            <BiSearch />
-          </span>
-        </div>
-        <input
-          className="peer w-full h-full bg-transparent text-blue-gray-700 outline outline-0 focus:outline-0 disabled:bg-blue-gray-50 disabled:border-0 transition-all placeholder-shown:border placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 border focus:border-2 border-t-transparent focus:border-t-transparent text-sm px-3 py-2.5 rounded-[7px] !pr-9 border-blue-gray-200 focus:border-[#8bc9f8]"
-          placeholder=" "
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-        />
-        <label className="flex w-full h-full select-none pointer-events-none absolute left-0 !overflow-visible truncate peer-placeholder-shown:text-blue-gray-500 leading-tight peer-focus:leading-tight peer-disabled:text-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500 transition-all -top-1.5 peer-placeholder-shown:text-sm text-[11px] peer-focus:text-[11px] before:content[' '] before:block before:box-border before:w-2.5 before:h-1.5 before:mt-[6.5px] before:mr-1 peer-placeholder-shown:before:border-transparent before:rounded-tl-md before:border-t peer-focus:before:border-t-2 before:border-l peer-focus:before:border-l-2 before:pointer-events-none before:transition-all peer-disabled:before:border-transparent after:content[' '] after:block after:flex-grow after:box-border after:w-2.5 after:h-1.5 after:mt-[6.5px] after:ml-1 peer-placeholder-shown:after:border-transparent after:rounded-tr-md after:border-t peer-focus:after:border-t-2 after:border-r peer-focus:after:border-r-2 after:pointer-events-none after:transition-all peer-disabled:after:border-transparent peer-placeholder-shown:leading-[3.75] text-gray-500 peer-focus:text-[#8bc9f8] before:border-blue-gray-200 peer-focus:before:!border-[#8bc9f8] after:border-blue-gray-200 peer-focus:after:!border-[#8bc9f8]">
-          Search Notes
-        </label>
-      </div> */}
-      <div className='w-[350px] min-w-[200px]'>
-          {/* <label className='text-[12px] text-[#474747] font-Urbanist font-medium px-2'>Search Branch</label> */}
-          <div className="relative w-full min-w-[200px] h-[38px] bg-white rounded-[7px] px-3 drop-shadow-md ">
-            <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-2/4 right-3 -translate-y-2/4">
-              <span>
-                <BiSearch />
-              </span>
-            </div>
-            <input
-              className="w-full h-full bg-transparent text-[#474747] border-none outline-none text-[12px] font-Urbanist rounded-[7px]"
-              placeholder="Search Notes" name='searchBranch' value={searchValue} onChange={(e) => setSearchValue(e.target.value)} />
-          </div>
-        </div>
-
-      <div className="grid w-full gap-4 grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
+      <div className="grid w-full gap-5 grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
         {loading ? (
           <div className='col-span-full text-center py-8'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto'></div>
@@ -246,134 +217,141 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
           </div>
         ) : (
           <>
+            {/* Add Note Card (if permitted) */}
+            {hasNotesAdditionPermission() && (
+                <motion.div
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex flex-col items-center justify-center w-full h-[220px] rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/30 cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 group"
+                    onClick={handleAddNoteClick}
+                >
+                    <div className="flex items-center justify-center w-14 h-14 bg-white rounded-full shadow-sm text-blue-500 mb-3 group-hover:scale-110 transition-transform duration-300 group-hover:text-blue-600">
+                        <BiPlus className="text-3xl" />
+                    </div>
+                    <span className="font-semibold text-sm text-gray-600 group-hover:text-blue-600 transition-colors">Create New Note</span>
+                </motion.div>
+            )}
             
             {/* Notes List */}
-            {filteredNotes?.length > 0
-          ? filteredNotes?.map((note, index) => {
-            // SAFE CHECK: Skip if note is null/undefined
+            {filteredNotes?.length > 0 && filteredNotes?.map((note, index) => {
             if (!note) return null;
             
-            const { bgColor } = titleNameAlpha(note.note_title || 'Untitled')
-            const rgbaColor = hexToRGBA(bgColor, 0.3)
             const noteId = note.note_id || note.id || note._id
             const isNoteStarred = isStarred(noteId)
+            
             return (
-              <div
+              <motion.div
                 key={index}
-                className="border-[1px] border-[#3DA5F4] rounded-[10px] flex flex-col justify-between w-full justify-self-start max-w-[190px] h-[190px] cursor-pointer bg-white p-2"
-                onClick={() => handleNoteClick(note)}>
-                <div className="flex justify-end items-end gap-2 w-full">
-                  {/* Star Icon */}
-                  <motion.div
-                    className="cursor-pointer"
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => handleStarClickWrapper(note, e)}
-                  >
-                    {(() => {
-                      return isNoteStarred ? (
-                        <FaStar className="text-yellow-500 text-lg" />
-                      ) : (
-                        <FaRegStar className="text-gray-400 text-lg hover:text-yellow-500" />
-                      );
-                    })()}
-                  </motion.div>
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="relative flex flex-col justify-between w-full h-[220px] rounded-2xl bg-white border border-gray-100 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-blue-100 group overflow-hidden"
+                onClick={() => handleNoteClick(note)}
+              >
+                {/* Decorative top bar */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-cyan-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                  {/* More Menu - Only show if user has write permission */}
-                  {hasWritePermission() && (
-                    <div
-                      ref={(el) => (triggerRefs.current[index] = el)}
-                      onMouseEnter={() => toggleMenuValue(index, true)}
-                      onMouseLeave={() => toggleMenuValue(index, false)}
-                      className="relative"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                <div className="flex justify-between items-start w-full relative z-10">
+                   {/* Icon Placeholder */}
+                   <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors duration-300">
+                      <MdEditDocument className="text-xl" />
+                   </div>
+
+                   <div className="flex items-center gap-1">
+                      {/* Star Icon */}
                       <motion.div
-                        className="text-[#698592] cursor-pointer relative hover:text-black"
-                        whileHover={{ scale: 1.4 }}
+                        className="p-1.5 rounded-full hover:bg-gray-50 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => handleStarClickWrapper(note, e)}
                       >
-                        <IoMdMore />
+                        {isNoteStarred ? (
+                            <FaStar className="text-yellow-400 text-base" />
+                        ) : (
+                            <FaRegStar className="text-gray-300 text-base hover:text-yellow-400 transition-colors" />
+                        )}
                       </motion.div>
-                      {openMenuValue[index] && (
+
+                      {/* More Menu */}
+                      {hasWritePermission() && (
                         <div
-                          className={`border border-gray-200 rounded-lg absolute z-50 bg-white w-[200px] left-[-170px] shadow-md ${getDropdownPosition(index) === "top"
-                            ? "bottom-full"
-                            : "top-full"
-                            }`}
+                        ref={(el) => (triggerRefs.current[index] = el)}
+                        onMouseEnter={() => toggleMenuValue(index, true)}
+                        onMouseLeave={() => toggleMenuValue(index, false)}
+                        className="relative"
+                        onClick={(e) => e.stopPropagation()}
                         >
-                          <motion.div
-                            initial={{
-                              opacity: 0,
-                              y: getDropdownPosition(index) === "top" ? -50 : 50,
-                            }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{
-                              opacity: 0,
-                              y: getDropdownPosition(index) === "top" ? -50 : 50,
-                            }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <ul className="flex w-full flex-col gap-1 p-1">
-                              {Array.isArray(sharednotesMenuList) && sharednotesMenuList.map((menuItem) => (
+                        <div className="p-1.5 rounded-full text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors">
+                            <IoMdMore className="text-lg" />
+                        </div>
+                        
+                        <AnimatePresence>
+                        {openMenuValue[index] && (
+                            <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className={`
+                                absolute z-50 w-48 rounded-xl border border-gray-100 bg-white shadow-xl right-0
+                                ${getDropdownPosition(index) === "top" ? "bottom-full mb-2" : "top-full mt-2"}
+                            `}
+                            >
+                            <ul className="flex flex-col p-1.5">
+                                {Array.isArray(sharednotesMenuList) && sharednotesMenuList.map((menuItem) => (
                                 <MenuItem
-                                  className="flex items-center justify-between"
-                                  key={menuItem.id}
-                                  onClick={(e) => {
+                                    className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
+                                    key={menuItem.id}
+                                    onClick={(e) => {
                                     e.stopPropagation();
                                     handleNoteMenuList(note, menuItem);
-                                  }}
+                                    }}
                                 >
-                                  <Typography variant="small">
+                                    <Typography variant="small" className="font-medium text-xs">
                                     {menuItem.name}
-                                  </Typography>
-                                  <span>{menuItem.icon}</span>
+                                    </Typography>
+                                    <span className="text-gray-400 text-sm">{menuItem.icon}</span>
                                 </MenuItem>
-                              ))}
+                                ))}
                             </ul>
-                          </motion.div>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
                         </div>
                       )}
-                    </div>
-                  )}
+                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex flex-col space-y-1 items-center justify-center">
-                    <div className="flex items-center justify-center bg-bgBlue rounded-full w-[50px] h-[50px]">
-                      <MdEditDocument className="text-white w-[21px] h-[21px]" />
-                    </div>
-                    {/* TITLE + TOOLTIP */}
-                    <div className="relative group w-full text-center">
-                      <span
-                        className="block text-sm font-medium truncate"
-                      >
+                <div className="flex flex-col gap-2 mt-4 relative z-10 flex-1">
+                    <h3 className="font-bold text-gray-800 text-lg leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
                         {note.note_title}
-                      </span>
-                      <div className="absolute hidden group-hover:block text-center bg-black text-white text-xs px-2 py-1 rounded mt-1 z-50 whitespace-normal break-words max-w-xs">
-                        {note.note_title}
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-normal font-Urbanist text-[#616161]">Last Update {formatDateDMY(note.last_updated)}</span>
-                    <span className="text-[10px] font-normal font-Urbanist text-bgBlue">views ({note?.view_count || 0})</span>
-                  </div>
-
-                  <div className="flex items-center justify-end w-full gap-1">
-                    <BiCalendar className="text-bgBlue text-[10px]" />
-                    <span className="text-[10px] font-normal font-Urbanist text-[#616161]">{formatDateDMY(note.entry_time)}</span>
-                  </div>
+                    </h3>
                 </div>
-              </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-gray-50 mt-auto relative z-10">
+                    <div className="flex items-center gap-1.5 text-gray-400">
+                        <BiCalendar className="text-xs" />
+                        <span className="text-[11px] font-medium">{formatDateDMY(note.last_updated)}</span>
+                    </div>
+                    {note?.view_count > 0 && (
+                        <span className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">
+                            {note.view_count} views
+                        </span>
+                    )}
+                </div>
+              </motion.div>
             );
-          })
-          : null}
+          })}
           </>
         )}
         
         {/* Empty State */}
-        {!loading && filteredNotes.length === 0 && (
-          <div className="col-span-full w-full flex items-center justify-center py-10">
-            <span className="text-[#474747] text-[14px] font-medium font-Urbanist">
-              No notes exist
+        {!loading && filteredNotes.length === 0 && !hasNotesAdditionPermission() && (
+          <div className="col-span-full w-full flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <FaBook className="text-gray-300 text-2xl" />
+            </div>
+            <span className="text-gray-500 text-sm font-medium">
+              No notes found in this shared notebook.
             </span>
           </div>
         )}
@@ -424,7 +402,6 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
               addNoteValue={editorValue}
               toggleEditorNote={() => {
                 toggleEditNote();
-                // Refresh notes list after editing
                 gettingSharedNotebookNotes(notebook._id || notebook.id);
               }}
             />

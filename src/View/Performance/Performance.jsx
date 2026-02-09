@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
 import { Typography, Badge, Progress, Button } from "@material-tailwind/react";
@@ -214,54 +214,38 @@ const Performance = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 py-2 px-2">
-      {!showProfile && (
-        <div className="">
-          <span className="text-[20px] font-Urbanist font-semibold text-[#474747]">
-            Performance
-          </span>
-        </div>
-      )}
-
-      {/* Profile Management Section - Displayed at top when employee is selected */}
-      {showProfile && profileData && (
-        <ProfileManagement
-          profileData={profileData}
-          onClose={handleCloseProfile}
-        />
-      )}
-
-      <div className="flex flex-col gap-2 pb-3">
-        {/* Review Cycle Section - Inside main content div */}
-        {/* TODO: Implement Review Cycle functionality for Competency view later */}
-        {/* {showProfile && currentView !== 'competency' && (
-          <div className="flex items-center gap-4 px-6 py-4 border-b border-gray-200">
-            <Typography variant="h6" color="blue-gray" className="font-semibold">
-              Review Cycle
-            </Typography>
-            <div className="flex-1 max-w-xs">
-              <select className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Select Review Cycle</option>
-                <option value="cycle1">self - for leader</option>
-                <option value="cycle2">start date 2023-08-22 → deadline 2023-09-01</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                self - for leader
-              </Typography>
-            </div>
-            <div className="flex items-center gap-2">
-              <FaCalendarAlt className="text-gray-500" />
-              <Typography variant="small" color="gray" className="font-normal">
-                start date 2023-08-22 → deadline 2023-09-01
-              </Typography>
+    <div className='min-h-screen bg-gray-50/50 p-6 font-poppins'>
+      <div className='max-w-7xl mx-auto space-y-6'>
+        
+        {/* Header Section */}
+        {!showProfile && (
+          <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+            <div>
+              <h1 className='text-2xl font-bold text-gray-900'>Performance</h1>
+              <p className='text-sm text-gray-500 mt-1'>Manage goals, competencies, and reviews</p>
             </div>
           </div>
-        )} */}
+        )}
 
-        <div className="flex justify-between items-center gap-5 py-5">
-          <div className="flex items-center gap-5">
+        {/* Profile Management Section - Displayed at top when employee is selected */}
+        <AnimatePresence>
+          {showProfile && profileData && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ProfileManagement
+                profileData={profileData}
+                onClose={handleCloseProfile}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Navigation Tabs */}
+        <div className='bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-100 inline-flex flex-wrap gap-1'>
             {performanceTitles
               .filter((ele) => {
                 // Hide "Performance Review Cycle" tab when viewing individual employee details
@@ -271,22 +255,10 @@ const Performance = () => {
                 return true;
               })
               .map((ele) => (
-                <NavLink
+                <button
                   key={ele.id}
-                  className={`${
-                    showProfile && selectedEmployeeId
-                      ? currentView === ele.title.toLowerCase()
-                        ? "text-white"
-                        : "hover:text-[#474747]/60 text-[#474747]"
-                      : location.pathname === ele.link
-                      ? "text-white"
-                      : "hover:text-[#474747]/60 text-[#474747]"
-                  } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
-                  style={{
-                    WebkitTapHighlightColor: "transparent",
-                  }}
-                  // to={ele.link}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
                     // If profile is open, handle tab change
                     if (showProfile && selectedEmployeeId) {
                       if (ele.title === "Goals") {
@@ -303,31 +275,34 @@ const Performance = () => {
                       handleNavLinkClick(ele);
                     }
                   }}
+                  className={`
+                    relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out z-10
+                    ${((showProfile && selectedEmployeeId && currentView === ele.title.toLowerCase()) ||
+                       (!showProfile && location.pathname === ele.link))
+                        ? "text-white shadow-md shadow-blue-500/20" 
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                    }
+                  `}
                 >
-                  {((showProfile &&
-                    selectedEmployeeId &&
-                    currentView === ele.title.toLowerCase()) ||
+                  {((showProfile && selectedEmployeeId && currentView === ele.title.toLowerCase()) ||
                     (!showProfile && location.pathname === ele.link)) && (
                     <motion.span
-                      layoutId="bubble"
-                      className="absolute inset-0 z-10 bg-[#8bc9f8]"
-                      style={{ borderRadius: 9999 }}
-                      transition={{
-                        type: "spring",
-                        bounce: 0.2,
-                        duration: 0.6,
-                      }}
+                      layoutId="activeTab"
+                      className="absolute inset-0 bg-bgBlue rounded-xl -z-10"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
-                  <span className="relative cursor-pointer text-[14px] z-20">
-                    {ele.title}
-                  </span>
-                </NavLink>
+                  {ele.title}
+                </button>
               ))}
-          </div>
         </div>
-        <div>
-          {/* Show EmployeeSubFeed when profile is active and feedback tab is selected */}
+
+        {/* Content Area */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           {showProfile && currentView === "feedback" ? (
             <EmployeeSubFeed
               handleCloseProfile={handleCloseProfile}
@@ -361,7 +336,7 @@ const Performance = () => {
               }}
             />
           )}
-        </div>
+        </motion.div>
       </div>
 
       {/* Modal Components */}

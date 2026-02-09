@@ -36,96 +36,94 @@ const MarkBranchAdmin = (props) => {
     }
   return (
     <>
-    <div className='flex flex-col space-y-4 text-[12px]'>
+    <div className='flex flex-col space-y-6 p-6'>
         <div>
-            <span className=''>Select Employee to mark as Branch Admin</span>
-            {/* <div className="text-xs text-gray-500 mt-1">
-                This will assign administrative privileges (privileges: "2") to the selected employee
-            </div> */}
+            <Typography variant="small" className="mb-2 font-medium font-poppins text-gray-700">
+                Select Employee to mark as Branch Admin
+            </Typography>
+            <div className="w-full">
+                <CustomSelect
+                placeHolderTitle='Select Employee'
+                value={empIdBranchAdmin?.emp_Id}
+                options={brnachAdminData?.DB_DATA?.length > 0 ? 
+                    brnachAdminData.DB_DATA
+                        .filter(employee => {
+                            // Filter out employees who are already branch admins
+                            const existingAdminIds = brnachAdminData?.BRANCH_ADMIN_DATA?.map(admin => admin.employee_id) || [];
+                            return !existingAdminIds.includes(employee.id);
+                        })
+                        .map((employee) => ({value:employee.id, label:employee.name})) : 
+                    []
+                }
+                onChangeHandler={(selectedOption, e) => onChangeEmpBranc(selectedOption, 'emp_Id', e)}
+                customStyles={false}
+                /> 
+            </div>
         </div>
         
-        <div>
-            <CustomSelect
-            placeHolderTitle='Employee'
-            value={empIdBranchAdmin?.emp_Id}
-            options={brnachAdminData?.DB_DATA?.length > 0 ? 
-                brnachAdminData.DB_DATA
-                    .filter(employee => {
-                        // Filter out employees who are already branch admins
-                        const existingAdminIds = brnachAdminData?.BRANCH_ADMIN_DATA?.map(admin => admin.employee_id) || [];
-                        return !existingAdminIds.includes(employee.id);
-                    })
-                    .map((employee) => ({value:employee.id, label:employee.name})) : 
-                []
-            }
-            onChangeHandler={(selectedOption, e) => onChangeEmpBranc(selectedOption, 'emp_Id', e)}
-            cStyle={true}
-            /> 
-        </div>
-        
-
-
-        <div>
-            <span className='font-semibold'>Note:</span>
-            <span>If you want to make branch admin with some restrictions kindly, go to
-            Employee &gt; View &gt; Profile &gt; Account Privileges</span>
+        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <div className="flex items-start gap-2">
+                <div className="text-blue-500 mt-0.5">ℹ️</div>
+                <div>
+                    <Typography variant="small" className='font-semibold text-blue-900 font-poppins'>Note:</Typography>
+                    <Typography variant="small" className="text-blue-800 font-poppins mt-1">
+                        If you want to make branch admin with some restrictions, kindly go to: <br/>
+                        <span className="font-medium">Employee &gt; View &gt; Profile &gt; Account Privileges</span>
+                    </Typography>
+                </div>
+            </div>
         </div>
 
         <div>
             {brnachAdminData?.BRANCH_ADMIN_DATA?.length > 0 && (
-                <div className="mb-3 text-sm text-gray-600">
-                    <Typography variant="small" color="blue-gray" className="font-normal">
-                        Total Existing Branch Admins: {brnachAdminData.BRANCH_ADMIN_DATA.length}
+                <div className="mb-3 text-sm text-gray-600 font-poppins">
+                    <Typography variant="small" color="blue-gray" className="font-medium font-poppins">
+                        Total Existing Branch Admins: <span className="font-bold">{brnachAdminData.BRANCH_ADMIN_DATA.length}</span>
                     </Typography>
                 </div>
             )}
-            <table className="w-[100%] min-w-max text-left">
-                                        <thead>
-                            <tr>
-                                    <th 
-                                    className="border-b border-blue-gray-100 p-2">
-                                        <Typography
-                                        variant='small'
-                                        color='blue-gray'
-                                        className="font-semibold leading-none opacity-70 capitalize"
-                                        >
-                                            Already Assigned Branch Admin
-                                        </Typography>
-                                    </th>
-                                    <th 
-                                    className="border-b border-blue-gray-100 p-2">
-                                        <Typography
-                                        variant='small'
-                                        color='blue-gray'
-                                        className="font-semibold leading-none opacity-70 capitalize flex items-center gap-2"
-                                        >
-                                            <span className='cursor-pointer' onClick={showDeleteOption}>Edit</span>
-                                        </Typography>
-                                    </th>
-                            </tr>
-                        </thead>
-                <tbody>
-                    {brnachAdminData?.BRANCH_ADMIN_DATA?.length > 0 ? (
-                        brnachAdminData?.BRANCH_ADMIN_DATA?.map((ele, index) => {
-                            const isLast = index === brnachAdminData?.BRANCH_ADMIN_DATA?.length - 1;
-                            const classes = isLast ? "p-2" : "p-2 border-b border-blue-gray-50";
-
-                            return(
-                                <tr key={ele.employee_id || ele.id}>
-                                    <td className={classes}>
-                                        <Typography
-                                        variant="small"
-                                        color="blue-gray"
-                                        className="font-normal"
-                                        >
-                                            {ele.employee_name || ele.name}
-                                        </Typography>
+            
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                <table className="w-full min-w-max text-left">
+                    <thead>
+                        <tr className="bg-gray-50/50">
+                            <th className="border-b border-gray-100 p-4">
+                                <Typography variant='small' color='blue-gray' className="font-semibold leading-none opacity-70 capitalize font-poppins">
+                                    Already Assigned Branch Admin
+                                </Typography>
+                            </th>
+                            <th className="border-b border-gray-100 p-4 w-20 text-right">
+                                <Button 
+                                    variant="text" 
+                                    size="sm" 
+                                    className="p-1 min-w-0 hover:bg-blue-50 text-blue-500 font-medium normal-case flex items-center gap-1 ml-auto"
+                                    onClick={showDeleteOption}
+                                >
+                                    {deleteOption ? 'Done' : 'Edit'}
+                                </Button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {brnachAdminData?.BRANCH_ADMIN_DATA?.length > 0 ? (
+                            brnachAdminData?.BRANCH_ADMIN_DATA?.map((ele, index) => (
+                                <tr key={ele.employee_id || ele.id} className="hover:bg-gray-50/30 transition-colors">
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                                {(ele.employee_name || ele.name || 'U').charAt(0).toUpperCase()}
+                                            </div>
+                                            <Typography variant="small" color="blue-gray" className="font-medium font-poppins">
+                                                {ele.employee_name || ele.name}
+                                            </Typography>
+                                        </div>
                                     </td>
-                                    {deleteOption && 
-                                        <td className={classes}>
+                                    <td className="p-4 text-right">
+                                        {deleteOption && (
                                             <IconButton 
+                                                variant="text"
                                                 color="red" 
-                                                className='w-7 h-7' 
+                                                className='w-8 h-8 rounded-full hover:bg-red-50' 
                                                 disabled={loadingDelete[ele.employee_id || ele.id]}
                                                 onClick={async () => {
                                                     const empId = ele.employee_id || ele.id;
@@ -154,34 +152,41 @@ const MarkBranchAdmin = (props) => {
                                                 }}
                                             >
                                                 {loadingDelete[ele.employee_id || ele.id] ? (
-                                                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                    <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
                                                 ) : (
-                                                    <FaTrash className='text-[10px] '/> 
+                                                    <FaTrash size={14} /> 
                                                 )}
                                             </IconButton>
-                                        </td>
-                                    }
-
+                                        )}
+                                    </td>
                                 </tr>
-                            )
-                        })
-                    ) : (
-                        <tr>
-                            <td colSpan={2} className='p-2 text-center'>
-                                <Typography variant="small" color="blue-gray" className="font-normal">
-                                    No Branch Admin assigned yet
-                                </Typography>
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={2} className='p-8 text-center text-gray-400'>
+                                    <Typography variant="small" className="font-normal font-poppins">
+                                        No Branch Admin assigned yet
+                                    </Typography>
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         {/* Submit Button */}
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-end pt-4 border-t border-gray-100 mt-auto">
             <Button
-                className="capitalize font-medium bg-[#8bc9f8] px-6 py-2"
+                variant="text"
+                color="gray"
+                onClick={closeDrawer}
+                className="mr-2 font-poppins normal-case"
+            >
+                Cancel
+            </Button>
+            <Button
+                className="capitalize font-medium bg-bgBlue shadow-blue-500/20 px-6 py-2 rounded-lg font-poppins"
                 disabled={empIdBranchAdmin?.loading}
                 onClick={async () => {
                     if (empIdBranchAdmin?.emp_Id) {

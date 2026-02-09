@@ -13,5 +13,9 @@ export default defineConfig({
     exclude: [],
   },
 
+  server: {
+    host:true,
+    allowedHosts:['entrepreneur-tmp-administered-spoke.trycloudflare.com']
+  }
 })
 
