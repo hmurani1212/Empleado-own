@@ -3,6 +3,7 @@ import React from 'react'
 import useNotice from '../../ViewModel/NoticeViewModel/NoticeServices';
 import useEditNoticeService from '../../ViewModel/NoticeViewModel/NoticeEditService';
 import { Loader2 } from 'lucide-react';
+import CustomSelect from '../../Components/CustomSelect/CustomSelect';
 
 const EditNoticeForm = (props) => {
 
@@ -14,57 +15,84 @@ const EditNoticeForm = (props) => {
    
 
   return (
-    <>
-    <form onSubmit={handleEditNotice}>
-        <div className='flex flex-col gap-4'>
-            <div className='w-100'>
-            <Select label='Branch' color='blue' className='h-9' name = 'branch_id' 
-        value={addNoticeValue.branch_id}
-        onChange={(event) => {handleAddNoticeBranch("branch_id", event)}}
-      >
-          {noticesBranches?.map((ele)=>(
-              <Option  key={`${ele.id}`} value={ele.id}>{ele.branch_name}</Option>
-          ))}
-        </Select>
-        </div>
-
-        <div className='w-100'>
-        <Select label='Department' color='blue'  name='deptt_id'  
-          value={addNoticeValue.deptt_id}
-          onChange={(event) => {handleAddNoticeBranch("deptt_id", event)}}
-        >
-        {filterDepartmentsNotices?.map((dept) => (
-            <Option key={`${dept.id}`} value={dept.id}>{dept.name}</Option>
-          ))}
-    
-        </Select>
-      </div>
-
-      <div className='w-100'>
-        <Input label='Notice Title' color='blue' value={addNoticeValue.title} name='title' onChange={handleNewNotice}/>
-      </div>
-
-      <div className="w-100">
-        <Textarea label="Notice Detail" color='blue' name='notice' value={addNoticeValue.notice} onChange={handleNewNotice}/>
-      </div>
-
-      <div>
-              {/* {isLoading ? (
-                <Button className='bg-blue-300 py-[10px] capitalize' loading={true}>
-                  Loading
-                </Button>
-              ) : ( */}
-                <Button type='submit' className='bg-blue-300 py-[10px] capitalize'>
-                  {loading ? <Loader2 className='animate-spin w-4 h-4' /> : 'Submit'}
-                </Button>
-              {/* )} */}
+    <div className='p-6 h-full flex flex-col'>
+    <form onSubmit={handleEditNotice} className="flex flex-col gap-6 h-full">
+        <div className='flex flex-col gap-5 flex-1'>
+            
+            <div className='flex flex-col gap-2'>
+                <label className="text-sm font-semibold text-gray-700 font-poppins">Branch</label>
+                <div className="w-full">
+                    <CustomSelect 
+                        placeHolderTitle='Select Branch'
+                        value={addNoticeValue.branch_id}
+                        options={noticesBranches?.map(ele => ({
+                            value: ele.id,
+                            label: ele.branch_name
+                        }))}
+                        onChangeHandler={(option) => handleAddNoticeBranch("branch_id", option)}
+                        customStyles={false}
+                    />
+                </div>
             </div>
 
+            <div className='flex flex-col gap-2'>
+                <label className="text-sm font-semibold text-gray-700 font-poppins">Department</label>
+                <div className="w-full">
+                    <CustomSelect 
+                        placeHolderTitle='Select Department'
+                        value={addNoticeValue.deptt_id}
+                        options={filterDepartmentsNotices?.map(dept => ({
+                            value: dept.id,
+                            label: dept.name
+                        }))}
+                        onChangeHandler={(option) => handleAddNoticeBranch("deptt_id", option)}
+                        customStyles={false}
+                    />
+                </div>
+            </div>
+
+            <div className='flex flex-col gap-2'>
+                <label className="text-sm font-semibold text-gray-700 font-poppins">Notice Title</label>
+                <Input 
+                    color='blue' 
+                    className='!border !border-gray-200 bg-white text-gray-900 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-blue-500 focus:!border-t-blue-500 focus:ring-blue-500/10 rounded-lg'
+                    labelProps={{
+                        className: "hidden",
+                    }}
+                    value={addNoticeValue.title} 
+                    name='title' 
+                    onChange={handleNewNotice}
+                />
+            </div>
+
+            <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700 font-poppins">Notice Details</label>
+                <Textarea 
+                    color='blue' 
+                    className='!border !border-gray-200 bg-white text-gray-900 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-blue-500 focus:!border-t-blue-500 focus:ring-blue-500/10 rounded-lg min-h-[150px]'
+                    labelProps={{
+                        className: "hidden",
+                    }}
+                    name='notice' 
+                    value={addNoticeValue.notice} 
+                    onChange={handleNewNotice}
+                />
+            </div>
 
         </div>
+
+        <div className='mt-auto pt-6 border-t border-gray-100 flex justify-end gap-3'>
+            <Button 
+                type='submit' 
+                className='font-poppins font-medium capitalize bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/40 min-w-[120px] flex items-center justify-center py-2.5 rounded-xl'
+                disabled={loading}
+            >
+                {loading ? <Loader2 className='animate-spin w-4 h-4' /> : 'Update Notice'}
+            </Button>
+        </div>
+
     </form>
-    
-    </>
+    </div>
   )
 }
 

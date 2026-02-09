@@ -4,11 +4,13 @@ const empApplicationViewModel = (set, get)=>({
     existingApplication:[],
     lastId:'',
     fetchNext:true,
+    isEmpApplicationLoading: false,
 
 
 
 
     getAllEmpExistingApplication:async(data)=>{
+        set({isEmpApplicationLoading: true})
         try {
             const response = await empApplicationApi.getAllEmpApplication(data)
             console.log('response', response)
@@ -20,6 +22,8 @@ const empApplicationViewModel = (set, get)=>({
             }
         } catch (error) {
             
+        } finally {
+            set({isEmpApplicationLoading: false})
         }
     },
 

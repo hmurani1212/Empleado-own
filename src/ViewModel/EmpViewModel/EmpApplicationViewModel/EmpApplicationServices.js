@@ -8,6 +8,7 @@ const useEmpApplcationServices = ()=>{
     const existingApplication = useStore((state)=> state.existingApplication)
     const getAllEmpExistingApplication = useStore((state)=> state.getAllEmpExistingApplication)
     const getNextEmpExistingApplication = useStore((state)=> state.getNextEmpExistingApplication)
+    const isEmpApplicationLoading = useStore((state)=> state.isEmpApplicationLoading)
     const [active, setActive] = useState(1)
 
     const existingApplicationRef = useRef(null)
@@ -63,6 +64,7 @@ const useEmpApplcationServices = ()=>{
         active,handleApplicationToggle,getAllEmpExistingApplication,
         existingApplication,
         existingApplicationRef,
+        isEmpApplicationLoading
         
     }
 }

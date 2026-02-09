@@ -11,13 +11,25 @@ import CustomDrawer from "../../Components/CustomDrawer/CustomDrawer";
 import useDepartments from "../../ViewModel/DepartmentsViewModel/DepartmentsServices";
 import AddNewDepartment from "./AddNewDepartment";
 import { FaEye, FaChevronDown } from "react-icons/fa";
-import { motion } from "framer-motion";
+import { HiOutlineUserGroup, HiOutlineOfficeBuilding } from "react-icons/hi"; // New icons
+import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import useSubDept from "../../ViewModel/DepartmentsViewModel/SubDeptServices";
 import { Outlet, useLocation, useParams } from "react-router";
 import useDropdownService from "../../services/__dropDownHoverService";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 
+const SkeletonRow = () => (
+  <tr className="animate-pulse border-b border-gray-100">
+    <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-48 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-6 w-16 bg-gray-200 rounded-full mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-6 w-16 bg-gray-200 rounded-full mx-auto"></div></td>
+    <td className="p-4"><div className="h-8 w-8 bg-gray-200 rounded-full mx-auto"></div></td>
+    <td className="p-4"><div className="h-8 w-20 bg-gray-200 rounded mx-auto"></div></td>
+  </tr>
+);
 
 const Departments = () => {
   const {
@@ -43,13 +55,14 @@ const Departments = () => {
   } = useDepartments();
   const { triggerRefs, getDropdownPosition } = useDropdownService();
   const { handleSubDept } = useSubDept();
+  
   const deptData = [
     "Dept Name",
     "Description",
-    "Number of Employees",
-    "Head of Department",
-    "Sub Departments",
-    "Designation(s)",
+    "Employees",
+    "Head of Dept",
+    "Sub Depts",
+    "Designations",
     "Actions",
   ];
 
@@ -62,7 +75,9 @@ const Departments = () => {
   useEffect(() => {
     if (params.id && location.pathname.includes("manageDept")) {
       settingBranchId(params.id);
-      getManageDept(params.id, 1, 10);
+      // Simulate a loading state if not provided by ViewModel
+      setIsLoadingDeptPage(true);
+      getManageDept(params.id, 1, 10).finally(() => setIsLoadingDeptPage(false));
     }
   }, [params.id]);
 
@@ -105,570 +120,330 @@ const Departments = () => {
   // Server returns one page; render allDeptDetails as-is (no client-side slice)
   const displayDeptDetails = allDeptDetails || [];
 
-  const centerCols = [0, 1, 2, 3, 4, 5, 6];
-  const minWidths = {
-    0: "min-w-[220px]", // Dept Name
-    1: "min-w-[260px]", // Description
-    2: "min-w-[180px]", // Number Of Employees
-    3: "min-w-[180px]", // Head Of Department
-    4: "min-w-[170px]", // Sub Departments
-    5: "min-w-[140px]", // Designation(s)
-    6: "min-w-[120px]", // Actions
-  };
   return (
     <>
       {location.pathname.includes("manage_sub_dep") ? (
         <Outlet />
       ) : (
-        <div>
-          {allDeptDetails?.length > 0 ? (
-            <>
-              <div className="flex flex-col space-y-4 px-2">
-                <div className="flex flex-row items-center justify-between gap-4">
-                  <span className="font-medium text-[16px] capitalize text-bgBlue font-Urbanist">
-                    Manage existing department
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <CustomButton
-                      className="capitalize font-medium bg-[#8bc9f8] p-2"
-                      onClick={handleNavigateCreateNewDept}
-                      title="Add new department"
-                    >
-                      {/* Add new department */}
-                    </CustomButton>
-                    <CustomButton
-                      title="back"
-                      onClick={handleBackDept}
-                    />
-                  </div>
+        <div className="min-h-screen bg-gray-50/50 p-6">
+          {allDeptDetails?.length > 0 || isLoadingDeptPage ? (
+            <div className="max-w-7xl mx-auto space-y-6">
+              
+              {/* Header Section */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 font-poppins">
+                    Manage Departments
+                  </h1>
+                  <p className="text-sm text-gray-500 font-poppins mt-1">
+                    Overview and management of your organization's structure
+                  </p>
                 </div>
-                <div className="bg-white rounded-[10px] drop-shadow-md p-2 z-20">
-                  <div className="relative w-full overflow-auto customScroll">
-                    <table className="w-full text-center min-w-max">
-                      <thead className="sticky top-0 z-20 bg-[#F8F9FA] rounded-[8px]">
-                        <tr>
-                          {deptData?.map((head, i) => (
-                            <th key={i} className="bg-[#F8F9FA] p-4 text-center">
-                              <Typography className="font-medium leading-none capitalize text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist">
-                                {head}
-                              </Typography>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
+                <div className="flex items-center gap-3">
+                   <CustomButton
+                    className="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg shadow-sm font-medium transition-all"
+                    onClick={handleBackDept}
+                    title="Back"
+                  >
+                    Back
+                  </CustomButton>
+                  <CustomButton
+                    className="bg-bgBlue text-white hover:bg-blue-600 px-4 py-2 rounded-lg shadow-lg shadow-blue-500/20 font-medium transition-all flex items-center gap-2"
+                    onClick={handleNavigateCreateNewDept}
+                    title="Add Department"
+                  >
+                    <span className="text-lg">+</span> Add Department
+                  </CustomButton>
+                </div>
+              </div>
 
-                      <tbody>
-                        {displayDeptDetails.map((t_data, index) => {
-                          const isLast = index === displayDeptDetails.length - 1;
-                          const cellClasses = isLast ? "p-4 text-center" : "p-4 border-b border-[#F2F2F9] text-center";
+              {/* Glassy Table Card */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-center min-w-[1000px] table-auto">
+                    <thead>
+                      <tr className="bg-gray-50/80 border-b border-gray-100">
+                        {deptData?.map((head, i) => (
+                          <th key={i} className={`p-4 first:pl-6 last:pr-6 ${i === 0 ? 'text-left' : 'text-center'}`}>
+                            <Typography className="font-semibold uppercase tracking-wider text-[11px] text-gray-500 font-poppins">
+                              {head}
+                            </Typography>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
 
-                          return (
-                            <tr key={t_data.id ?? index} className="hover:bg-gray-50 transition-colors">
-                              {/* Dept Name */}
-                              <td className={cellClasses}>
-                                <Typography className="text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist font-normal">
+                    <tbody className="divide-y divide-gray-50">
+                      {isLoadingDeptPage ? (
+                         [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
+                      ) : (
+                        displayDeptDetails.map((t_data, index) => (
+                          <motion.tr
+                            key={t_data.id ?? index}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className="hover:bg-blue-50/30 transition-colors group"
+                          >
+                            {/* Dept Name */}
+                            <td className="p-4 first:pl-6 text-left">
+                              <div className="flex items-center justify-start gap-3">
+                                <div className="p-2 bg-blue-50 rounded-lg text-blue-500 group-hover:bg-blue-100 transition-colors">
+                                   <HiOutlineOfficeBuilding size={18} />
+                                </div>
+                                <Typography className="text-sm font-semibold text-gray-900 font-poppins">
                                   {t_data.name || t_data.dept_name}
                                 </Typography>
-                              </td>
+                              </div>
+                            </td>
 
-                              {/* Description */}
-                              <td className={cellClasses}>
-                                <Typography className="text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist font-normal">
-                                  {t_data.description}
-                                </Typography>
-                              </td>
+                            {/* Description */}
+                            <td className="p-4 max-w-[250px]">
+                              <Typography className="text-sm text-gray-500 font-poppins truncate" title={t_data.description}>
+                                {t_data.description || "—"}
+                              </Typography>
+                            </td>
 
-                              {/* Number Of Employees (count + View) */}
-                              <td className={cellClasses}>
-                                <div className="flex items-center justify-center gap-2 flex-wrap">
-                                  <Typography className="text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist font-normal">
-                                    <span className="px-2 py-0.5 border border-gray-200 rounded text-[#474747]">
-                                      {t_data?._count?.employees ?? "0"}
-                                    </span>
-                                  </Typography>
-                                  <button
-                                    type="button"
-                                    className="text-[clamp(12px,0.9vw,14px)] text-[#3DA5F4] font-Urbanist font-normal hover:underline transition-colors"
-                                    onClick={() => handleEmpDetails(t_data.id)}
-                                  >
-                                    View
-                                  </button>
-                                </div>
-                              </td>
+                            {/* Number Of Employees */}
+                            <td className="p-4">
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-600 text-xs font-medium border border-amber-100">
+                                  <HiOutlineUserGroup size={14} />
+                                  {t_data?._count?.employees ?? "0"}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="text-xs text-blue-500 hover:text-blue-700 font-medium font-poppins transition-colors underline decoration-blue-200 hover:decoration-blue-500 underline-offset-2"
+                                  onClick={() => handleEmpDetails(t_data.id)}
+                                >
+                                  View
+                                </button>
+                              </div>
+                            </td>
 
-                              {/* Head Of Department */}
-                              <td className={cellClasses}>
-                                <Typography className="text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist font-normal">
-                                  {t_data?.Hod || "—"}
-                                </Typography>
-                              </td>
+                            {/* Head Of Department */}
+                            <td className="p-4">
+                              <Typography className="text-sm font-medium text-gray-700 font-poppins">
+                                {t_data?.Hod || <span className="text-gray-400 italic">Unassigned</span>}
+                              </Typography>
+                            </td>
 
-                              {/* Sub Departments (count + View) */}
-                              <td className={cellClasses}>
-                                <div className="flex items-center justify-center gap-2 flex-wrap">
-                                  <Typography className="text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist font-normal">
-                                    <span className="px-2 py-0.5 border border-gray-200 rounded text-[#474747]">
-                                      {t_data.childDepartments || "0"}
-                                    </span>
-                                  </Typography>
-                                  <button
-                                    type="button"
-                                    className="text-[clamp(12px,0.9vw,14px)] text-[#3DA5F4] font-Urbanist font-normal hover:underline transition-colors"
-                                    onClick={() => handleSubDept(t_data, params.id)}
-                                  >
-                                    View
-                                  </button>
-                                </div>
-                              </td>
+                            {/* Sub Departments */}
+                            <td className="p-4">
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-600 text-xs font-bold">
+                                  {t_data.childDepartments || "0"}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="text-xs text-blue-500 hover:text-blue-700 font-medium font-poppins transition-colors underline decoration-blue-200 hover:decoration-blue-500 underline-offset-2"
+                                  onClick={() => handleSubDept(t_data, params.id)}
+                                >
+                                  Manage
+                                </button>
+                              </div>
+                            </td>
 
-                              {/* Designation(s) - View icon like ApplicationsList */}
-                              <td className={cellClasses}>
-                                <div className="flex items-center justify-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDesignation(t_data.designation, t_data.id)}
-                                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-50 transition-colors cursor-pointer bg-transparent p-0 outline-none focus:outline-none"
-                                    title="View Designations"
-                                    aria-label="View designations"
-                                  >
-                                    <FaEye className="text-blue-500" size={18} />
-                                  </button>
-                                </div>
-                              </td>
+                            {/* Designation(s) */}
+                            <td className="p-4">
+                              <div className="flex justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDesignation(t_data.designation, t_data.id)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-600 transition-all shadow-sm border border-blue-100"
+                                  title="View Designations"
+                                >
+                                  <FaEye size={14} />
+                                </button>
+                              </div>
+                            </td>
 
-                              {/* Actions - same design as Application/Training table */}
-                              <td className={cellClasses}>
+                            {/* Actions */}
+                            <td className="p-4 last:pr-6 relative">
                                 <div
-                                  ref={(el) =>
-                                    (triggerRefs.current[index] = el)
-                                  }
-                                  onMouseEnter={() =>
-                                    toggleMenuDept(index, true)
-                                  }
-                                  onMouseLeave={() =>
-                                    toggleMenuDept(index, false)
-                                  }
-                                  className="relative flex justify-center"
+                                  ref={(el) => (triggerRefs.current[index] = el)}
+                                  onMouseEnter={() => toggleMenuDept(index, true)}
+                                  onMouseLeave={() => toggleMenuDept(index, false)}
+                                  className="relative inline-block"
                                 >
                                   <Button
-                                    className="flex items-center gap-2 capitalize font-medium bg-[#EFF8FF] rounded-[8px] text-[clamp(12px,0.9vw,14px)] border border-[#3DA5F4] text-[#3DA5F4] px-[10px] py-[5px] hover:bg-blue-50 hover:border-blue-400 transition-colors"
-                                    variant="outlined"
+                                    className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
+                                    variant="text"
                                   >
                                     Action
                                     <FaChevronDown
-                                      strokeWidth={2.5}
-                                      className={`transition-transform transform ${openMenuDept[index]
-                                          ? "rotate-180"
-                                          : ""
-                                        }`}
+                                      size={10}
+                                      className={`transition-transform duration-200 ${openMenuDept[index] ? "rotate-180" : ""}`}
                                     />
                                   </Button>
 
-                                  {openMenuDept[index] && (() => {
-                                    const isFirstRow = index === 0;
-                                    const isLastRow = index === displayDeptDetails.length - 1;
-                                    const isOpenUp = isFirstRow
-                                      ? false
-                                      : isLastRow
-                                        ? true
-                                        : getDropdownPosition(index) === "top";
-                                    return (
-                                      <div
-                                        className={`border border-gray-200 rounded-lg absolute z-[99999] bg-white w-[200px] left-[-100px] shadow-lg mt-0 ${isOpenUp
-                                            ? "bottom-full mb-1"
-                                            : "top-full mt-0"
-                                          }`}
-                                      >
+                                  <AnimatePresence>
+                                    {openMenuDept[index] && (() => {
+                                       const isFirstRow = index === 0;
+                                       const isLastRow = index === displayDeptDetails.length - 1;
+                                       const isOpenUp = isFirstRow ? false : isLastRow ? true : getDropdownPosition(index) === "top";
+                                      
+                                      return (
                                         <motion.div
-                                          initial={{
-                                            opacity: 0,
-                                            y: isOpenUp ? 10 : -10,
-                                          }}
-                                          animate={{ opacity: 1, y: 0 }}
-                                          transition={{ duration: 0.2 }}
-                                        >
-                                          <ul className="flex w-full flex-col">
-                                            {deptActionTitle.map(
-                                              (menuItem) => (
-                                                <MenuItem
-                                                  className="flex items-center justify-between"
-                                                  key={menuItem.id}
-                                                  onClick={() =>
-                                                    handleMenuDept(
-                                                      menuItem.id,
-                                                      t_data
-                                                    )
-                                                  }
-                                                >
-                                                  <Typography
-                                                    variant="small"
-                                                    style={{ fontSize: "10px" }}
-                                                  >
-                                                    {menuItem.title}
-                                                  </Typography>
-                                                  <span
-                                                    style={{
-                                                      color: menuItem.color,
-                                                    }}
-                                                  >
-                                                    {menuItem.icon}
-                                                  </span>
-                                                </MenuItem>
-                                              )
-                                            )}
-                                          </ul>
-                                        </motion.div>
-                                      </div>
-                                    );
-                                  })()}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  {/* Sticky pagination bar - fixed position below table, aligned like Application */}
-                  {displayDeptDetails.length > 0 && (() => {
-                    const paginationData = getDeptPaginationData();
-                    return paginationData.totalPages > 1 && (
-                      <div className="flex-shrink-0 border-t border-[#F2F2F9]  rounded-b-[10px] min-h-[52px] flex justify-center items-center gap-1 py-3 px-4">
-                        {paginationData.currentPage > 1 ? (
-                          <button
-                            title="Previous Page"
-                            className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed font-Urbanist"
-                            onClick={goToDeptPreviousPage}
-                            disabled={isLoadingDeptPage}
-                          >
-                            <span>‹</span>
-                            <span>Previous</span>
-                          </button>
-                        ) : (
-                          <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1 font-Urbanist">
-                            <span>‹</span>
-                            <span>Previous</span>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-center gap-1 min-w-[120px]">
-                          {(() => {
-                            const currentPage = paginationData.currentPage;
-                            const totalPages = paginationData.totalPages;
-                            if (totalPages <= 10) {
-                              return Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                                <button
-                                  key={pageNum}
-                                  onClick={() => goToDeptPage(pageNum)}
-                                  disabled={isLoadingDeptPage}
-                                  className={`min-w-[32px] px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-Urbanist font-medium ${pageNum === currentPage
-                                      ? "bg-[#1a73e8] text-white"
-                                      : "text-[#1a73e8] hover:bg-gray-100"
-                                    }`}
-                                >
-                                  {pageNum}
-                                </button>
-                              ));
-                            }
-                            const pages = [1];
-                            if (currentPage > 3) pages.push("ellipsis-start");
-                            const startPage = Math.max(2, currentPage - 1);
-                            const endPage = Math.min(totalPages - 1, currentPage + 1);
-                            for (let i = startPage; i <= endPage; i++) {
-                              if (i !== 1 && i !== totalPages) pages.push(i);
-                            }
-                            if (currentPage < totalPages - 2) pages.push("ellipsis-end");
-                            pages.push(totalPages);
-                            const uniquePages = [...new Set(pages)];
-                            return uniquePages.map((page, index) => {
-                              if (page === "ellipsis-start" || page === "ellipsis-end") {
-                                return (
-                                  <span key={`ellipsis-${index}`} className="px-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] font-Urbanist">
-                                    ...
-                                  </span>
-                                );
-                              }
-                              return (
-                                <button
-                                  key={page}
-                                  onClick={() => goToDeptPage(page)}
-                                  disabled={isLoadingDeptPage}
-                                  className={`min-w-[32px] px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-Urbanist font-medium ${page === currentPage
-                                      ? "bg-[#1a73e8] text-white"
-                                      : "text-[#1a73e8] hover:bg-gray-100"
-                                    }`}
-                                >
-                                  {page}
-                                </button>
-                              );
-                            });
-                          })()}
-                        </div>
-                        {paginationData.currentPage < paginationData.totalPages ? (
-                          <button
-                            title="Next Page"
-                            className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed font-Urbanist"
-                            onClick={goToDeptNextPage}
-                            disabled={isLoadingDeptPage}
-                          >
-                            <span>Next</span>
-                            <span>›</span>
-                          </button>
-                        ) : (
-                          <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1 font-Urbanist">
-                            <span>Next</span>
-                            <span>›</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  <ConfirmationDialog
-                    openDialog={openDialogDept}
-                    handleOpen={handleDialogDept}
-                    handleConfirm={(e) => handleDeleteDept(e)}
-                    title={"Confirm Delete"}
-                    message={"Are you sure to Delete this Department?"}
-                  />
-
-                  {/* <table className="w-full text-left h-full min-w-[1200px] whitespace-nowrap table-auto">
-                        <thead className="sticky top-[-9px] z-10">
-                          <tr>
-                            {deptData?.map((head, i) => (
-                              <th
-                                key={i}
-                                className="border-b border-blue-gray-100 bg-blue-gray-50 p-4"
-                              >
-                                <Typography
-                                  variant="small"
-                                  color="blue-gray"
-                                  className="font-normal leading-none opacity-70 capitalize"
-                                >
-                                  {head}
-                                </Typography>
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {allDeptDetails?.map((department, index) => {
-                            const isLast = index === allDeptDetails.length - 1;
-                            const classes = isLast
-                              ? "p-4"
-                              : "p-4 border-b border-blue-gray-50";
-
-                            return (
-                              <tr key={index} className={classes}>
-                                <td className={classes}>
-                                  <Typography
-                                    variant="small"
-                                    color="blue-gray"
-                                    className="font-normal"
-                                  >
-                                    {department.name || department.dept_name}
-                                  </Typography>
-                                </td>
-
-                                <td className={classes}>
-                                  <Typography
-                                    variant="small"
-                                    color="blue-gray"
-                                    className="font-normal"
-                                  >
-                                    {department.description}
-                                  </Typography>
-                                </td>
-
-                                <td className={classes}>
-                                  <Typography
-                                    variant="small"
-                                    color="blue-gray"
-                                    className="font-normal"
-                                  >
-                                    <div className="flex gap-2 items-center">
-                                      <div className="border p-[4px] text-[#ffae42]">
-                                        {department?._count?.employees || "0"}
-                                      </div>
-                                      <span
-                                        className="cursor-pointer"
-                                        onClick={() =>
-                                          handleEmpDetails(department.id)
-                                        }
-                                      >
-                                        View
-                                      </span>
-                                    </div>
-                                  </Typography>
-                                </td>
-
-                                <td className={classes}>
-                                  <Typography
-                                    variant="small"
-                                    color="blue-gray"
-                                    className="font-normal"
-                                  >
-                                    {department.child_departments_count}
-                                  </Typography>
-                                </td>
-
-                                <td className={classes}>
-                                  <Typography
-                                    variant="small"
-                                    color="blue-gray"
-                                    className="font-normal"
-                                  >
-                                    <div className="flex gap-2 items-center">
-                                      <div
-                                        className="border p-[4px] text-[#ffae42]"
-                                        onClick={() =>
-                                          handleSubDept(department, params.id)
-                                        }
-                                      >
-                                        {department.Sub_dep || "0"}
-                                      </div>
-                                      <span
-                                        className="cursor-pointer"
-                                        onClick={() =>
-                                          handleSubDept(department, params.id)
-                                        }
-                                      >
-                                        View
-                                      </span>
-                                    </div>
-                                  </Typography>
-                                </td>
-                                <td>
-                                  <Typography
-                                    variant="small"
-                                    color="blue-gray"
-                                    className="font-normal"
-                                  >
-                                    <FaEye
-                                      className="border-solid border-2 border-[#8bc9f8] p-[3px] text-[27px] text-[#8bc9f8] cursor-pointer"
-                                      onClick={() =>
-                                        handleDesignation(
-                                          department.designation,
-                                          department.id
-                                        )
-                                      }
-                                    />
-                                  </Typography>
-                                </td>
-
-                                <td className={classes}>
-                                  <div
-                                    ref={(el) =>
-                                      (triggerRefs.current[index] = el)
-                                    }
-                                    onMouseEnter={() =>
-                                      toggleMenuDept(index, true)
-                                    }
-                                    onMouseLeave={() =>
-                                      toggleMenuDept(index, false)
-                                    }
-                                    className="relative"
-                                  >
-                                    <Button
-                                      className="flex items-center gap-2 capitalize font-normal text-[13px] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px]"
-                                      variant="outlined"
-                                    >
-                                      Action
-                                      <FaChevronDown
-                                        strokeWidth={2.5}
-                                        className={`transition-transform transform ${openMenuDept[index]
-                                          ? "rotate-180"
-                                          : ""
+                                          initial={{ opacity: 0, y: isOpenUp ? 10 : -10, scale: 0.95 }}
+                                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                                          exit={{ opacity: 0, y: isOpenUp ? 10 : -10, scale: 0.95 }}
+                                          transition={{ duration: 0.15, ease: "easeOut" }}
+                                          className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-40 right-0 ${
+                                            isOpenUp ? "bottom-full mb-2" : "top-full mt-2"
                                           }`}
-                                      />
-                                    </Button>
-                                    {openMenuDept[index] && (
-                                      <div
-                                        className={`border border-gray-200 rounded-lg absolute z-10 bg-white w-[200px] left-[-120px] shadow-md  ${getDropdownPosition(index) === "top"
-                                          ? "bottom-full"
-                                          : "top-full"
-                                          }`}
-                                      >
-                                        <motion.div
-                                          initial={{
-                                            opacity: 0,
-                                            y:
-                                              getDropdownPosition(index) ===
-                                                "top"
-                                                ? -50
-                                                : 50,
-                                          }}
-                                          animate={{ opacity: 1, y: 0 }}
-                                          exit={{
-                                            opacity: 0,
-                                            y:
-                                              getDropdownPosition(index) ===
-                                                "top"
-                                                ? -50
-                                                : 50,
-                                          }}
-                                          transition={{ duration: 0.2 }}
                                         >
-                                          <ul className="flex w-full flex-col gap-1">
+                                          <ul className="flex flex-col py-1">
                                             {deptActionTitle.map((menuItem) => (
-                                              <MenuItem
-                                                className="flex items-center justify-between"
-                                                key={menuItem.id}
-                                                onClick={() =>
-                                                  handleMenuDept(
-                                                    menuItem.id,
-                                                    department
-                                                  )
-                                                }
-                                              >
-                                                <Typography variant="small">
+                                              <li key={menuItem.id}>
+                                                <button
+                                                  className="w-full text-left px-4 py-2.5 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between transition-colors"
+                                                  onClick={() => handleMenuDept(menuItem.id, t_data)}
+                                                >
                                                   {menuItem.title}
-                                                </Typography>
-                                                <span>{menuItem.icon}</span>
-                                              </MenuItem>
+                                                  <span style={{ color: menuItem.color }}>{menuItem.icon}</span>
+                                                </button>
+                                              </li>
                                             ))}
                                           </ul>
                                         </motion.div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-
-                        <ConfirmationDialog
-                          openDialog={openDialogDept}
-                          handleOpen={handleDialogDept}
-                          handleConfirm={(e) => handleDeleteDept(e)}
-                          title={"Confirm Delete"}
-                          message={"Are you sure to Delete this Department?"}
-                        />
-                      </table> */}
+                                      );
+                                    })()}
+                                  </AnimatePresence>
+                                </div>
+                            </td>
+                          </motion.tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
+
+                {/* Pagination */}
+                {displayDeptDetails.length > 0 && !isLoadingDeptPage && (() => {
+                    const paginationData = getDeptPaginationData();
+                    return paginationData.totalPages > 1 && (
+                      <div className="w-full flex justify-center items-center gap-2 mt-6 mb-2 pb-4">
+                        {/* Previous Button */}
+                        <button
+                          title="Previous Page"
+                          disabled={paginationData.currentPage <= 1}
+                          className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                            paginationData.currentPage > 1
+                              ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                              : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                          }`}
+                          onClick={goToDeptPreviousPage}
+                        >
+                          ‹
+                        </button>
+                        
+                        {/* Page Numbers */}
+                        <div className="flex items-center gap-1.5">
+                          {(() => {
+                            const currentPage = paginationData.currentPage;
+                            const totalPages = paginationData.totalPages;
+                            
+                            const renderPageButton = (page) => (
+                              <button
+                                key={page}
+                                onClick={() => goToDeptPage(page)}
+                                className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                                  page === currentPage
+                                    ? 'bg-bgBlue text-white shadow-md shadow-blue-500/20'
+                                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            );
+
+                            // If 7 or fewer pages, show all
+                            if (totalPages <= 7) {
+                              return Array.from({ length: totalPages }, (_, i) => i + 1).map(renderPageButton);
+                            }
+                            
+                            const pages = [];
+                            pages.push(renderPageButton(1));
+                            
+                            if (currentPage > 3) {
+                              pages.push(<span key="start-ellipsis" className="text-gray-400 px-1">...</span>);
+                            }
+                            
+                            const startPage = Math.max(2, currentPage - 1);
+                            const endPage = Math.min(totalPages - 1, currentPage + 1);
+                            
+                            for (let i = startPage; i <= endPage; i++) {
+                              pages.push(renderPageButton(i));
+                            }
+                            
+                            if (currentPage < totalPages - 2) {
+                              pages.push(<span key="end-ellipsis" className="text-gray-400 px-1">...</span>);
+                            }
+                            
+                            pages.push(renderPageButton(totalPages));
+                            
+                            return pages;
+                          })()}
+                        </div>
+                        
+                        {/* Next Button */}
+                        <button
+                          title="Next Page"
+                          disabled={paginationData.currentPage >= paginationData.totalPages}
+                          className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                            paginationData.currentPage < paginationData.totalPages
+                              ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                              : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                          }`}
+                          onClick={goToDeptNextPage}
+                        >
+                          ›
+                        </button>
+                      </div>
+                    );
+                  })()
+                }
               </div>
-            </>
-          ) : (
-            <div className="gap-4 py-2 pb-1 pl-2 h-full">
-              <div className="flex justify-between">
-                <Button
-                  className="capitalize font-medium bg-[#8bc9f8] p-2"
-                  onClick={() => handleNavigateCreateNewDept()}
-                >
-                  Add new department
-                </Button>
-              </div>
-              <div className="text-center">
-                <img
-                  src={deptImage}
-                  alt="department_image"
-                  className="mx-auto block"
-                ></img>
-                <span className="text-[20px] font-semibold">
-                  You Haven’t Created Any Department Yet!
-                </span>
-              </div>
+
+              <ConfirmationDialog
+                openDialog={openDialogDept}
+                handleOpen={handleDialogDept}
+                handleConfirm={(e) => handleDeleteDept(e)}
+                title={"Confirm Delete"}
+                message={"Are you sure to Delete this Department?"}
+              />
             </div>
+          ) : (
+             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="bg-white p-10 rounded-3xl shadow-sm border border-gray-100 max-w-md w-full"
+                >
+                  <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <img
+                      src={deptImage}
+                      alt="No Departments"
+                      className="w-20 h-20 opacity-80 mix-blend-multiply"
+                    />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 font-poppins">
+                    No Departments Found
+                  </h3>
+                  <p className="text-gray-500 mb-8 font-poppins text-sm">
+                    You haven't created any departments yet. Start by building your organization structure.
+                  </p>
+                  <CustomButton
+                    className="w-full bg-bgBlue text-white hover:bg-blue-600 py-3 rounded-xl shadow-lg shadow-blue-500/20 font-semibold transition-all"
+                    onClick={() => handleNavigateCreateNewDept()}
+                    title="Add Your First Department"
+                  >
+                    Add New Department
+                  </CustomButton>
+                </motion.div>
+             </div>
           )}
 
           <CustomDrawer

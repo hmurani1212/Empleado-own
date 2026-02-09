@@ -1,17 +1,15 @@
-import React, { useEffect } from 'react';
-import { Typography, Badge, Progress, Button } from '@material-tailwind/react';
-import { FaEye, FaStar, FaUser, FaCheck, FaArrowLeft } from 'react-icons/fa6';
-import { useOutletContext, useNavigate } from 'react-router';
-import performanceApi from '../../ViewModel/PerformnaceViewModel/Performance';
+import React from 'react';
+import { Typography, Button } from '@material-tailwind/react';
+import { FaStar, FaUser, FaCheck, FaArrowLeft, FaClipboardList } from 'react-icons/fa6';
+import { useOutletContext } from 'react-router';
+import { motion } from 'framer-motion';
+
 const EmployeeCompetency = () => {
   // Get data from context
-  const { competencyData, profileData, handleOpenRatingModal, handleOpenProgressModal, handleCloseProfile } = useOutletContext() || {};
-  const navigate = useNavigate();
+  const { competencyData, handleOpenRatingModal, handleCloseProfile } = useOutletContext() || {};
 
   const handleBackToCompetency = () => {
-    console.log('EmployeeCompetency: Clearing profile and returning to competency table');
     try {
-      // Clear the profile state to return to the main competency table
       if (handleCloseProfile) {
         handleCloseProfile();
       }
@@ -19,39 +17,6 @@ const EmployeeCompetency = () => {
       console.error('Navigation error:', error);
     }
   }
-
-  console.log('EmployeeCompetency - competencyData:', competencyData);
-  console.log('EmployeeCompetency - profileData:', profileData);
-  // const { gettingCompetencyByEmployeeId, employeeCompetencyData } = performanceApi();
-  // useEffect(() => {
-  //   gettingCompetencyByEmployeeId()
-  // }, [])
-  // console.log('subComptencyData', employeeCompetencyData)
-  const getStatusColor = (status) => {
-    switch (status) {
-      case '1':
-        return 'green';
-      case '2':
-        return 'yellow';
-      case '3':
-        return 'red';
-      default:
-        return 'gray';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case '1':
-        return 'Completed';
-      case '2':
-        return 'In Progress';
-      case '3':
-        return 'Not Started';
-      default:
-        return 'Unknown';
-    }
-  };
 
   const renderStars = (rating, competency) => {
     const stars = [];
@@ -71,68 +36,73 @@ const EmployeeCompetency = () => {
 
   if (!competencyData || competencyData.length === 0) {
     return (
-      <div className="text-center py-8">
-        <Typography variant="h6" color="gray" className="font-normal">
+      <div className="text-center py-12 bg-white rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">
+        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+          <FaClipboardList className="text-3xl text-gray-300" />
+        </div>
+        <Typography variant="h6" color="gray" className="font-medium font-poppins">
           No competencies found for this employee
         </Typography>
       </div>
     );
   };
 
-
-
-
   return (
-    <div className='flex flex-col gap-2 py-2 pb-1 pl-2 pr-4'>
+    <div className='flex flex-col gap-6'>
       {/* Back Navigation */}
-      <div className="flex items-center mb-2">
+      <div className="flex items-center justify-between">
         <Button
           variant="text"
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors p-2 cursor-pointer"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
           onClick={handleBackToCompetency}
         >
-          <FaArrowLeft className="text-sm" />
+          <FaArrowLeft className="text-sm" /> Back to List
         </Button>
       </div>
 
-      {/* Competency Cards - Matching the image design */}
-      <div className="bg-white rounded-lg p-4">
-        {competencyData?.map((competency, index) => (
-          <div key={index}>
-            <div className="flex items-center justify-between py-3">
-              {/* Left side - Icon and Competency Name */}
-              <div className="flex items-center gap-4">
-                {/* Blue icon with user silhouette and checkmark */}
-                <div className="relative">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <FaUser className="text-blue-600 text-lg" />
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                      <FaCheck className="text-white text-xs" />
+      {/* Competency Cards */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-6">
+          <h3 className="text-lg font-bold text-gray-900 font-poppins mb-6">Competency Ratings</h3>
+          
+          <div className="flex flex-col gap-0">
+            {competencyData?.map((competency, index) => (
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className={`py-4 ${index < competencyData.length - 1 ? 'border-b border-dashed border-gray-200' : ''}`}
+              >
+                <div className="flex items-center justify-between">
+                  {/* Left side - Icon and Competency Name */}
+                  <div className="flex items-center gap-4">
+                    <div className="relative shrink-0">
+                      <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center border border-blue-100">
+                        <FaUser className="text-blue-500 text-lg" />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                        <FaCheck className="text-white text-[10px]" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Typography className="font-semibold text-gray-900 font-poppins text-sm">
+                        {competency.name || competency.competency || 'N/A'}
+                      </Typography>
+                      <p className="text-xs text-gray-500 mt-0.5">Competency Assessment</p>
                     </div>
                   </div>
+
+                  {/* Right side - Star Rating */}
+                  <div className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                    {renderStars(competency.rating || 0, competency)}
+                  </div>
                 </div>
-
-                <Typography variant="body1" color="gray" className="font-normal">
-                  {competency.name || competency.competency || 'N/A'}
-                </Typography>
-              </div>
-
-              {/* Right side - Star Rating */}
-              <div className="flex items-center gap-1">
-                {renderStars(competency.rating || 0, competency)}
-              </div>
-              {/* Right side - Star Rating */}
-              <div className="flex items-center gap-1">
-              
-              </div>
-            </div>
-
-            {/* Dashed separator line (except for last item) */}
-            {index < competencyData.length - 1 && (
-              <div className="border-b border-dashed border-gray-300"></div>
-            )}
+              </motion.div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

@@ -52,15 +52,33 @@ const EmpApplication = () => {
           </div>
           {active === 1 ?
             <div className='flex items-center justify-center flex-wrap gap-4'>
-              {applicationData.map((ele) => (
-                <div key={ele.id} className='w-[200px] h-[100px] rounded-xl flex flex-col justify-between py-1 px-3 cursor-pointer' style={{ backgroundColor: ele.bgColor, border: `1px solid ${ele.color}` }}
+              {applicationData.map((ele, index) => (
+                <motion.div 
+                  key={ele.id} 
+                  className='w-[200px] h-[100px] rounded-xl flex flex-col justify-between py-4 px-4 cursor-pointer relative overflow-hidden group bg-white border border-gray-100' 
                   onClick={() => handleApplicationType(ele)}
+                  whileHover={{ 
+                    y: -4,
+                    boxShadow: "0 10px 30px -10px rgba(0,0,0,0.1)",
+                    borderColor: ele.color 
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  <div className='flex items-center flex-1'>
-                    <span style={{ color: ele.color }} className='text-[30px]'>{ele.icon}</span>
+                  <div className='flex items-center justify-between flex-1 z-10'>
+                    <div className="p-2 rounded-lg bg-gray-50 group-hover:bg-opacity-20 transition-colors duration-300" style={{ color: ele.color }}>
+                        <span className='text-[24px]'>{ele.icon}</span>
+                    </div>
+                    <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full opacity-0 group-hover:opacity-10 transition-all duration-500 ease-out" 
+                         style={{ background: `radial-gradient(circle, ${ele.color}20 0%, transparent 70%)` }}></div>
                   </div>
-                  <span style={{ color: ele.color }} className='text-[13px]'>{ele.title}</span>
-                </div>
+                  <span className='text-[14px] font-semibold z-10 tracking-wide text-gray-700 group-hover:text-gray-900 transition-colors duration-200'>{ele.title}</span>
+                  
+                  {/* Bottom Border Accent */}
+                  <div className="absolute bottom-0 left-0 h-[3px] w-0 bg-current group-hover:w-full transition-all duration-300 ease-out" style={{ backgroundColor: ele.color }}></div>
+                </motion.div>
               ))}
             </div>
             :

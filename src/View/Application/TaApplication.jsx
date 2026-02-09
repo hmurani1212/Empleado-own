@@ -14,11 +14,10 @@ function TaApplication(props) {
     isUploading
   } = props
   return (
-    <>
-      <div className='w-full bg-white p-4 sm:p-6 rounded-xl sm:rounded-lg shadow-md'>
-        <h3 className='text-base sm:text-lg font-semibold text-gray-800 mb-4 sm:mb-6'>Travel & Daily Allowance Application</h3>
+    <div className='w-full'>
+      <h3 className='text-base sm:text-lg font-semibold text-gray-800 mb-4 sm:mb-6 font-poppins'>Travel & Daily Allowance Application</h3>
 
-        <form onSubmit={handleTaDaApplication} className='flex flex-col gap-4 sm:gap-6'>
+      <form onSubmit={handleTaDaApplication} className='flex flex-col gap-4 sm:gap-6'>
           <div className='w-full'>
             <Input
               className='!h-11 !rounded-6'
@@ -251,7 +250,7 @@ function TaApplication(props) {
               color="blue"
               type="submit"
               disabled={isUploading}
-              className='px-6 py-2 rounded-lg capitalize font-medium text-sm'
+              className='px-6 py-2 rounded-lg capitalize font-medium text-sm font-poppins bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/40'
               size="lg"
             >
               {isUploading ? 'Submitting...' : 'Submit'}
@@ -259,7 +258,6 @@ function TaApplication(props) {
           </div>
         </form>
       </div>
-    </>
   )
 }
 

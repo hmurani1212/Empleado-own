@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
-import { FaWpforms } from "react-icons/fa6";
-import {
-  Timeline,
-  TimelineItem,
-  TimelineConnector,
-  TimelineHeader,
-  TimelineBody,
-  Typography,
-} from "@material-tailwind/react";
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaFileAlt, FaCalendarCheck } from "react-icons/fa";
 import ApplicationLeave from '../Application/ApplicationLeave';
 import RequestLeave from '../Application/RequestLeave';
 
@@ -18,110 +11,106 @@ const ApplicationInfo = ({ data, isLoading, onClose }) => {
     setActivePage(page);
   };
 
-  // Show loading state
+  const sidebarItems = [
+    { id: 'application', label: 'Application', icon: FaFileAlt },
+    { id: 'requestedLeave', label: 'Requested Leave', icon: FaCalendarCheck },
+  ];
+
+  // Loading state
   if (isLoading) {
     return (
-      <div className='flex flex-row h-full w-full border border-1 rounded-[10px]'>
-        <div className='w-full p-8 text-center flex items-center justify-center'>
-          <div className='text-gray-500'>Loading application details...</div>
+      <div className='flex h-full w-full items-center justify-center bg-white/50 backdrop-blur-sm'>
+        <div className='flex flex-col items-center gap-3'>
+          <div className="w-10 h-10 border-4 border-gray-200 rounded-full border-t-customBlue animate-spin"></div>
+          <div className='text-gray-500 font-medium text-sm'>Loading details...</div>
         </div>
       </div>
     );
   }
 
-  // Show error state if no data
+  // Error state
   if (!data && !isLoading) {
     return (
-      <div className='flex flex-row h-full w-full border border-[#CCCCCC] rounded-[10px]'>
-        <div className='w-full p-8 text-center flex items-center justify-center'>
-          <div className='text-red-500'>No application data available</div>
+      <div className='flex h-full w-full items-center justify-center bg-white/50 backdrop-blur-sm'>
+        <div className='text-center p-8 bg-red-50 rounded-xl border border-red-100'>
+          <div className='text-red-500 font-medium'>No application data available</div>
+          <button onClick={onClose} className="mt-4 text-sm text-gray-600 hover:underline">Go back</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className='h-full flex flex-col md:flex-row w-full border border-1 rounded-[10px] relative overflow-hidden'>
-      <div className='w-full md:w-[25%] lg:w-[25%] bg-[#F8F9FF] p-3 sm:p-4 flex-shrink-0'>
-        {/* <div className='flex gap-[50px]'>
-            <div><FaWpforms color='#3DA5F4' size={'45px'} /></div>
-            <div className='text-[#3DA5F4] font-normal mt-2 font-semibold'>{employeeName}</div>
-          </div> */}
+    <div className='h-full flex flex-col md:flex-row w-full relative overflow-hidden bg-white/60'>
+      {/* Sidebar */}
+      <div className='w-full md:w-[280px] bg-gradient-to-b from-gray-50 to-white border-r border-gray-100 p-4 flex-shrink-0 flex flex-col'>
+        <div className="mb-6 px-2">
+          <h3 className="text-gray-800 font-bold text-lg">Details</h3>
+          <p className="text-gray-500 text-xs mt-1">View application information</p>
+        </div>
 
-        <div className="mt-2 sm:mt-4 w-full">
-          <Timeline>
-            <TimelineItem>
-              <TimelineConnector className='!w-1 bg-[#3DA5F4]' />
-              <TimelineHeader
-                className={`h-auto py-1.5 sm:py-2 px-2 sm:px-4 rounded-lg cursor-pointer transition-all w-full flex items-center gap-2 sm:gap-3 ${activePage === 'application'
-                  ? 'bg-[#3DA5F4] shadow-sm'
-                  : 'bg-white hover:bg-gray-50'
-                  }`}
-                onClick={() => handleClick('application')}
-              >
-                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center flex-shrink-0 ${activePage === 'application'
-                  ? 'bg-white'
-                  : 'bg-white border-2 border-[#3DA5F4]'
-                  }`}>
-                  {activePage === 'application' && (
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#3DA5F4] rounded-full"></div>
-                  )}
-                </div>
-                <Typography
-                  variant="h6"
-                  className={`leading-none text-xs sm:text-sm font-medium whitespace-nowrap ${activePage === 'application'
-                    ? 'text-white'
-                    : 'text-gray-600'
-                    }`}
-                >
-                  Application
-                </Typography>
-              </TimelineHeader>
-              <TimelineBody className="pb-1 sm:pb-1.5"></TimelineBody>
-            </TimelineItem>
-            <TimelineItem>
-              <TimelineConnector className='!w-1 bg-[#3DA5F4]' />
-              <TimelineHeader
-                className={`h-auto py-1.5 sm:py-2 px-2 sm:px-4 rounded-lg cursor-pointer transition-all w-full flex items-center gap-2 sm:gap-3 ${activePage === 'requestedLeave'
-                  ? 'bg-[#3DA5F4] shadow-sm'
-                  : 'bg-white hover:bg-gray-50'
-                  }`}
-                onClick={() => handleClick('requestedLeave')}
-              >
-                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center flex-shrink-0 ${activePage === 'requestedLeave'
-                  ? 'bg-white'
-                  : 'bg-white border-2 border-[#3DA5F4]'
-                  }`}>
-                  {activePage === 'requestedLeave' && (
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#3DA5F4] rounded-full"></div>
-                  )}
-                </div>
-                <Typography
-                  variant="h6"
-                  className={`leading-none text-xs sm:text-sm font-medium whitespace-nowrap ${activePage === 'requestedLeave'
-                    ? 'text-white'
-                    : 'text-gray-600'
-                    }`}
-                >
-                  Requested Leave
-                </Typography>
-              </TimelineHeader>
-              <TimelineBody className="pb-1"></TimelineBody>
-            </TimelineItem>
-          </Timeline>
+        <div className="flex flex-col gap-2">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleClick(item.id)}
+              className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left w-full group ${
+                activePage === item.id 
+                  ? 'bg-white shadow-sm text-customBlue border border-blue-50' 
+                  : 'hover:bg-white/50 text-gray-600 hover:text-gray-900 border border-transparent'
+              }`}
+            >
+              {activePage === item.id && (
+                <motion.div
+                  layoutId="activeTabIndicator"
+                  className="absolute left-0 top-0 bottom-0 w-1 bg-customBlue rounded-l-xl"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                />
+              )}
+              
+              <div className={`p-2 rounded-lg transition-colors ${
+                activePage === item.id ? 'bg-blue-50 text-customBlue' : 'bg-gray-100 text-gray-500 group-hover:bg-white group-hover:shadow-sm'
+              }`}>
+                <item.icon size={16} />
+              </div>
+              <span className="font-medium text-sm">{item.label}</span>
+            </button>
+          ))}
+        </div>
+        
+        {/* Decorative bottom element */}
+        <div className="mt-auto p-4 rounded-xl bg-blue-50/50 border border-blue-100/50 text-center">
+          <p className="text-[10px] text-blue-400 font-medium">Application Viewer</p>
         </div>
       </div>
-      <div className='comp w-full md:w-[75%] flex-shrink-0 overflow-hidden h-full flex flex-col'>
-        {activePage === 'application' && (
-          <div className='flex-1 overflow-auto'>
-            <ApplicationLeave applicationData={data} onClose={onClose} />
-          </div>
-        )}
-        {activePage === 'requestedLeave' && (
-          <div className='flex-1 flex flex-col overflow-auto'>
-            <RequestLeave applicationData={data} onClose={onClose} />
-          </div>
-        )}
+
+      {/* Content Area */}
+      <div className='flex-1 flex flex-col overflow-hidden bg-white/40 relative'>
+        <div className='flex-1 overflow-auto customDrwerScroll p-6'>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activePage}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="h-full"
+            >
+              {activePage === 'application' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-1 min-h-full">
+                  <ApplicationLeave applicationData={data} onClose={onClose} />
+                </div>
+              )}
+              {activePage === 'requestedLeave' && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-1 min-h-full">
+                  <RequestLeave applicationData={data} onClose={onClose} />
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     Typography,
     Button,
@@ -2462,7 +2462,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-                <Spinner className="h-10 w-10 text-blue-500" />
+                <Spinner className="h-10 w-10 text-brand-500" />
                 <Typography variant="h6" color="gray" className="font-normal">
                     Loading employee profile...
                 </Typography>
@@ -2492,11 +2492,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             {/* Basic Information Card */}
             <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
                 {/* Blue Header */}
-                <div className="px-3 sm:px-4 py-3 sm:py-3.5 flex justify-between items-center" style={{ backgroundColor: '#E3F2FD', borderRadius: '8px 8px 0 0' }}>
+                <div className="px-4 py-3 flex justify-between items-center bg-brand-50 rounded-t-lg border-b border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px]"
-                        style={{ color: '#42A5F5' }}
+                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
                     >
                         Basic Information
                     </Typography>
@@ -2515,8 +2514,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* First Row: Date of Birth, Father Name, Gender */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaCalendar className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaCalendar className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
@@ -2537,8 +2536,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaUsers className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
@@ -2559,8 +2558,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaUsers className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
@@ -2595,8 +2594,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* Second Row: Nationality, City, Domicile */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaMapMarkerAlt className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaMapMarkerAlt className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
@@ -2648,8 +2647,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaCity className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaCity className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
@@ -2670,8 +2669,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaFileContract className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaFileContract className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
@@ -2710,73 +2709,38 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="border-t border-dashed border-gray-300 my-3 sm:my-4"></div>
 
                     {/* Third Row: Religion, Marital Status, Blood Group */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaShieldAlt className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                            <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center flex-shrink-0">
+                                <FaShieldAlt className="text-lg" />
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <Typography
-                                    variant="small"
-                                    color="gray"
-                                    className="font-normal text-xs"
-                                >
-                                    Religion
-                                </Typography>
-                                <Typography
-                                    variant="small"
-                                    className="font-semibold font-Urbanisttext-xs sm:text-sm text-gray-900 mt-1 break-words"
-                                >
-                                    {employeeData?.basic_information?.religion ||
-                                        employeeData?.religion ||
-                                        "N/A"}
-                                </Typography>
+                            <div>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Religion</p>
+                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.religion || employeeData?.religion || "N/A"}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaHeart className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                            <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center flex-shrink-0">
+                                <FaHeart className="text-lg" />
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <Typography
-                                    variant="small"
-                                    color="gray"
-                                    className="font-normal text-xs"
-                                >
-                                    Marital Status
-                                </Typography>
-                                <Typography
-                                    variant="small"
-                                    className="font-semibold text-xs sm:text-sm text-gray-900 mt-1 break-words"
-                                >
+                            <div>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Marital Status</p>
+                                <p className="text-sm font-bold text-gray-800 mt-0.5">
                                     {getMaritalStatusLabel(
                                         employeeData?.basic_information?.marital_status ??
                                         employeeData?.marital_status ??
                                         null
                                     )}
-                                </Typography>
+                                </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaHeart className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                            <div className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
+                                <FaHeart className="text-lg" />
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <Typography
-                                    variant="small"
-                                    color="gray"
-                                    className="font-normal text-xs"
-                                >
-                                    Blood Group
-                                </Typography>
-                                <Typography
-                                    variant="small"
-                                    className="font-semibold text-xs sm:text-sm text-gray-900 mt-1 break-words"
-                                >
-                                    {employeeData?.basic_information?.blood_group ||
-                                        employeeData?.blood_group ||
-                                        "N/A"}
-                                </Typography>
+                            <div>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Blood Group</p>
+                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.blood_group || employeeData?.blood_group || "N/A"}</p>
                             </div>
                         </div>
                     </div>
@@ -2785,72 +2749,32 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="border-t border-dashed border-gray-300 my-3 sm:my-4"></div>
 
                     {/* Fourth Row: Disability, Passport/NIC #, NTN # */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaUserShield className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                            <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">
+                                <FaUserShield className="text-lg" />
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <Typography
-                                    variant="small"
-                                    color="gray"
-                                    className="font-normal text-xs"
-                                >
-                                    Disability
-                                </Typography>
-                                <Typography
-                                    variant="small"
-                                    className="font-semibold text-xs sm:text-sm text-gray-900 mt-1 break-words"
-                                >
-                                    {employeeData?.basic_information?.disability ||
-                                        employeeData?.disability ||
-                                        "N/A"}
-                                </Typography>
+                            <div>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Disability</p>
+                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.disability || employeeData?.disability || "N/A"}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaPassport className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                            <div className="w-10 h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center flex-shrink-0">
+                                <FaPassport className="text-lg" />
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <Typography
-                                    variant="small"
-                                    color="gray"
-                                    className="font-normal text-xs"
-                                >
-                                    Passport/NIC #
-                                </Typography>
-                                <Typography
-                                    variant="small"
-                                    className="font-semibold text-xs sm:text-sm text-gray-900 mt-1 break-words"
-                                >
-                                    {employeeData?.basic_information?.passport_no ||
-                                        employeeData?.passport_no ||
-                                        employeeData?.nic ||
-                                        "N/A"}
-                                </Typography>
+                            <div>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Passport/NIC #</p>
+                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.passport_no || employeeData?.passport_no || employeeData?.nic || "N/A"}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaIdCard className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-500 flex items-center justify-center flex-shrink-0">
+                                <FaIdCard className="text-lg" />
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <Typography
-                                    variant="small"
-                                    color="gray"
-                                    className="font-normal text-xs"
-                                >
-                                    NTN #
-                                </Typography>
-                                <Typography
-                                    variant="small"
-                                    className="font-semibold text-xs sm:text-sm text-gray-900 mt-1 break-words"
-                                >
-                                    {employeeData?.basic_information?.ntn_no ||
-                                        employeeData?.ntn ||
-                                        "N/A"}
-                                </Typography>
+                            <div>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">NTN #</p>
+                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.ntn_no || employeeData?.ntn || "N/A"}</p>
                             </div>
                         </div>
                     </div>
@@ -3056,11 +2980,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             {/* Attendance Setting Card */}
             <div className="bg-white rounded-t-lg overflow-hidden border border-gray-200">
                 {/* Blue Header */}
-                <div className="bg-blue-50 rounded-t-lg px-4 py-3 flex justify-between items-center">
+                <div className="bg-brand-50 rounded-t-lg px-4 py-3 flex justify-between items-center border-b border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px]"
-                        style={{ color: '#42A5F5' }}
+                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
                     >
                         Attendance Setting
                     </Typography>
@@ -3092,7 +3015,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* First Row: HR Policy, Bio ID, Policy ID */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-brand-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
                                 <BsPersonGear className="w-5 h-5 text-blue-600" />
                             </div>
                             <div className="flex flex-col">
@@ -3114,7 +3037,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-brand-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
                                 <LuFingerprint className="w-5 h-5 font-bold text-blue-600" />
                             </div>
                             <div className="flex flex-col">
@@ -3136,7 +3059,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-brand-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
                                 <FaUsers className="w-5 h-5 text-blue-600" />
                             </div>
                             <div className="flex flex-col">
@@ -3165,7 +3088,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* Second Row: Team, Working Shift Name, Planner Name */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-brand-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
                                 <FaUsers className="w-5 h-5 text-blue-600" />
                             </div>
                             <div className="flex flex-col">
@@ -3185,7 +3108,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-brand-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
                                 <MdWatchLater className="w-5 h-5 text-blue-600" />
                             </div>
                             <div className="flex flex-col">
@@ -3205,7 +3128,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-brand-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
                                 <MdFileOpen className="w-5 h-5 text-blue-600" />
                             </div>
                             <div className="flex flex-col">
@@ -3232,7 +3155,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* Third Row: Web Attendance */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-brand-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
                                 <FaLaptop className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
@@ -3284,7 +3207,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* Fourth Row: Mobile Attendance */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-brand-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
                                 <FaMobile className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
@@ -3336,7 +3259,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* Fifth Row: Attendance Premises */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="flex items-center gap-3">
-                            <div className="bg-blue-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
+                            <div className="bg-brand-50 rounded-lg h-10 w-10 flex items-center justify-center flex-shrink-0">
                                 <FaUsers className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
@@ -3399,8 +3322,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         {/* Row 1: Employee Id, Employee Status, Tag */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaPersonHalfDress className="text-blue-500 font-bold w-5 h-5" size={14} />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaPersonHalfDress className="text-brand-500 font-bold w-5 h-5" size={14} />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3421,8 +3344,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <IoTimerOutline className="text-blue-500 w-5 font-bold h-5" size={14} />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <IoTimerOutline className="text-brand-500 w-5 font-bold h-5" size={14} />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3443,8 +3366,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaUsers className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaUsers className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3470,8 +3393,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         {/* Row 2: EOBI, Provident Fund, Social Security */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaMoneyBills className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaMoneyBills className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3493,8 +3416,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaMoneyBills className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaMoneyBills className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3518,8 +3441,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <AiFillSafetyCertificate className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <AiFillSafetyCertificate className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3550,8 +3473,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         {/* Row 3: Insurance Status, Health Benefit, Designation */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <BsCardText className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <BsCardText className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3575,8 +3498,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaHeartCrack className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaHeartCrack className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3600,8 +3523,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <PiLockBold className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <PiLockBold className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3631,8 +3554,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         {/* Row 4: Branch, Department, Join Date */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaCodeBranch className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaCodeBranch className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3653,8 +3576,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaBuilding className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaBuilding className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3675,8 +3598,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <CgCalendarDates className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <CgCalendarDates className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3706,8 +3629,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         {/* Row 5: Date Of Retirement, Date Of Exit */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaChartLine className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaChartLine className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3726,8 +3649,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaChartLine className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaChartLine className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3765,8 +3688,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="pt-4">
                         <div className="flex items-center justify-between">
                             <div className="flex flex-row gap-3 items-center">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaUsers className="text-blue-500 w-4 h-4" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaUsers className="text-brand-500 w-4 h-4" />
                                 </div>
                                 <Typography
                                     variant="small"
@@ -3779,7 +3702,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                             <button
                                 onClick={() => setOpenChangeReportingManagerDrawer(true)}
-                                className="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                                className="p-1 text-gray-500 hover:text-blue-600 hover:bg-brand-50 rounded-full transition-colors duration-200"
                                 title="Change Reporting Manager"
                             >
                                 <FaRegPenToSquare className="text-green-500" size={20} />
@@ -3794,8 +3717,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 content: (
                     <div className="pt-4">
                         <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <FaUsers className="text-blue-500 w-4 h-4" />
+                            <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaUsers className="text-brand-500 w-4 h-4" />
                             </div>
                             <div className="flex-1 mt-2">
                                 <Typography
@@ -3818,8 +3741,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="py-3">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                             <div className="flex items-center  gap-3">
-                                <div className="w-10 h-10 rounded-lg mt-4  bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaCodeBranch className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg mt-4  bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaCodeBranch className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3840,8 +3763,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start mt-4 gap-3">
-                                <div className="w-10 h-10 rounded-lg  bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaBuilding className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg  bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaBuilding className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3862,8 +3785,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start mt-4 gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaUsers className="text-blue-500 w-4 h-4" />
+                                <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaUsers className="text-brand-500 w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3884,8 +3807,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex items-start mt-4 gap-3">
-                                <div className="w-10 h-10 rounded-lg  bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaCalendar className="text-blue-500 w-5 h-5" />
+                                <div className="w-10 h-10 rounded-lg  bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaCalendar className="text-brand-500 w-5 h-5" />
                                 </div>
                                 <div className="flex-1">
                                     <Typography
@@ -3920,8 +3843,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="pt-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaUsers className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
 
                                 <div className="min-w-0">
@@ -3944,8 +3867,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaBuilding className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaBuilding className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -3967,8 +3890,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaUserTie className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaUserTie className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -3990,8 +3913,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaCalendar className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaCalendar className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4017,8 +3940,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaClock className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaClock className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4054,8 +3977,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="pt-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaUsers className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4075,8 +3998,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaCalendar className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaCalendar className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4102,8 +4025,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaCalendar className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaCalendar className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4131,8 +4054,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                    <FaShieldAlt className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaShieldAlt className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4160,8 +4083,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 title: "Official Info History",
                 content: (
                     <div className="flex flex-row gap-2 items-center">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 mt-2 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                            <FaUsers className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 mt-2 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                            <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </div>
                         <div className="pt-4">
                             <Typography variant="small" color="gray" className="font-semibold text-sm front-urbanist text-gray-900">
@@ -4181,18 +4104,16 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         className="border border-gray-200 rounded-lg bg-white shadow-sm"
                     >
                         <div
-                            className="flex justify-between items-center p-4 cursor-pointer transition-colors"
+                            className="flex justify-between items-center p-4 cursor-pointer transition-all bg-brand-50 hover:bg-brand-100/80 rounded-t-lg border-b border-brand-100"
                             onClick={() => toggleSection(section.id)}
-                            style={{ backgroundColor: '#E3F2FD', borderRadius: '8px 8px 0 0' }}
                         >
                             <Typography
                                 variant="h6"
-                                className="font-semibold text-[15px]"
-                                style={{ color: '#42A5F5' }}
+                                className="font-semibold text-[15px] text-brand-500"
                             >
                                 {section.title}
                             </Typography>
-                            <div style={{ color: '#42A5F5' }}>
+                            <div className="text-brand-500">
                                 <FaChevronDown
                                     size={18}
                                     className={`transition-transform duration-500 ease-in-out ${expandedSections[section.id] ? 'rotate-0' : 'rotate-180'
@@ -4241,26 +4162,15 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     };
 
     // Helper function to render grid item with icon
-    const renderGridItem = (label, value) => {
+    const renderGridItem = (label, value, icon) => {
         return (
-            <div className="flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                    <FaUsers className="text-blue-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <div className="group flex items-start gap-4 p-3 rounded-xl hover:bg-brand-50/50 transition-all duration-300 border border-transparent hover:border-brand-100">
+                <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                    {icon || <FaUsers className="text-lg" />}
                 </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                    <Typography
-                        variant="small"
-                        color="gray"
-                        className="font-normal text-xs mb-1"
-                    >
-                        {label}
-                    </Typography>
-                    <Typography
-                        variant="small"
-                        className="font-semibold text-sm text-gray-900 break-words"
-                    >
-                        {value || "--"}
-                    </Typography>
+                <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide group-hover:text-brand-400 transition-colors">{label}</p>
+                    <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{value || "--"}</p>
                 </div>
             </div>
         );
@@ -4287,14 +4197,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         className="border border-gray-200 rounded-lg bg-white shadow-sm"
                     >
                         <div
-                            className="flex justify-between items-center p-4 cursor-pointer transition-colors"
+                            className="flex justify-between items-center p-4 cursor-pointer transition-all bg-brand-50 hover:bg-brand-100/80 rounded-t-lg border-b border-brand-100"
                             onClick={() => toggleDocSection(section.id)}
-                            style={{ backgroundColor: '#E3F2FD', borderRadius: '8px 8px 0 0' }}
                         >
                             <Typography
                                 variant="h6"
-                                className="font-semibold text-[15px]"
-                                style={{ color: '#42A5F5' }}
+                                className="font-semibold text-[15px] text-brand-500"
                             >
                                 {section.title}
                             </Typography>
@@ -4338,7 +4246,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                         </svg> */}
                                     </button>
                                 )}
-                                <div style={{ color: '#42A5F5' }}>
+                                <div className="text-brand-500">
                                     <FaChevronDown
                                         size={18}
                                         className={`transition-transform duration-500 ease-in-out ${expandedDocSections[section.id] ? 'rotate-0' : 'rotate-180'
@@ -4391,7 +4299,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                                     setEditingAcademicRecord(doc);
                                                                     setOpenAcademicsDrawer(true);
                                                                 }}
-                                                                className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                                                                className="p-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-full transition-colors duration-200"
                                                                 title="Edit record"
                                                             >
                                                                 <FaEdit size={14} />
@@ -4793,7 +4701,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                                                         setEditingExperienceRecord(exp);
                                                                                         setOpenExperienceDrawer(true);
                                                                                     }}
-                                                                                    className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                                                                                    className="p-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-full transition-colors duration-200"
                                                                                     title="Edit record"
                                                                                 >
                                                                                     <FaEdit size={14} className="text-green-500" />
@@ -4871,7 +4779,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                                                         setEditingDependentRecord(dep);
                                                                                         setOpenDependentDrawer(true);
                                                                                     }}
-                                                                                    className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                                                                                    className="p-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-full transition-colors duration-200"
                                                                                     title="Edit record"
                                                                                 >
                                                                                     <FaEdit size={14} />
@@ -4970,7 +4878,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                                                         setEditingLicenseRecord(license);
                                                                                         setOpenLicenseDrawer(true);
                                                                                     }}
-                                                                                    className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                                                                                    className="p-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-full transition-colors duration-200"
                                                                                     title="Edit record"
                                                                                 >
                                                                                     <FaEdit size={14} />
@@ -5050,7 +4958,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                                                         setEditingReferenceRecord(ref);
                                                                                         setOpenReferenceDrawer(true);
                                                                                     }}
-                                                                                    className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                                                                                    className="p-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-full transition-colors duration-200"
                                                                                     title="Edit record"
                                                                                 >
                                                                                     <FaEdit size={14} />
@@ -5103,7 +5011,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                                                             window.open(doc.doc_name, "_blank");
                                                                                         }
                                                                                     }}
-                                                                                    className="px-4 py-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors duration-200 text-sm font-medium"
+                                                                                    className="px-4 py-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-lg transition-colors duration-200 text-sm font-medium"
                                                                                     title="View Document"
                                                                                 >
                                                                                     <FaEye size={14} className="inline mr-2" />
@@ -5114,7 +5022,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                                                         setEditingDocumentRecord(doc);
                                                                                         setOpenDocumentsDrawer(true);
                                                                                     }}
-                                                                                    className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-colors duration-200"
+                                                                                    className="p-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-full transition-colors duration-200"
                                                                                     title="Edit record"
                                                                                 >
                                                                                     <FaEdit size={14} />
@@ -5205,22 +5113,24 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         return (
             <div className="space-y-6">
                 {/* Salary Template Name Section */}
-                <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     <div
-                        className="flex justify-between items-center p-4 cursor-pointer transition-colors"
+                        className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white cursor-pointer hover:bg-gray-50/50 transition-colors"
                         onClick={() => toggleSection("salaryTemplate")}
-                        style={{ backgroundColor: '#E3F2FD', borderRadius: '8px 8px 0 0' }}
                     >
-                        <Typography
-                            variant="h6"
-                            className="font-semibold text-[15px]"
-                            style={{ color: '#42A5F5' }}
-                        >
-                            {salarySettings?.["Salary Template Name"] ||
-                                "Salary Template Name"}
-                        </Typography>
-                        <div className="flex items-center gap-2">
-                            <button
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center">
+                                <FaFileAlt className="text-sm" />
+                            </div>
+                            <h3 className="font-bold text-gray-800 text-lg">
+                                {salarySettings?.["Salary Template Name"] || "Salary Template Name"}
+                            </h3>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="text"
+                                size="sm"
+                                className="flex items-center gap-2 text-brand-500 hover:bg-brand-50 rounded-lg normal-case font-medium p-2"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     // Populate form with current data
@@ -5252,15 +5162,13 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     });
                                     setOpenSalarySettingsDrawer(true);
                                 }}
-                                className="p-1 text-green-500 hover:text-green-700 hover:bg-green-50 rounded transition-colors duration-200"
-                                title="Edit Salary Settings"
                             >
-                                <FaRegPenToSquare size={18} className="text-green-500" />
-                            </button>
-                            <div style={{ color: '#42A5F5' }}>
+                                <FaRegPenToSquare className="text-base" />
+                            </Button>
+                            <div className="text-brand-500">
                                 <FaChevronDown
-                                    size={18}
-                                    className={`transition-transform duration-500 ease-in-out ${expandedSections.salaryTemplate ? 'rotate-0' : 'rotate-180'
+                                    size={16}
+                                    className={`transition-transform duration-300 ease-in-out ${expandedSections.salaryTemplate ? 'rotate-0' : 'rotate-180'
                                         }`}
                                 />
                             </div>
@@ -5272,219 +5180,67 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             : 'max-h-0 opacity-0'
                             }`}
                     >
-                        <div className="px-4 pb-4 bg-white">
-                            {/* Top Row: Basic Pay, Overtime Rate, Mode of payment */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-3">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaCodeBranch className="text-blue-500 w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Basic Pay
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {formatNumber(salarySettings?.["Basic Pay"])}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <MdBarChart className="text-blue-500 w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Overtime Rate
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {salarySettings?.["Overtime Rate"] || "0/hour"}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaMoneyBills className="text-blue-500 w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Mode of payment
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-base text-gray-900 mt-1"
-                                        >
-                                            {salarySettings?.["Mode of payment"] || "N/A"}
-                                        </Typography>
-                                    </div>
-                                </div>
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {renderGridItem("Basic Pay", formatNumber(salarySettings?.["Basic Pay"]), <FaCodeBranch className="text-lg" />)}
+                                {renderGridItem("Overtime Rate", salarySettings?.["Overtime Rate"] || "0/hour", <MdBarChart className="text-lg" />)}
+                                {renderGridItem("Mode of payment", salarySettings?.["Mode of payment"] || "N/A", <FaMoneyBills className="text-lg" />)}
                             </div>
 
-                            {/* Dashed Separator */}
-                            <div className="border-t border-dashed border-gray-300 my-4"></div>
+                            <div className="border-t border-dashed border-gray-200 my-6"></div>
 
-                            {/* Bottom Row: Ex-Gratia on overtime, Gratuity */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Ex-Gratia on overtime
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className={`font-semibold text-base mt-1 ${salarySettings?.["Ex-Gratia on overtime"] === "Yes"
-                                                ? "text-green-500"
-                                                : "text-red-500"
-                                                }`}
-                                        >
-                                            {salarySettings?.["Ex-Gratia on overtime"] || "No"}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaTrophy className="text-blue-500 w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Gratuity
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className={`font-semibold text-base mt-1 ${salarySettings?.["Gratuity"] === "Yes"
-                                                ? "text-green-500"
-                                                : "text-red-500"
-                                                }`}
-                                        >
-                                            {salarySettings?.["Gratuity"] || "No"}
-                                        </Typography>
-                                    </div>
-                                </div>
+                                {renderGridItem("Ex-Gratia on overtime", salarySettings?.["Ex-Gratia on overtime"] || "No", <FaUsers className="text-lg" />)}
+                                {renderGridItem("Gratuity", salarySettings?.["Gratuity"] || "No", <FaTrophy className="text-lg" />)}
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Bank Account Info Section */}
-                <div className="border border-gray-200 rounded-lg bg-blue-50">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     <div
-                        className="flex justify-between items-center p-4 cursor-pointer transition-colors"
+                        className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white cursor-pointer hover:bg-gray-50/50 transition-colors"
                         onClick={() => toggleSection("bankAccountInfo")}
                     >
-                        <Typography
-                            variant="h6"
-                            color="blue-gray"
-                            className="font-medium text-blue-500"
-                        >
-                            Bank account info
-                        </Typography>
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center">
+                                <CiBank className="text-sm font-bold" />
+                            </div>
+                            <h3 className="font-bold text-gray-800 text-lg">Bank account info</h3>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="text"
+                                size="sm"
+                                className="flex items-center gap-2 text-brand-500 hover:bg-brand-50 rounded-lg normal-case font-medium p-2"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    get_bank_type_fn(); /// console.log('Bank account button clicked');
-                                    // Populate form with current data
-                                    const bankData =
-                                        employeeData?.Salary_Settings?.["Bank account info"] || {};
-                                    ///console.log('Bank data:', bankData);
-
-                                    // Get existing account type - could be text or ID (number)
+                                    get_bank_type_fn();
+                                    const bankData = employeeData?.Salary_Settings?.["Bank account info"] || {};
                                     const existingAccountType = bankData?.["Account Type"] || "";
-                                    const existingAccountTypeNum =
-                                        typeof existingAccountType === "number"
-                                            ? existingAccountType
-                                            : typeof existingAccountType === "string" &&
-                                                !isNaN(existingAccountType)
-                                                ? parseInt(existingAccountType)
-                                                : null;
-
-                                    // Check if account type exists in API data
+                                    const existingAccountTypeNum = typeof existingAccountType === "number" ? existingAccountType : (typeof existingAccountType === "string" && !isNaN(existingAccountType) ? parseInt(existingAccountType) : null);
                                     let matchedAccountType = null;
                                     let isCustomType = false;
 
-                                    if (
-                                        existingAccountType &&
-                                        Array.isArray(get_bank_type) &&
-                                        get_bank_type.length > 0
-                                    ) {
-                                        // Check if it matches by ID or by account_type text
+                                    if (existingAccountType && Array.isArray(get_bank_type) && get_bank_type.length > 0) {
                                         const found = get_bank_type.find((item) => {
                                             if (typeof item === "object" && item) {
                                                 const itemId = item.id;
-                                                const accountType =
-                                                    item.account_type ??
-                                                    item.value ??
-                                                    item.account_type_name ??
-                                                    item.name ??
-                                                    item.label;
-                                                // Match by ID if existingAccountType is a number
-                                                if (
-                                                    existingAccountTypeNum !== null &&
-                                                    itemId === existingAccountTypeNum
-                                                ) {
-                                                    return true;
-                                                }
-                                                // Match by text
-                                                if (
-                                                    accountType &&
-                                                    String(accountType) === String(existingAccountType)
-                                                ) {
-                                                    return true;
-                                                }
+                                                const accountType = item.account_type ?? item.value ?? item.account_type_name ?? item.name ?? item.label;
+                                                if (existingAccountTypeNum !== null && itemId === existingAccountTypeNum) return true;
+                                                if (accountType && String(accountType) === String(existingAccountType)) return true;
                                             }
                                             return false;
                                         });
 
                                         if (found) {
-                                            // Found a match - use the account_type text value
-                                            matchedAccountType =
-                                                typeof found === "object" && found
-                                                    ? found.account_type ??
-                                                    found.value ??
-                                                    found.account_type_name ??
-                                                    found.name ??
-                                                    found.label
-                                                    : found;
+                                            matchedAccountType = typeof found === "object" && found ? (found.account_type ?? found.value ?? found.account_type_name ?? found.name ?? found.label) : found;
                                         } else {
-                                            // Not found in API data - treat as custom type
                                             isCustomType = true;
                                         }
-                                    } else if (
-                                        existingAccountType &&
-                                        (!Array.isArray(get_bank_type) ||
-                                            get_bank_type.length === 0)
-                                    ) {
-                                        // No API data available yet, but we have existing type - check if it's a number (ID)
+                                    } else if (existingAccountType && (!Array.isArray(get_bank_type) || get_bank_type.length === 0)) {
                                         isCustomType = existingAccountTypeNum !== null;
                                     }
 
@@ -5492,29 +5248,20 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                         bankName: bankData?.Bank || "",
                                         bankBranchInfo: bankData?.Branch || "",
                                         bankBranchCode: bankData?.["Branch Code"] || "",
-                                        bankAccountType: isCustomType
-                                            ? "Other"
-                                            : matchedAccountType || existingAccountType || "",
-                                        customAccountType: isCustomType
-                                            ? existingAccountTypeNum !== null
-                                                ? String(existingAccountTypeNum)
-                                                : existingAccountType
-                                            : "",
+                                        bankAccountType: isCustomType ? "Other" : (matchedAccountType || existingAccountType || ""),
+                                        customAccountType: isCustomType ? (existingAccountTypeNum !== null ? String(existingAccountTypeNum) : existingAccountType) : "",
                                         accountTitle: bankData?.["Account Title"] || "",
                                         accountNo: bankData?.["Account No"] || "",
                                     });
-                                    ////console.log('Setting drawer to open');
                                     setOpenBankAccountDrawer(true);
                                 }}
-                                className="p-1 text-green-500 hover:text-green-700 hover:bg-green-50 rounded transition-colors duration-200 cursor-pointer"
-                                title="Edit Bank Account Info"
                             >
-                                <FaRegPenToSquare size={18} className="text-green-500" />
-                            </button>
-                            <div style={{ color: '#42A5F5' }}>
+                                <FaRegPenToSquare className="text-base" />
+                            </Button>
+                            <div className="text-brand-500">
                                 <FaChevronDown
-                                    size={18}
-                                    className={`transition-transform duration-500 ease-in-out ${expandedSections.bankAccountInfo ? 'rotate-0' : 'rotate-180'
+                                    size={16}
+                                    className={`transition-transform duration-300 ease-in-out ${expandedSections.bankAccountInfo ? 'rotate-0' : 'rotate-180'
                                         }`}
                                 />
                             </div>
@@ -5526,162 +5273,38 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             : 'max-h-0 opacity-0'
                             }`}
                     >
-                        <div className="px-4 pb-4 bg-white">
-                            {/* Top Row: Bank, Branch, Branch Code */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <CiBank className="text-blue-500 w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Bank
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {bankInfo?.Bank || "-"}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Branch
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {bankInfo?.Branch || "-"}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Branch Code
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {bankInfo?.["Branch Code"] || "-"}
-                                        </Typography>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Dashed Separator */}
-                            <div className="border-t border-dashed border-gray-300 my-4"></div>
-
-                            {/* Bottom Row: Account Type, Account Title, Account No */}
+                        <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs "
-                                        >
-                                            Account Type
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {bankInfo?.["Account Type"] === 0 ||
-                                                !bankInfo?.["Account Type"]
-                                                ? "-"
-                                                : bankInfo?.["Account Type"]}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Account Title
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {bankInfo?.["Account Title"] || "-"}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Account No
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {bankInfo?.["Account No"] || "0"}
-                                        </Typography>
-                                    </div>
-                                </div>
+                                {renderGridItem("Bank", bankInfo?.Bank || "-", <CiBank className="text-lg" />)}
+                                {renderGridItem("Branch", bankInfo?.Branch || "-", <FaCodeBranch className="text-lg" />)}
+                                {renderGridItem("Branch Code", bankInfo?.["Branch Code"] || "-", <FaCodeBranch className="text-lg" />)}
+                            </div>
+                            <div className="border-t border-dashed border-gray-200 my-6"></div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {renderGridItem("Account Type", (bankInfo?.["Account Type"] === 0 || !bankInfo?.["Account Type"]) ? "-" : bankInfo?.["Account Type"], <FaUsers className="text-lg" />)}
+                                {renderGridItem("Account Title", bankInfo?.["Account Title"] || "-", <FaUsers className="text-lg" />)}
+                                {renderGridItem("Account No", bankInfo?.["Account No"] || "0", <FaUsers className="text-lg" />)}
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Net Salary Section */}
-                <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     <div
-                        className="flex justify-between items-center p-4 cursor-pointer transition-colors"
+                        className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white cursor-pointer hover:bg-gray-50/50 transition-colors"
                         onClick={() => toggleSection("netSalary")}
-                        style={{ backgroundColor: '#E3F2FD', borderRadius: '8px 8px 0 0' }}
                     >
-                        <Typography
-                            variant="h6"
-                            className="font-semibold text-[15px]"
-                            style={{ color: '#42A5F5' }}
-                        >
-                            Net Salary
-                        </Typography>
-                        <div style={{ color: '#42A5F5' }}>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center">
+                                <FaMoneyBills className="text-sm" />
+                            </div>
+                            <h3 className="font-bold text-gray-800 text-lg">Net Salary</h3>
+                        </div>
+                        <div className="text-brand-500">
                             <FaChevronDown
-                                size={18}
-                                className={`transition-transform duration-500 ease-in-out ${expandedSections.netSalary ? 'rotate-0' : 'rotate-180'
+                                size={16}
+                                className={`transition-transform duration-300 ease-in-out ${expandedSections.netSalary ? 'rotate-0' : 'rotate-180'
                                     }`}
                             />
                         </div>
@@ -5692,145 +5315,23 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             : 'max-h-0 opacity-0'
                             }`}
                     >
-                        <div className="px-4 pb-4 bg-white">
-                            {/* Top Row: Increments, Incentives, Deductions */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-3">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Increments
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {formatNumber(netSalary?.Increments)}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Incentives
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {formatNumber(netSalary?.Incentives)}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Deductions
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {formatNumber(netSalary?.Deductions)}
-                                        </Typography>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Dashed Separator */}
-                            <div className="border-t border-dashed border-gray-300 my-4"></div>
-
-                            {/* Bottom Row: EOBI, Provident Fund, Net Salary Total */}
+                        <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
+                                {renderGridItem("Increments", formatNumber(netSalary?.Increments), <FaChartLine className="text-lg" />)}
+                                {renderGridItem("Incentives", formatNumber(netSalary?.Incentives), <FaChartLine className="text-lg" />)}
+                                {renderGridItem("Deductions", formatNumber(netSalary?.Deductions), <FaChartLine className="text-lg" />)}
+                            </div>
+                            <div className="border-t border-dashed border-gray-200 my-6"></div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {renderGridItem("EOBI", (netSalary?.EOBI === "No" || !netSalary?.EOBI) ? "0" : netSalary?.EOBI, <FaUsers className="text-lg" />)}
+                                {renderGridItem("Provident Fund", (netSalary?.["Provident Fund"] === "0" || !netSalary?.["Provident Fund"]) ? "No" : netSalary?.["Provident Fund"], <FaUsers className="text-lg" />)}
+                                <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                                    <div className="w-10 h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center flex-shrink-0">
+                                        <FaMoneyBills className="text-lg" />
                                     </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            EOBI
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-semibold text-sm text-gray-900 mt-1"
-                                        >
-                                            {netSalary?.EOBI === "No" || !netSalary?.EOBI
-                                                ? "0"
-                                                : netSalary?.EOBI}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Provident Fund
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className={`font-semibold text-sm mt-1 ${netSalary?.["Provident Fund"] === "0" ||
-                                                netSalary?.["Provident Fund"] === "No"
-                                                ? "text-red-500"
-                                                : "text-green-500"
-                                                }`}
-                                        >
-                                            {netSalary?.["Provident Fund"] === "0" ||
-                                                !netSalary?.["Provident Fund"]
-                                                ? "No"
-                                                : netSalary?.["Provident Fund"]}
-                                        </Typography>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                        <FaUsers className="text-blue-500 w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <Typography
-                                            variant="small"
-                                            color="gray"
-                                            className="font-normal text-xs"
-                                        >
-                                            Net Salary Excluding Attendance deduction
-                                        </Typography>
-                                        <Typography
-                                            variant="small"
-                                            className="font-bold text-sm text-green-600 mt-1"
-                                        >
-                                            {formatNumber(
-                                                netSalary?.["Net Salary Excluding Attendance deduction"]
-                                            )}
-                                        </Typography>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Net Salary Excluding Attendance deduction</p>
+                                        <p className="text-sm font-bold text-green-600 mt-0.5 break-words">{formatNumber(netSalary?.["Net Salary Excluding Attendance deduction"])}</p>
                                     </div>
                                 </div>
                             </div>
@@ -5839,23 +5340,21 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 </div>
 
                 {/* Allowances/Deductions Section */}
-                <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     <div
-                        className="flex justify-between items-center p-4 cursor-pointer transition-colors"
+                        className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white cursor-pointer hover:bg-gray-50/50 transition-colors"
                         onClick={() => toggleSection("allowancesDeductions")}
-                        style={{ backgroundColor: '#E3F2FD', borderRadius: '8px 8px 0 0' }}
                     >
-                        <Typography
-                            variant="h6"
-                            className="font-semibold text-[15px]"
-                            style={{ color: '#42A5F5' }}
-                        >
-                            Allowances/Deductions
-                        </Typography>
-                        <div style={{ color: '#42A5F5' }}>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center">
+                                <FaListUl className="text-sm" />
+                            </div>
+                            <h3 className="font-bold text-gray-800 text-lg">Allowances/Deductions</h3>
+                        </div>
+                        <div className="text-brand-500">
                             <FaChevronDown
-                                size={18}
-                                className={`transition-transform duration-500 ease-in-out ${expandedSections.allowancesDeductions ? 'rotate-0' : 'rotate-180'
+                                size={16}
+                                className={`transition-transform duration-300 ease-in-out ${expandedSections.allowancesDeductions ? 'rotate-0' : 'rotate-180'
                                     }`}
                             />
                         </div>
@@ -5866,176 +5365,47 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             : 'max-h-0 opacity-0'
                             }`}
                     >
-                        <div className="px-4 pb-4 bg-white">
-                            <div className="overflow-x-auto">
+                        <div className="p-6">
+                            <div className="overflow-x-auto rounded-xl border border-gray-100">
                                 <table className="w-full table-fixed">
                                     <thead>
-                                        <tr className="border-b border-gray-200">
-                                            <th className="text-left py-2 w-1/5">
-                                                <Typography
-                                                    variant="small"
-                                                    color="gray"
-                                                    className="font-medium"
-                                                >
-                                                    Title
-                                                </Typography>
-                                            </th>
-                                            <th className="text-left py-2 w-1/5">
-                                                <Typography
-                                                    variant="small"
-                                                    color="gray"
-                                                    className="font-medium"
-                                                >
-                                                    Type
-                                                </Typography>
-                                            </th>
-                                            <th className="text-left py-2 w-1/5">
-                                                <Typography
-                                                    variant="small"
-                                                    color="gray"
-                                                    className="font-medium"
-                                                >
-                                                    Amount
-                                                </Typography>
-                                            </th>
-                                            <th className="text-left py-2 w-1/5">
-                                                <Typography
-                                                    variant="small"
-                                                    color="gray"
-                                                    className="font-medium"
-                                                >
-                                                    Recurring
-                                                </Typography>
-                                            </th>
-                                            <th className="text-left py-2 w-1/5">
-                                                <Typography
-                                                    variant="small"
-                                                    color="gray"
-                                                    className="font-medium"
-                                                >
-                                                    Date/Duration
-                                                </Typography>
-                                            </th>
+                                        <tr className="bg-gray-50 border-b border-gray-100">
+                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Title</th>
+                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Type</th>
+                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Amount</th>
+                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Recurring</th>
+                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Date/Duration</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="divide-y divide-gray-100">
                                         {incentives.length > 0 || deductions.length > 0 ? (
                                             <>
-                                                {/* Incentives */}
                                                 {incentives.map((item, index) => (
-                                                    <tr
-                                                        key={`incentive-${index}`}
-                                                        className="border-b border-gray-100"
-                                                    >
-                                                        <td className="py-2 pr-2">
-                                                            <Typography
-                                                                variant="small"
-                                                                color="blue-gray"
-                                                                className="font-medium break-words"
-                                                            >
-                                                                {item.title || "N/A"}
-                                                            </Typography>
-                                                        </td>
-                                                        <td className="py-2 pr-2">
-                                                            <Typography
-                                                                variant="small"
-                                                                color="green"
-                                                                className="font-medium"
-                                                            >
-                                                                Incentive
-                                                            </Typography>
-                                                        </td>
-                                                        <td className="py-2 pr-2">
-                                                            <Typography
-                                                                variant="small"
-                                                                color="blue-gray"
-                                                                className="font-medium"
-                                                            >
-                                                                {formatNumber(item.amount)}
-                                                            </Typography>
-                                                        </td>
-                                                        <td className="py-2 pr-2">
-                                                            <Typography
-                                                                variant="small"
-                                                                color="blue-gray"
-                                                                className="font-medium"
-                                                            >
-                                                                {item.re_occuring || "N/A"}
-                                                            </Typography>
-                                                        </td>
-                                                        <td className="py-2">
-                                                            <Typography variant="small" color="gray" className="break-words">
-                                                                {item.start_date_formatted
-                                                                    ? `${item.start_date_formatted}${item.end_date_formatted
-                                                                        ? ` - ${item.end_date_formatted}`
-                                                                        : ""
-                                                                    }`
-                                                                    : "N/A"}
-                                                            </Typography>
-                                                        </td>
+                                                    <tr key={`incentive-${index}`}>
+                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-900 break-words">{item.title || "N/A"}</Typography></td>
+                                                        <td className="py-3 px-4"><span className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium">Incentive</span></td>
+                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-900">{formatNumber(item.amount)}</Typography></td>
+                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-700">{item.re_occuring || "N/A"}</Typography></td>
+                                                        <td className="py-3 px-4"><Typography variant="small" className="text-sm text-gray-700 break-words">{item.start_date_formatted ? `${item.start_date_formatted}${item.end_date_formatted ? ` - ${item.end_date_formatted}` : ""}` : "N/A"}</Typography></td>
                                                     </tr>
                                                 ))}
-                                                {/* Deductions */}
                                                 {deductions.map((item, index) => (
-                                                    <tr
-                                                        key={`deduction-${index}`}
-                                                        className="border-b border-gray-100"
-                                                    >
-                                                        <td className="py-2 pr-2">
-                                                            <Typography
-                                                                variant="small"
-                                                                color="blue-gray"
-                                                                className="font-medium break-words"
-                                                            >
-                                                                {item.title || "N/A"}
-                                                            </Typography>
-                                                        </td>
-                                                        <td className="py-2 pr-2">
-                                                            <Typography
-                                                                variant="small"
-                                                                color="red"
-                                                                className="font-medium"
-                                                            >
-                                                                Deduction
-                                                            </Typography>
-                                                        </td>
-                                                        <td className="py-2 pr-2">
-                                                            <Typography
-                                                                variant="small"
-                                                                color="blue-gray"
-                                                                className="font-medium"
-                                                            >
-                                                                {formatNumber(item.amount)}
-                                                            </Typography>
-                                                        </td>
-                                                        <td className="py-2 pr-2">
-                                                            <Typography
-                                                                variant="small"
-                                                                color="blue-gray"
-                                                                className="font-medium"
-                                                            >
-                                                                {item.re_occuring || "N/A"}
-                                                            </Typography>
-                                                        </td>
-                                                        <td className="py-2">
-                                                            <Typography variant="small" color="gray" className="break-words">
-                                                                {item.start_date_formatted
-                                                                    ? `${item.start_date_formatted}${item.end_date_formatted
-                                                                        ? ` - ${item.end_date_formatted}`
-                                                                        : ""
-                                                                    }`
-                                                                    : "N/A"}
-                                                            </Typography>
-                                                        </td>
+                                                    <tr key={`deduction-${index}`}>
+                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-900 break-words">{item.title || "N/A"}</Typography></td>
+                                                        <td className="py-3 px-4"><span className="inline-flex items-center px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium">Deduction</span></td>
+                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-900">{formatNumber(item.amount)}</Typography></td>
+                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-700">{item.re_occuring || "N/A"}</Typography></td>
+                                                        <td className="py-3 px-4"><Typography variant="small" className="text-sm text-gray-700 break-words">{item.start_date_formatted ? `${item.start_date_formatted}${item.end_date_formatted ? ` - ${item.end_date_formatted}` : ""}` : "N/A"}</Typography></td>
                                                     </tr>
                                                 ))}
                                             </>
                                         ) : (
                                             <tr>
-                                                <td colSpan="5" className="text-center py-8">
-                                                    <Typography variant="small" color="gray">
-                                                        No allowances or deductions available
-                                                    </Typography>
+                                                <td colSpan="5" className="text-center py-12">
+                                                    <div className="flex flex-col items-center justify-center text-gray-400">
+                                                        <FaListUl className="text-2xl mb-2 opacity-20" />
+                                                        <p className="text-sm font-medium">No allowances or deductions available</p>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         )}
@@ -6208,11 +5578,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             {/* Checklist Section */}
             <div className="px-4 py-4">
-                <div className="bg-blue-50 mb-6 rounded-lg px-4 py-3 w-full flex justify-between items-center">
+                <div className="bg-brand-50 mb-6 rounded-lg px-4 py-3 w-full flex justify-between items-center border border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px]"
-                        style={{ color: '#42A5F5' }}
+                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
                     >
                         Checklist
                     </Typography>
@@ -6375,11 +5744,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             {/* Account & Privileges Section */}
             <div className="px-4 py-6 mb-4">
-                <div className="bg-blue-50 mb-6 rounded-lg px-4 py-3 w-full flex justify-between items-center">
+                <div className="bg-brand-50 mb-6 rounded-lg px-4 py-3 w-full flex justify-between items-center border border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px]"
-                        style={{ color: '#42A5F5' }}
+                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
                     >
                         Account & Privileges
                     </Typography>
@@ -6573,11 +5941,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     const renderRepetitiveDuties = () => (
         <div className='bg-white rounded-[10px] p-4 drop-shadow-md z-20'>
             <div className="flex justify-between items-center mb-4">
-                <div className="bg-blue-50 rounded-lg px-4 py-3 w-full flex gap-2 items-center">
+                <div className="bg-brand-50 rounded-lg px-4 py-3 w-full flex gap-2 items-center border border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px]"
-                        style={{ color: '#42A5F5' }}
+                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
                     >
                         Repetitive Duties
                     </Typography>
@@ -6763,14 +6130,14 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 </Typography>
 
                 {/* Report Type Filter Card */}
-                <Card className="border border-gray-200">
-                    <CardBody className="p-4">
+                <Card className="border border-gray-100 shadow-sm rounded-xl">
+                    <CardBody className="p-5">
                         <div className="flex items-center gap-4">
                             <div className="flex-1">
-                                <label className="block text-[#698592] text-[12px] mb-2">
+                                <label className="block text-gray-600 font-medium text-xs mb-2">
                                     Report Type
                                 </label>
-                                <select className="w-full text-[#333333] text-[12px] rounded-md py-[8px] px-[17px] border border-gray-500 outline-none bg-white">
+                                <select className="w-full text-gray-700 text-sm rounded-lg py-2.5 px-4 border border-gray-300 outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-all">
                                     <option value="">Select Report Type</option>
                                     <option value="1">Monthly Report</option>
                                     <option value="2">Date Range Report</option>
@@ -6791,12 +6158,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                         {headers?.map((head, i) => (
                                             <th
                                                 key={i}
-                                                className="border-b border-blue-gray-100 bg-blue-gray-50 px-2 py-3 text-center"
+                                                className="border-b border-brand-100 bg-brand-50 px-3 py-3 text-center first:rounded-tl-lg last:rounded-tr-lg"
                                             >
                                                 <Typography
                                                     color="blue-gray"
-                                                    className="font-normal leading-none opacity-70 capitalize text-xs"
-                                                    style={{ fontSize: "11px" }}
+                                                    className="font-semibold leading-none text-brand-600 capitalize text-xs"
                                                 >
                                                     {head}
                                                 </Typography>
@@ -6931,13 +6297,13 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     return (
         <div className="flex flex-col min-w-0 w-full max-w-full gap-2 py-2 pb-1 pl-2 sm:pl-4 pr-2 sm:pr-3 overflow-x-hidden box-border">
             {/* Header */}
-            <div className="min-w-0 max-w-full">
-                <span className="text-base sm:text-lg md:text-[20px] break-words">Employees Management</span>
+            <div className="min-w-0 max-w-full mb-4">
+                <span className="text-2xl font-bold text-gray-800 break-words tracking-tight">Employees Management</span>
             </div>
 
             {console.log("EmplopyeeData", employeeData)}
             {/* Employee Avatar and Basic Info */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm min-w-0 max-w-full">
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-soft min-w-0 max-w-full mb-6">
                 <div className="flex flex-col md:flex-row min-w-0">
                     {/* Left Section - Profile Picture */}
                     <div className="w-full md:w-40 lg:w-48 flex-shrink-0 h-40 sm:h-48 md:h-48 relative overflow-hidden min-w-0">
@@ -7015,7 +6381,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 <Button
                                     variant="outlined"
                                     size="sm"
-                                    className="border-blue-500 text-blue-500 hover:bg-blue-50 px-3 sm:px-4 py-2 rounded-md font-medium normal-case text-xs sm:text-sm w-full sm:w-auto"
+                                    className="border-blue-500 text-brand-500 hover:bg-brand-50 px-3 sm:px-4 py-2 rounded-md font-medium normal-case text-xs sm:text-sm w-full sm:w-auto"
                                     onClick={handleBack}
                                 >
                                     Back
@@ -7028,7 +6394,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             {/* First Row: Designation and Department */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2">
                                 <div className="flex items-start gap-2 sm:gap-3 min-w-0">
-                                    <div className="bg-blue-500 rounded-full h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
+                                    <div className="bg-brand-500 rounded-full h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
                                         <FaUsers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                     </div>
                                     <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
@@ -7052,7 +6418,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-2 sm:gap-3 min-w-0 sm:ml-0">
-                                    <div className="bg-blue-500 rounded-full h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
+                                    <div className="bg-brand-500 rounded-full h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
                                         <FaBuilding className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                     </div>
                                     <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
@@ -7082,7 +6448,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             {/* Second Row: Contact and Email */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2">
                                 <div className="flex items-start gap-2 sm:gap-3 min-w-0">
-                                    <div className="bg-blue-500 rounded-full h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
+                                    <div className="bg-brand-500 rounded-full h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
                                         <FaPhone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                     </div>
                                     <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
@@ -7107,7 +6473,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-2 sm:gap-3 min-w-0 sm:ml-0">
-                                    <div className="bg-blue-500 rounded-full h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
+                                    <div className="bg-brand-500 rounded-full h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
                                         <FaEnvelope className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                     </div>
                                     <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
@@ -7144,14 +6510,14 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     onClick={() => setActiveTab(index)}
                                     whileHover={{ scale: 1.02 }}
                                     className={`group relative flex items-center gap-2 sm:gap-3 py-2.5 sm:py-3 px-2 sm:px-3 cursor-pointer transition-all duration-200 rounded-lg min-w-0 ${activeTab === index
-                                        ? "bg-[#E7F0FF] text-[#2F80ED] font-medium"
-                                        : "text-[#5D6470] hover:bg-gray-50 rounded-lg"
+                                        ? "bg-brand-50 text-brand-600 font-semibold shadow-sm"
+                                        : "text-gray-600 hover:bg-gray-50 hover:text-brand-500 rounded-lg"
                                         }`}
                                 >
                                     <div
                                         className={`flex-shrink-0 flex items-center justify-center transition-colors duration-200 ${activeTab === index
-                                            ? "text-[#2F80ED]"
-                                            : "text-[#CECED0] group-hover:text-[#5D6470]"
+                                            ? "text-brand-600"
+                                            : "text-gray-400 group-hover:text-brand-500"
                                             }`}
                                     >
                                         {icon}
@@ -7166,7 +6532,17 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 {/* Right Side - Content: full width, reduced right padding */}
                 <Card className="w-full min-w-0 flex-1 max-w-full bg-transparent shadow-none lg:-mt-4">
                     <CardBody className="pt-3 sm:pt-4 pb-3 sm:pb-4 pl-3 sm:pl-4 pr-2 sm:pr-3 min-w-0 overflow-x-hidden">
-                        {renderTabContent()}
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                {renderTabContent()}
+                            </motion.div>
+                        </AnimatePresence>
                     </CardBody>
                 </Card>
             </div>
@@ -7328,7 +6704,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                         dropdownMode="select"
                                     />
                                     <label
-                                        className={`absolute left-3 -top-2.5 text-xs bg-white px-1 pointer-events-none z-10 ${dateOfBirthFocused ? "text-blue-500" : "text-gray-500"
+                                        className={`absolute left-3 -top-2.5 text-xs bg-white px-1 pointer-events-none z-10 ${dateOfBirthFocused ? "text-brand-500" : "text-gray-500"
                                             }`}
                                     >
                                         Date of Birth
@@ -7446,7 +6822,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                         disabled={false}
                                     />
                                     <label
-                                        className={`absolute left-3 -top-2.5 text-xs bg-white px-1 pointer-events-none z-10 transition-colors ${countryFocused ? "text-blue-500" : "text-gray-500"
+                                        className={`absolute left-3 -top-2.5 text-xs bg-white px-1 pointer-events-none z-10 transition-colors ${countryFocused ? "text-brand-500" : "text-gray-500"
                                             }`}
                                     >
                                         Country

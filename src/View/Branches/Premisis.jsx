@@ -1455,14 +1455,14 @@ const Premisis = (props) => {
                     </GoogleMap>
                 </div>
 
-                <div className='py-2 flex items-center justify-between' style={{ position: 'relative', zIndex: 1000, pointerEvents: 'none' }}>
-                    <div className='flex gap-2' style={{ pointerEvents: 'auto' }}>
-                        <Button variant="gradient" color='blue'
-                            className='capitalize px-2 py-2 text-[11px]'
+                <div className='py-4 flex items-center justify-between' style={{ position: 'relative', zIndex: 1000, pointerEvents: 'none' }}>
+                    <div className='flex gap-3' style={{ pointerEvents: 'auto' }}>
+                        <Button
+                            className='capitalize px-4 py-2 text-xs font-medium bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/40 transition-all rounded-lg font-poppins'
                             onClick={handleSetPremises}
-                        >Set  Premises</Button>
-                        <Button variant="gradient" color='red'
-                            className='capitalize px-2 py-2 text-[11px]'
+                        >Set Premises</Button>
+                        <Button
+                            className='capitalize px-4 py-2 text-xs font-medium bg-white text-red-500 border border-red-100 hover:bg-red-50 shadow-sm transition-all rounded-lg font-poppins'
                             disabled={polygons?.length === 0}
                             onClick={async () => {
                                 try {
@@ -1477,30 +1477,32 @@ const Premisis = (props) => {
                                     showToast('Error resetting premises. Please try again.', 'error');
                                 }
                             }}
-                        >Reset  Premises</Button>
+                        >Reset Premises</Button>
                     </div>
-                    <div className='flex items-center gap-2'>
-                        <Typography variant="small" className="text-gray-600">
+                    <div className='flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm'>
+                        <Typography variant="small" className="text-gray-600 font-poppins font-medium">
                             {premisesRecords.length > 0 ? `${premisesRecords.length} premise${premisesRecords.length > 1 ? 's' : ''} loaded` : 'No premises found'}
                             {newPolygons.length > 0 && ` | ${newPolygons.length} new polygon${newPolygons.length > 1 ? 's' : ''} ready to save`}
                         </Typography>
                     </div>
                     <div className='flex items-center gap-3' style={{ pointerEvents: 'auto' }}>
-                        <CustomSelect
-                            placeHolderTitle='Select Premises'
-                            value={premisisValue?.premisis}
-                            options={premisesRecords?.map((record, i) => ({ value: i, label: `Premises ${i + 1}`, id: record._id }))}
-                            onChangeHandler={(selectedOption) => {
-                                handleSelectChange(selectedOption, 'premisis', data);
-                                // Move map to selected premises
-                                if (selectedOption && selectedOption.value !== undefined) {
-                                    moveToPremises(selectedOption.value);
-                                }
-                            }}
-                            customStyle={false}
-                        />
-                        <Button variant="gradient" color='red'
-                            className='capitalize px-2 py-2 text-[11px]'
+                        <div className="w-48">
+                            <CustomSelect
+                                placeHolderTitle='Select Premises'
+                                value={premisisValue?.premisis}
+                                options={premisesRecords?.map((record, i) => ({ value: i, label: `Premises ${i + 1}`, id: record._id }))}
+                                onChangeHandler={(selectedOption) => {
+                                    handleSelectChange(selectedOption, 'premisis', data);
+                                    // Move map to selected premises
+                                    if (selectedOption && selectedOption.value !== undefined) {
+                                        moveToPremises(selectedOption.value);
+                                    }
+                                }}
+                                customStyle={false}
+                            />
+                        </div>
+                        <Button
+                            className='capitalize px-4 py-2 text-xs font-medium bg-red-500 text-white shadow-red-500/20 hover:shadow-red-500/40 transition-all rounded-lg font-poppins'
                             onClick={async () => {
                                 const selectedOption = premisisValue?.premisis;
                                 const selectedPolygon = polygons[selectedOption?.value];
@@ -1522,7 +1524,7 @@ const Premisis = (props) => {
                                 }
                             }}
                         >
-                            Delete  Premises
+                            Delete Premises
                         </Button>
                     </div>
                 </div>

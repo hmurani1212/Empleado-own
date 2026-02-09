@@ -2,11 +2,9 @@ import React from "react";
 import useLeavesPlanner from "../../ViewModel/LeavePlannerViewModel/LeavePlannerServices";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Button } from "@material-tailwind/react";
-import CustomButton from "../../Components/CustomButton/CustomButton";
 
 const LeavesPlanner = () => {
-  const { leavesPlannerTitles, importEmpLeaves } = useLeavesPlanner();
+  const { leavesPlannerTitles } = useLeavesPlanner();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -14,67 +12,59 @@ const LeavesPlanner = () => {
     e.preventDefault();
     navigate(link);
   };
+
   return (
-    <>
-      <div className="flex flex-col gap-4 py-2 px-2">
-        <div>
-          <span className="text-[20px] font-Urbanist font-semibold text-[#474747]">
-            Leaves Planner
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-2 pb-3">
-          <div className="flex justify-between items-center gap-5 py-5">
-            <div className="flex items-center gap-5">
-              {leavesPlannerTitles?.length > 0 &&
-                leavesPlannerTitles.map(
-                  (ele) =>
-                    ele && (
-                      <NavLink
-                        key={ele.id}
-                        className={`${
-                          location.pathname === ele.link
-                            ? "text-white"
-                            : "hover:text-[#474747]/60 text-[#474747]"
-                        } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
-                        style={{
-                          WebkitTapHighlightColor: "transparent",
-                        }}
-                        onClick={(e) =>
-                          handleLeaveNavClick(e, ele.link, ele.id)
-                        }
-                      >
-                        {location.pathname === ele.link && (
-                          <motion.span
-                            layoutId="bubble"
-                            className="absolute inset-0 z-10 bg-[#8bc9f8]"
-                            style={{ borderRadius: 9999 }}
-                            transition={{
-                              type: "spring",
-                              bounce: 0.2,
-                              duration: 0.6,
-                            }}
-                          />
-                        )}
-                        <span className="relative cursor-pointer text-[14px] z-20">
-                          {ele.title}
-                        </span>
-                      </NavLink>
-                    )
-                )}
-            </div>
-
-            {/* <div>
-            <CustomButton className='bg-[#8bc9f8]' title='Import Employees Leaves' onClick={importEmpLeaves}></CustomButton>
-
-          </div> */}
-          </div>
+    <div className='min-h-screen bg-gray-50/50 p-6 font-poppins'>
+      <div className='max-w-7xl mx-auto space-y-6'>
+        
+        {/* Header Section */}
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
           <div>
-            <Outlet />
+            <h1 className='text-2xl font-bold text-gray-900'>Leaves Planner</h1>
+            <p className='text-sm text-gray-500 mt-1'>Manage leave groups, types, and policies</p>
           </div>
         </div>
+
+        {/* Navigation Tabs */}
+        <div className='bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-100 inline-flex flex-wrap gap-1'>
+            {leavesPlannerTitles?.map((ele) => (
+              ele && (
+                <NavLink 
+                  key={ele.id}
+                  to={ele.link}
+                  onClick={(e) => handleLeaveNavClick(e, ele.link)}
+                  className={({ isActive }) => `
+                    relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out z-10
+                    ${location.pathname === ele.link 
+                      ? "text-white shadow-md shadow-blue-500/20" 
+                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                    }
+                  `}
+                >
+                  {location.pathname === ele.link && (
+                    <motion.span
+                      layoutId="activeTab"
+                      className="absolute inset-0 bg-bgBlue rounded-xl -z-10"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                  {ele.title}
+                </NavLink>
+              )
+            ))}
+        </div>
+
+        {/* Content Area with Transition */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Outlet /> 
+        </motion.div>
+
       </div>
-    </>
+    </div>
   );
 };
 

@@ -1,6 +1,19 @@
 import React, { useState } from 'react'
-import CustomButton from '../../../Components/CustomButton/CustomButton'
+import { 
+    Input, 
+    Textarea, 
+    Radio, 
+    Button, 
+    Select, 
+    Option,
+    Card,
+    CardBody,
+    Typography,
+    IconButton
+} from '@material-tailwind/react'
 import { toast } from 'react-toastify'
+import { FaTrash, FaPlus, FaCloudUploadAlt, FaFileAlt } from 'react-icons/fa'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
     const [formData, setFormData] = useState({
@@ -18,36 +31,22 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
         ]
     })
 
-
     // Expense categories options
     const expenseCategories = [
         { label: 'Fuel', value: 0 },
         { label: 'Hotel', value: 1 },
-        { label: 'Launch', value: 2 },
+        { label: 'Lunch', value: 2 },
         { label: 'Dinner', value: 3 }
     ]
 
     const handleInputChange = (e) => {
-        const { name, value, type, files } = e.target
+        const { name, value, type } = e.target
         
-        if (type === 'file') {
-            setFormData(prev => ({
-                ...prev,
-                [name]: files
-            }))
-        } else if (type === 'radio') {
-            // For radio buttons, convert value to number for expenseType
-            setFormData(prev => ({
-                ...prev,
-                [name]: parseInt(value, 10)
-            }))
+        if (type === 'radio') {
+            setFormData(prev => ({ ...prev, [name]: parseInt(value, 10) }))
         } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: value
-            }))
+            setFormData(prev => ({ ...prev, [name]: value }))
         }
-
     }
 
     const handleItemChange = (index, field, value) => {
@@ -57,16 +56,17 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                 i === index ? { ...item, [field]: value } : item
             )
         }))
-
     }
 
     const handleFileChange = (index, files) => {
-        setFormData(prev => ({
-            ...prev,
-            items: prev.items.map((item, i) => 
-                i === index ? { ...item, attachment: files[0] || null } : item
-            )
-        }))
+        if (files && files[0]) {
+            setFormData(prev => ({
+                ...prev,
+                items: prev.items.map((item, i) => 
+                    i === index ? { ...item, attachment: files[0] } : item
+                )
+            }))
+        }
     }
 
     const addItem = () => {
@@ -74,12 +74,7 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
             ...prev,
             items: [
                 ...prev.items,
-                {
-                    item: '',
-                    category: 0,
-                    amount: '',
-                    attachment: null
-                }
+                { item: '', category: 0, amount: '', attachment: null }
             ]
         }))
     }
@@ -90,6 +85,8 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                 ...prev,
                 items: prev.items.filter((_, i) => i !== index)
             }))
+        } else {
+            toast.warning("You must have at least one item.");
         }
     }
 
@@ -97,269 +94,252 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
         setFormData({
             title: '',
             description: '',
-            expenseType: 0, // Reset to default value
+            expenseType: 0,
             date: '',
-            items: [
-                {
-                    item: '',
-                    category: 0,
-                    amount: '',
-                    attachment: null
-                }
-            ]
+            items: [{ item: '', category: 0, amount: '', attachment: null }]
         })
     }
 
-    // Expose resetForm to parent component
     React.useEffect(() => {
-        if (onReset) {
-            onReset(resetForm)
-        }
+        if (onReset) onReset(resetForm)
     }, [onReset])
 
     const validateForm = () => {
-        // Validate Title first
         if (!formData.title.trim()) {
             toast.error('Title is required')
             return false
         }
-
-        // Validate Description
         if (!formData.description.trim()) {
             toast.error('Description is required')
             return false
         }
-
-        // Validate Expense Type
-        if (formData.expenseType === null || formData.expenseType === undefined) {
-            toast.error('Expense Type is required')
-            return false
-        }
-
-        // Validate Date
         if (!formData.date) {
             toast.error('Date is required')
             return false
         }
-
-        // Validate Items - check if at least one item exists
-        if (!formData.items || formData.items.length === 0) {
-            toast.error('At least one item is required')
-            return false
-        }
-
-        // Validate each item one by one
+        
         for (let i = 0; i < formData.items.length; i++) {
             const item = formData.items[i]
-            
             if (!item.item.trim()) {
-                toast.error(`Item ${i + 1}: Item name is required`)
+                toast.error(`Item ${i + 1}: Name is required`)
                 return false
             }
-
             if (!item.amount || item.amount <= 0) {
-                toast.error(`Item ${i + 1}: Amount must be greater than 0`)
+                toast.error(`Item ${i + 1}: Amount must be positive`)
                 return false
             }
         }
-
         return true
     }
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        
-        if (!validateForm()) {
-            return
-        }
-
-        // Call parent onSubmit with form data
-        onSubmit(formData)
+        if (validateForm()) onSubmit(formData)
     }
 
     return (
-        <div className='p-6'>
-            <form className='space-y-8' onSubmit={handleSubmit}>
-            {/* Title */}
-            <div className='space-y-2'>
-                <label className='text-[#698592] text-[12px]'>Title *</label>
-                <input 
-                    className='w-full text-[#333333] text-[12px] rounded-md py-[10px] px-[15px] border border-gray-500 outline-none'
-                    type='text' 
-                    name='title' 
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    placeholder='Enter expense title'
-                />
-            </div>
-
-            {/* Description */}
-            <div className='space-y-2'>
-                <label className='text-[#698592] text-[12px]'>Description *</label>
-                <textarea 
-                    rows="4" 
-                    className='w-full text-[#333333] text-[12px] rounded-md py-[10px] px-[15px] border border-gray-500 outline-none resize-none'
-                    name='description'
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    placeholder='Enter expense description'
-                />
-            </div>
-
-            {/* Expense Type */}
-            <div className='space-y-2'>
-                <label className='text-[#698592] text-[12px]'>Expense Type *</label>
-                <div className='flex gap-4'>
-                    <label className='flex items-center gap-2 cursor-pointer'>
-                        <input 
-                            type='radio' 
-                            name='expenseType' 
-                            value={0}
-                            checked={formData.expenseType === 0}
-                            onChange={handleInputChange}
-                            className='text-blue-600'
-                        />
-                        <span className='text-[#333333] text-[12px]'>Expense Claim</span>
-                    </label>
-                    <label className='flex items-center gap-2 cursor-pointer'>
-                        <input 
-                            type='radio' 
-                            name='expenseType' 
-                            value={1}
-                            checked={formData.expenseType === 1}
-                            onChange={handleInputChange}
-                            className='text-blue-600'
-                        />
-                        <span className='text-[#333333] text-[12px]'>Cash Advance</span>
-                    </label>
-                </div>
-            </div>
-
-            {/* Dynamic Items Section */}
-            <div className='space-y-4'>
-                <label className='text-[#698592] text-[12px]'>Item Details *</label>
-                
-                {formData.items.map((item, index) => (
-                    <div key={index} className='border border-gray-200 rounded-lg p-6 space-y-6'>
-                        <div className='flex items-center justify-between'>
-                            <h4 className='text-[#333333] text-[14px] font-medium'>Item {index + 1}</h4>
-                            {formData.items.length > 1 && (
-                                <button
-                                    type='button'
-                                    onClick={() => removeItem(index)}
-                                    className='text-red-500 hover:text-red-700 text-[12px]'
-                                >
-                                    Remove
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Item Row - Horizontal Layout */}
-                        <div className='grid grid-cols-4 gap-6 items-end'>
-                            {/* Item */}
-                            <div className='space-y-2'>
-                                <label className='text-[#698592] text-[12px]'>Item *</label>
-                                <input 
-                                    className='w-full text-[#333333] text-[12px] rounded-md py-[10px] px-[15px] border border-gray-500 outline-none'
-                                    type='text' 
-                                    value={item.item}
-                                    onChange={(e) => handleItemChange(index, 'item', e.target.value)}
-                                    placeholder='Enter item name'
-                                />
-                            </div>
-
-                            {/* Expense Category */}
-                            <div className='space-y-2'>
-                                <label className='text-[#698592] text-[12px]'>Expense Category *</label>
-                                <select 
-                                    className='w-full text-[#333333] text-[12px] rounded-md py-[10px] px-[15px] border border-gray-500 outline-none'
-                                    value={item.category}
-                                    onChange={(e) => handleItemChange(index, 'category', parseInt(e.target.value))}
-                                >
-                                    {expenseCategories.map(category => (
-                                        <option key={category.value} value={category.value}>
-                                            {category.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Amount */}
-                            <div className='space-y-2'>
-                                <label className='text-[#698592] text-[12px]'>Amount *</label>
-                                <input 
-                                    className='w-full text-[#333333] text-[12px] rounded-md py-[10px] px-[15px] border border-gray-500 outline-none'
-                                    type='number' 
-                                    value={item.amount}
-                                    onChange={(e) => handleItemChange(index, 'amount', e.target.value)}
-                                    placeholder='Enter amount'
-                                    min='0'
-                                    step='0.01'
-                                />
-                            </div>
-
-                            {/* Attach File */}
-                            <div className='space-y-2'>
-                                <label className='text-[#698592] text-[12px]'>Attach File</label>
-                                <div className='flex items-center gap-2'>
-                                    <input 
-                                        type='file' 
-                                        onChange={(e) => handleFileChange(index, e.target.files)}
-                                        className='hidden'
-                                        id={`file-input-${index}`}
+        <div className='p-6 h-full flex flex-col'>
+            <div className="flex-1 overflow-y-auto customScroll pr-2 pb-20">
+                <form id="expenseForm" onSubmit={handleSubmit} className='space-y-6'>
+                    
+                    {/* Basic Info Section */}
+                    <Card className="border border-gray-200 shadow-none">
+                        <CardBody className="p-5 space-y-5">
+                            <Typography variant="h6" color="blue-gray" className="flex items-center gap-2">
+                                <span className="w-1 h-6 bg-brand-500 rounded-full"></span>
+                                General Information
+                            </Typography>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className='md:col-span-2'>
+                                    <Input 
+                                        label="Expense Title *" 
+                                        name='title'
+                                        value={formData.title}
+                                        onChange={handleInputChange}
+                                        color="blue"
+                                        size="lg"
                                     />
-                                    <label 
-                                        htmlFor={`file-input-${index}`}
-                                        className='px-3 py-2 border border-gray-500 rounded-md text-[12px] text-[#333333] cursor-pointer hover:bg-gray-50'
-                                    >
-                                        Choose Files
-                                    </label>
-                                    <button
-                                        type='button'
-                                        onClick={addItem}
-                                        className='w-8 h-8 bg-blue-600 text-white rounded-md flex items-center justify-center hover:bg-blue-700'
-                                    >
-                                        <span className='text-lg'>+</span>
-                                    </button>
                                 </div>
-                                {item.attachment && (
-                                    <span className='text-[#333333] text-[11px]'>
-                                        {item.attachment.name}
-                                    </span>
-                                )}
+                                <div className='md:col-span-2'>
+                                    <Textarea 
+                                        label="Description *" 
+                                        name='description'
+                                        value={formData.description}
+                                        onChange={handleInputChange}
+                                        color="blue"
+                                        rows={3}
+                                    />
+                                </div>
+                                <div>
+                                    <Input 
+                                        type='date'
+                                        label="Expense Date *" 
+                                        name='date'
+                                        value={formData.date}
+                                        onChange={handleInputChange}
+                                        color="blue"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-6 pl-2">
+                                    <Typography variant="small" color="gray" className="font-medium">Type:</Typography>
+                                    <Radio 
+                                        name="expenseType" 
+                                        label="Expense Claim" 
+                                        value={0}
+                                        checked={formData.expenseType === 0}
+                                        onChange={handleInputChange}
+                                        color="blue"
+                                    />
+                                    <Radio 
+                                        name="expenseType" 
+                                        label="Cash Advance" 
+                                        value={1}
+                                        checked={formData.expenseType === 1}
+                                        onChange={handleInputChange}
+                                        color="blue"
+                                    />
+                                </div>
                             </div>
+                        </CardBody>
+                    </Card>
+
+                    {/* Items Section */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <Typography variant="h6" color="blue-gray" className="flex items-center gap-2">
+                                <span className="w-1 h-6 bg-brand-500 rounded-full"></span>
+                                Expense Items
+                            </Typography>
+                            <Button 
+                                size="sm" 
+                                variant="text" 
+                                className="flex items-center gap-2 text-brand-500 hover:bg-brand-50"
+                                onClick={addItem}
+                            >
+                                <FaPlus /> Add Another Item
+                            </Button>
                         </div>
+
+                        <AnimatePresence>
+                            {formData.items.map((item, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <Card className="border border-gray-200 shadow-sm overflow-visible">
+                                        <CardBody className="p-5 relative">
+                                            {/* Remove Button */}
+                                            {formData.items.length > 1 && (
+                                                <div className="absolute top-2 right-2">
+                                                    <IconButton 
+                                                        variant="text" 
+                                                        color="red" 
+                                                        size="sm"
+                                                        className="rounded-full hover:bg-red-50"
+                                                        onClick={() => removeItem(index)}
+                                                    >
+                                                        <FaTrash className="text-xs" />
+                                                    </IconButton>
+                                                </div>
+                                            )}
+
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                                <div className="md:col-span-1 flex items-center justify-center md:justify-start">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
+                                                        {index + 1}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="md:col-span-11 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                    <div className="md:col-span-2">
+                                                        <Input 
+                                                            label="Item Name *" 
+                                                            value={item.item}
+                                                            onChange={(e) => handleItemChange(index, 'item', e.target.value)}
+                                                            color="blue"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <Select
+                                                            label="Category *"
+                                                            value={item.category.toString()}
+                                                            onChange={(val) => handleItemChange(index, 'category', parseInt(val))}
+                                                            color="blue"
+                                                        >
+                                                            {expenseCategories.map(cat => (
+                                                                <Option key={cat.value} value={cat.value.toString()}>
+                                                                    {cat.label}
+                                                                </Option>
+                                                            ))}
+                                                        </Select>
+                                                    </div>
+
+                                                    <div>
+                                                        <Input 
+                                                            type="number" 
+                                                            label="Amount *" 
+                                                            value={item.amount}
+                                                            onChange={(e) => handleItemChange(index, 'amount', e.target.value)}
+                                                            color="blue"
+                                                            min="0"
+                                                            icon={<span className="text-xs font-bold text-gray-500">PKR</span>}
+                                                        />
+                                                    </div>
+
+                                                    <div className="md:col-span-4 border-t border-gray-100 pt-3 mt-1">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="file"
+                                                                    id={`file-${index}`}
+                                                                    className="hidden"
+                                                                    onChange={(e) => handleFileChange(index, e.target.files)}
+                                                                />
+                                                                <label 
+                                                                    htmlFor={`file-${index}`}
+                                                                    className="flex items-center gap-2 cursor-pointer py-2 px-4 rounded-lg border border-dashed border-gray-300 hover:border-brand-500 hover:bg-brand-50 transition-all text-sm text-gray-600"
+                                                                >
+                                                                    <FaCloudUploadAlt className="text-brand-500 text-lg" />
+                                                                    {item.attachment ? "Change Receipt" : "Upload Receipt"}
+                                                                </label>
+                                                            </div>
+                                                            {item.attachment && (
+                                                                <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                                                                    <FaFileAlt />
+                                                                    <span className="truncate max-w-[200px]">{item.attachment.name}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardBody>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
-                ))}
+                </form>
             </div>
 
-            {/* Date */}
-            <div className='space-y-2'>
-                <label className='text-[#698592] text-[12px]'>Date *</label>
-                <input 
-                    className='w-full text-[#333333] text-[12px] rounded-md py-[10px] px-[15px] border border-gray-500 outline-none'
-                    type='date' 
-                    name='date' 
-                    value={formData.date}
-                    onChange={handleInputChange}
-                />
-            </div>
-
-            {/* Submit Button */}
-            <div className='flex justify-end gap-3 pt-4'>
-                <button
-                    type='button'
-                    onClick={onCancel}
-                    className='px-4 py-2 border border-gray-300 rounded-md text-[12px] text-gray-700 hover:bg-gray-50'
-                >
+            {/* Footer Actions - Fixed at bottom */}
+            <div className="pt-4 mt-2 border-t border-gray-100 flex justify-end gap-3 bg-white">
+                <Button variant="outlined" color="gray" onClick={onCancel} className="border-gray-300 text-gray-700">
                     Cancel
-                </button>
-                <CustomButton 
-                    title='Submit'
-                    type='submit'
-                />
+                </Button>
+                <Button 
+                    type="submit" 
+                    form="expenseForm"
+                    className="bg-brand-500 hover:bg-brand-600 shadow-brand-500/20"
+                >
+                    Submit Expense
+                </Button>
             </div>
-            </form>
         </div>
     )
 }

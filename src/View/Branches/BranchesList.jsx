@@ -2,14 +2,29 @@ import React from "react";
 import { Button, MenuItem, Typography } from "@material-tailwind/react";
 import { formatTimestamp } from "./utils";
 import { FaChevronDown } from "react-icons/fa";
+import { HiOutlineOfficeBuilding } from "react-icons/hi"; // New icons
 
 import useBranches from "../../ViewModel/BranchesViewModel/BranchesServices";
 import useBranches2 from "../../ViewModel/Brach2ViewModel/BranchesServices2";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import CustomDrawer from "../../Components/CustomDrawer/CustomDrawer";
 import EditBranchForm from "./EditBranchForm";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import branchImage from "../../assets/images/departement 1.png"; // Reusing the same image or a generic empty state image if available
+
+const SkeletonRow = () => (
+  <tr className="animate-pulse border-b border-gray-100">
+    <td className="p-4"><div className="h-4 w-16 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-12 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-20 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-8 w-20 bg-gray-200 rounded mx-auto"></div></td>
+  </tr>
+);
 
 const BranchesList = (props) => {
   const { data, loading, branchesAll, currentFilterStatus } = props;
@@ -41,79 +56,64 @@ const BranchesList = (props) => {
 
   return (
     <>
-      <div className="w-full bg-white rounded-[10px] p-2 drop-shadow-md">
-        <div className="relative w-full min-h-[calc(100vh-100px)] overflow-auto customScroll">
-          <table className="min-w-full table-fixed text-center">
-          <colgroup>
-    <col span="8" />
-  </colgroup>
-            <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="relative w-full min-h-[calc(100vh-250px)] overflow-auto customScroll">
+          <table className="min-w-full table-auto text-center">
+            <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
               <tr>
                 {data?.map((head, i) => (
                   <th
                     key={i}
-                    className={`bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4 ${
-                      head === "Creation Time" ? "min-w-[180px]" : ""
+                    className={`p-4 first:pl-6 last:pr-6 whitespace-nowrap ${
+                      head === "Branch Name" ? "text-left" : "text-center"
                     }`}
                   >
-                    <Typography className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize">
+                    <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
                       {head}
                     </Typography>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {loading && (
-                <tr>
-                  <td colSpan={data.length} className="p-6 text-center">
-                    <Typography className="text-gray-500">
-                      Loading employees...
-                    </Typography>
-                  </td>
-                </tr>
-              )}
-              {!loading && branchesAll?.branches?.length > 0 && (
+            <tbody className="divide-y divide-gray-50">
+              {loading ? (
+                 [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
+              ) : branchesAll?.branches?.length > 0 ? (
                 branchesAll?.branches?.map((branch, index) => {
-                  const isLast = index === branchesAll.length - 1;
-                  const classes = isLast
-                    ? "px-[clamp(4px,0.8vw,12px)] py-4"
-                    : "px-[clamp(4px,0.8vw,12px)] py-4 border-b border-[#F2F2F9]";
-
+                  
                   return (
-                    <tr key={index}>
-                      <td className={`${classes} text-center`}>
-                        {/* <div className="flex justify-center"> */}
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                        >
-                          {branch.id}
+                    <motion.tr 
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      className="hover:bg-blue-50/30 transition-colors group"
+                    >
+                      {/* Branch ID */}
+                      <td className="p-4 first:pl-6">
+                        <Typography className="text-sm font-medium text-gray-500 font-poppins">
+                          #{branch.id}
                         </Typography>
-                        {/* </div> */}
                       </td>
-                      <td className={`${classes} text-center`}>
-                        {/* <div className="flex justify-center"> */}
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                        >
-                          {branch.branch_name}
-                        </Typography>
-                        {/* </div> */}
+
+                      {/* Branch Name */}
+                      <td className="p-4 text-left">
+                        <div className="flex items-center gap-3">
+                           {/* <div className="p-2 bg-blue-50 rounded-lg text-blue-500 group-hover:bg-blue-100 transition-colors">
+                              <HiOutlineOfficeBuilding size={18} />
+                           </div> */}
+                           <Typography className="text-sm font-semibold text-gray-900 font-poppins">
+                             {branch.branch_name}
+                           </Typography>
+                        </div>
                       </td>
-                      <td className={`${classes} text-center`}>
-                        {/* <div className="flex justify-center"> */}
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                        >
+
+                      {/* Branch Admin */}
+                      <td className="p-4">
+                        <Typography className="text-sm text-gray-700 font-poppins">
                           {branch?.branch_admin?.length > 0 ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <span>{branch?.branch_admin[0]?.name}</span>
+                            <div className="flex flex-col items-center justify-center">
+                              <span className="font-medium text-gray-900">{branch?.branch_admin[0]?.name}</span>
                               {branch?.branch_admin.length > 1 && (
                                 <span
                                   onClick={() =>
@@ -122,403 +122,322 @@ const BranchesList = (props) => {
                                       ...branch,
                                     })
                                   }
-                                  className="text-gray-400 cursor-pointer hover:text-gray-600 underline"
+                                  className="text-[10px] text-blue-500 cursor-pointer hover:underline mt-0.5 font-medium"
                                   title="Click to manage branch admins"
                                 >
-                                  (+{branch?.branch_admin.length - 1} more)
+                                  +{branch?.branch_admin.length - 1} more
                                 </span>
                               )}
                             </div>
                           ) : (
-                            "-"
+                            <span className="text-gray-400 italic text-xs">Unassigned</span>
                           )}
                         </Typography>
-                        {/* </div> */}
                       </td>
-                      <td className={`${classes} text-center`}>
-                        {/* <div className="flex justify-center"> */}
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                        >
-                          {branch.currency}
-                        </Typography>
-                        {/* </div> */}
+
+                      {/* Currency */}
+                      <td className="p-4">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium border border-gray-200">
+                          {branch.currency || "-"}
+                        </span>
                       </td>
-                      <td className={`${classes} text-center`}>
-                        {/* <div className="flex justify-center"> */}
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                        >
+
+                      {/* Phone */}
+                      <td className="p-4 whitespace-nowrap">
+                        <Typography className="text-sm text-gray-600 font-poppins">
                           {formatPhoneNumberTable(branch.phone_no)}
                         </Typography>
-                        {/* </div> */}
                       </td>
-                      <td className={`${classes} text-center`}>
-                        {/* <div className="flex justify-center"> */}
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                        >
+
+                      {/* Email */}
+                      <td className="p-4">
+                        <Typography className="text-sm text-gray-600 font-poppins truncate max-w-[180px]" title={branch.email_add}>
                           {branch.email_add}
                         </Typography>
-                        {/* </div> */}
                       </td>
-                      <td
-                        className={`${classes} text-center whitespace-nowrap min-w-[180px]`}
-                      >
-                        {/* <div className="flex justify-center"> */}
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                        >
+
+                      {/* Creation Time */}
+                      <td className="p-4 whitespace-nowrap">
+                        <Typography className="text-xs text-gray-500 font-poppins">
                           {formatTimestamp(branch.creation_time)}
                         </Typography>
-                        {/* </div> */}
                       </td>
-                      <td className={classes}>
+
+                      {/* Actions */}
+                      <td className="p-4 last:pr-6 relative">
                         <div
                           ref={(el) => (triggerRefs.current[index] = el)}
                           onMouseEnter={() => toggleMenu(index, true)}
                           onMouseLeave={() => toggleMenu(index, false)}
-                          className="relative flex justify-center"
+                          className="relative inline-block"
                         >
                           <Button
-                            className="flex items-center gap-2 bg-[#EFF8FF] capitalize font-normal text-[clamp(10px,0.8vw,13px)] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px]"
-                            // variant="outlined"
+                            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
+                            variant="text"
                           >
                             Action
                             <FaChevronDown
-                              strokeWidth={2.5}
-                              className={`transition-transform transform ${
+                              size={10}
+                              className={`transition-transform duration-200 ${
                                 openMenu[index] ? "rotate-180" : ""
                               }`}
                             />
                           </Button>
 
+                          <AnimatePresence>
                           {openMenu[index] && (
-                            <div
-                              className={`border border-gray-200 rounded-lg absolute z-[99999] bg-white w-[200px] left-[-130px] shadow-lg mt-0 ${
-                                index <= 4 ? "top-full" : "bottom-full"
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                              transition={{ duration: 0.15, ease: "easeOut" }}
+                              className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-48 right-0 ${
+                                getDropdownPosition(index) === "top" ? "bottom-full mb-2" : "top-full mt-2"
                               }`}
                             >
-                              <motion.div
-                                initial={{
-                                  opacity: 0,
-                                  y: index <= 4 ? 50 : -50,
-                                }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{
-                                  opacity: 0,
-                                  y: index <= 4 ? 50 : -50,
-                                }}
-                                transition={{ duration: 0.2 }}
-                              >
-                                {/* <div className='border border-gray-200 rounded-lg absolute z-10 bg-white  w-[200px] shadow-md' 
-                        >
-                          <motion.div
-                            initial={{ opacity: 0, y: 50 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 50 }}
-                            transition={{ duration: 0.2 }}
-                          > */}
-
-                                <ul className="flex w-full flex-col gap-1">
+                                <ul className="flex flex-col py-1">
                                   {/* For inactive branches (status == 0): Show Activate and Edit */}
                                   {branch.status == 0 ? (
                                     <>
-                                      <MenuItem
-                                        className="flex items-center justify-between"
-                                        onClick={() =>
-                                          handleMenuItems(1, branch.id, branch)
-                                        }
-                                      >
-                                        <Typography variant="small">
+                                      <li className="px-1">
+                                        <button
+                                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                                          onClick={() =>
+                                            handleMenuItems(1, branch.id, branch)
+                                          }
+                                        >
                                           Edit
-                                        </Typography>
-                                        <span>
-                                          {
-                                            menuItems.find(
-                                              (item) => item.title === "Edit"
-                                            ).icon
+                                          <span className="text-gray-400">{menuItems.find(item => item.title === 'Edit')?.icon}</span>
+                                        </button>
+                                      </li>
+                                      <li className="px-1">
+                                        <button
+                                          className="w-full text-left px-3 py-2 text-xs font-medium text-green-600 hover:bg-green-50 flex items-center justify-between rounded-lg transition-colors"
+                                          onClick={() =>
+                                            handleMenuItems(3, branch.id, 1) // 3 is Activate
                                           }
-                                        </span>
-                                      </MenuItem>
-                                      <MenuItem
-                                        className="flex items-center justify-between"
-                                        onClick={() =>
-                                          handleMenuItems(2, branch.id, 1)
-                                        }
-                                      >
-                                        <Typography variant="small">
+                                        >
                                           Activate
-                                        </Typography>
-                                        <span>
-                                          {
-                                            menuItems.find(
-                                              (item) =>
-                                                item.title === "Activate"
-                                            ).icon
-                                          }
-                                        </span>
-                                      </MenuItem>
+                                          <span>{menuItems.find(item => item.title === 'Activate')?.icon}</span>
+                                        </button>
+                                      </li>
                                     </>
                                   ) : (
                                     /* For active branches (status == 1): Show Edit, Premises, Branch Admin, Deactivate in order */
                                     <>
-                                      <MenuItem
-                                        className="flex items-center justify-between"
-                                        onClick={() =>
-                                          handleMenuItems(1, branch.id, branch)
-                                        }
-                                      >
-                                        <Typography variant="small">
+                                      <li className="px-1">
+                                        <button
+                                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                                          onClick={() =>
+                                            handleMenuItems(1, branch.id, branch)
+                                          }
+                                        >
                                           Edit
-                                        </Typography>
-                                        <span>
-                                          {
-                                            menuItems.find(
-                                              (item) => item.title === "Edit"
-                                            ).icon
+                                          <span className="text-gray-400">{menuItems.find(item => item.title === 'Edit')?.icon}</span>
+                                        </button>
+                                      </li>
+                                      <li className="px-1">
+                                        <button
+                                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                                          onClick={() =>
+                                            handleMenuItems(4, branch.id, branch)
                                           }
-                                        </span>
-                                      </MenuItem>
-                                      <MenuItem
-                                        className="flex items-center justify-between"
-                                        onClick={() =>
-                                          handleMenuItems(4, branch.id, branch)
-                                        }
-                                      >
-                                        <Typography variant="small">
+                                        >
                                           Premises
-                                        </Typography>
-                                        <span>
-                                          {
-                                            menuItems.find(
-                                              (item) =>
-                                                item.title === "Premises"
-                                            ).icon
+                                          <span className="text-gray-400">{menuItems.find(item => item.title === 'Premises')?.icon}</span>
+                                        </button>
+                                      </li>
+                                      <li className="px-1">
+                                        <button
+                                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                                          onClick={() =>
+                                            handleMenuItems(5, branch.id, branch)
                                           }
-                                        </span>
-                                      </MenuItem>
-                                      <MenuItem
-                                        className="flex items-center justify-between"
-                                        onClick={() =>
-                                          handleMenuItems(5, branch.id, branch)
-                                        }
-                                      >
-                                        <Typography variant="small">
+                                        >
                                           Branch Admin
-                                        </Typography>
-                                        <span>
-                                          {
-                                            menuItems.find(
-                                              (item) =>
-                                                item.title === "Branch Admin"
-                                            ).icon
+                                          <span className="text-gray-400">{menuItems.find(item => item.title === 'Branch Admin')?.icon}</span>
+                                        </button>
+                                      </li>
+                                      <div className="h-px bg-gray-100 my-1 mx-2"></div>
+                                      <li className="px-1">
+                                        <button
+                                          className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center justify-between rounded-lg transition-colors"
+                                          onClick={() =>
+                                            handleMenuItems(2, branch.id, 0)
                                           }
-                                        </span>
-                                      </MenuItem>
-                                      <MenuItem
-                                        className="flex items-center justify-between"
-                                        onClick={() =>
-                                          handleMenuItems(2, branch.id, 0)
-                                        }
-                                      >
-                                        <Typography variant="small">
+                                        >
                                           Deactivate
-                                        </Typography>
-                                        <span>
-                                          {
-                                            menuItems.find(
-                                              (item) =>
-                                                item.title === "Deactivate"
-                                            ).icon
-                                          }
-                                        </span>
-                                      </MenuItem>
+                                          <span>{menuItems.find(item => item.title === 'Deactivate')?.icon}</span>
+                                        </button>
+                                      </li>
                                     </>
                                   )}
                                 </ul>
-                              </motion.div>
-                            </div>
+                            </motion.div>
                           )}
+                          </AnimatePresence>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
-                }))}
-                {!loading && branchesAll?.branches?.length === 0 && (
-              <tr>
-                <td colSpan={data.length} className="p-6 text-center">
-                  <Typography className="text-gray-500">
-                    No branches found
-                  </Typography>
-                </td>
-              </tr>
-            )}
+                })
+              ) : (
+                <tr>
+                  <td colSpan={data.length} className="p-12 text-center text-gray-400">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                        <HiOutlineOfficeBuilding className="w-8 h-8 text-gray-300" />
+                      </div>
+                      <Typography color="gray" className="font-medium font-poppins">
+                        No branches found
+                      </Typography>
+                      <Typography className="text-sm text-gray-400 mt-1 font-poppins">
+                        Try adjusting your search or filters
+                      </Typography>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
-            <ConfirmationDialog
-              openDialog={openDialog}
-              handleOpen={handleStatus}
-              handleConfirm={() => handleChangeStatus()}
-              title={
-                branchStatusValue.status == 0
-                  ? "Confirm Deactivation"
-                  : "Confirm Activation"
-              }
-              message={`Are you sure you want to ${
-                branchStatusValue.status == 0 ? "deactivate" : "activate"
-              } this branch ?`}
-            />
           </table>
-
-          {/* Google-style Pagination */}
-          {branchesAll?.branches?.length > 0 && branchesAll?.pagination && branchesAll?.pagination?.pages > 1 && (
-            <div className="w-full flex justify-center items-center gap-1 mt-4 mb-4">
-              {/* Previous Button */}
-              {branchesAll.pagination.page > 1 ? (
-                <button
-                  title="Previous Page"
-                  className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1"
-                  onClick={goToPreviousPage}
-                >
-                  <span>‹</span>
-                  <span>Previous</span>
-                </button>
-              ) : (
-                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1">
-                  <span>‹</span>
-                  <span>Previous</span>
-                </div>
-              )}
-              
-              {/* Page Numbers */}
-              <div className="flex items-center gap-1">
-                {(() => {
-                  const currentPage = branchesAll.pagination.page;
-                  const totalPages = branchesAll.pagination.pages;
-                  
-                  // If 10 or fewer pages, show all pages (like Google)
-                  if (totalPages <= 10) {
-                    return Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                      <button
-                        key={pageNum}
-                        onClick={() => goToPage(pageNum)}
-                        className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors ${
-                          pageNum === currentPage
-                            ? 'bg-[#1a73e8] text-white font-medium'
-                            : 'text-[#1a73e8] hover:bg-gray-100'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    ));
-                  }
-                  
-                  // For more than 10 pages, show with ellipsis
-                  const pages = [];
-                  pages.push(1);
-                  
-                  if (currentPage > 3) {
-                    pages.push('ellipsis-start');
-                  }
-                  
-                  const startPage = Math.max(2, currentPage - 1);
-                  const endPage = Math.min(totalPages - 1, currentPage + 1);
-                  
-                  for (let i = startPage; i <= endPage; i++) {
-                    if (i !== 1 && i !== totalPages) {
-                      pages.push(i);
-                    }
-                  }
-                  
-                  if (currentPage < totalPages - 2) {
-                    pages.push('ellipsis-end');
-                  }
-                  
-                  pages.push(totalPages);
-                  
-                  // Remove duplicates
-                  const uniquePages = [];
-                  const seen = new Set();
-                  pages.forEach(page => {
-                    if (typeof page === 'number' && !seen.has(page)) {
-                      seen.add(page);
-                      uniquePages.push(page);
-                    } else if (typeof page === 'string') {
-                      uniquePages.push(page);
-                    }
-                  });
-                  
-                  return uniquePages.map((page, index) => {
-                    if (page === 'ellipsis-start' || page === 'ellipsis-end') {
-                      return (
-                        <span key={`ellipsis-${index}`} className="px-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8]">
-                          ...
-                        </span>
-                      );
-                    }
-                    
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => goToPage(page)}
-                        className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors ${
-                          page === currentPage
-                            ? 'bg-[#1a73e8] text-white font-medium'
-                            : 'text-[#1a73e8] hover:bg-gray-100'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  });
-                })()}
-              </div>
-              
-              {/* Next Button */}
-              {branchesAll.pagination.page < branchesAll.pagination.pages ? (
-                <button
-                  title="Next Page"
-                  className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1"
-                  onClick={goToNextPage}
-                >
-                  <span>Next</span>
-                  <span>›</span>
-                </button>
-              ) : (
-                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1">
-                  <span>Next</span>
-                  <span>›</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {showDrawer && (
-            <CustomDrawer
-              open={showDrawer}
-              closeDrawer={closeBranchDrawer}
-              compo={
-                <EditBranchForm
-                  newBranchValues={newBranchValues}
-                  closeBranchDrawer={closeBranchDrawer}
-                  handleNewBranch={handleNewBranch}
-                  handleSelect={handleSelect}
-                  handleEditBranch={handleEditBranch}
-                />
-              }
-              title="Edit Branch"
-              widthSize={620}
-            />
-          )}
         </div>
+
+        <ConfirmationDialog
+          openDialog={openDialog}
+          handleOpen={handleStatus}
+          handleConfirm={() => handleChangeStatus()}
+          title={
+            branchStatusValue.status == 0
+              ? "Confirm Deactivation"
+              : "Confirm Activation"
+          }
+          message={`Are you sure you want to ${
+            branchStatusValue.status == 0 ? "deactivate" : "activate"
+          } this branch?`}
+        />
+
+        {/* Google-style Pagination */}
+        {branchesAll?.branches?.length > 0 && branchesAll?.pagination && branchesAll?.pagination?.pages > 1 && (
+          <div className="w-full flex justify-center items-center gap-2 mt-6 mb-2 pb-4">
+            {/* Previous Button */}
+            <button
+              title="Previous Page"
+              disabled={branchesAll.pagination.page <= 1}
+              className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                branchesAll.pagination.page > 1
+                  ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                  : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+              }`}
+              onClick={goToPreviousPage}
+            >
+              ‹
+            </button>
+            
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1.5">
+              {(() => {
+                const currentPage = branchesAll.pagination.page;
+                const totalPages = branchesAll.pagination.pages;
+                
+                // If 7 or fewer pages, show all pages
+                if (totalPages <= 7) {
+                  return Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => goToPage(pageNum)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                        pageNum === currentPage
+                          ? 'bg-bgBlue text-white shadow-md shadow-blue-500/20'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ));
+                }
+                
+                // For more than 7 pages, show with ellipsis
+                const pages = [];
+                pages.push(1);
+                
+                if (currentPage > 3) {
+                  pages.push('ellipsis-start');
+                }
+                
+                const startPage = Math.max(2, currentPage - 1);
+                const endPage = Math.min(totalPages - 1, currentPage + 1);
+                
+                for (let i = startPage; i <= endPage; i++) {
+                  if (i !== 1 && i !== totalPages) {
+                    pages.push(i);
+                  }
+                }
+                
+                if (currentPage < totalPages - 2) {
+                  pages.push('ellipsis-end');
+                }
+                
+                pages.push(totalPages);
+                
+                return pages.map((page, index) => {
+                  if (page === 'ellipsis-start' || page === 'ellipsis-end') {
+                    return (
+                      <span key={`ellipsis-${index}`} className="text-gray-400 px-1">
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                        page === currentPage
+                          ? 'bg-bgBlue text-white shadow-md shadow-blue-500/20'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+            
+            {/* Next Button */}
+            <button
+              title="Next Page"
+              disabled={branchesAll.pagination.page >= branchesAll.pagination.pages}
+              className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                branchesAll.pagination.page < branchesAll.pagination.pages
+                  ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                  : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+              }`}
+              onClick={goToNextPage}
+            >
+              ›
+            </button>
+          </div>
+        )}
+
+        {showDrawer && (
+          <CustomDrawer
+            open={showDrawer}
+            closeDrawer={closeBranchDrawer}
+            compo={
+              <EditBranchForm
+                newBranchValues={newBranchValues}
+                closeBranchDrawer={closeBranchDrawer}
+                handleNewBranch={handleNewBranch}
+                handleSelect={handleSelect}
+                handleEditBranch={handleEditBranch}
+              />
+            }
+            title="Edit Branch"
+            widthSize={620}
+          />
+        )}
       </div>
     </>
   );

@@ -1,24 +1,23 @@
-import { Card, CardBody } from '@material-tailwind/react'
 import React from 'react'
 
 const CustomCard = (props) => {
     const {logo, title, data} = props
   return (
-    <Card  className="border border-[#3DA5F4] bg-[#F8F9FF] shadow-none">
-        <CardBody className='p-1'>
-            <div className='flex text-[12px]'>
-                <div className='pr-[20px] pt-[3px] pl-[2px] text-[#3DA5F4]'>
-                    {logo}
-                </div>
-                <div className=''>
-                    <div className='font-bold pb-1'>{title}</div>
-                    <div className='pb-1'>
-                        {(typeof data === 'object' && data !== null) ? data.pay_month: data}
-                    </div>
-                </div>
+    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <div className="flex items-start gap-3">
+            <div className="p-2 bg-blue-50 text-bgBlue rounded-lg flex-shrink-0 mt-0.5">
+                {React.cloneElement(logo, { size: 18 })}
             </div>
-        </CardBody>
-    </Card>
+            <div className="flex flex-col min-w-0">
+                <span className="text-xs font-medium text-gray-500 font-poppins mb-1 uppercase tracking-wide">
+                    {title}
+                </span>
+                <span className="text-sm font-semibold text-gray-900 font-poppins break-words leading-tight">
+                     {(typeof data === 'object' && data !== null) ? data.pay_month: data || '-'}
+                </span>
+            </div>
+        </div>
+    </div>
   )
 }
 

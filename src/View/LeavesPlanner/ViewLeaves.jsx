@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router";
 import useLeavesPlanner from "../../ViewModel/LeavePlannerViewModel/LeavePlannerServices";
 import { MdDelete } from "react-icons/md";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
-import CustomButton from "../../Components/CustomButton/CustomButton";
+import { FaArrowLeft, FaPlus } from "react-icons/fa";
 
 const ViewLeaves = () => {
   const {
@@ -18,10 +18,8 @@ const ViewLeaves = () => {
     isDeletingSpecificLeave,
   } = useLeavesPlanner();
   const params = useParams();
-  // console.log(params)
-  // console.log('allView', allViewLeave)
-
   const navigate = useNavigate();
+
   const handleBackToLeave = () => {
     navigate("/leavesPlanner/leaves_group");
   };
@@ -43,228 +41,114 @@ const ViewLeaves = () => {
   ];
 
   return (
-    <>
-      <div className="pl-2 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="relative w-full min-w-[200px] h-9">
-                <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-2/4 right-3 -translate-y-2/4">
-                  <span>
-                    <BiSearch />
-                  </span>
-                </div>
-                <input
-                  className="peer w-full h-full bg-white text-blue-gray-700  outline outline-0 focus:outline-0 disabled:bg-blue-gray-50 disabled:border-0 transition-all placeholder-shown:border placeholder-shown:border-blue-gray-200 placeholder-shown:border-t-blue-gray-200 border focus:border-2 border-t-transparent focus:border-t-transparent text-sm px-3 py-2.5 rounded-[7px] !pr-9 border-blue-gray-200 focus:border-gray-900"
-                  placeholder=" "
-                  name="searchE"
-                  onChange={handleLeaveTypeSearch}
-                />
-                <label className="flex w-full h-full select-none pointer-events-none absolute left-0 !overflow-visible truncate peer-placeholder-shown:text-blue-gray-500 leading-tight peer-focus:leading-tight peer-disabled:text-transparent peer-disabled:peer-placeholder-shown:text-blue-gray-500 transition-all -top-1.5 peer-placeholder-shown:text-sm text-[11px] peer-focus:text-[11px] before:content[' '] before:block before:box-border before:w-2.5 before:h-1.5 before:mt-[6.5px] before:mr-1 peer-placeholder-shown:before:border-transparent before:rounded-tl-md before:border-t peer-focus:before:border-t-2 before:border-l peer-focus:before:border-l-2 before:pointer-events-none before:transition-all peer-disabled:before:border-transparent after:content[' '] after:block after:flex-grow after:box-border after:w-2.5 after:h-1.5 after:mt-[6.5px] after:ml-1 peer-placeholder-shown:after:border-transparent after:rounded-tr-md after:border-t peer-focus:after:border-t-2 after:border-r peer-focus:after:border-r-2 after:pointer-events-none after:transition-all peer-disabled:after:border-transparent peer-placeholder-shown:leading-[3.75] text-gray-500 peer-focus:text-gray-900 before:border-blue-gray-200 peer-focus:before:!border-gray-900 after:border-blue-gray-200 peer-focus:after:!border-gray-900">
-                  Search by name
-                </label>
-              </div>
+    <div className="flex flex-col gap-6">
+      {/* Header & Controls */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <Button 
+            variant="text" 
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
+            onClick={handleBackToLeave}
+          >
+            <FaArrowLeft /> Back
+          </Button>
+          
+          <div className="relative w-full md:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <BiSearch className="text-gray-400 text-lg" />
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 pr-2">
-            <span>
-              <CustomButton
-                className="bg-[#8bc9f8]"
-                title="Define Leave Type"
-                onClick={() => addDefineLeave(params.id)}
-              ></CustomButton>
-            </span>
-            <span>
-              <CustomButton
-                className="bg-[#8bc9f8]"
-                title="Back"
-                onClick={handleBackToLeave}
-              ></CustomButton>
-            </span>
+            <input
+              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400 text-gray-700"
+              placeholder="Search leaves..."
+              name="searchE"
+              onChange={handleLeaveTypeSearch}
+            />
           </div>
         </div>
 
-        <div className="overflow-x-scroll sideMenu customScroll bg-white rounded-[10px] drop-shadow-md p-2">
-          <table className="w-full min-w-max text-center h-full">
-            <thead className="sticky top-[-9px] z-20 bg-[#F8F9FA] rounded-[8px]">
+        <Button
+          className="bg-bgBlue text-white shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
+          onClick={() => addDefineLeave(params.id)}
+        >
+          <FaPlus size={12} /> Define Leave Type
+        </Button>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
+          <table className="min-w-full table-auto text-center">
+            <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
               <tr>
-                {data?.length > 0 &&
-                  data.map((head, i) => (
-                    <th key={i} className="bg-[#F8F9FA] p-4">
-                      <Typography
-                        // variant = "small"
-                        // color = "blue-gray"
-                        className="font-medium leading-none text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                      >
-                        {head}
-                      </Typography>
-                    </th>
-                  ))}
+                {data?.map((head, i) => (
+                  <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
+                    <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
+                      {head}
+                    </Typography>
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody>
-              {allViewLeave?.length > 0 &&
-                allViewLeave.map((ele, index) => {
-                  const isLast = index === data.length - 1;
-                  const classes = isLast
-                    ? "p-4"
-                    : "p-4 border-b border-[#F2F2F9]";
-
-                  return (
-                    <tr key={index}>
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.id}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.title}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.calender_from}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.calender_upto}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.quantity}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.unit}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.carry_forward}
-                        </Typography>
-                      </td>
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.consecutive}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.encashable}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.prorated}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.leave_type}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          {ele.new_joiners_after}
-                        </Typography>
-                      </td>
-
-                      <td className={classes}>
-                        <Typography
-                          //  variant="small"
-                          //  color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                        >
-                          <div className="flex items-center justify-center">
-                            <span>
-                              <MdDelete
-                                className="text-[20px] text-red-500 cursor-pointer"
-                                onClick={() => handleDeleteSpecificLeaves(ele.id)}
-                              />
-                            </span>
-                          </div>
-                        </Typography>
-                      </td>
-                    </tr>
-                  );
-                })}
+            <tbody className="divide-y divide-gray-50">
+              {allViewLeave && allViewLeave.length > 0 ? (
+                allViewLeave.map((ele, index) => (
+                  <tr key={index} className="hover:bg-blue-50/30 transition-colors">
+                    <td className="p-4">
+                      <span className="text-xs font-medium text-gray-500 font-poppins bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                        #{ele.id}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <Typography className="text-sm font-semibold text-gray-900 font-poppins">
+                        {ele.title}
+                      </Typography>
+                    </td>
+                    <td className="p-4"><Typography className="text-xs text-gray-600 font-poppins">{ele.calender_from}</Typography></td>
+                    <td className="p-4"><Typography className="text-xs text-gray-600 font-poppins">{ele.calender_upto}</Typography></td>
+                    <td className="p-4"><Typography className="text-xs font-medium text-blue-600 font-poppins">{ele.quantity}</Typography></td>
+                    <td className="p-4"><Typography className="text-xs text-gray-600 font-poppins">{ele.unit}</Typography></td>
+                    <td className="p-4"><Typography className="text-xs text-gray-600 font-poppins">{ele.carry_forward}</Typography></td>
+                    <td className="p-4"><Typography className="text-xs text-gray-600 font-poppins">{ele.consecutive}</Typography></td>
+                    <td className="p-4"><Typography className="text-xs text-gray-600 font-poppins">{ele.encashable}</Typography></td>
+                    <td className="p-4"><Typography className="text-xs text-gray-600 font-poppins">{ele.prorated}</Typography></td>
+                    <td className="p-4"><Typography className="text-xs text-gray-600 font-poppins">{ele.leave_type}</Typography></td>
+                    <td className="p-4"><Typography className="text-xs text-gray-600 font-poppins">{ele.new_joiners_after}</Typography></td>
+                    <td className="p-4">
+                      <Button
+                        variant="text"
+                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                        onClick={() => handleDeleteSpecificLeaves(ele.id)}
+                      >
+                        <MdDelete size={20} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={data.length} className="p-12 text-center text-gray-400">
+                    <div className="flex flex-col items-center justify-center">
+                      <Typography color="gray" className="font-medium font-poppins">
+                        No leave types found
+                      </Typography>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
-
-            <ConfirmationDialog
-              openDialog={openDialogSpecific}
-              handleOpen={handleDeleteSpecificLeaves}
-              handleConfirm={() => handleDeleteLeaves()}
-              title={"Confirm Delete"}
-              message={"Are you sure to Delete this leave?"}
-              loading={isDeletingSpecificLeave}
-            />
           </table>
         </div>
       </div>
-    </>
+
+      <ConfirmationDialog
+        openDialog={openDialogSpecific}
+        handleOpen={handleDeleteSpecificLeaves}
+        handleConfirm={() => handleDeleteLeaves()}
+        title={"Confirm Delete"}
+        message={"Are you sure to Delete this leave?"}
+        loading={isDeletingSpecificLeave}
+      />
+    </div>
   );
 };
 

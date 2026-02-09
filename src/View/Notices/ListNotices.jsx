@@ -8,11 +8,23 @@ import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import NoticesView from "./NoticesView";
 import { formatTimestamp } from "../Branches/utils";
 import { FaChevronDown } from "react-icons/fa";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { hexToRGBA, titleNameAlpha } from "../../services/appServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { getAllYears } from "../../services/__appServicesData";
+import { HiOutlineSpeakerphone } from "react-icons/hi";
+
+const SkeletonRow = () => (
+  <tr className="animate-pulse border-b border-gray-100">
+    <td className="p-4"><div className="h-4 w-16 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-12 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-8 w-20 bg-gray-200 rounded mx-auto"></div></td>
+  </tr>
+);
 
 const ListNotices = () => {
   const {
@@ -46,6 +58,7 @@ const ListNotices = () => {
 
   const [currentPageId, setCurrentPageId] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const data = [
     "Month",
@@ -58,8 +71,13 @@ const ListNotices = () => {
 
   // Always fetch notices list when List notices tab is shown (first time or when navigating here)
   useEffect(() => {
-    getAllNoticesList({ page: 1, limit: 10 }, true, false);
-    setCurrentPageId(1);
+    const fetchData = async () => {
+      setInitialLoading(true);
+      await getAllNoticesList({ page: 1, limit: 10 }, true, false);
+      setCurrentPageId(1);
+      setInitialLoading(false);
+    };
+    fetchData();
     // Branch/department options are loaded when user opens "Filter by Branch" (onMenuOpen) to avoid extra APIs on first load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -114,15 +132,13 @@ const ListNotices = () => {
 
   return (
     <>
-      <div className="flex flex-col gap-3 w-full h-full relative mt-2">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-full md:w-52">
-              <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-                Filter by Branch
-              </label>
+      <div className="flex flex-col gap-6 w-full h-full relative">
+        {/* Controls Bar */}
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="w-full md:w-56">
               <CustomSelect
-                placeHolderTitle="Branch"
+                placeHolderTitle="Filter by Branch"
                 value={filterNoticeValue?.branch_id}
                 options={
                   Array.isArray(filterNoticeValue?.branchesList)
@@ -140,12 +156,9 @@ const ListNotices = () => {
                 thinScrollbar={true}
               />
             </div>
-            <div className="w-full md:w-52">
-              <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-                Filter by Department
-              </label>
+            <div className="w-full md:w-56">
               <CustomSelect
-                placeHolderTitle="Department"
+                placeHolderTitle="Filter by Department"
                 value={filterNoticeValue?.dept_id}
                 options={
                   Array.isArray(filterNoticeValue?.departmentList)
@@ -163,11 +176,8 @@ const ListNotices = () => {
               />
             </div>
             <div className="w-full md:w-32">
-              <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-                Filter by Year
-              </label>
               <CustomSelect
-                placeHolderTitle="Year"
+                placeHolderTitle="Filter by Year"
                 value={filterNoticeValue?.year}
                 options={years?.map((year) => ({ value: year, label: year }))}
                 onChangeHandler={(selectedOption) =>
@@ -179,20 +189,19 @@ const ListNotices = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-[10px] drop-shadow-md p-2 mt-2">
-          <div className="relative w-full min-h-[calc(100vh-100px)] overflow-auto customScroll">
-            <table className="min-w-full table-fixed text-center">
-            <colgroup>
-    <col span="6" />
-  </colgroup>
-              <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
+
+        {/* Notices Table */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="relative w-full min-h-[calc(100vh-250px)] overflow-auto customScroll">
+            <table className="min-w-full table-auto text-center">
+              <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
                 <tr>
                   {data?.map((head, i) => (
-                    <th key={i} className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
+                    <th key={i} className={`p-4 first:pl-6 last:pr-6 whitespace-nowrap ${
+                      head === "Notice Title" ? "text-left" : "text-center"
+                    }`}>
                       <Typography
-                        // variant="small"
-                        // color="blue-gray"
-                        className="font-medium text-[clamp(10px,0.9vw,14px)] text-[#474747] font-Urbanist leading-none capitalize"
+                        className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins"
                       >
                         {head}
                       </Typography>
@@ -200,110 +209,13 @@ const ListNotices = () => {
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {/* {allNoticesList?.map((ele, index) => {
-            const isLast = index === data.length - 1;
-            const classes = isLast ? "p-4" : "p-4 border-b border-blue-gray-50";
-
-          return (
-            <tr key={index}>
-
-              <td className={classes}>
-                  <Typography 
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                  >
-                      -
-                  </Typography>
-              </td>
-
-              <td className={classes}>
-                  <Typography 
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                  >
-                      {ele.id}
-                  </Typography>
-              </td>
-
-              <td className={classes}>
-                  <Typography 
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                  >
-                      {ele.title}
-                  </Typography>
-              </td>
-
-              <td className={classes}>
-                  <Typography 
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                  >
-                      {ele.emp_name ? ele.emp_name : "All Branches"}
-                  </Typography>
-              </td>
-
-              <td className={classes}>
-                  <Typography 
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                  >
-                      {formatTimestamp(ele.timestamp)}
-                  </Typography>
-              </td>
-
-
-
-
-              <td className={classes}>
-                <div onMouseEnter={() => toggleMenuNotices(index, true)} onMouseLeave={() => toggleMenuNotices(index, false)} className='relative'>
-                  <Button 
-                    
-                    className='flex items-center gap-2 capitalize font-normal text-[13px] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px]'
-                      variant="outlined"
-                  >
-                    Action
-                    <FaChevronDown
-                      strokeWidth={2.5}
-                      className={`transition-transform transform ${openMenu[index] ? "rotate-180" : ""}`}
-                      />
-                  </Button>
-
-                  {openMenu[index] && (
-                        <div className='border border-gray-200 rounded-lg absolute z-10 bg-white left-[-60px] w-[200px] shadow-md' 
-                        >
-                        <motion.div
-                            initial={{ opacity: 0, y: 50 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 50 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            
-                            <ul className="flex w-full flex-col gap-1">
-                            
-                            {noticesMenuItems.map(menuItem => (
-                                <MenuItem className='flex items-center justify-between' key={menuItem.id} onClick={() => handleMenuItemsNotices(menuItem.id, ele)}>
-                                <Typography variant="small">{menuItem.title}</Typography>
-                                </MenuItem>
-                            ))}
-                            </ul>
-                        </motion.div>
-                        </div>
-                    )}
-                </div>
-              </td>
-
-            </tr>
-          );
-        })} */}
-
-                {allNoticesList && allNoticesList.length > 0 ? (
+              <tbody className="divide-y divide-gray-50">
+                {initialLoading ? (
+                   // Show 8 skeleton rows while loading
+                   Array.from({ length: 8 }).map((_, index) => (
+                    <SkeletonRow key={index} />
+                  ))
+                ) : allNoticesList && allNoticesList.length > 0 ? (
                   allNoticesList
                     .filter(
                       (ele) =>
@@ -341,24 +253,26 @@ const ListNotices = () => {
                           ) === currentMonth
                       ).length;
 
-                      const isLast = index === allNoticesList.length - 1;
-                      const classes = isLast
-                        ? "px-[clamp(4px,0.8vw,12px)] py-4"
-                        : "px-[clamp(4px,0.8vw,12px)] py-4 border-b border-[#F2F2F9]";
                       const { bgColor } = titleNameAlpha(currentMonth);
                       const rgbaColor = hexToRGBA(bgColor, 0.1);
                       return (
-                        <tr key={index}>
+                        <motion.tr 
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="hover:bg-blue-50/30 transition-colors group"
+                        >
                           {/* Month Name (only in the first row for each month, with dynamic rowSpan) */}
                           {isFirstRowOfMonth && (
-                            <td rowSpan={rowSpan} className="p-4 align-middle">
+                            <td rowSpan={rowSpan} className="p-4 align-middle border-r border-gray-50 bg-gray-50/30">
                               <div className="flex items-center justify-center h-full">
                                 <div
-                                  className="h-20 w-14 text-[clamp(10px,0.8vw,13px)] text-[#474747] flex items-center justify-center rounded-lg leading-none"
+                                  className="h-20 w-10 text-[11px] font-bold flex items-center justify-center rounded-lg leading-none shadow-sm"
                                   style={{
                                     writingMode: "vertical-rl",
                                     textOrientation: "upright",
-                                    border: `2px solid ${bgColor}`,
+                                    border: `1px solid ${bgColor}`,
                                     backgroundColor: rgbaColor,
                                     color: bgColor,
                                   }}
@@ -370,51 +284,51 @@ const ListNotices = () => {
                           )}
 
                           {/* ID */}
-                          <td className={classes}>
+                          <td className="p-4">
                             <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                              className="font-medium text-xs text-gray-500 font-poppins"
                             >
-                              {ele.id}
+                              #{ele.id}
                             </Typography>
                           </td>
 
                           {/* Title */}
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                            >
-                              {ele.title}
-                            </Typography>
+                          <td className="p-4 text-left">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-blue-50 rounded-lg text-blue-500 group-hover:bg-blue-100 transition-colors">
+                                  <HiOutlineSpeakerphone size={16} />
+                                </div>
+                                <Typography
+                                  className="text-sm font-semibold text-gray-900 font-poppins line-clamp-1"
+                                  title={ele.title}
+                                >
+                                  {ele.title}
+                                </Typography>
+                            </div>
                           </td>
 
                           {/* Employee Name */}
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                            >
+                          <td className="p-4">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                              ele.emp_name 
+                                ? 'bg-purple-50 text-purple-600 border border-purple-100' 
+                                : 'bg-blue-50 text-blue-600 border border-blue-100'
+                            }`}>
                               {ele.emp_name || "All Branches"}
-                            </Typography>
+                            </span>
                           </td>
 
                           {/* Formatted Timestamp */}
-                          <td className={classes}>
+                          <td className="p-4">
                             <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
+                              className="text-xs text-gray-500 font-poppins"
                             >
                               {formatTimestamp(ele.timestamp)}
                             </Typography>
                           </td>
 
                           {/* Action */}
-                          <td className={classes}>
+                          <td className="p-4 last:pr-6 relative">
                             <div
                               onMouseEnter={() =>
                                 toggleMenuNotices(index, true)
@@ -422,34 +336,37 @@ const ListNotices = () => {
                               onMouseLeave={() =>
                                 toggleMenuNotices(index, false)
                               }
-                              className="relative flex items-center justify-center"
+                              className="relative inline-block"
                             >
                               <Button
-                                className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.8vw,13px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px]"
-                                variant="outlined"
+                                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
+                                variant="text"
                               >
                                 Action
                                 <FaChevronDown
-                                  strokeWidth={2.5}
-                                  className={`transition-transform transform ${
+                                  size={10}
+                                  className={`transition-transform duration-200 ${
                                     openMenu[index] ? "rotate-180" : ""
                                   }`}
                                 />
                               </Button>
 
+                              <AnimatePresence>
                               {openMenu[index] && (
-                                <div className={`border border-gray-200 rounded-lg absolute z-[99999] bg-white w-[200px] left-[-100px] shadow-lg mt-0 ${index<=5 ? "top-full" : "bottom-full"}`}>
-                                  <motion.div
-                                    initial={{ opacity: 0, y: 50 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 50 }}
-                                    transition={{ duration: 0.2 }}
-                                  >
-                                    <ul className="flex w-full flex-col gap-1">
+                                <motion.div
+                                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                  transition={{ duration: 0.15, ease: "easeOut" }}
+                                  className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-40 right-0 ${
+                                    index >= allNoticesList.length - 3 ? "bottom-full mb-2" : "top-full mt-2"
+                                  }`}
+                                >
+                                    <ul className="flex flex-col py-1">
                                       {noticesMenuItems.map((menuItem) => (
-                                        <MenuItem
-                                          className="flex items-center justify-between"
-                                          key={menuItem.id}
+                                        <li className="px-1" key={menuItem.id}>
+                                        <button
+                                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
                                           onClick={() =>
                                             handleMenuItemsNotices(
                                               menuItem.id,
@@ -457,71 +374,81 @@ const ListNotices = () => {
                                             )
                                           }
                                         >
-                                          <Typography variant="small">
                                             {menuItem.title}
-                                          </Typography>
-                                          <span>{menuItem.icon}</span>
-                                        </MenuItem>
+                                          <span className="text-gray-400">{menuItem.icon}</span>
+                                        </button>
+                                        </li>
                                       ))}
                                     </ul>
-                                  </motion.div>
-                                </div>
+                                </motion.div>
                               )}
+                              </AnimatePresence>
                             </div>
                           </td>
-                        </tr>
+                        </motion.tr>
                       );
                     })
                 ) : (
                   <tr>
-                    <td colSpan={data?.length} className="p-2 text-center py-4 text-[12px]">
-                      No record found
+                    <td colSpan={data?.length} className="p-12 text-center text-gray-400">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                          <HiOutlineSpeakerphone className="w-8 h-8 text-gray-300" />
+                        </div>
+                        <Typography color="gray" className="font-medium font-poppins">
+                          No Notices Found
+                        </Typography>
+                        <Typography className="text-sm text-gray-400 mt-1 font-poppins">
+                          Try adjusting your search or filters
+                        </Typography>
+                      </div>
                     </td>
                   </tr>
                 )}
               </tbody>
-
-              <ConfirmationDialog
-                openDialog={openDialog}
-                handleOpen={handleDelete}
-                handleConfirm={() => deleteNotices()}
-                title={"Confirm Delete"}
-                loading={loading}
-                message={"Are you sure to Delete this notice?"}
-              />
-
-              <CustomDialog
-                openDialog={openViewDialog}
-                handleOpenDialog={handleView}
-                handleOpen={() => setOpenViewDialog(false)}
-                title={"View Notice Detail"}
-                compo={<NoticesView />}
-                showBtns={false}
-              />
             </table>
             
             {/* Load More Button */}
             {allNoticesList && allNoticesList.length > 0 && noticesPagination?.hasMore && (
-              <div className="flex justify-center mt-4 pb-4">
+              <div className="flex justify-center mt-6 pb-6">
                 <Button
                   onClick={handleLoadMore}
                   disabled={isLoadingMore}
-                  loading={isLoadingMore}
-                  className="px-6 py-2 text-[13px] font-semibold capitalize bg-[#3DA5F4] text-white rounded-lg"
+                  className="px-6 py-2.5 text-xs font-semibold capitalize bg-white text-blue-600 border border-blue-100 hover:bg-blue-50 hover:border-blue-200 rounded-xl shadow-sm transition-all flex items-center gap-2"
                 >
-                  {isLoadingMore ? "Loading..." : "Load More"}
+                  {isLoadingMore && <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />}
+                  {isLoadingMore ? "Loading..." : "Load More Notices"}
                 </Button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      <ConfirmationDialog
+        openDialog={openDialog}
+        handleOpen={handleDelete}
+        handleConfirm={() => deleteNotices()}
+        title={"Confirm Delete"}
+        loading={loading}
+        message={"Are you sure to Delete this notice?"}
+      />
+
+      <CustomDialog
+        openDialog={openViewDialog}
+        handleOpenDialog={handleView}
+        handleOpen={() => setOpenViewDialog(false)}
+        title={"View Notice Detail"}
+        compo={<NoticesView />}
+        showBtns={false}
+      />
+
       {addNoticeValue?.show && (
         <PortalDrawer
           open={addNoticeValue.show}
           addNoticeValue={addNoticeValue}
           closeDrawer={handleEditNoticeToggle}
-          widthSize={"45vw"}
+          widthSize={"500px"}
           title="Update Notice"
           compo={
             <EditNoticeForm

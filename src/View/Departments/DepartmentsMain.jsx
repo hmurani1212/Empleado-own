@@ -35,69 +35,70 @@ const DepartmentsMain = () => {
 
   return (
     <>
-      <div className="flex justify-between py-2 lg:px-2 md:px-2 px-0">
-        <span className="text-[20px] font-Urbanist font-semibold text-[#474747]">
-          Manage Departments
-        </span>
-      </div>
-
       {location.pathname.includes("manageDept") ? (
         <Outlet />
       ) : location.pathname.includes("createNewDept") ? (
         <Outlet />
       ) : (
-        <div className="flex flex-col space-y-4 items-center mt-4">
-          <span className="lg:text-[16px] md:text-[15px] text-[14px] font-Urbanist font-medium text-[#474747]">
-            Choose your branch office from the list below
-          </span>
+        <div className="flex flex-col space-y-4 items-center mt-10 min-h-[60vh] justify-center">
+          <div className="text-center space-y-2 mb-6">
+             <h1 className="text-3xl font-bold text-gray-900 font-poppins">
+              Manage Departments
+            </h1>
+            <p className="text-gray-500 font-poppins">
+              Select a branch to view and manage its departments
+            </p>
+          </div>
 
-          <div className="lg:w-96 md:w-96 w-full">
-            <CustomSelect
-              placeHolderTitle="Select Branch"
-              value={
-                branchId
-                  ? empBranches?.find((branch) => branch.id === branchId)
-                    ? {
-                        value: branchId,
-                        label: empBranches.find(
-                          (branch) => branch.id === branchId
-                        ).branch_name,
-                      }
+          <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+            <div className="mb-6">
+                <CustomSelect
+                placeHolderTitle="Select Branch"
+                value={
+                    branchId
+                    ? empBranches?.find((branch) => branch.id === branchId)
+                        ? {
+                            value: branchId,
+                            label: empBranches.find(
+                            (branch) => branch.id === branchId
+                            ).branch_name,
+                        }
+                        : null
                     : null
-                  : null
-              }
-              options={[
-                { value: "", label: "Select Branch" },
-                ...(empBranches?.map((branch) => ({
-                  value: branch.id,
-                  label: branch.branch_name,
-                })) || []),
-              ]}
-              onChangeHandler={(selectedOption) =>
-                handleBranchDept(selectedOption?.value || "")
-              }
-              cStyle={false}
-              isSearchable={true}
-            />
-          </div>
+                }
+                options={[
+                    { value: "", label: "Select Branch" },
+                    ...(empBranches?.map((branch) => ({
+                    value: branch.id,
+                    label: branch.branch_name,
+                    })) || []),
+                ]}
+                onChangeHandler={(selectedOption) =>
+                    handleBranchDept(selectedOption?.value || "")
+                }
+                cStyle={false}
+                isSearchable={true}
+                />
+            </div>
 
-          <div className="text-[12px] flex gap-3">
-            <CustomButton
-              className="bg-bgBlue capitalize p-2 font-medium"
-              onClick={handleNavigateNewDept}
-              title="Create Department"
-            >
-              {/* Create Department */}
-            </CustomButton>
-            <CustomButton
-              className="bg-[#8bc9f8] capitalize p-2 font-medium"
-              onClick={handleManageDept}
-              title="Manage Department"
-            >
-              {/* Manage Department */}
-            </CustomButton>
+            <div className="flex flex-col gap-3">
+                <CustomButton
+                className="w-full bg-bgBlue text-white hover:bg-blue-600 py-3 rounded-xl font-medium transition-all shadow-lg shadow-blue-500/20"
+                onClick={handleNavigateNewDept}
+                title="Create Department"
+                >
+                Create Department
+                </CustomButton>
+                
+                <CustomButton
+                className="w-full bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 py-3 rounded-xl font-medium transition-all"
+                onClick={handleManageDept}
+                title="Manage Department"
+                >
+                Manage Department
+                </CustomButton>
+            </div>
           </div>
-          <div></div>
         </div>
       )}
     </>

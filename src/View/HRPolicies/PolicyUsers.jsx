@@ -1,34 +1,56 @@
 import React from 'react'
 import useHRPolicies from '../../ViewModel/HRPoliciesViewModel/HRPoliciesServices'
+import { Avatar, Typography } from '@material-tailwind/react'
 
 const PolicyUsers = (props) => {
   const {allPolicyUsers} = useHRPolicies()
   console.log('Users', allPolicyUsers)
   return (
-    <div className='grid grid-col-2'>
-      {allPolicyUsers?.map((user,index) => (
-        <div>
-        <div className='flex py-[20px]' key={index}>
-          
-          <div className='row-span-3'>
-            <div>
-            <img className='rounded-full w-[50px] h-[50px]' src={`https://emp-beta.veevotech.com/${user.dp}`}/>
-
-            </div>
-          </div>
-          <div className='px-8'>
-            <div className='text-[#3da5f4] text-[14px] font-semibold'>{user.name}</div>
-            <div className='text-[12px]'>{user.dept_name}</div>
-            <div className='text-[12px] text-[#9B9B9B]'>{user.designation}</div>
-          </div>
-        </div>
-        <hr></hr>
-        </div>
+    <div className='flex flex-col h-full bg-white'>
+      <div className="p-4 border-b border-gray-50">
+        <Typography className="text-gray-900 font-semibold font-poppins text-lg">
+          Assigned Users ({allPolicyUsers?.length || 0})
+        </Typography>
+      </div>
       
-        
-      ))}
-  
-      
+      <div className='flex-1 overflow-y-auto customScroll px-4'>
+        {allPolicyUsers?.length > 0 ? (
+          <div className="flex flex-col divide-y divide-gray-50">
+            {allPolicyUsers?.map((user,index) => (
+              <div className='flex items-center gap-4 py-4 hover:bg-gray-50/50 rounded-lg px-2 transition-colors' key={index}>
+                <Avatar 
+                  src={`https://emp-beta.veevotech.com/${user.dp}`} 
+                  alt={user.name}
+                  size="md"
+                  className="border border-gray-100 shadow-sm"
+                  onError={(e) => {
+                    e.target.src = "https://ui-avatars.com/api/?name=" + user.name + "&background=random";
+                  }}
+                />
+                
+                <div className='flex-1 min-w-0'>
+                  <Typography className='text-gray-900 font-medium text-sm font-poppins truncate'>
+                    {user.name}
+                  </Typography>
+                  <Typography className='text-xs text-gray-500 font-poppins truncate mt-0.5'>
+                    {user.designation}
+                  </Typography>
+                </div>
+                
+                <div className="text-right">
+                  <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-[10px] font-medium font-poppins">
+                    {user.dept_name}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 py-12">
+            <Typography className="text-sm font-medium font-poppins">No users assigned to this policy</Typography>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

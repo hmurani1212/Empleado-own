@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import useCreatePolicies from '../../ViewModel/HRPoliciesViewModel/createHrPoliciesServices';
-import { Button, Step, Stepper, Typography } from '@material-tailwind/react';
+import { Step, Stepper, Typography } from '@material-tailwind/react';
 import EmpMapping from './EmpMapping';
 import PayrollSettings from './PayrollSettings';
 import WorkingHours from './WorkingHours';
@@ -9,6 +9,7 @@ import useHRPolicies from '../../ViewModel/HRPoliciesViewModel/HRPoliciesService
 import { useLocation } from 'react-router';
 import { earlyArivalData, forceTimeOutHrs, generationTypeData, MonthSelection, overTimeCounter, timeOutPlicy, weekendoverTimeRate, weekdays } from '../../services/__hrPoliciesServices';
 import CustomButton from '../../Components/CustomButton/CustomButton';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const CreateNew = () => {
   const {
@@ -38,8 +39,6 @@ const CreateNew = () => {
 
   const location = useLocation()
 
-
-
   useEffect(() => {
     if (location.state && location.state.formData) {
       console.log('Copy Policy Data:', location.state.formData)
@@ -61,22 +60,6 @@ const CreateNew = () => {
       const tOPolicy = timeOutPlicy.find((ele) => ele.value == data.timeout_policy);
       const otCounter = overTimeCounter.find((ele) => ele.value == data.overtime_pay || ele.value == data.vertime_pay);
       const weekendotCounter = weekendoverTimeRate.find((ele) => ele.value == data.overtime_rules?.holidays_overtime_type);
-
-      // Debug logging for dropdown selections
-      // console.log('Dropdown Selections:', {
-      //   gentype,
-      //   selectMonth,
-      //   arivalPolicy,
-      //   forceTimeOut,
-      //   tOPolicy,
-      //   otCounter,
-      //   weekendotCounter,
-      //   payroll: data.payroll,
-      //   force_timeout: data.force_timeout,
-      //   timeout_policy: data.timeout_policy,
-      //   overtime_pay: data.overtime_pay,
-      //   vertime_pay: data.vertime_pay
-      // });
 
       // Process daily_timings to populate schedule
       // Create mapping between abbreviated and full day names
@@ -116,13 +99,8 @@ const CreateNew = () => {
         }
       });
 
-      // console.log('Processed Schedule:', processedSchedule);
-      // console.log('Daily Timings from API:', data.daily_timings);
-      // console.log('Day Mapping:', dayMapping);
-      
       // Create checkedDay array for validation
       const checkedDays = processedSchedule.filter(day => day.isChecked).map(day => day.day);
-      // console.log('Checked Days for validation:', checkedDays);
 
       setnewHrPolicesValues((prevState) => ({
         ...prevState,
@@ -167,17 +145,17 @@ const CreateNew = () => {
       }));
     }
   }, [location.state]);
+  
   return (
-    <div className='w-full px-2'>
-      <div className='flex flex-col gap-4 bg-white rounded-[10px] drop-shadow-md py-4 px-[40px]'>
-        <div>
+    <div className='w-full max-w-7xl mx-auto'>
+      <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-8 min-h-[600px] flex flex-col'>
+        <div className="mb-8">
           <Stepper
             activeStep={stepsValue.activeStep}
-            lineClassName="bg-gray-300"
-            activeLineClassName="bg-[#3DA5F4]"
+            lineClassName="bg-gray-100 h-1"
+            activeLineClassName="bg-bgBlue"
           >
-            {['Policy Mapping', 'Payroll setting', 'Working Hours', 'Overtime & Leave Setting'].map((label, index) => {
-              // Disable steps that are more than one step ahead of current step
+            {['Policy Mapping', 'Payroll Settings', 'Working Hours', 'Overtime & Leave'].map((label, index) => {
               const isDisabled = index > stepsValue.activeStep + 1;
               const isClickable = !isDisabled;
               
@@ -185,17 +163,21 @@ const CreateNew = () => {
                 <Step
                   key={index}
                   onClick={() => isClickable && handleStepActive(index)}
-                  activeClassName="bg-[#61ADFF]"
-                  completedClassName="bg-white border border-blue-500 rounded-full text-[#474747]"
-                  className={isClickable ? "cursor-pointer" : "cursor-not-allowed opacity-50"}
+                  activeClassName="bg-bgBlue ring-4 ring-blue-50"
+                  completedClassName="bg-bgBlue text-white"
+                  className={`w-8 h-8 flex items-center justify-center transition-all duration-300 ${
+                    isClickable ? "cursor-pointer" : "cursor-not-allowed bg-gray-200 text-gray-400"
+                  }`}
                 >
-                  <div className="flex items-center">
-                    <Typography variant="small">{index + 1}</Typography>
-                    <div className='absolute top-11 inset-x-0 w-fit flex items-center justify-center'>
-                      <Typography variant="small" className={`text-[11px] text-center font-Urbanist font-medium ${isClickable ? 'text-[#818a90]' : 'text-gray-400'}`}>
-                        {label}
-                      </Typography>
-                    </div>
+                  <span className="text-xs font-bold font-poppins">{index + 1}</span>
+                  <div className='absolute -bottom-8 w-32 text-center'>
+                    <Typography 
+                      className={`text-xs font-medium font-poppins transition-colors duration-300 ${
+                        index === stepsValue.activeStep ? 'text-bgBlue' : 'text-gray-400'
+                      }`}
+                    >
+                      {label}
+                    </Typography>
                   </div>
                 </Step>
               );
@@ -203,53 +185,68 @@ const CreateNew = () => {
           </Stepper>
         </div>
 
-        <div className='mt-10'>
-          {stepsValue.activeStep === 0 && <EmpMapping 
-            policyBranches = {policyBranches}
-            handleSelectChange = { handleSelectChange }
-            newhrPolicesValues= {newhrPolicesValues}
-            dept_subDept= {dept_subDept}
-            flattenOptions = {flattenOptions}
-            handleChange = {handleChange}
-            handleCheckbox = {handleCheckbox}
-            handleRemoveSubDept = {handleRemoveSubDept}
-            empBranches = {empBranches}
-          />}
-          {stepsValue.activeStep === 1 && <PayrollSettings 
-          
-            handleSelectChange = { handleSelectChange }
-            newhrPolicesValues= {newhrPolicesValues}
-            handleChange= {handleChange}
-
-          />}
-          {stepsValue.activeStep === 2 && <WorkingHours 
-            newhrPolicesValues = { newhrPolicesValues }
-            handleChange= {handleChange}
-            handleCheckboxChange = { handleCheckboxChange }
-            handleTimeChange = { handleTimeChange }
-            handleSelectChange = {handleSelectChange}
-            handleRangeChange= {handleRangeChange}
-            rangeValues= { rangeValues }
-          />}
-          {stepsValue.activeStep === 3 && <OverTimeLeave 
-            handleChange= {handleChange}
-            handleSelectChange = { handleSelectChange }
-            newhrPolicesValues= {newhrPolicesValues}
-            leavesGroupOptionList= {leavesGroupOptionList}
-          />}
+        <div className='mt-8 flex-1'>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={stepsValue.activeStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="h-full"
+            >
+              {stepsValue.activeStep === 0 && <EmpMapping 
+                policyBranches = {policyBranches}
+                handleSelectChange = { handleSelectChange }
+                newhrPolicesValues= {newhrPolicesValues}
+                dept_subDept= {dept_subDept}
+                flattenOptions = {flattenOptions}
+                handleChange = {handleChange}
+                handleCheckbox = {handleCheckbox}
+                handleRemoveSubDept = {handleRemoveSubDept}
+                empBranches = {empBranches}
+              />}
+              {stepsValue.activeStep === 1 && <PayrollSettings 
+                handleSelectChange = { handleSelectChange }
+                newhrPolicesValues= {newhrPolicesValues}
+                handleChange= {handleChange}
+              />}
+              {stepsValue.activeStep === 2 && <WorkingHours 
+                newhrPolicesValues = { newhrPolicesValues }
+                handleChange= {handleChange}
+                handleCheckboxChange = { handleCheckboxChange }
+                handleTimeChange = { handleTimeChange }
+                handleSelectChange = {handleSelectChange}
+                handleRangeChange= {handleRangeChange}
+                rangeValues= { rangeValues }
+              />}
+              {stepsValue.activeStep === 3 && <OverTimeLeave 
+                handleChange= {handleChange}
+                handleSelectChange = { handleSelectChange }
+                newhrPolicesValues= {newhrPolicesValues}
+                leavesGroupOptionList= {leavesGroupOptionList}
+              />}
+            </motion.div>
+          </AnimatePresence>
         </div>
-        <div className="mt-16 flex justify-between">
+
+        <div className="mt-10 pt-6 border-t border-gray-100 flex justify-between items-center">
           <div>
             {!stepsValue.isFirstStep && 
-              <CustomButton title='Prev' onClick={handlePrev} disabled={stepsValue.isFirstStep} className='capitalize '>
-                {/* Prev */}
-              </CustomButton>
+              <CustomButton 
+                title='Previous' 
+                onClick={handlePrev} 
+                disabled={stepsValue.isFirstStep} 
+                className='bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm px-6'
+              />
             }
           </div>
           <div>
-            <CustomButton title={stepsValue.isLastStep ? 'Submit' : 'Next'} onClick={stepsValue.isLastStep ? handlePolicySubmit : handleNext} className={`capitalize cursor-pointer ${stepsValue.isLastStep ? 'bg-[#0acf97]' : ''}`}>
-              {/* {stepsValue.isLastStep ? 'Submit' : 'Next'} */}
-            </CustomButton>
+            <CustomButton 
+              title={stepsValue.isLastStep ? 'Submit Policy' : 'Next Step'} 
+              onClick={stepsValue.isLastStep ? handlePolicySubmit : handleNext} 
+              className={`px-8 ${stepsValue.isLastStep ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20' : 'bg-bgBlue hover:bg-blue-600 shadow-blue-500/20'}`}
+            />
           </div>
         </div>
       </div>
