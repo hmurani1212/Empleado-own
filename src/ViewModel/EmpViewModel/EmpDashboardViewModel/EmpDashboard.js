@@ -16,11 +16,14 @@ const empDashboardViewModel = (set, get) => ({
                 const lastAttendance = attendanceData[attendanceData.length - 2] || null;
                 // console.log('lastAttendance', lastAttendance)
                 let workingStatus = null;
-                if (lastAttendance && lastAttendance.att_label === "N") {
-                    workingStatus = attendanceData[attendanceData.length - 2] || null;
-                } else {
-                    workingStatus = lastAttendance || null;
-                }
+                const todayDate = new Date();
+                const dateString = todayDate.toLocaleDateString('en-GB').replace(/\//g, '-');
+                workingStatus = attendanceData.find(attendance => attendance.date_string === dateString) || null;
+                // if (lastAttendance && lastAttendance.att_label === "N") {
+                //     workingStatus = attendanceData[attendanceData.length - 2] || null;
+                // } else {
+                //     workingStatus = lastAttendance || null;
+                // }
 
                 let workingStatusLabel = "Unknown";
                 const loginTime = workingStatus?.timings || [];
@@ -98,19 +101,18 @@ const empDashboardViewModel = (set, get) => ({
 
                 const usedLateMin = dbData.attendance_data.DB_DATA.late_coming_days || [];
                 let totalUsedLateMin = 0;
+                let totalLateMinutes = 0;
                 for (let i = 0; i < usedLateMin.length; i++) {
                     totalUsedLateMin += usedLateMin[i].adjusted_late_min || 0;
-                }
+                    totalLateMinutes += usedLateMin[i].late_minutes || 0;
+                };
 
-                const allowedLateMin = dbData.attendance_data.DB_DATA.last_policy?.late_time_in_minutes || 0;
-                const substrictMin = allowedLateMin - totalUsedLateMin;
-                let calculatedUsedMin = 0;
-
-                if (substrictMin < 0) {
-                    calculatedUsedMin = substrictMin;
-                } else {
-                    calculatedUsedMin = totalUsedLateMin;
-                }
+                // const allowedLateMin = dbData.attendance_data.DB_DATA.last_policy?.late_time_in_minutes || 0;
+                // let adjusted_late_min = 0;
+                // let late_minutes = 0;
+                // late_minutes += dbData?.attendance_data?.DB_DATA?.late_coming_days?.late_minutes || 0;
+                // adjusted_late_min += dbData?.attendance_data?.DB_DATA?.late_coming_days?.adjusted_late_min || 0;
+                // console.log('what is the adjusted_late_min ?????????????', adjusted_late_min, late_minutes)
                //// console.log("calculatedUsedMin", calculatedUsedMin);
 
                 const leaveBalance = dbData.attendance_data.DB_DATA.leave_balance || [];
@@ -154,18 +156,18 @@ const empDashboardViewModel = (set, get) => ({
 
                 const transformedData = {
                     section1: {
-                        name: dbData.employee_data.name || '',
-                        emp_id: dbData.employee_data.id || '',
-                        dp: dbData.employee_data.dp || '',
-                        permanent_address: dbData.employee_data.permanent_address || '',
-                        branch: dbData.employee_data.branch?.branch_name || '',
-                        email: dbData.employee_data.work_email || dbData.employee_data.email || '',
-                        department: dbData.employee_data.department?.name || '',
-                        designation: dbData.employee_data.designationObj?.title || '',
-                        phone: dbData.employee_data?.contacts?.[1].contact || '',
-                        working_from: new Date(dbData.employee_data.join_date * 1000).toLocaleDateString() || '',
-                        mobile_attendance: dbData.employee_data.mobile_attendance,
-                        web_attendance_status: dbData.employee_data.web_attendance_status,
+                        name: dbData?.employee_data?.name || '',
+                        emp_id: dbData?.employee_data?.id || '',
+                        dp: dbData?.employee_data?.dp || '',
+                        permanent_address: dbData?.employee_data?.permanent_address || '',
+                        branch: dbData?.employee_data?.branch?.branch_name || '',
+                        email: dbData?.employee_data?.work_email || dbData?.employee_data?.email || '',
+                        department: dbData?.employee_data?.department?.name || '',
+                        designation: dbData?.employee_data?.designationObj?.title || '',
+                        phone: dbData?.employee_data?.contacts?.[1]?.contact || '',
+                        working_from: new Date(dbData?.employee_data?.join_date * 1000).toLocaleDateString() || '',
+                        mobile_attendance: dbData?.employee_data?.mobile_attendance,
+                        web_attendance_status: dbData?.employee_data?.web_attendance_status,
                         designation_name: dbData?.employee_data?.designation_name|| '',
                     },
                     section2: {
@@ -175,24 +177,25 @@ const empDashboardViewModel = (set, get) => ({
                         is_even_or_odd: isEvenOrOdd || ''
                     },
                     attendance_detail: {
-                        total: dbData.attendance_data.DB_DATA.total || 0,
-                        earned: dbData.attendance_data.DB_DATA.earned_secs || 0,
-                        attendance: dbData.attendance_data.DB_DATA.attendance || [],
-                        overtime_seconds: dbData.attendance_data.DB_DATA.overtime_seconds || 0
+                        total: dbData?.attendance_data?.DB_DATA?.total || 0,
+                        earned: dbData?.attendance_data?.DB_DATA?.earned_secs || 0,
+                        attendance: dbData?.attendance_data?.DB_DATA?.attendance || [],
+                        overtime_seconds: dbData?.attendance_data?.DB_DATA?.overtime_seconds || 0
                     },
                     attendance: {
-                        absentees: dbData.attendance_data.DB_DATA.absent_days || 0,
-                        allowed_leaves: dbData.attendance_data.DB_DATA.last_policy?.allowed_offs || 0,
+                        absentees: dbData?.attendance_data?.DB_DATA?.absent_days || 0,
+                        allowed_leaves: dbData?.attendance_data?.DB_DATA?.last_policy?.allowed_offs || 0,
                         availed: availed || 0,
                         leaves: leaves || 0,
-                        used_late_min: calculatedUsedMin || 0,
-                        allowed_late_min: dbData.attendance_data.DB_DATA.last_policy?.late_time_in_minutes || 0,
+                        total_used_late_min: totalUsedLateMin || 0,
+                        total_late_minutes: totalLateMinutes || 0,
+                        allowed_late_min: dbData?.attendance_data?.DB_DATA?.last_policy?.late_time_in_minutes || 0,
                         leave_balance: leaveBalance || 0,
-                        monthly_allowed_leaves: dbData.attendance_data.DB_DATA.monthly_allowed_leaves || 0,
-                        holidays: dbData.attendance_data.DB_DATA.holidays || 0,
-                        presents: dbData.attendance_data.DB_DATA.present_days || 0,
+                        monthly_allowed_leaves: dbData?.attendance_data?.DB_DATA?.monthly_allowed_leaves || 0,
+                        holidays: dbData?.attendance_data?.DB_DATA?.holidays || 0,
+                        presents: dbData?.attendance_data?.DB_DATA?.present_days || 0,
                     },
-                    view_policy: dbData.attendance_data.DB_DATA.last_policy || null,
+                    view_policy: dbData?.attendance_data?.DB_DATA?.last_policy || null,
                     leave_balance: leaveBalance || [],
                     attendance_history: matchedAttendance || [],
                     // leave_balance: {

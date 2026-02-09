@@ -4,15 +4,26 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
 const Notices = () => {
+<<<<<<< Updated upstream
   const {noticeTitles, getAllDepartmentsNotices} = useNotice()
+=======
+  
+  const { noticeTitles, getBranchesOnly } = useNotice()
+>>>>>>> Stashed changes
   const location = useLocation();
   const navigate = useNavigate()
 
-  const handleNavLinkClick = (e, link, id)=>{
+  const handleNavLinkClick = (e, link, id) => {
     e.preventDefault()
+<<<<<<< Updated upstream
     navigate(link)
     if(id === 2){
       getAllDepartmentsNotices()
+=======
+    naivgate(link)
+    if (id === 2) {
+      getBranchesOnly()
+>>>>>>> Stashed changes
     }
   }
 

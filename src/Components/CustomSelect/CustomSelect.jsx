@@ -168,6 +168,7 @@ const CustomSelect = (props) => {
         isClearable={isClearable}
         isSearchable={isSearchable}
         isMulti={isMulti}
+        filterOption={filterOption}
         noOptionsMessage={() => "No data found"}
       />
     </div>

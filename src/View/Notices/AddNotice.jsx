@@ -5,19 +5,19 @@ import CustomSelect from '../../Components/CustomSelect/CustomSelect';
 import { Loader2 } from 'lucide-react';
 
 const AddNotice = () => {
-  const {noticesBranches, addNoticeValue, getAllDepartmentsNotices, handleAddNoticeBranch, handleDeptChange, employeeOptions, addNewNotice, filterDepartmentsNotices, handleCheckboxChange, handleChangeEmpName, showEmployeeName, handleNewNotice,
-    handleNoticesSearchEmp, fetchAllEmployees, loading
+  const { noticesBranches, addNoticeValue, getBranchesOnly, handleAddNoticeBranch, employeeOptions, addNewNotice, filterDepartmentsNotices, handleCheckboxChange, showEmployeeName, handleNewNotice,
+    handleNoticesSearchEmp, loading
   } = useNotice();
 
   useEffect(() => {
-    getAllDepartmentsNotices()
-    // fetchAllEmployees()
+    getBranchesOnly();
   }, [])
 
   return (
     <div className='p-6'>
       <form onSubmit={(e) => addNewNotice(e)} className="flex flex-col gap-6">
         
+<<<<<<< Updated upstream
         {/* Branch & Department Group */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className='flex flex-col gap-2'>
@@ -34,6 +34,26 @@ const AddNotice = () => {
                         customStyles={false}
                     />
                 </div>
+=======
+            </Select>
+          </div>
+          <div className='w-96 flex items-center'>
+            <Checkbox color="blue" label='Notice for individual Employee' className='text-[13px]' checked={showEmployeeName} onChange={handleCheckboxChange}/>
+          </div>
+          {showEmployeeName && (
+            <div className='w-96'>
+              <CustomSelect 
+                placeHolderTitle='Employee Name/ID'
+                color='blue'
+                name='emp_id'
+                value={addNoticeValue.emp_id}
+                options={employeeOptions}
+                onHandleSelectSearch={handleNoticesSearchEmp}
+                customStyle={false}
+                onChangeHandler={(field) => handleAddNoticeBranch('emp_id', field)}
+              />
+              {/* <Input label='Employee Name/ID' color='blue' placeholder='Employee Name/ID' name='emp_id' onChange={handleChangeEmpName} value={addNoticeValue.emp_id}/> */}
+>>>>>>> Stashed changes
             </div>
 
             <div className='flex flex-col gap-2'>

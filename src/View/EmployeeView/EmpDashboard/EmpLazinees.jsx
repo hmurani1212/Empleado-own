@@ -78,6 +78,7 @@ const EmpLazinees = () => {
 
   // Get attendance data
   const attendanceData = empDashboardData?.attendance;
+  console.log('what is the attendanceData of employee laziness ?????????????', attendanceData)
 
   // Get reminders from dashboard data and sync with local state
   const dashboardReminders = useMemo(() => {
@@ -533,19 +534,17 @@ const EmpLazinees = () => {
                     fill="none"
                   />
                   {(() => {
-                    const usedLateMin = Math.abs(
-                      attendanceData?.used_late_min || 0
-                    );
+                    const usedLateMin = attendanceData?.total_late_minutes || 0;
                     const allowedLateMin =
                       attendanceData?.allowed_late_min || 1;
                     const percentage = Math.min(
                       100,
-                      (usedLateMin / allowedLateMin) * 100
+                      (usedLateMin > 0 ? usedLateMin : attendanceData?.total_used_late_min / allowedLateMin) * 100
                     );
                     const circumference = 2 * Math.PI * 52;
                     const offset = circumference * (1 - percentage / 100);
                     const strokeColor =
-                      attendanceData?.used_late_min < 0 ? "#FC563B" : "#0acf97";
+                      attendanceData?.total_late_minutes > 0 ? "#FC563B" : "#0acf97";
 
                     return (
                       <motion.circle
@@ -568,12 +567,12 @@ const EmpLazinees = () => {
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span
                     className={`text-[16px] font-bold ${
-                      attendanceData?.used_late_min < 0
+                      attendanceData?.total_late_minutes < 0
                         ? "text-red-500"
                         : "text-[#212529]"
                     }`}
                   >
-                    {Math.abs(attendanceData?.used_late_min || 0)}/
+                    {Math.abs(attendanceData?.total_late_minutes > 0 ? attendanceData?.total_late_minutes : attendanceData?.total_used_late_min || 0)}/
                     {attendanceData?.allowed_late_min || 0}
                   </span>
                   <span className="text-[10px] text-gray-500">
@@ -583,7 +582,7 @@ const EmpLazinees = () => {
               </div>
 
               <span className="text-[12px] text-[#212529]">
-                {attendanceData?.used_late_min < 0
+                {attendanceData?.total_late_minutes > 0
                   ? "Deducted Minutes"
                   : "Late Minutes"}
               </span>

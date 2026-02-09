@@ -90,13 +90,14 @@ const useShiftManagement = () => {
       }
     }
 
-    const handleCreateNewShift = () => {
-      getAllBranchesShift()
+    const handleCreateNewShift = async () => {
+      await getAllBranchesShift()
+      const freshBranches = useStore.getState().branchesShift
       openDrawer()
       settingDrawerSize(500)
       settingDrawerTitle('Create New Shift Planner')
       settingComponent(<NewShiftForm
-        branchesShift = {branchesShift}
+        branchesShift={freshBranches}
       />)}
 
       

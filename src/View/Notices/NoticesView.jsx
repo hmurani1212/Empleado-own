@@ -55,6 +55,13 @@ const NoticesView = () => {
                                 {viewNoticeData.emp_name || "All Branches"}
                             </span>
                         </div>
+<<<<<<< Updated upstream
+=======
+                        <div>
+                            <span className="text-[12px] text-[black]">{viewNoticeData.emp_name || viewNoticeData.branch_name || "All Branches"}</span>
+                        </div>
+                        
+>>>>>>> Stashed changes
                     </div>
 
                     {/* Description */}

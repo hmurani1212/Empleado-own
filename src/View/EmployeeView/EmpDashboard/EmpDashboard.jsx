@@ -354,6 +354,7 @@ const EmpDashboard = () => {
   const pInfo = empDashboardData?.section1;
   ///console.log('what is the data', pInfo)
   const dutyInfo = empDashboardData?.section2
+
   const attendanceDetail = empDashboardData?.attendance_detail
   const attendanceData = empDashboardData?.attendance
   const leaveBalance = empDashboardData?.leave_balance
