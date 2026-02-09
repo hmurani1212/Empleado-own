@@ -78,6 +78,7 @@ const EmpLazinees = () => {
 
   // Get attendance data
   const attendanceData = empDashboardData?.attendance;
+  console.log('what is the attendanceData of employee laziness ?????????????', attendanceData)
 
   // Get reminders from dashboard data and sync with local state
   const dashboardReminders = useMemo(() => {
@@ -533,11 +534,14 @@ const EmpLazinees = () => {
                     const usedLateMin = attendanceData?.total_late_minutes || 0;
                     const allowedLateMin =
                       attendanceData?.allowed_late_min || 1;
-                      
                       const percentage = Math.min(
                         100,
                         ((usedLateMin > 0 ? usedLateMin : attendanceData?.total_used_late_min) / allowedLateMin) * 100
                       );
+                    // const percentage = Math.min(
+                    //   100,
+                    //   (usedLateMin > 0 ? usedLateMin : attendanceData?.total_used_late_min / allowedLateMin) * 100
+                    // );
                     const circumference = 2 * Math.PI * 52;
                     const offset = circumference * (1 - percentage / 100);
                     const strokeColor =

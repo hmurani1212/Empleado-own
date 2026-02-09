@@ -30,8 +30,73 @@ const noticeViewModel = (set, get) => ({
         if (currentState.noticesBranches && currentState.noticesBranches.length > 0) {
             return;
         }
+        set({ departmentsLoading: true, filterDepartmentsNotices: [] });
+        try {
+            const response = await departmentsApi.gettingAllDepartments();
+            const data = response.data;
+            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+                const branches = data.DB_DATA?.branches || [];
+                const ownObjectBranches = { id: '0', branch_name: 'All Branches' };
+                const updatedBranches = [ownObjectBranches, ...branches];
+                set({
+                    noticesBranches: updatedBranches,
+                    departmentsLoading: false,
+                });
+            } else {
+                set({ departmentsLoading: false });
+            }
+        } catch (err) {
+            set({ departmentsLoading: false });
+        }
+    },
+
+    // Fetch departments only when user selects a branch. For "All Branches" uses list/all; for specific branch uses manageDepartments.
+    getDepartmentsByBranch: async (branchId) => {
+        set({ departmentsLoading: true });
+        try {
+            let departments = [{ id: '0', name: 'All Departments' }];
+            if (branchId === '0' || branchId === 0 || !branchId) {
+                const response = await departmentsApi.get_all_Department(0);
+                const data = response?.data;
+                if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                    const deptList = data.DB_DATA?.departments || data.DB_DATA || [];
+                    const flatDepts = Array.isArray(deptList) ? deptList : [];
+                    departments = [{ id: '0', name: 'All Departments' }, ...flatDepts];
+                }
+            } else {
+                const response = await departmentsApi.manageDepartments(branchId);
+                const data = response?.data;
+                if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                    const branchDepts = data.DB_DATA?.departments || [];
+                    const storeState = get();
+                    const branch = storeState.noticesBranches?.find((b) => String(b.id) === String(branchId));
+                    const withBranchId = branchDepts.map((dept) => ({
+                        ...dept,
+                        branch_id: branchId,
+                        branch_name: branch?.branch_name,
+                    }));
+                    departments = [{ id: '0', name: 'All Departments' }, ...withBranchId];
+                }
+            }
+            set({
+                noticesDepartment: departments,
+                filterDepartmentsNotices: departments,
+                departmentsLoaded: true,
+                departmentsLoading: false,
+            });
+        } catch (err) {
+            set({ departmentsLoading: false });
+        }
+    },
+
+    getAllDepartmentsNotices: async () => {
+        const currentState = get();
+        if (currentState.noticesBranches && currentState.noticesBranches.length > 0) {
+            return;
+        }
         getBranchesOnlyInFlight = true;
         set({ departmentsLoading: true, filterDepartmentsNotices: [], departmentsLoadedForBranchId: null });
+        set({ departmentsLoading: true });
         try {
             const response = await departmentsApi.gettingAllDepartments();
             const data = response.data;

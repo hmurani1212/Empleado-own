@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import useStore from "../../Store/store"
 import noticesApi from "../../Model/Data/Notices/Notices"
 import { showToast } from "../../Components/Toaster/Toaster"
@@ -13,14 +13,15 @@ import departmentsApi from "../../Model/Data/Departments/Departments";
 const useNotice = () => {
 
     const noticesBranches = useStore((state) => state.noticesBranches)
-    const getAllDepartmentsNotices = useStore((state) => state.getAllDepartmentsNotices)
     const getBranchesOnly = useStore((state) => state.getBranchesOnly)
     const getDepartmentsByBranch = useStore((state) => state.getDepartmentsByBranch)
+    const getAllDepartmentsNotices = useStore((state) => state.getAllDepartmentsNotices)
     const noticesFilterBranches = useStore((state) => state.noticesFilterBranches)
     const noticesDepartment = useStore((state) => state.noticesDepartment)
     const filterDepartmentsNotices = useStore ((state)=> state.filterDepartmentsNotices)
     const allNoticesList = useStore ((state)=> state.allNoticesList)
     const getAllNoticesList = useStore ((state) => state.getAllNoticesList)
+    const addNewNoticeState = useStore((state) => state.addNewNoticeState)
     const noticeMount = useStore ((state) => state.noticeMount)
     const getViewNotice = useStore ((state) => state.getViewNotice)
     const deleteNotice = useStore ((state) => state.deleteNotice)
@@ -66,41 +67,32 @@ const useNotice = () => {
 
     })
 
-
-    const handleAddNoticeBranch = (name, event)=>{
-    
-        // Handle both direct values (Material Tailwind) and objects (CustomSelect/React-Select)
+    const handleAddNoticeBranch = (name, event) => {
         const value = event?.value !== undefined ? event.value : event;
-        const noticeDeptId = value;
-
-        setAddNoticeValue ((prevState)=>({
+        setAddNoticeValue((prevState) => ({
             ...prevState,
-            [name] : event, // Keep original event (object/value) for UI state
-        }))
-
-        if(name === 'branch_id'){
-            // Load departments for selected branch (one API call); clear department and employee
-            getDepartmentsByBranch(noticeDeptId);
+            [name]: event,
+        }));
+        if (name === 'branch_id') {
             setAddNoticeValue((prevState) => ({
                 ...prevState,
                 emp_id: '',
-                deptt_id: ''
+                deptt_id: '',
             }));
             setEmployeeOptions([]);
             setEmployeeOptionsFull([]);
+            getDepartmentsByBranch(value);
         }
-
-        if(name === 'deptt_id'){
-            // Clear employee selection when department changes
+        if (name === 'deptt_id') {
             setAddNoticeValue((prevState) => ({
                 ...prevState,
-                emp_id: ''
+                emp_id: '',
             }));
             setEmployeeOptions([]);
             setEmployeeOptionsFull([]);
-
-            // Fetch employees from the selected department (once; search is frontend-only)
-            fetchEmployeesByDepartment(noticeDeptId);
+            if (showEmployeeName) {
+                fetchEmployeesByDepartment(value || '0');
+            }
         }
     }
 
@@ -141,9 +133,11 @@ const useNotice = () => {
                 setEmployeeOptions(employeeData);
             } else {
                 setEmployeeOptions([]);
+                setEmployeeOptionsFull([]);
             }
         } catch (error) {
             setEmployeeOptions([]);
+            setEmployeeOptionsFull([]);
         }
     };
 
@@ -171,7 +165,6 @@ const useNotice = () => {
             return false;
         }
     };
-    
     const handleNoticesSearchEmp = (searchTerm, actionMeta) => {
         if (actionMeta.action === 'input-change') {
             filterEmployeeOptionsBySearch(searchTerm);
@@ -192,8 +185,6 @@ const useNotice = () => {
         });
         setEmployeeOptions(filtered);
     };
-
-  
 
     const handleNewNotice = (e) => {
         const { name, value, type, checked } = e.target;
@@ -386,6 +377,20 @@ const useNotice = () => {
                 showToast('Notice added Successfully!', 'success');
                 // Refresh list so List Notices shows the new notice when user navigates there
                 await getAllNoticesList({ page: 1, limit: 10 }, true, false);
+                // Add new notice to list without calling list API - use API response or build from form data
+                const createdNotice = respData.DB_DATA;
+                const noticeId = createdNotice?.notice_ids?.[0] ?? createdNotice?.id ?? createdNotice?.notice_id ?? respData.id;
+                const branchNameFromForm = addNoticeValue.branch_id === '0' || addNoticeValue.branch_id === 0
+                    ? 'All Branches'
+                    : (noticesBranches?.find((b) => String(b.id) === String(addNoticeValue.branch_id))?.branch_name || '');
+                const noticeForList = {
+                    id: noticeId,
+                    title: createdNotice?.title || addNoticeValue.title,
+                    timestamp: createdNotice?.timestamp || Math.floor(Date.now() / 1000),
+                    branch_name: createdNotice?.branch_name || branchNameFromForm,
+                    description: createdNotice?.description || addNoticeValue.notice,
+                };
+                addNewNoticeState(noticeForList);
                 navigate('/notices/list_notices')
                 setAddNoticeValue({
                     branch_id: '',
@@ -452,34 +457,70 @@ const useNotice = () => {
     const [showNoticeDrawer, setShowNoticeDrawer] = useState(false)
 
 
-    const getForNoticeEdit =  async(notice) => {
-        const data = {id: notice.id}
-        const response = await noticesApi.singleNotice(data)
-        const resData = response.data 
+    const getForNoticeEdit = async (notice) => {
+        // Ensure branches and departments are loaded for the dropdowns
+        await getAllDepartmentsNotices();
 
-        if(response.status === 200 && resData.STATUS === "SUCCESSFUL"){
-            setAddNoticeValue((prevState)=>({
+        const data = { id: notice.id };
+        const response = await noticesApi.singleNotice(data);
+        const resData = response.data;
+
+        if (response.status === 200 && resData.STATUS === "SUCCESSFUL") {
+            const dbData = resData.DB_DATA;
+            const storeState = useStore.getState();
+            const branches = storeState.noticesBranches || [];
+            const allDepartments = storeState.noticesDepartment || [];
+
+            // Resolve branch: find matching branch in our list (by id or name) - use exact id from list for Option match
+            const rawBranchId = dbData.branch_id ?? dbData.branch_name ?? '';
+            const isAllBranches = rawBranchId === 0 || rawBranchId === '0' || rawBranchId === 'All Branches' || rawBranchId === '';
+            const matchedBranch = isAllBranches
+                ? branches.find((b) => b.id === '0' || b.id === 0)
+                : branches.find(
+                    (b) =>
+                        String(b.id) === String(rawBranchId) ||
+                        String(b.branch_name) === String(dbData.branch_name)
+                );
+            // Use exact id from our list so Select Option value matches (Option uses value={ele.id})
+            const branchId = matchedBranch ? matchedBranch.id : (isAllBranches ? '0' : rawBranchId);
+
+            // Populate department dropdown based on selected branch first
+            noticesFilterBranches(branchId);
+
+            // Get updated filterDepartmentsNotices after branch filter (use getState for fresh data)
+            const updatedState = useStore.getState();
+            const departmentsForBranch = updatedState.filterDepartmentsNotices || [];
+
+            // Resolve department: find matching department by id or name - use exact id from list for Option match
+            const rawDeptId = dbData.deptt_id ?? dbData.deptt_name ?? dbData.department ?? '';
+            const isAllDepts = rawDeptId === 0 || rawDeptId === '0' || rawDeptId === 'All Departments' || rawDeptId === '';
+            const matchedDept = isAllDepts
+                ? departmentsForBranch.find((d) => d.id === '0' || d.id === 0)
+                : departmentsForBranch.find(
+                    (d) => {
+                        const deptName = (d.name || d.department_name || '').toString().trim();
+                        const apiDeptName = (dbData.department || rawDeptId || '').toString().trim();
+                        return (
+                            String(d.id) === String(rawDeptId) ||
+                            (apiDeptName && deptName && deptName === apiDeptName)
+                        );
+                    }
+                );
+            const depttId = matchedDept ? matchedDept.id : (isAllDepts ? '0' : rawDeptId);
+
+            setAddNoticeValue((prevState) => ({
                 ...prevState,
-                show:true,
-                id: resData.DB_DATA.id,
-                title: resData.DB_DATA.title,
-                notice: resData.DB_DATA.description,
-                branch_id: resData.DB_DATA.branch_id || resData.DB_DATA.branch_name || '',
-                deptt_id: resData.DB_DATA.deptt_id || resData.DB_DATA.department || '',
-                emp_id: resData.DB_DATA.emp_id || '',
-                send_sms_notice: resData.DB_DATA.send_sms_notice || false,
-                send_email_notice: resData.DB_DATA.send_email_notice || false,
-            }))
-            
-            // Ensure branches and departments for this branch are loaded for the edit form
-            const branchId = resData.DB_DATA.branch_id ?? resData.DB_DATA.branch_name;
-            if (branchId !== undefined && branchId !== null) {
-                await getBranchesOnly();
-                await getDepartmentsByBranch(branchId);
-            }
-            
+                show: true,
+                id: dbData.id,
+                title: dbData.title,
+                notice: dbData.description,
+                branch_id: branchId,
+                deptt_id: depttId,
+                emp_id: dbData.emp_id || '',
+                send_sms_notice: dbData.send_sms_notice || false,
+                send_email_notice: dbData.send_email_notice || false,
+            }));
         }
-        
     }
 
     const  closeNoticeDrawer = () => {
@@ -631,7 +672,7 @@ const useNotice = () => {
     }
     
  return {
-    noticeTitles, noticesBranches, noticesDepartment, getAllDepartmentsNotices, getBranchesOnly, getDepartmentsByBranch, noticesFilterBranches, handleChangeDept, addNoticeValue, handleAddNoticeBranch,
+    noticeTitles, noticesBranches, noticesDepartment, getBranchesOnly, getDepartmentsByBranch, getAllDepartmentsNotices, noticesFilterBranches, handleChangeDept, addNoticeValue, handleAddNoticeBranch,
     filterDepartmentsNotices, employeeOptions, handleDeptChange, setAddNoticeValue, handleNewNotice, handleCheckboxChange, showEmployeeName, handleChangeEmpName, addNewNotice, allNoticesList,
     getAllNoticesList, noticeMount, noticesMenuItems, toggleMenuNotices, openMenu, openDialog, handleDelete, handleMenuItemsNotices, deleteNotices, viewNoticeData, getViewNotice, openViewDialog, setOpenViewDialog,
     handleView, handleNoticesSearchEmp, loading, showNoticeDrawer, closeNoticeDrawer, loading,
