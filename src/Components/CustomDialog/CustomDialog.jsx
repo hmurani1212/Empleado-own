@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogBody, DialogFooter, DialogHeader } from '@material-tailwind/react'
+import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, ThemeProvider } from '@material-tailwind/react'
 import React from 'react'
 import { IoClose } from "react-icons/io5";
 
@@ -15,14 +15,31 @@ const CustomDialog = (props) => {
   
   // Create custom className with proper Material Tailwind overrides
   const customClassName = isCustomSize ? `${widthClass} ${heightClass} max-w-none` : ''
+
+  const customTheme = {
+    dialog: {
+      styles: {
+        base: {
+          backdrop: {
+            backgroundColor: "bg-black/10",
+            backdropFilter: "backdrop-blur-sm",
+          },
+        },
+      },
+    },
+  };
   
   return (
+    <ThemeProvider value={customTheme}>
     <Dialog 
       open={openDialog} 
       handler={handleOpen} 
       size={dialogSize} 
-      dismiss={{ outsidePress: outsidePress }}
-      className={customClassName}
+      animate={{
+        mount: { scale: 1, y: 0 },
+        unmount: { scale: 0.9, y: -100 },
+      }}
+     
       style={{
         backgroundColor: backgroundColor ? '#6691cc' : backgroundColor,
         ...(isCustomSize ? {
@@ -77,6 +94,7 @@ const CustomDialog = (props) => {
             </DialogFooter>
         }
     </Dialog>
+    </ThemeProvider>
   )
 }
 

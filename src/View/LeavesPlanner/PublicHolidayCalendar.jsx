@@ -22,35 +22,41 @@ const PublicHolidayCalendar = (props) => {
 
     return (
       <>
-      <div className='py-8 px-10 bg-white rounded-[10px] drop-shadow-md'>
-          <div className="flex justify-between items-center mb-4">
+      <div className='py-8 px-10 bg-white rounded-2xl shadow-sm border border-gray-100 font-poppins'>
+          <div className="flex justify-between items-center mb-8">
             <motion.button
-              whileHover={{ scale: 1.2 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={()=>handlePreviousMonth(publicHolidayValue, publicHolidayValue?.year?.label)}
-              className="w-10 h-10 flex items-center justify-center border border-customBlack-100 rounded-full hover:bg-customGray-400 hover:text-customGray-300"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
             >
-              <FaChevronLeft />
+              <FaChevronLeft className="text-sm" />
             </motion.button>
-              <div className="text-xl text-customGray-400 font-bold flex flex-col items-center">
-              <span>
+            
+            <div className="text-xl text-gray-800 font-bold flex flex-col items-center">
+              <span className="text-2xl mb-1">
                 {publicHolidayValue?.month.label}
               </span>
-              <span className="font-normal">{publicHolidayValue.year.label}</span>
+              <span className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                {publicHolidayValue.year.label}
+              </span>
             </div> 
+            
             <motion.button
-              whileHover={{ scale: 1.2 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleNextMonth}
-              className="w-10 h-10 flex items-center justify-center border border-customGray-300 rounded-full hover:bg-customGray-400 hover:text-customGray-300"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 text-gray-600 transition-colors"
             >
-              <FaChevronRight />
+              <FaChevronRight className="text-sm" />
             </motion.button>
           </div>
 
-          <div className="grid grid-cols-7 gap-6 text-center p-4 place-items-center">
+          <div className="grid grid-cols-7 gap-y-6 gap-x-2 text-center p-2 place-items-center">
             {daysOfWeek.map((day) => (
               <div
                 key={day}
-                className="text-md text-customGray-400 font-normal w-10 h-10 flex items-center justify-center"
+                className="text-xs font-semibold text-gray-400 uppercase tracking-wider w-10 h-10 flex items-center justify-center"
               >
                 {day}
               </div>
@@ -82,31 +88,37 @@ const PublicHolidayCalendar = (props) => {
                   console.log('🔍 Found holiday with ID:', specificHoliday.id, specificHoliday);
                 }
 
-                return day ? (
-                    <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        key={index}
-                        className={`w-10 h-10 flex items-center justify-center rounded-full ${
-                            day === today.getDate() &&
-                            today.getMonth() === currentMonth &&
-                            today.getFullYear() === currentYear
-                                ? "!bg-customGray-blueGray cursor-pointer"
-                                : holidayDates.some(
+                // Determine classes based on state
+                const isToday = day === today.getDate() && 
+                               today.getMonth() === currentMonth && 
+                               today.getFullYear() === currentYear;
+                               
+                const isHoliday = holidayDates.some(
                                       holiday =>
                                           holiday.day == day &&
                                           holiday.month == currentMonth &&
                                           holiday.year == currentYear
-                                  ) // Check if the day, month, and year match a holiday
-                                    ? "!bg-yellow-400 cursor-pointer" // Apply yellow for matching days
-                                    : "hover:border hover:border-customGray-blueGray cursor-pointer"
-                        } relative`}
+                                  );
 
+                return day ? (
+                    <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        key={index}
+                        className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-200 cursor-pointer relative
+                        ${isToday ? "bg-bgBlue text-white shadow-md shadow-blue-500/20" : ""}
+                        ${isHoliday ? "bg-amber-100 text-amber-700 font-bold border-2 border-amber-200" : ""}
+                        ${!isToday && !isHoliday ? "text-gray-700 hover:bg-gray-100" : ""}
+                        `}
                         onClick={()=>handleSingleDayPublicHoliday(specificHoliday, {day, currentMonth,currentYear})}
                     >
                         {day}
+                        {isHoliday && (
+                          <span className="absolute -bottom-1 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                        )}
                     </motion.div>
                 ) : (
-                    <div key={index} className="px-4 py-2"></div>
+                    <div key={index} className="w-10 h-10"></div>
                 );
             })}
 
@@ -156,9 +168,11 @@ const PublicHolidayCalendar = (props) => {
           }
           outsidePress ={false}
           footer ={false}
-          backgroundColor={(showSingleHoliday.showHoliday || showSingleHoliday.assignHoliday) ? '#6691cc' : undefined}
-
-      />
+          className="rounded-2xl shadow-xl border border-gray-100 font-poppins overflow-hidden"
+          headerClassName="bg-gray-50 border-b border-gray-100 px-6 py-4"
+          titleClassName="text-lg font-bold text-gray-800"
+          bodyClassName="p-6"
+        />
 
       }
     </>

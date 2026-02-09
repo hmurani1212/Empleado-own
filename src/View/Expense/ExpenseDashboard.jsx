@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Card, CardBody, Typography } from "@material-tailwind/react";
+import { Button, Card, CardBody, Typography, IconButton } from "@material-tailwind/react";
 import {
   FaClock,
   FaWallet,
@@ -11,6 +11,7 @@ import {
   FaTrash,
   FaCheckCircle,
   FaUser,
+  FaFilter
 } from "react-icons/fa";
 import { Bar } from "react-chartjs-2";
 import {
@@ -22,9 +23,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import CustomDrawer from "../../Components/CustomDrawer/CustomDrawer";
-import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import PendingApprovalsDrawer from "./PendingApprovalsDrawer";
 import SettlementAcceptanceModal from "./SettlementAcceptanceModal";
 import useExpenseService from "../../ViewModel/ExpenseViewModel/ExpenseServices";
@@ -32,16 +32,11 @@ import { showToast } from "../../Components/Toaster/Toaster";
 import { formatDateDMY } from "../../services/__dateTimeServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { getAllMonths, getAllYears } from "../../services/__appServicesData";
-import { NavLink } from "react-router-dom";
-import { PiEyeLight } from "react-icons/pi";
+import { PiEyeLight, PiMoneyFill } from "react-icons/pi";
 import { HiMiniUser } from "react-icons/hi2";
-import { FaFileInvoiceDollar } from "react-icons/fa";
-import { PiMoneyFill } from "react-icons/pi";
+import { FaFileInvoiceDollar, FaFileSignature, FaSackDollar, FaMoneyBill1Wave } from "react-icons/fa6";
 import { IoCalendar } from "react-icons/io5";
-import { FaFileSignature } from "react-icons/fa";
 import { AiOutlineBars } from "react-icons/ai";
-import { FaSackDollar } from "react-icons/fa6";
-import { FaMoneyBill1Wave } from "react-icons/fa6";
 
 // Register Chart.js components
 ChartJS.register(
@@ -88,8 +83,6 @@ const ExpenseDashboard = () => {
     handleLoadMore,
   } = useExpenseService();
 
-  const [openMenuValue, setOpenMenuValue] = useState({});
-  const [triggerRefs, setTriggerRefs] = useState({});
   const [showExpenseDetailModal, setShowExpenseDetailModal] = useState(false);
   const [showInvoiceDetailModal, setShowInvoiceDetailModal] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState(null);
@@ -120,7 +113,6 @@ const ExpenseDashboard = () => {
   const pendingAmount = cardData.expenseAmount; // Use expense_amount for pending amount
   const totalBudget = cardData.totalBudget;
   const rejected_expense = cardData?.rejected_expense;
-  /////console.log('what is rejected expense', cardData)
   const totalExpenses = cardData.totalExpenses;
   const approvedExpense = cardData.approvedExpense;
 
@@ -261,62 +253,6 @@ const ExpenseDashboard = () => {
   const expenseListData = getTableData();
   const tablePagination = getTablePagination();
 
-  // Sample data for fallback (remove this after API integration)
-  const sampleExpenseListData = [
-    {
-      id: "EXP001",
-      employeeName: "John Doe",
-      category: "Travel",
-      amount: "2,500 PKR",
-      date: "2024-01-15",
-      status: "Approved",
-      description: "Business trip to Karachi",
-    },
-    {
-      id: "EXP002",
-      employeeName: "Jane Smith",
-      category: "Meals",
-      amount: "1,200 PKR",
-      date: "2024-01-14",
-      status: "Pending",
-      description: "Client meeting lunch",
-    },
-    {
-      id: "EXP003",
-      employeeName: "Mike Johnson",
-      category: "Office Supplies",
-      amount: "800 PKR",
-      date: "2024-01-13",
-      status: "Rejected",
-      description: "Stationery items",
-    },
-    {
-      id: "EXP004",
-      employeeName: "Sarah Wilson",
-      category: "Transportation",
-      amount: "1,500 PKR",
-      date: "2024-01-12",
-      status: "Approved",
-      description: "Taxi fare for meetings",
-    },
-    {
-      id: "EXP005",
-      employeeName: "David Brown",
-      category: "Accommodation",
-      amount: "5,000 PKR",
-      date: "2024-01-11",
-      status: "Pending",
-      description: "Hotel stay for conference",
-    },
-  ];
-
-  // Action menu items for expense list
-  const expenseActionList = [
-    { id: 1, title: "View Details", icon: <FaEye />, color: "#3DA5F4" },
-    { id: 2, title: "Edit", icon: <FaEdit />, color: "#0ACF97" },
-    { id: 3, title: "Delete", icon: <FaTrash />, color: "#FF4979" },
-  ];
-
   // Invoices table headers (matching the image)
   const invoicesTableHeaders = [
     "Employee ID",
@@ -364,37 +300,12 @@ const ExpenseDashboard = () => {
     },
   ];
 
-  // Action menu items for invoices (only view details)
-  const invoicesActionList = [
-    { id: 1, title: "View Details", icon: <FaEye />, color: "#3DA5F4" },
-  ];
-
   const tabs = ["Expense Analysis", "Expense List", "Invoices"];
-
-  // Helper functions for dropdown menu
-  const toggleMenuValue = (index, isOpen) => {
-    setOpenMenuValue((prev) => ({
-      ...prev,
-      [index]: isOpen,
-    }));
-  };
-
-  const getDropdownPosition = (index) => {
-    // Simple logic to determine dropdown position
-    return index > 2 ? "top" : "bottom";
-  };
-
-  const handleExpenseAction = (expense, action) => {
-    console.log("Expense action:", action.title, "for expense:", expense.id);
-    // Handle different actions here
-  };
 
   // Handle view invoice detail
   const handleViewInvoice = async (invoice) => {
     setSelectedInvoice(invoice);
     setShowInvoiceDetailModal(true);
-    // Note: If there's a getInvoiceById API endpoint, we can call it here
-    // await getInvoiceById(invoice.id);
   };
 
   const handleCloseInvoiceDetailModal = () => {
@@ -443,526 +354,324 @@ const ExpenseDashboard = () => {
     clearExpenseDetail();
   };
 
-  return (
-    <div className="flex flex-col gap-4 p-2 w-full">
-      {/* Header Section */}
-      <div className="w-full">
-        <div className="w-full">
-          <Typography className="text-[20px] font-Urbanist font-semibold text-[#474747]">
-            Expense Management
+  // Modern Stat Card Component
+  const StatCard = ({ title, value, icon, colorClass, bgColorClass, subValue, onClick }) => (
+    <motion.div
+        whileHover={{ y: -5 }}
+        className={`relative overflow-hidden rounded-2xl p-5 ${bgColorClass} shadow-sm border border-transparent hover:shadow-md transition-all duration-300 cursor-pointer group`}
+        onClick={onClick}
+    >
+      <div className="flex items-center justify-between z-10 relative">
+        <div className="flex flex-col gap-1">
+          <Typography className="text-sm font-medium text-white/90 font-poppins">
+            {title}
           </Typography>
-          <div className="flex justify-between items-end w-full">
-            <div className="flex items-center gap-3 mt-4">
-              {/* Month Filter */}
-              <div className="w-44">
-                <label className="text-[#474747] text-[12px] font-medium px-2">
-                  Month
-                </label>
-                <CustomSelect
-                  placeHolderTitle="Month"
-                  value={selectedMonthOption}
-                  options={months?.map((month) => ({
-                    value: month.id,
-                    label: month.title,
-                  }))}
-                  onChangeHandler={(selectedOption) =>
-                    handleMonthChange(selectedOption, "month")
-                  }
-                  customStyles={false}
-                  thinScrollbar={true}
-                />
-              </div>
-
-              {/* Year Filter */}
-              <div className="w-32">
-                <label className="text-[#474747] text-[12px] font-medium px-2">
-                  Year
-                </label>
-                <CustomSelect
-                  placeHolderTitle="Year"
-                  value={
-                    selectedYear
-                      ? { value: selectedYear, label: selectedYear }
-                      : null
-                  }
-                  options={years?.map((year) => ({ value: year, label: year }))}
-                  onChangeHandler={(selectedOption) =>
-                    handleYearChange(selectedOption, "year")
-                  }
-                  customStyles={false}
-                  thinScrollbar={true}
-                />
-              </div>
-            </div>
-            {/* Add New Expense Button */}
-            <div className="flex justify-end items-end w-full h-full mt-10">
-              <Button
-                className="bg-bgBlue hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-[8px] flex items-end justify-end gap-2"
-                size="sm"
-                onClick={openSettlementDrawer}
-              >
-                Add new expense
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-2 lg:gap-3 mb-2">
-        {/* Approved Expense Card - Teal/Green */}
-        <Card className="bg-[#0ACF97] text-white drop-shadow-sm p-4 h-[100px] rounded-[15px]">
-          <CardBody className="flex items-center h-full p-0 space-x-4">
-            <div className="flex items-center justify-center w-[50px] h-[50px] rounded-full bg-white aspect-square">
-              <FaCheckCircle className="w-[25px] h-[25px] text-[#0ACF97]" />
-            </div>
-            <div className="flex flex-col text-white leading-tight">
-              <span className="text-[14px] font-normal font-Poppins">
-                Approved Expense
-              </span>
-              <span className="text-[20px] font-semibold font-Poppins">
-                {approvedExpense.toLocaleString()} PKR
-              </span>
-            </div>
-          </CardBody>
-        </Card>
-        {/* Pending Approvals Card - Green */}
-        <Card className="bg-[#3DA5F4] text-white drop-shadow-sm p-4 h-[100px] rounded-[15px] relative">
-          <CardBody className="flex items-center h-full p-0">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-[50px] h-[50px] rounded-full bg-white aspect-square">
-                <FaClock className="w-[25px] h-[25px] text-[#3DA5F4]" />
-              </div>
-              <div className="flex flex-col text-white leading-tight">
-                <span className="text-[14px] font-semibold font-Poppins">
-                  Pending Approvals
-                </span>
-                <span className="text-[12px] font-normal font-Poppins">
-                  {pendingApprovalsCount} approvals pending
-                </span>
-                <span className="text-[14px] font-semibold font-Poppins pt-[3px]">
-                  {pendingAmount} PKR
-                </span>
-                {/* <div className="flex items-center justify-between"> */}
-                <PiEyeLight
-                  className="w-4 h-4 text-white absolute bottom-2 right-3 cursor-pointer hover:text-yellow-500 font-bold"
-                  onClick={openPendingApprovalsDrawer}
-                />
-                {/* <Button
-                    size="xs"
-                    className="bg-white text-gray-800 font-medium border-0 shadow-sm hover:bg-gray-100 text-xs px-4 py-1 mt-2 rounded-lg font-normal ml-4"
-                    onClick={openPendingApprovalsDrawer}
-                  >
-                    View details
-                  </Button> */}
-                {/* </div> */}
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Total Budget Card - Blue */}
-        <Card className="bg-[#FF4979] text-white drop-shadow-sm p-4 h-[100px] rounded-[15px]">
-          <CardBody className="flex items-center gap-4 h-full p-0">
-            <div className="flex items-center justify-center w-[50px] h-[50px] rounded-full bg-white aspect-square">
-              <FaWallet className="w-[25px] h-[25px] text-[#FF4979]" />
-            </div>
-            <div className="flex-1 flex flex-col text-white leading-tight">
-              <span className="text-[14px] font-normal font-Poppins">
-                Rejected Expense
-              </span>
-              <span className="text-[20px] font-semibold font-Poppins">
-                {rejected_expense?.toLocaleString()} PKR
-              </span>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Total Expenses Card - Pink/Red */}
-        <Card className="bg-[#FDA006] text-white drop-shadow-sm p-4 h-[100px] rounded-[15px]">
-          <CardBody className="flex items-center gap-4 h-full p-0">
-            <div className="flex items-center justify-center w-[50px] h-[50px] rounded-full bg-white aspect-square">
-              <FaReceipt className="w-[25px] h-[25px] text-[#FDA006]" />
-            </div>
-            <div className="flex-1 flex flex-col text-white leading-tight">
-              <span className="text-[14px] font-normal font-Poppins">
-                Total Expenses
-              </span>
-              <span className="text-[20px] font-semibold font-Poppins">
-                {totalExpenses.toLocaleString()} PKR
-              </span>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-      <div className="">
-        <div className="flex gap-5 pb-3 rounded-[10px]">
-          <div className="flex items-center gap-5 flex-wrap">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                className={`${
-                  activeTab === tab
-                    ? "text-white"
-                    : "hover:text-black/60 text-[#474747]"
-                } relative rounded-full px-4 py-1.5 text-sm font-medium transition focus-visible:outline-2`}
-                style={{ WebkitTapHighlightColor: "transparent" }}
-              >
-                {activeTab === tab && (
-                  <motion.span
-                    layoutId="bubble"
-                    className="absolute inset-0 z-10 bg-[#8bc9f8]"
-                    style={{ borderRadius: 9999 }}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-
-                <span className="relative z-20 font-Urbanist text-[14px]">
-                  {tab}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange(tab)}
-                className={`py-2 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div> */}
-
-      {/* Main Content Area */}
-      {activeTab === "Expense Analysis" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Chart Section - Left Panel */}
-          <div className="lg:col-span-2">
-            <Card className="h-[430px] drop-shadow-md rounded-[8px]">
-              <CardBody className="p-4 h-full">
-                <div className="h-full w-full">
-                  <Bar data={chartData} options={chartOptions} />
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-
-          {/* Recent Activity Log - Right Panel */}
-          <div className="lg:col-span-1">
-            <Card className="h-[430px] drop-shadow-md rounded-[8px]">
-              <CardBody className="p-0">
-                <div className="bg-bgBlue text-white p-4 rounded-t-lg">
-                  <Typography className="text-white font-medium text-[16px] font-Urbanist">
-                    Recent Activity Log
-                  </Typography>
-                </div>
-                <div className="p-4 space-y-4 max-h-80 overflow-y-auto">
-                  {recentActivities.map((activity, index) => (
-                    <div
-                      key={index}
-                      className="text-sm text-gray-700 leading-relaxed"
-                    >
-                      <span className="font-normal text-[#474747]">
-                        {activity.date}:
-                      </span>{" "}
-                      {formatActivityMessage(activity)}
-                    </div>
-                  ))}
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-        </div>
-      ) : activeTab === "Expense List" ? (
-        /* Expense List Table */
-        // <div className="bg-white rounded-[10px] p-2">
-        <div className="bg-white drop-shadow-md rounded-[10px] p-2">
-          <div className="h-[calc(100vh-100px)] overflow-auto customScroll">
-            <table className="w-full text-center">
-              <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
-                <tr>
-                  {expenseTableHeaders?.map((head, i) => (
-                    <th key={i} className="bg-[#F8F9FA] p-4 text-center">
-                      <Typography
-                        // color="blue-gray"
-                        className="font-medium leading-none capitalize text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist text-[#474747]"
-                        // style={{ fontSize: '15px' }}
-                      >
-                        {head}
-                      </Typography>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody style={{ overflow: "visible" }} className=" w-full">
-                {expenseListData?.length > 0 ? (
-                  expenseListData?.map((expense, i) => {
-                    const isLast = i === expenseListData.length - 1;
-                    const classes = isLast
-                      ? "p-4 text-center"
-                      : "p-4 border-b border-[#F2F2F9] text-center";
-                    return (
-                      <tr
-                        key={i}
-                        style={{ overflow: "visible", position: "relative" }}
-                      >
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap text-center font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {expense?.["Expense ID"]}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="whitespace-nowrap font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {expense?.["Employee Name"]}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {expense?.Category}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {expense?.Amount}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {expense?.Date}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <div className="flex justify-center">
-                            <span
-                              className={`px-2 py-1 rounded-[7px] text-[12px] font-medium w-[107px] text-center ${
-                                expense?.Status === "Approved"
-                                  ? "bg-[#DBFFF5] text-[#0ACF97]"
-                                  : expense?.Status === "Pending"
-                                  ? "bg-[#FFF1D9] text-[#FDA006]"
-                                  : "bg-[#FFF0F4] text-[#FF4979]"
-                              }`}
-                            >
-                              {expense?.Status}
-                            </span>
-                          </div>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {expense?.Description}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <div className="flex justify-center ">
-                            <PiEyeLight
-                              className="text-bgBlue w-5 h-5 cursor-pointer hover:text-blue-700"
-                              onClick={() => handleViewExpense(expense)}
-                            />
-                            {/* <Button
-                              className="flex items-center justify-center w-8 h-8 p-0 border-0 rounded-full"
-                              onClick={() => handleViewExpense(expense)}
-                              title="View Details"
-                            >
-                            </Button> */}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="py-10">
-                      <div className="flex items-center justify-center w-full">
-                        <span className="text-[clamp(12px, 0.9vw, 14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]">
-                          No data found
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Load More Button */}
-          {tablePagination.has_next_page && (
-            <div className="p-4 border-t border-gray-200 flex justify-center">
-              <Button
-                onClick={handleLoadMore}
-                disabled={loading}
-                className="bg-bgBlue text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
-              >
-                {loading ? "Loading..." : "Load More"}
-              </Button>
-            </div>
+          <Typography className="text-2xl font-bold text-white font-poppins">
+            {value}
+          </Typography>
+          {subValue && (
+            <Typography className="text-xs text-white/80 font-poppins mt-1">
+              {subValue}
+            </Typography>
           )}
         </div>
-      ) : (
-        // </div>
-        /* Invoices Tab - Table */
-        // <div className="bg-white rounded-[10px] p-2">
-        <div className="bg-white rounded-[10px] p-2 drop-shadow-md">
-          <div className="h-[calc(100vh-100px)] overflow-auto customScroll">
-            <table className="w-full text-center">
-              <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
-                <tr>
-                  {invoicesTableHeaders?.map((head, i) => (
-                    <th key={i} className="bg-[#F8F9FA] p-4 text-center">
-                      <Typography
-                        // color="blue-gray"
-                        className="font-medium leading-none capitalize text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist text-[#474747]"
-                        // style={{ fontSize: '15px' }}
-                      >
-                        {head}
-                      </Typography>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody style={{ overflow: "visible" }}>
-                {invoicesListData?.length > 0 ? (
-                  invoicesListData?.map((invoice, i) => {
-                    const isLast = i === invoicesListData.length - 1;
-                    const classes = isLast
-                      ? "p-4 text-center"
-                      : "p-4 border-b border-[#F2F2F9] text-center";
-                    return (
-                      <tr
-                        key={i}
-                        style={{ overflow: "visible", position: "relative" }}
-                      >
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {invoice?.id}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {invoice?.employeeName}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {invoice?.installmentTotal}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {invoice?.paidAmount}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <Typography
-                            // color="blue-gray"
-                            className="text-[clamp(12px,0.9vw,14px)] whitespace-nowrap font-Urbanist font-normal text-[#474747]"
-                            // style={{ fontSize: '13px' }}
-                          >
-                            {invoice?.remainingAmount}
-                          </Typography>
-                        </td>
-                        <td className={classes}>
-                          <div className="flex justify-center items-center w-full">
-                            <span
-                              className={`px-3 py-1 rounded-[7px] text-[12px] font-medium w-[120px] text-center ${
-                                invoice?.settlementMethod === "One time"
-                                  ? "bg-[#DBFFF5] text-[#0ACF97]"
-                                  : "bg-[#FFF1D9] text-[#FDA006]"
-                              }`}
-                            >
-                              {invoice?.settlementMethod}
-                            </span>
-                          </div>
-                        </td>
-                        <td className={classes}>
-                          <div className="flex justify-center">
-                            <PiEyeLight
-                              className="text-bgBlue w-5 h-5 cursor-pointer hover:text-blue-700"
-                              onClick={() => handleViewInvoice(invoice)}
-                            />
-                            {/* <Button
-                              className="flex items-center justify-center w-8 h-8 p-0 border-0 bg-transparent hover:bg-blue-50 rounded-full"
-                              
-                              title="View Details"
-                            >
-                            </Button> */}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="py-10">
-                      <div className="flex items-center justify-center w-full">
-                        <span className="text-[14px] font-Urbanist font-normal text-[#474747]">
-                          No data found
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className={`p-3 rounded-xl bg-white/20 backdrop-blur-sm text-white ${colorClass}`}>
+          {icon}
         </div>
-        // </div>
-      )}
+      </div>
+      {/* Decorative circle */}
+      <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all duration-500"></div>
+    </motion.div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50/50 p-6 font-poppins">
+        <div className="max-w-7xl mx-auto space-y-6">
+            
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Expense Management</h1>
+                    <p className="text-sm text-gray-500 mt-1">Track and manage company expenses and approvals</p>
+                </div>
+
+                <div className="flex flex-wrap items-end gap-3">
+                    <div className="w-40">
+                        <label className="text-gray-600 text-xs font-medium mb-1 block pl-1">Month</label>
+                        <CustomSelect
+                            placeHolderTitle="Select Month"
+                            value={selectedMonthOption}
+                            options={months?.map((month) => ({ value: month.id, label: month.title }))}
+                            onChangeHandler={(selectedOption) => handleMonthChange(selectedOption, "month")}
+                            thinScrollbar={true}
+                        />
+                    </div>
+                    <div className="w-32">
+                        <label className="text-gray-600 text-xs font-medium mb-1 block pl-1">Year</label>
+                        <CustomSelect
+                            placeHolderTitle="Select Year"
+                            value={selectedYear ? { value: selectedYear, label: selectedYear } : null}
+                            options={years?.map((year) => ({ value: year, label: year }))}
+                            onChangeHandler={(selectedOption) => handleYearChange(selectedOption, "year")}
+                            thinScrollbar={true}
+                        />
+                    </div>
+                    <Button
+                        className="flex items-center gap-2 bg-bgBlue hover:bg-blue-600 shadow-blue-500/20 hover:shadow-blue-500/40 rounded-xl py-2.5 px-4 h-[42px] normal-case"
+                        onClick={openSettlementDrawer}
+                    >
+                        <FaPlus className="text-xs" /> New Expense
+                    </Button>
+                </div>
+            </div>
+
+            {/* Key Metrics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard 
+                    title="Approved Expense" 
+                    value={`${approvedExpense.toLocaleString()} PKR`}
+                    icon={<FaCheckCircle className="text-xl" />}
+                    bgColorClass="bg-[#0ACF97]"
+                />
+                <StatCard 
+                    title="Pending Approvals" 
+                    value={`${pendingApprovalsCount} Pending`}
+                    subValue={`${pendingAmount} PKR`}
+                    icon={<FaClock className="text-xl" />}
+                    bgColorClass="bg-[#3DA5F4]"
+                    onClick={openPendingApprovalsDrawer}
+                />
+                <StatCard 
+                    title="Rejected Expense" 
+                    value={`${rejected_expense?.toLocaleString() || 0} PKR`}
+                    icon={<FaWallet className="text-xl" />}
+                    bgColorClass="bg-[#FF4979]"
+                />
+                <StatCard 
+                    title="Total Expenses" 
+                    value={`${totalExpenses.toLocaleString()} PKR`}
+                    icon={<FaReceipt className="text-xl" />}
+                    bgColorClass="bg-[#FDA006]"
+                />
+            </div>
+
+            {/* Tabs */}
+            <div className="flex items-center gap-2 p-1 bg-white rounded-xl w-fit shadow-sm border border-gray-100">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => handleTabChange(tab)}
+                        className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                            activeTab === tab ? 'text-white' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+                        }`}
+                    >
+                        {activeTab === tab && (
+                            <motion.div
+                                layoutId="activeTab"
+                                className="absolute inset-0 bg-bgBlue rounded-lg shadow-sm"
+                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                            />
+                        )}
+                        <span className="relative z-10">{tab}</span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Content Area */}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {activeTab === "Expense Analysis" ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Chart Section */}
+                            <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-[450px]">
+                                <Typography className="text-lg font-bold text-gray-800 mb-6 font-poppins">Expense Overview</Typography>
+                                <div className="h-[350px] w-full">
+                                    <Bar data={chartData} options={chartOptions} />
+                                </div>
+                            </div>
+
+                            {/* Recent Activity */}
+                            <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-[450px] flex flex-col">
+                                <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+                                    <Typography className="text-lg font-bold text-gray-800 font-poppins">Recent Activity</Typography>
+                                </div>
+                                <div className="p-0 overflow-y-auto flex-1 customScroll">
+                                    {recentActivities.length > 0 ? (
+                                        <div className="divide-y divide-gray-50">
+                                            {recentActivities.map((activity, index) => (
+                                                <div key={index} className="p-4 hover:bg-blue-50/30 transition-colors">
+                                                    <div className="flex gap-3">
+                                                        <div className="mt-1 min-w-[8px] h-2 rounded-full bg-blue-400"></div>
+                                                        <div>
+                                                            <p className="text-xs text-gray-400 font-medium mb-1">{activity.date}</p>
+                                                            <p className="text-sm text-gray-700 leading-relaxed">{formatActivityMessage(activity)}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-400 p-6 text-center">
+                                            <FaReceipt className="text-4xl mb-2 opacity-20" />
+                                            <p className="text-sm">No recent activity</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ) : activeTab === "Expense List" ? (
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="overflow-x-auto customScroll">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-gray-50/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                                        <tr>
+                                            {expenseTableHeaders.map((head, i) => (
+                                                <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
+                                                    <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
+                                                        {head}
+                                                    </Typography>
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {expenseListData?.length > 0 ? (
+                                            expenseListData.map((expense, i) => (
+                                                <tr key={i} className="hover:bg-blue-50/30 transition-colors group">
+                                                    <td className="p-4 first:pl-6">
+                                                        <span className="font-medium text-gray-900 text-sm font-poppins">{expense?.["Expense ID"]}</span>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">
+                                                                {expense?.["Employee Name"]?.charAt(0) || "U"}
+                                                            </div>
+                                                            <span className="font-medium text-gray-700 text-sm font-poppins">{expense?.["Employee Name"]}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium">{expense?.Category}</span>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className="font-semibold text-gray-800 text-sm">{expense?.Amount}</span>
+                                                    </td>
+                                                    <td className="p-4 text-sm text-gray-500">
+                                                        {expense?.Date}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                                                            expense?.Status === "Approved" ? "bg-green-50 text-green-600 border border-green-100" :
+                                                            expense?.Status === "Pending" ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                                                            "bg-red-50 text-red-600 border border-red-100"
+                                                        }`}>
+                                                            {expense?.Status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4 max-w-[200px]">
+                                                        <p className="truncate text-sm text-gray-500" title={expense?.Description}>{expense?.Description}</p>
+                                                    </td>
+                                                    <td className="p-4 last:pr-6 text-center">
+                                                        <IconButton variant="text" color="blue" size="sm" onClick={() => handleViewExpense(expense)} className="rounded-full hover:bg-blue-50">
+                                                            <PiEyeLight className="text-lg" />
+                                                        </IconButton>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={8} className="p-12 text-center text-gray-400">
+                                                    <div className="flex flex-col items-center justify-center gap-3">
+                                                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+                                                            <FaReceipt className="text-3xl text-gray-300" />
+                                                        </div>
+                                                        <p className="font-medium">No expenses found</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {tablePagination.has_next_page && (
+                                <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-center">
+                                    <Button
+                                        onClick={handleLoadMore}
+                                        disabled={loading}
+                                        variant="text"
+                                        className="text-blue-600 hover:bg-blue-50 normal-case"
+                                    >
+                                        {loading ? "Loading..." : "Load More"}
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="overflow-x-auto customScroll">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-gray-50/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                                        <tr>
+                                            {invoicesTableHeaders.map((head, i) => (
+                                                <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
+                                                    <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
+                                                        {head}
+                                                    </Typography>
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {invoicesListData?.length > 0 ? (
+                                            invoicesListData.map((invoice, i) => (
+                                                <tr key={i} className="hover:bg-blue-50/30 transition-colors group">
+                                                    <td className="p-4 first:pl-6 text-sm font-medium text-gray-900">{invoice?.id}</td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold">
+                                                                {invoice?.employeeName?.charAt(0) || "U"}
+                                                            </div>
+                                                            <span className="font-medium text-gray-700 text-sm">{invoice?.employeeName}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-sm font-medium text-gray-800">{invoice?.installmentTotal}</td>
+                                                    <td className="p-4 text-sm text-green-600 font-medium">{invoice?.paidAmount}</td>
+                                                    <td className="p-4 text-sm text-red-600 font-medium">{invoice?.remainingAmount}</td>
+                                                    <td className="p-4 text-center">
+                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                                                            invoice?.settlementMethod === "One time" 
+                                                            ? "bg-purple-50 text-purple-600 border border-purple-100" 
+                                                            : "bg-orange-50 text-orange-600 border border-orange-100"
+                                                        }`}>
+                                                            {invoice?.settlementMethod}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4 last:pr-6 text-center">
+                                                        <IconButton variant="text" color="blue" size="sm" onClick={() => handleViewInvoice(invoice)} className="rounded-full hover:bg-blue-50">
+                                                            <PiEyeLight className="text-lg" />
+                                                        </IconButton>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={8} className="p-12 text-center text-gray-400">
+                                                    <p>No invoices found</p>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </motion.div>
+            </AnimatePresence>
 
       {/* Pending Approvals Drawer */}
       {showPendingApprovalsDrawer && (
@@ -1001,180 +710,86 @@ const ExpenseDashboard = () => {
         closeDrawer={handleCloseExpenseDetailModal}
         title="Expense Details"
         widthSize={800}
-        // footer={true}
-        // showBtns={false}
         compo={
           isLoadingExpenseDetail ? (
-            <div className="flex justify-center items-center py-8">
-              <Typography variant="paragraph" className="text-gray-500">
-                Loading expense details...
-              </Typography>
+            <div className="flex justify-center items-center py-20">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <Typography className="text-gray-500 text-sm">Loading details...</Typography>
+              </div>
             </div>
           ) : selectedExpenseDetail ? (
-            <div className="pt-4 space-y-6">
-              {/* Employee Information Section */}
-              <div className="grid grid-cols-3 gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                    <FaUser className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                      Employee Name
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                      {selectedExpenseDetail.employee_name || "N/A"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                    <HiMiniUser className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                      User ID
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                      {selectedExpenseDetail.user_id || "N/A"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                    <FaFileInvoiceDollar className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                      Expense Title
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                      {selectedExpenseDetail.title || "N/A"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                    <FaMoneyBill1Wave className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                      Payment Type
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                      {selectedExpenseDetail.type === 0
-                        ? "One-time"
-                        : selectedExpenseDetail.type === 1
-                        ? "Installment"
-                        : "N/A"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                    <IoCalendar className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                      Date
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                      {selectedExpenseDetail.date
-                        ? formatDateDMY(selectedExpenseDetail.date)
-                        : "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                    <FaFileSignature className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                      Description
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                      {selectedExpenseDetail.desc || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-b border-dashed border-[#DDDDDD]"></div>
-
-              {/* Items Section */}
-              {selectedExpenseDetail.items &&
-                selectedExpenseDetail.items.length > 0 && (
-                  <div className="">
-                    <span className="font-medium font-Urbanist text-[16px] text-bgBlue">
-                      Expense Items
-                    </span>
-                    {selectedExpenseDetail.items.map((item, index) => (
-                      <div key={index} className="">
-                        <div className="pt-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                                <AiOutlineBars className="text-bgBlue w-[18px] h-[18px]" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                                  Item
-                                </span>
-                                <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                                  {item.item || "N/A"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                                <FaSackDollar className="text-bgBlue w-[18px] h-[18px]" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                                  Category
-                                </span>
-                                <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                                  {item.category || "N/A"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                                <FaMoneyBill1Wave className="text-bgBlue w-[18px] h-[18px]" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                                  Amount
-                                </span>
-                                <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                                  {item.amount
-                                    ? `${item.amount.toLocaleString()} PKR`
-                                    : "N/A"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+            <div className="p-6 space-y-8 font-poppins">
+              {/* Employee Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                    { label: "Employee Name", value: selectedExpenseDetail.employee_name, icon: <FaUser /> },
+                    { label: "User ID", value: selectedExpenseDetail.user_id, icon: <HiMiniUser /> },
+                    { label: "Expense Title", value: selectedExpenseDetail.title, icon: <FaFileInvoiceDollar /> },
+                    { label: "Payment Type", value: selectedExpenseDetail.type === 0 ? "One-time" : "Installment", icon: <FaMoneyBill1Wave /> },
+                    { label: "Date", value: selectedExpenseDetail.date ? formatDateDMY(selectedExpenseDetail.date) : "N/A", icon: <IoCalendar /> },
+                ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                        <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-blue-500 shadow-sm border border-gray-100">
+                            {item.icon}
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                        <div>
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{item.label}</p>
+                            <p className="text-sm font-semibold text-gray-800">{item.value || "N/A"}</p>
+                        </div>
+                    </div>
+                ))}
+              </div>
+
+              {/* Description */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-2">
+                    <FaFileSignature className="text-blue-500" />
+                    <span className="text-sm font-semibold text-gray-700">Description</span>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">{selectedExpenseDetail.desc || "No description provided."}</p>
+              </div>
+
+              <div className="border-t border-gray-100"></div>
+
+              {/* Expense Items */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <AiOutlineBars className="text-blue-500" /> Expense Items
+                </h3>
+                {selectedExpenseDetail.items && selectedExpenseDetail.items.length > 0 ? (
+                    <div className="space-y-3">
+                        {selectedExpenseDetail.items.map((item, index) => (
+                            <div key={index} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-200 shadow-sm transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-sm font-bold">
+                                        {index + 1}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-800">{item.item || "Unknown Item"}</p>
+                                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md mt-1 inline-block">
+                                            {item.category || "General"}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mt-3 md:mt-0 text-right">
+                                    <p className="text-sm font-bold text-gray-900">
+                                        {item.amount ? `${item.amount.toLocaleString()} PKR` : "N/A"}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                        <p className="text-gray-500 text-sm">No items found for this expense.</p>
+                    </div>
                 )}
+              </div>
             </div>
           ) : (
-            <div className="flex justify-center items-center py-8">
-              <Typography variant="paragraph" className="text-gray-500">
-                No expense details available
-              </Typography>
+            <div className="flex justify-center items-center py-20 text-gray-500">
+              No expense details available
             </div>
           )
         }
@@ -1188,115 +803,54 @@ const ExpenseDashboard = () => {
         widthSize={800}
         compo={
           selectedInvoice ? (
-            <div className="pt-4 space-y-6">
-              {/* Employee Information Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                    <FaUser className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                      Employee ID
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                      {selectedInvoice.id || "N/A"}
-                    </span>
-                  </div>
+            <div className="p-6 space-y-8 font-poppins">
+              <div className="flex items-center gap-4 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-blue-600 text-lg font-bold shadow-sm">
+                    {selectedInvoice.employeeName?.charAt(0) || "U"}
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                    <HiMiniUser className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-medium text-[#474747]">
-                      Employee Name
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-light text-[#474747]">
-                      {selectedInvoice.employeeName || "N/A"}
-                    </span>
-                  </div>
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900">{selectedInvoice.employeeName || "N/A"}</h3>
+                    <p className="text-sm text-gray-500">ID: {selectedInvoice.id || "N/A"}</p>
                 </div>
               </div>
 
-              {/* Financial Information Section */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 shadow-sm rounded-[10px] pl-2 py-6">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-full bg-white">
-                    <FaCheckCircle className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-normal text-[#474747]">
-                      Installment Total Amount
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-medium text-[#474747]">
-                      {selectedInvoice.installmentTotal || "N/A"}
-                    </span>
-                  </div>
+                <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm text-center">
+                    <p className="text-xs text-gray-500 uppercase font-medium mb-1">Total Installment</p>
+                    <p className="text-lg font-bold text-gray-900">{selectedInvoice.installmentTotal || "N/A"}</p>
                 </div>
-
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 shadow-sm rounded-[10px] pl-2 py-6">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-full bg-white">
-                    <FaClock className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-normal text-[#474747]">
-                      Paid Amount
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-medium text-[#474747]">
-                      {selectedInvoice.paidAmount || "N/A"}
-                    </span>
-                  </div>
+                <div className="p-4 rounded-xl bg-green-50 border border-green-100 shadow-sm text-center">
+                    <p className="text-xs text-green-600 uppercase font-medium mb-1">Paid Amount</p>
+                    <p className="text-lg font-bold text-green-700">{selectedInvoice.paidAmount || "N/A"}</p>
                 </div>
-
-                <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 shadow-sm rounded-[10px] pl-2 py-6">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-full bg-white">
-                    <FaReceipt className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-normal text-[#474747]">
-                      Remaining Amount
-                    </span>
-                    <span className="text-[14px] font-Urbanist font-medium text-[#474747]">
-                      {selectedInvoice.remainingAmount || "N/A"}
-                    </span>
-                  </div>
+                <div className="p-4 rounded-xl bg-red-50 border border-red-100 shadow-sm text-center">
+                    <p className="text-xs text-red-600 uppercase font-medium mb-1">Remaining</p>
+                    <p className="text-lg font-bold text-red-700">{selectedInvoice.remainingAmount || "N/A"}</p>
                 </div>
               </div>
 
-              {/* Settlement Method Section */}
-              <div className="grid grid-cols-1">
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-[40px] h-[40px] rounded-[8px] border-[1px] border-bgBlue">
-                    <FaFileSignature className="text-bgBlue w-[18px] h-[18px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] font-Urbanist font-normal text-[#474747]">
-                      Settlement Method
-                    </span>
-                    <span
-                      className={`text-[14px] font-Urbanist font-light text-[#474747] rounded-[7px] text-center ${
-                        selectedInvoice.settlementMethod === "One time"
-                          ? "bg-[#DBFFF5] text-[#0ACF97]"
-                          : "bg-[#FFF1D9] text-[#FDA006]"
-                      }`}
-                    >
-                      {selectedInvoice.settlementMethod || "N/A"}
-                    </span>
-                  </div>
+                    <FaFileSignature className="text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700">Settlement Method</span>
                 </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    selectedInvoice.settlementMethod === "One time" 
+                    ? "bg-purple-100 text-purple-700" 
+                    : "bg-orange-100 text-orange-700"
+                }`}>
+                    {selectedInvoice.settlementMethod || "N/A"}
+                </span>
               </div>
             </div>
           ) : (
-            <div className="flex justify-center items-center py-8">
-              <Typography variant="paragraph" className="text-gray-500">
-                No invoice details available
-              </Typography>
+            <div className="flex justify-center items-center py-20 text-gray-500">
+              No invoice details available
             </div>
           )
         }
       />
+        </div>
     </div>
   );
 };

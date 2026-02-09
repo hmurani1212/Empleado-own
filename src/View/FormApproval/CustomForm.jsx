@@ -1,8 +1,9 @@
-import { Button, Typography } from "@material-tailwind/react";
+import { Button, Typography, IconButton } from "@material-tailwind/react";
 import React, { useEffect } from "react";
 import useFormApproval from "../../ViewModel/FormApprovalViewModel/FormApprovalServices";
 import { formatTimestamp } from "../../services/__formApprovalServices";
-import { FaEye, FaFileSignature } from "react-icons/fa";
+import { FaEye, FaFileSignature, FaClipboardList, FaUser } from "react-icons/fa";
+import { PiEyeLight, PiSignature } from "react-icons/pi";
 import useCustomFormService from "../../ViewModel/FormApprovalViewModel/customFormService";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import ViewAssignAF from "./ViewAssignAF";
@@ -12,6 +13,7 @@ import ViewOnlyEmpLoanApplication from "./ViewOnlyEmpLoanApplication";
 import useEmpLeaveApplication from "../../ViewModel/EmpViewModel/EmpApplicationViewModel/EmpLeaveApplicationServices";
 import useNewAdjustRequest from "../../ViewModel/AttendanceViewModel/newAdjustRequest";
 import useEmpLoanApplication from "../../ViewModel/EmpViewModel/EmpApplicationViewModel/EmpLoanApplicationServices";
+import { motion } from "framer-motion";
 
 const CustomForm = () => {
   const { mountCustomForm, gettingCustomForm, allCustomForm } =
@@ -31,8 +33,6 @@ const CustomForm = () => {
   // Leave application hook for modal functionality
   const {
     leaveApplcationValue,
-    handleToggleLeaveApplication,
-    addEmpLeaveApplication,
     handleApplicationChange,
     generateLeaveDays,
     handleLeaveTypeChange,
@@ -40,19 +40,17 @@ const CustomForm = () => {
   } = useEmpLeaveApplication();
 
   // Time adjustment hook for modal functionality
-  const { formValue, handleChangeAdjustRequest, handleNewTimeRequest } =
+  const { formValue, handleChangeAdjustRequest } =
     useNewAdjustRequest();
 
   // Loan application hook for modal functionality
   const {
     loanApplicationValue,
-    handleToggleLoanApplication,
-    addEmpLoanApplication,
     handleApplicationChange: handleLoanApplicationChange,
   } = useEmpLoanApplication();
 
   const customHead = [
-    "#",
+    "S.No",
     "Form Name",
     "Assigned To",
     "Creation Time",
@@ -76,18 +74,8 @@ const CustomForm = () => {
 
   function formatTimeStamp(unixTimestamp) {
     const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ];
 
     // Convert seconds to milliseconds for JS Date
@@ -113,20 +101,31 @@ const CustomForm = () => {
     return formatted;
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+  };
+
+  const itemVariants = {
+    hidden: { y: 10, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300 } },
+  };
+
   return (
-    <>
-      <div className="bg-white rounded-[10px] drop-shadow-md p-2">
-        <div className="h-[calc(100vh-100px)] overflow-auto customScroll">
-          <table className="w-full text-center">
-            <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="flex flex-col gap-4"
+    >
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto customScroll">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
               <tr>
                 {customHead?.map((head, i) => (
-                  <th key={i} className="bg-[#F8F9FA] p-4">
-                    <Typography
-                      // variant='small'
-                      // color='blue-gray'
-                      className="font-medium leading-none text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                    >
+                  <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
+                    <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
                       {head}
                     </Typography>
                   </th>
@@ -134,82 +133,79 @@ const CustomForm = () => {
               </tr>
             </thead>
 
-            <tbody>
-              {allCustomForm?.map((data, index) => {
-                const isLast = index === allCustomForm.length - 1;
-                const classes = isLast
-                  ? "p-4"
-                  : "p-4 border-b border-[#F2F2F9]";
-
-                return (
-                  <tr key={index}>
-                    <td className={classes}>
-                      <Typography
-                        // variant='small'
-                        // color='blue-gray'
-                        className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                      >
+            <tbody className="divide-y divide-gray-50">
+              {allCustomForm?.length > 0 ? (
+                allCustomForm.map((data, index) => (
+                  <motion.tr 
+                    key={index}
+                    variants={itemVariants}
+                    className="hover:bg-blue-50/30 transition-colors group"
+                  >
+                    <td className="p-4 first:pl-6 text-xs text-center">
                         {index + 1}
-                      </Typography>
+                    
                     </td>
 
-                    <td className={classes}>
-                      <Typography
-                        // variant='small'
-                        // color='blue-gray'
-                        className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                      >
-                        {formatFormLabel(data.form_name)}
-                      </Typography>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <FaClipboardList className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                        <Typography className="font-medium text-gray-900 text-sm font-poppins capitalize">
+                          {formatFormLabel(data.form_name)}
+                        </Typography>
+                      </div>
                     </td>
 
-                    <td className={classes}>
-                      <Typography
-                        // variant='small'
-                        // color='blue-gray'
-                        className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                      >
-                        {data.assigned_to}
-                      </Typography>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs">
+                          <FaUser />
+                        </div>
+                        <Typography className="text-sm font-medium text-gray-700 font-poppins capitalize">
+                          {data.assigned_to}
+                        </Typography>
+                      </div>
                     </td>
 
-                    <td className={classes}>
-                      <Typography
-                        // variant='small'
-                        // color='blue-gray'
-                        className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                      >
+                    <td className="p-4">
+                      <Typography className="text-sm text-gray-500 font-poppins bg-gray-50 px-2 py-1 rounded-md inline-block border border-gray-100">
                         {formatTimeStamp(data.entry_time)}
                       </Typography>
                     </td>
 
-                    {/* Tooba */}
-                    {/* In Actions, Assign AF & View */}
-                    <td className={classes}>
-                      <div className="flex justify-center items-center gap-2">
+                    <td className="p-4 last:pr-6">
+                      <div className="flex items-center gap-2">
                         <Button
-                          className="capitalize font-medium text-[12px] bg-[#ffc107] p-2 flex items-center gap-1"
+                          variant="text"
+                          className="flex items-center gap-2 text-amber-600 hover:bg-amber-50 normal-case font-medium px-3 py-2 rounded-lg"
                           onClick={() => viewAssignAF(data)}
                         >
-                          <span>
-                            <FaFileSignature />
-                          </span>
+                          <PiSignature className="text-lg" />
                           Assign AF
                         </Button>
                         <Button
-                          className="capitalize font-medium text-[12px] bg-[#8bc9f8] p-2 flex items-center gap-1"
+                          variant="text"
+                          className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 normal-case font-medium px-3 py-2 rounded-lg"
                           onClick={() => handleViewForm(data)}
                         >
-                          <span>
-                            <FaEye />
-                          </span>
+                          <PiEyeLight className="text-lg" />
                           View
                         </Button>
                       </div>
                     </td>
-                  </tr>
-                );
-              })}
+                  </motion.tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="p-12 text-center text-gray-400">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-2">
+                        <FaClipboardList className="text-3xl text-gray-300" />
+                      </div>
+                      <Typography className="font-medium font-poppins">No forms found</Typography>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -237,7 +233,7 @@ const CustomForm = () => {
           open={formModal.show}
           closeDrawer={closeFormModal}
           compo={
-            <>
+            <div className="p-6 font-poppins">
               {formModal.formType === "time_adjustment" && (
                 <ViewOnlyCreateNewRequest
                   formValue={formValue}
@@ -260,61 +256,63 @@ const CustomForm = () => {
                 />
               )}
               {formModal.formType === "default" && (
-                <div className="space-y-4 p-4">
+                <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[#698592] text-[12px]">
-                      Subject*
+                    <label className="text-gray-600 text-xs font-medium uppercase tracking-wide">
+                      Subject
                     </label>
                     <input
-                      className="w-full text-[#333333] text-[12px] rounded-md py-[8px] px-[17px] border border-gray-500 outline-none"
+                      className="w-full text-gray-800 text-sm rounded-xl py-3 px-4 border border-gray-200 bg-gray-50 outline-none font-medium"
                       type="text"
                       name="subject"
                       placeholder="Subject"
                       disabled
                     />
                   </div>
-                  <div className="flex-1 flex flex-col px-2 space-y-1">
-                    <label className="text-[#698592] text-[12px]">
-                      Application Body*
+                  <div className="flex-1 flex flex-col space-y-2">
+                    <label className="text-gray-600 text-xs font-medium uppercase tracking-wide">
+                      Application Body
                     </label>
                     <textarea
                       rows="7"
-                      className="text-[#333333] text-[12px] rounded-md py-[10px] px-[17px] border border-[#cccccc] outline-none resize-none"
+                      className="text-gray-800 text-sm rounded-xl py-3 px-4 border border-gray-200 bg-gray-50 outline-none resize-none leading-relaxed"
                       placeholder="Application Detail"
                       disabled
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[#698592] text-[12px]">
-                      Leave From*
-                    </label>
-                    <input
-                      className="w-full text-[#333333] text-[12px] rounded-md py-[8px] px-[17px] border border-gray-500 outline-none"
-                      type="date"
-                      name="leaveFrom"
-                      disabled
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[#698592] text-[12px]">
-                      Leave Upto*
-                    </label>
-                    <input
-                      className="w-full text-[#333333] text-[12px] rounded-md py-[8px] px-[17px] border border-gray-500 outline-none"
-                      type="date"
-                      name="leaveUpto"
-                      disabled
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-gray-600 text-xs font-medium uppercase tracking-wide">
+                        Leave From
+                      </label>
+                      <input
+                        className="w-full text-gray-800 text-sm rounded-xl py-3 px-4 border border-gray-200 bg-gray-50 outline-none font-medium"
+                        type="date"
+                        name="leaveFrom"
+                        disabled
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-gray-600 text-xs font-medium uppercase tracking-wide">
+                        Leave Upto
+                      </label>
+                      <input
+                        className="w-full text-gray-800 text-sm rounded-xl py-3 px-4 border border-gray-200 bg-gray-50 outline-none font-medium"
+                        type="date"
+                        name="leaveUpto"
+                        disabled
+                      />
+                    </div>
                   </div>
                 </div>
               )}
-            </>
+            </div>
           }
           widthSize={600}
           title="View Form"
         />
       )}
-    </>
+    </motion.div>
   );
 };
 

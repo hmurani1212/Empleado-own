@@ -6,6 +6,8 @@ import useEmpTrainingService from '../../../ViewModel/EmpViewModel/EmpTrainingVi
 import { showToast } from '../../../Components/Toaster/Toaster'
 import CustomDialog from '../../../Components/CustomDialog/CustomDialog'
 import EditorData from '../../../View/NotesPool/EditorData'
+import { motion } from 'framer-motion'
+
 const CourseDetailPage = () => {
   const navigate = useNavigate()
   const { courseIndex } = useParams()
@@ -130,10 +132,10 @@ const CourseDetailPage = () => {
 
   if (loading) {
     return (
-      <div className='flex justify-center items-center min-h-screen'>
+      <div className='flex justify-center items-center min-h-screen bg-gray-50'>
         <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4'></div>
-          <Typography variant='small' color='gray'>
+          <div className='animate-spin rounded-full h-12 w-12 border-2 border-blue-500 border-t-transparent mx-auto mb-4'></div>
+          <Typography variant='small' className='font-medium text-gray-600'>
             Loading course details...
           </Typography>
         </div>
@@ -143,249 +145,193 @@ const CourseDetailPage = () => {
 
   if (!course) {
     return (
-      <div className='p-6'>
-        <Card>
-          <CardBody className='text-center py-20'>
-            <FaBook className='text-6xl text-gray-300 mx-auto mb-4' />
-            <Typography variant='h5' color='blue-gray' className='mb-2'>
-              Course not found
-            </Typography>
-            <Typography variant='small' color='gray' className='mb-4'>
-              The course you're looking for doesn't exist or has been removed
-            </Typography>
-            <Button color='blue' onClick={handleGoBack}>
-              Go Back to Courses
-            </Button>
-          </CardBody>
-        </Card>
+      <div className='min-h-screen bg-gray-50 flex items-center justify-center p-6'>
+        <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center max-w-md w-full'>
+          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <FaBook className='text-4xl text-gray-300' />
+          </div>
+          <Typography variant='h5' className='text-gray-800 font-bold mb-2'>
+            Course not found
+          </Typography>
+          <Typography className='text-gray-500 mb-8'>
+            The course you're looking for doesn't exist or has been removed.
+          </Typography>
+          <Button 
+            className='bg-blue-500 shadow-blue-500/20 hover:shadow-blue-500/40 rounded-xl' 
+            onClick={handleGoBack}
+          >
+            Back to Courses
+          </Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className='p-6'>
-      {/* Back Button */}
-      <div className='mb-6'>
-        <Button
-          variant='text'
-          color='blue'
-          className='flex items-center gap-2'
-          onClick={handleGoBack}
-        >
-          <FaArrowLeft />
-          Back to Courses
-        </Button>
-      </div>
+    <div className='min-h-screen bg-gray-50/50 p-6 font-poppins'>
+      <div className='max-w-5xl mx-auto space-y-6'>
+        
+        {/* Back Button */}
+        <div>
+          <button
+            onClick={handleGoBack}
+            className='flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group'
+          >
+            <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center group-hover:border-blue-200 group-hover:bg-blue-50 transition-all">
+              <FaArrowLeft className="text-xs" />
+            </div>
+            <span className="text-sm font-medium">Back to Courses</span>
+          </button>
+        </div>
 
-      {/* Course Header */}
-      <div className='mb-6'>
-        <Card>
-          <CardBody>
-            <div className='flex items-start gap-4'>
-              <div className='p-3 bg-blue-50 rounded-lg'>
-                <FaBook className='text-3xl text-blue-500' />
-              </div>
-              <div className='flex-1'>
-                <Typography variant='h4' color='blue-gray' className='mb-2'>
-                  {course.course_name}
-                </Typography>
-                <div className='flex items-center gap-4 text-sm text-gray-600'>
-                  <span className='flex items-center gap-1'>
-                    <FaFileAlt />
-                    {course.resources?.length || 0} Resources
-                  </span>
+        {/* Course Header */}
+        <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative overflow-hidden'>
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600"></div>
+          <div className='flex items-start gap-6'>
+            <div className='w-16 h-16 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0'>
+              <FaBook className='text-3xl text-blue-500' />
+            </div>
+            <div className='flex-1'>
+              <Typography className='text-2xl font-bold text-gray-900 mb-2 leading-tight'>
+                {course.course_name}
+              </Typography>
+              <div className='flex items-center gap-4'>
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+                  <FaFileAlt className='text-gray-400' />
+                  {course.resources?.length || 0} Resources
                 </div>
+                {/* Status Badge can be added here if available */}
               </div>
             </div>
-          </CardBody>
-        </Card>
-      </div>
+            
+            {/* Complete Course Button */}
+            {(!course.completed_date || course.completed_date === 0) && (
+              <Button
+                className='flex items-center gap-2 bg-green-500 hover:bg-green-600 shadow-green-500/20 hover:shadow-green-500/40 rounded-xl normal-case font-medium px-6'
+                onClick={handleCompleteCourse}
+              >
+                <FaCheckCircle />
+                Mark as Complete
+              </Button>
+            )}
+          </div>
+        </div>
 
-      {/* Course Content */}
-      <Card>
-        <CardBody>
+        {/* Course Content */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[500px]">
           <Tabs value={activeTab}>
-            <TabsHeader
-              className='bg-blue-gray-50'
-              indicatorProps={{
-                className: 'bg-blue-500 shadow-none'
-              }}
-            >
-              <Tab value='resources' onClick={() => setActiveTab('resources')}>
-                <div className='flex items-center gap-2'>
-                  <FaFileAlt />
-                  Resources
-                </div>
-              </Tab>
-            </TabsHeader>
+            <div className="border-b border-gray-100 px-6 pt-4">
+              <TabsHeader
+                className="w-full md:w-auto bg-transparent p-0"
+                indicatorProps={{
+                  className: "bg-transparent border-b-2 border-blue-500 shadow-none rounded-none",
+                }}
+              >
+                <Tab 
+                  value="resources" 
+                  onClick={() => setActiveTab('resources')}
+                  className={`${activeTab === 'resources' ? 'text-blue-600' : 'text-gray-500'} pb-4 px-6 font-medium text-sm transition-colors`}
+                >
+                  <div className="flex items-center gap-2">
+                    <FaFileAlt />
+                    Course Resources
+                  </div>
+                </Tab>
+                {/* Add more tabs here if needed (e.g. Overview, Discussion) */}
+              </TabsHeader>
+            </div>
 
-            <TabsBody>
-              <TabPanel value='resources' className='p-0 mt-4'>
+            <TabsBody animate={{ initial: { y: 250 }, mount: { y: 0 }, unmount: { y: 250 } }}>
+              <TabPanel value='resources' className='p-6'>
                 {!course.resources || course.resources.length === 0 ? (
-                  <Card>
-                    <CardBody className='text-center py-10'>
-                      <FaFileAlt className='text-5xl text-gray-300 mx-auto mb-3' />
-                      <Typography variant='h6' color='gray'>
-                        No resources available
-                      </Typography>
-                      <Typography variant='small' color='gray' className='mt-2'>
-                        This course doesn't have any resources yet
-                      </Typography>
-                    </CardBody>
-                  </Card>
+                  <div className='text-center py-20 bg-gray-50/50 rounded-xl border border-dashed border-gray-200'>
+                    <FaFileAlt className='text-4xl text-gray-300 mx-auto mb-3' />
+                    <Typography className='text-gray-900 font-medium'>No resources available</Typography>
+                    <Typography className='text-sm text-gray-500 mt-1'>This course doesn't have any content yet.</Typography>
+                  </div>
                 ) : (
                   <div className='space-y-4'>
                     {course.resources
                       .sort((a, b) => (a.order || 0) - (b.order || 0))
                       .map((resource, index) => (
-                        <Card key={resource.resource_id || index} className='hover:shadow-lg transition-shadow'>
-                          <CardBody>
-                            <div className='flex items-start gap-4'>
-                              <div className='text-3xl mt-1'>
-                                {getFileIcon(resource.resource_type, resource.attachment)}
-                              </div>
-                              <div className='flex-1'>
-                                <Typography variant='h6' color='blue-gray' className='mb-2'>
-                                  {resource.resource_name}
-                                </Typography>
-                                <div className='flex items-center gap-2 mb-3'>
-                                  <span className='text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded'>
-                                    {resource.resource_type}
-                                  </span>
-                                  <span className='text-xs text-gray-500'>
-                                    Order: {resource.order}
-                                  </span>
-                                </div>
-
-                                {/* Video files - show thumbnail or placeholder */}
-                                {isVideoFile(resource.attachment) && (
-                                  <div className='mb-3 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300'>
-                                    <div className='flex items-center gap-3'>
-                                      <FaFileVideo className='text-4xl text-purple-500' />
-                                      <div>
-                                        <Typography variant='small' color='gray' className='font-semibold'>
-                                          Video File
-                                        </Typography>
-                                        <Typography variant='small' color='gray'>
-                                          Click the Play button below to watch
-                                        </Typography>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Preview for images */}
-                                {isImageFile(resource.attachment) && (
-                                  <div className='mb-3'>
-                                    <img
-                                      src={resource.attachment}
-                                      alt={resource.resource_name}
-                                      className='w-full rounded-lg max-h-96 object-contain'
-                                    />
-                                  </div>
-                                )}
-
-                                {/* PDF files - show placeholder */}
-                                {isPdfFile(resource.attachment) && (
-                                  <div className='mb-3 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300'>
-                                    <div className='flex items-center gap-3'>
-                                      <FaFilePdf className='text-4xl text-red-500' />
-                                      <div>
-                                        <Typography variant='small' color='gray' className='font-semibold'>
-                                          PDF Document
-                                        </Typography>
-                                        <Typography variant='small' color='gray'>
-                                          Click the Open button below to view
-                                        </Typography>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Text content for Notes_pool */}
-                                {resource.resource_type === 'Notes_pool' && resource.attachment && (
-                                  <div className='mb-3 p-4 bg-gray-50 rounded-lg'>
-                                    <Typography variant='small' className='whitespace-pre-wrap text-gray-700'>
-                                      {resource.attachment}
-                                    </Typography>
-                                  </div>
-                                )}
-
-                                <div className='flex gap-2'>
-                                  <Button
-                                    size='sm'
-                                    color='blue'
-                                    variant='gradient'
-                                    className='flex items-center gap-2'
-                                    onClick={() => handleResourceClick(resource)}
-                                  >
-                                    {resource.resource_type === 'Link' ? (
-                                      <>
-                                        <FaExternalLinkAlt />
-                                        Open Link
-                                      </>
-                                    ) : isVideoFile(resource.attachment) ? (
-                                      <>
-                                        <FaPlayCircle />
-                                        Play Video
-                                      </>
-                                    ) : resource.resource_type === 'Notes' ? (
-                                      <>
-                                        <FaPlayCircle />
-                                        open document
-                                      </>
-                                    ) : isPdfFile(resource.attachment) ? (
-                                      <>
-                                        <FaExternalLinkAlt />
-                                        Open Document
-                                      </>
-                                    ) : (
-                                      <>
-                                        <FaDownload />
-                                        Open Resource
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              </div>
+                        <motion.div 
+                          key={resource.resource_id || index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className='group bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all duration-200 p-5'
+                        >
+                          <div className='flex items-start gap-5'>
+                            <div className='mt-1 p-3 rounded-lg bg-gray-50 group-hover:bg-blue-50 transition-colors text-2xl'>
+                              {getFileIcon(resource.resource_type, resource.attachment)}
                             </div>
-                          </CardBody>
-                        </Card>
+                            
+                            <div className='flex-1 min-w-0'>
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <Typography className='text-lg font-semibold text-gray-800 mb-1 group-hover:text-blue-600 transition-colors'>
+                                    {resource.resource_name}
+                                  </Typography>
+                                  <div className='flex items-center gap-3'>
+                                    <span className='text-[10px] uppercase tracking-wider font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded'>
+                                      {resource.resource_type}
+                                    </span>
+                                    {/* <span className='text-xs text-gray-400'>Order: {resource.order}</span> */}
+                                  </div>
+                                </div>
+                                <Button
+                                  size='sm'
+                                  className='flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-sm normal-case font-medium rounded-lg'
+                                  onClick={() => handleResourceClick(resource)}
+                                >
+                                  {resource.resource_type === 'Link' ? (
+                                    <>Open Link <FaExternalLinkAlt className="text-xs" /></>
+                                  ) : isVideoFile(resource.attachment) ? (
+                                    <>Watch Video <FaPlayCircle className="text-xs text-blue-500" /></>
+                                  ) : resource.resource_type === 'Notes' ? (
+                                    <>Read Notes <FaBook className="text-xs text-blue-500" /></>
+                                  ) : (
+                                    <>View File <FaArrowLeft className="text-xs rotate-180" /></>
+                                  )}
+                                </Button>
+                              </div>
+
+                              {/* Content Previews */}
+                              {isVideoFile(resource.attachment) && (
+                                <div className='mt-4 p-6 bg-gray-900 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer group/video' onClick={() => handleResourceClick(resource)}>
+                                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 group-hover/video:scale-110 transition-transform">
+                                    <FaPlayCircle className='text-3xl text-white' />
+                                  </div>
+                                  <span className="text-gray-300 text-sm font-medium">Click to play video</span>
+                                </div>
+                              )}
+
+                              {isImageFile(resource.attachment) && (
+                                <div className='mt-4 rounded-xl overflow-hidden border border-gray-100 bg-gray-50'>
+                                  <img
+                                    src={resource.attachment}
+                                    alt={resource.resource_name}
+                                    className='w-full max-h-80 object-contain mx-auto'
+                                  />
+                                </div>
+                              )}
+
+                              {resource.resource_type === 'Notes_pool' && resource.attachment && (
+                                <div className='mt-4 p-5 bg-yellow-50/50 rounded-xl border border-yellow-100 text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-medium'>
+                                  {resource.attachment}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
                       ))}
                   </div>
                 )}
               </TabPanel>
             </TabsBody>
           </Tabs>
-        </CardBody>
-      </Card>
-
-      {/* Complete Course Button - Only show if not completed */}
-      {(!course.completed_date || course.completed_date === 0) && (
-        <Card className='mt-6'>
-          <CardBody>
-            <div className='flex items-center justify-between'>
-              <div>
-                <Typography variant='h6' color='blue-gray' className='mb-1'>
-                  Finish Course
-                </Typography>
-                <Typography variant='small' color='gray'>
-                  Mark this course as completed after reviewing all resources
-                </Typography>
-              </div>
-              <Button
-                color='green'
-                size='lg'
-                className='flex items-center gap-2'
-                onClick={handleCompleteCourse}
-              >
-                <FaCheckCircle />
-                Complete Course
-              </Button>
-            </div>
-          </CardBody>
-        </Card>
-      )}
+        </div>
+      </div>
 
       {openEditor && (
         <CustomDialog
