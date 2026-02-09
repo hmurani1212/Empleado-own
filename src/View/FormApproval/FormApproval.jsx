@@ -1,13 +1,14 @@
 import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { NavLink } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import useFormApproval from "../../ViewModel/FormApprovalViewModel/FormApprovalServices";
 import { Button } from "@material-tailwind/react";
 import useDefineApprovalFlow from "../../ViewModel/FormApprovalViewModel/defineApprovalFlow";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import ApprovalFlowTemp from "./ApprovalFlowTemp";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import { FaPlus } from "react-icons/fa";
 
 const FormApproval = () => {
   const { formApprovalTitles } = useFormApproval();
@@ -31,80 +32,77 @@ const FormApproval = () => {
   };
 
   return (
-    <>
-      <div className="py-2 px-2">
-        <span className="text-[20px] font-Urbanist font-semibold text-[#474747]">
-          Form & Approval
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-2 pb-3">
-        <div className="flex justify-between items-center gap-5 px-3 py-5">
-          <div className="flex items-center gap-5">
-            {formApprovalTitles.map((ele) => (
-              <NavLink
-                key={ele.id}
-                className={`${
-                  location.pathname === ele.link
-                    ? "text-white"
-                    : "hover:text-[#474747]/60 text-[#474747]"
-                } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
-                style={{
-                  WebkitTapHighlightColor: "transparent",
-                }}
-                onClick={(e) => handleNavLinksForms(e, ele.link)}
-              >
-                {location.pathname === ele.link && (
-                  <motion.span
-                    layoutId="bubble"
-                    className="absolute inset-0 z-10 bg-[#8bc9f8]"
-                    style={{ borderRadius: 9999 }}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <span className="relative cursor-pointer text-[14px] z-20">
-                  {ele.title}
-                </span>
-              </NavLink>
-            ))}
-          </div>
+    <div className="min-h-screen bg-gray-50/50 p-6 font-poppins">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <CustomButton
-              className="capitalize font-medium text-[12px] bg-[#8bc9f8] p-2"
-              onClick={() => defineApprovalFlowForm()}
-              title="Define Approval Flow Template"
-            >
-              {/* Define Approval Flow Template */}
-            </CustomButton>
+            <h1 className="text-2xl font-bold text-gray-900">Form & Approval</h1>
+            <p className="text-sm text-gray-500 mt-1">Manage approval workflows and form assignments</p>
           </div>
+          
+          <Button
+            className="flex items-center gap-2 bg-bgBlue hover:bg-blue-600 shadow-blue-500/20 hover:shadow-blue-500/40 rounded-xl py-2.5 px-6 normal-case font-medium"
+            onClick={() => defineApprovalFlowForm()}
+          >
+            <FaPlus className="text-sm" /> Define Approval Flow
+          </Button>
         </div>
 
-        <div>
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-2 p-1 bg-white rounded-xl w-fit shadow-sm border border-gray-100">
+          {formApprovalTitles.map((ele) => (
+            <button
+              key={ele.id}
+              onClick={(e) => handleNavLinksForms(e, ele.link)}
+              className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                location.pathname === ele.link
+                  ? "text-white"
+                  : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              {location.pathname === ele.link && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-bgBlue rounded-lg shadow-sm"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">{ele.title}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content Area */}
+        <div className="mt-6">
           <Outlet />
         </div>
       </div>
 
-      {defineApprovalFlowValue.show && (
-        <PortalDrawer
-          open={defineApprovalFlowValue.show}
-          compo={
-            <ApprovalFlowTemp
-              defineApprovalFlowValue={defineApprovalFlowValue}
-              setDefineApprovalFlowValue={setDefineApprovalFlowValue}
-              handleSelectDefAppFlow={handleSelectDefAppFlow}
-              handleDragEnd={handleDragEnd}
-              handleChangeApprovalFlow={handleChangeApprovalFlow}
-              handleAddMoreAccordian={handleAddMoreAccordian}
-              removeApprovalStage={removeApprovalStage}
-              toggleDefApprovalFlow={toggleDefApprovalFlow}
-            />
-          }
-          closeDrawer={toggleDefApprovalFlow}
-          title="Define Approval Flow"
-          widthSize={600}
-        />
-      )}
-    </>
+      {/* Define Approval Flow Drawer */}
+      <AnimatePresence>
+        {defineApprovalFlowValue.show && (
+          <PortalDrawer
+            open={defineApprovalFlowValue.show}
+            compo={
+              <ApprovalFlowTemp
+                defineApprovalFlowValue={defineApprovalFlowValue}
+                setDefineApprovalFlowValue={setDefineApprovalFlowValue}
+                handleSelectDefAppFlow={handleSelectDefAppFlow}
+                handleDragEnd={handleDragEnd}
+                handleChangeApprovalFlow={handleChangeApprovalFlow}
+                handleAddMoreAccordian={handleAddMoreAccordian}
+                removeApprovalStage={removeApprovalStage}
+                toggleDefApprovalFlow={toggleDefApprovalFlow}
+              />
+            }
+            closeDrawer={toggleDefApprovalFlow}
+            title="Define Approval Flow"
+            widthSize={600}
+          />
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 

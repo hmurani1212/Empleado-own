@@ -6,6 +6,8 @@ import TrainingService from '../../ViewModel/TraingingViewModel/TrainingService'
 import useStore from '../../Store/store'
 import AssignQuestion from './AssignQuestion'
 import { showToast } from '../../Components/Toaster/Toaster'
+import CustomButton from '../../Components/CustomButton/CustomButton'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const QuestionBank = () => {
   const navigate = useNavigate()
@@ -197,175 +199,220 @@ const QuestionBank = () => {
   }
 
   return (
-    <div className='flex flex-col gap-4 p-2'>
-      {/* Header */}
-      <div className='flex items-center justify-between'>
-        <div className='flex items-center gap-4'>
-          <Button
-            variant="text"
-            className="flex items-center gap-2 p-2"
-            onClick={handleBack}
-          >
-            <FaArrowLeft className="text-[16px]" />
-          </Button>
-          <div className='flex flex-col'>
-            <Typography className='text-[20px] font-semibold text-[#474747]'>
-              Question Bank
-            </Typography>
-            <Typography className='text-[14px] text-gray-600 mt-1'>
-              Course: {displayCourseName}
-            </Typography>
+    <div className='min-h-screen bg-gray-50/50 p-6 font-poppins'>
+      <div className='max-w-7xl mx-auto space-y-6'>
+        
+        {/* Header Section */}
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+          <div className='flex items-center gap-4'>
+            <Button
+              variant="text"
+              className="p-2 rounded-full hover:bg-white hover:shadow-sm"
+              onClick={handleBack}
+            >
+              <FaArrowLeft className="text-gray-600 text-lg" />
+            </Button>
+            <div>
+              <h1 className='text-2xl font-bold text-gray-900'>Question Bank</h1>
+              <p className='text-sm text-gray-500 mt-1'>Course: <span className="font-semibold text-gray-700">{displayCourseName}</span></p>
+            </div>
+          </div>
+          
+          <div className='flex items-center gap-3'>
+            {selectedQuestions.length > 0 && (
+              <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-medium">
+                {selectedQuestions.length} selected
+              </div>
+            )}
+            
+            <CustomButton
+              title="Add Question"
+              onClick={handleAddQuestion}
+              icon={<FaPlus className="text-sm" />}
+              className="bg-green-500 hover:bg-green-600"
+            />
+            
+            <CustomButton
+              title="Assign Questions"
+              onClick={handleAssignQuestions}
+              disabled={selectedQuestions.length === 0}
+              className={`${selectedQuestions.length === 0 ? 'bg-gray-300' : 'bg-bgBlue'}`}
+            />
           </div>
         </div>
-        <div className='flex items-center gap-4'>
-          {selectedQuestions.length > 0 && (
-            <Typography className='text-[14px] text-gray-600'>
-              {selectedQuestions.length} question(s) selected
-            </Typography>
-          )}
-          <Button
-            className='flex items-center gap-2 bg-green-500 py-2 px-4 capitalize hover:bg-green-600'
-            onClick={handleAddQuestion}
-          >
-            <FaPlus className='text-[14px]' />
-            Add Question
-          </Button>
-          <Button
-            className='bg-blue-500 py-2 px-4 capitalize hover:bg-blue-600'
-            onClick={handleAssignQuestions}
-            disabled={selectedQuestions.length === 0}
-          >
-            Assign question
-          </Button>
-        </div>
-      </div>
 
-      {/* Resources with Questions List */}
-      <Card className='w-full drop-shadow'>
-        <CardBody className='py-6 px-4'>
-          {loading ? (
-            <div className='flex items-center justify-center py-16'>
-              <Typography className="text-[16px] text-gray-500 font-medium">
-                Loading...
-              </Typography>
-            </div>
-          ) : resourcesWithQuestions.length > 0 ? (
-            <div className='flex flex-col gap-4'>
-              {resourcesWithQuestions.map((item, resourceIndex) => {
-                const resource = item.resource || item
-                const questions = item.questions || []
-                const resourceId = resource._id || resourceIndex
-                const isExpanded = expandedResources[resourceId] !== undefined ? expandedResources[resourceId] : true // Default to expanded
+        {/* Content Card */}
+        <div className='bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>
+          <div className='p-6'>
+            {loading ? (
+              <div className='flex items-center justify-center py-20'>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <Typography className="text-sm text-gray-500 font-medium">Loading questions...</Typography>
+                </div>
+              </div>
+            ) : resourcesWithQuestions.length > 0 ? (
+              <div className='flex flex-col gap-4'>
+                {/* Global Select All (Optional) */}
+                {/* <div className="flex items-center gap-2 p-2 mb-2">
+                  <input
+                    type='checkbox'
+                    checked={areAllQuestionsSelected()}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
+                  />
+                  <span className="text-sm font-medium text-gray-700">Select All Questions</span>
+                </div> */}
 
-                return (
-                  <div key={resourceId} className='border border-gray-200 rounded-lg overflow-hidden'>
-                    {/* Resource Header with Accordion */}
-                    <div
-                      className='flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors'
-                      onClick={() => toggleResource(resourceId)}
+                {resourcesWithQuestions.map((item, resourceIndex) => {
+                  const resource = item.resource || item
+                  const questions = item.questions || []
+                  const resourceId = resource._id || resourceIndex
+                  const isExpanded = expandedResources[resourceId] !== undefined ? expandedResources[resourceId] : true
+
+                  return (
+                    <motion.div 
+                      key={resourceId} 
+                      className='border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md transition-shadow duration-200'
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: resourceIndex * 0.05 }}
                     >
-                      <div className='flex items-center gap-3 flex-1'>
-                        {/* Chevron Icon */}
-                        <div className='flex items-center justify-center w-6 h-6'>
-                          {isExpanded ? (
-                            <FaChevronDown className='text-gray-600 text-sm' />
-                          ) : (
-                            <FaChevronUp className='text-gray-600 text-sm' />
-                          )}
+                      {/* Resource Header */}
+                      <div
+                        className={`flex items-center justify-between p-4 cursor-pointer transition-colors ${isExpanded ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'}`}
+                        onClick={() => toggleResource(resourceId)}
+                      >
+                        <div className='flex items-center gap-4 flex-1'>
+                          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${isExpanded ? 'bg-white shadow-sm text-blue-600' : 'bg-gray-100 text-gray-500'} transition-all`}>
+                            {isExpanded ? <FaChevronUp className="text-xs" /> : <FaChevronDown className="text-xs" />}
+                          </div>
+
+                          <div className="flex-1">
+                            <Typography className='text-sm font-semibold text-gray-800'>
+                              {resource.resource_name || 'Unnamed Resource'}
+                            </Typography>
+                            {questions.length > 0 && (
+                              <Typography className='text-xs text-gray-500 mt-0.5'>
+                                {questions.length} question{questions.length !== 1 ? 's' : ''} available
+                              </Typography>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Resource Name */}
-                        <Typography className='text-[16px] font-semibold text-[#474747]'>
-                          {resourceIndex + 1}) {resource.resource_name || 'N/A'}
-                        </Typography>
-
-                        {/* Question Count */}
                         {questions.length > 0 && (
-                          <Typography className='text-[12px] text-gray-500'>
-                            ({questions.length} question{questions.length !== 1 ? 's' : ''})
-                          </Typography>
+                          <div
+                            className='flex items-center gap-2 pl-4 border-l border-gray-200'
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type='checkbox'
+                              id={`select-all-resource-${resourceId}`}
+                              checked={areAllResourceQuestionsSelected(questions)}
+                              onChange={(e) => handleResourceSelectAll(questions, e.target.checked)}
+                              className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer'
+                            />
+                            <label htmlFor={`select-all-resource-${resourceId}`} className='text-xs font-medium text-gray-600 cursor-pointer select-none'>
+                              Select All
+                            </label>
+                          </div>
                         )}
                       </div>
 
-                      {/* Resource Select All Checkbox */}
-                      {questions.length > 0 && (
-                        <div
-                          className='flex items-center gap-2'
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <input
-                            type='checkbox'
-                            id={`select-all-resource-${resourceId}`}
-                            checked={areAllResourceQuestionsSelected(questions)}
-                            onChange={(e) => handleResourceSelectAll(questions, e.target.checked)}
-                            className='w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer rounded'
-                          />
-                          <label htmlFor={`select-all-resource-${resourceId}`} className='cursor-pointer'>
-                            <Typography className='text-[12px] font-medium text-[#474747]'>
-                              Select All
-                            </Typography>
-                          </label>
-                        </div>
-                      )}
-                    </div>
+                      {/* Questions List */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <div className='p-4 border-t border-gray-100 bg-white space-y-2'>
+                              {questions.length > 0 ? (
+                                questions.map((question, questionIndex) => {
+                                  const questionId = question._id || question.id
+                                  const questionName = question.question || 'N/A'
+                                  const isSelected = selectedQuestions.some(q => q.id === questionId)
 
-                    {/* Questions under this resource (Collapsible) */}
-                    {isExpanded && (
-                      <div className='p-4 bg-white'>
-                        {questions.length > 0 ? (
-                          <div className='flex flex-col gap-2'>
-                            {questions.map((question, questionIndex) => {
-                              const questionId = question._id || question.id
-                              const questionName = question.question || 'N/A'
-                              const isSelected = selectedQuestions.some(q => q.id === questionId)
-
-                              return (
-                                <div key={questionId || questionIndex} className='flex items-center gap-3 py-1'>
-                                  <input
-                                    type='checkbox'
-                                    id={`question-${questionId || questionIndex}`}
-                                    checked={isSelected}
-                                    onChange={(e) => handleQuestionSelect(questionId, questionName, e.target.checked)}
-                                    className='w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer rounded'
-                                  />
-                                  <Typography className='text-[14px] font-medium text-[#474747]'>
-                                    {questionName}
+                                  return (
+                                    <div 
+                                      key={questionId || questionIndex} 
+                                      className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${isSelected ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-gray-100 hover:border-gray-200'}`}
+                                    >
+                                      <div className="pt-0.5">
+                                        <input
+                                          type='checkbox'
+                                          id={`question-${questionId || questionIndex}`}
+                                          checked={isSelected}
+                                          onChange={(e) => handleQuestionSelect(questionId, questionName, e.target.checked)}
+                                          className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer'
+                                        />
+                                      </div>
+                                      <label htmlFor={`question-${questionId || questionIndex}`} className="flex-1 cursor-pointer select-none">
+                                        <Typography className='text-sm text-gray-700 font-medium leading-snug'>
+                                          {questionName}
+                                        </Typography>
+                                        <div className="flex gap-2 mt-1">
+                                          <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full capitalize">
+                                            {question.question_type?.replace(/_/g, ' ') || 'Type N/A'}
+                                          </span>
+                                          <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                                            {question.points || 1} Pts
+                                          </span>
+                                        </div>
+                                      </label>
+                                    </div>
+                                  )
+                                })
+                              ) : (
+                                <div className="text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                  <Typography className='text-xs text-gray-400 italic'>
+                                    No questions available for this resource
                                   </Typography>
                                 </div>
-                              )
-                            })}
-                          </div>
-                        ) : (
-                          <div>
-                            <Typography className='text-[13px] text-gray-400 italic'>
-                              No questions available for this resource
-                            </Typography>
-                          </div>
+                              )}
+                            </div>
+                          </motion.div>
                         )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className='flex items-center justify-center py-16'>
-              <Typography className="text-[16px] text-gray-500 font-medium">
-                No resources found
-              </Typography>
-            </div>
-          )}
+                      </AnimatePresence>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className='flex flex-col items-center justify-center py-20 text-center'>
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                  <FaBook className="text-3xl text-gray-300" />
+                </div>
+                <Typography className="text-lg font-medium text-gray-700">No Resources Found</Typography>
+                <Typography className="text-sm text-gray-500 mt-1">
+                  This course doesn't have any resources with questions yet.
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  className="mt-4 border-gray-300 text-gray-600"
+                  onClick={handleBack}
+                >
+                  Go Back
+                </Button>
+              </div>
+            )}
 
-          {/* Summary */}
-          {(totalResources > 0 || totalQuestions > 0) && (
-            <div className='mt-6 pt-4 border-t border-gray-200'>
-              <Typography className='text-[14px] text-gray-600'>
-                Total Resources: {totalResources} | Total Questions: {totalQuestions}
-              </Typography>
-            </div>
-          )}
-        </CardBody>
-      </Card>
+            {/* Summary Footer */}
+            {(totalResources > 0 || totalQuestions > 0) && (
+              <div className='mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-sm text-gray-500'>
+                <div>
+                  Total Resources: <span className="font-semibold text-gray-700">{totalResources}</span>
+                </div>
+                <div>
+                  Total Questions: <span className="font-semibold text-gray-700">{totalQuestions}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,23 +1,22 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { Typography, Card, CardBody, Chip, IconButton, Tooltip, Button } from '@material-tailwind/react'
+import { Typography, Card, CardBody, Chip, IconButton, Button } from '@material-tailwind/react'
 import CustomDrawer from '../../../Components/CustomDrawer/CustomDrawer'
 import AddExpenseForm from './AddExpenseForm'
 import useStore from '../../../Store/store'
 import empExpenseApi from '../../../Model/Data/EmpData/EmpExpense/EmpExpense'
 import { toast } from 'react-toastify'
-import noRecordFound from '../../../assets/employee_side_images/no record found.gif';
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { FaFileInvoiceDollar, FaPlus, FaCheck, FaTimes, FaClock, FaReceipt } from 'react-icons/fa'
 import { HiCurrencyDollar, HiOutlineDocumentText } from "react-icons/hi";
 
 const SkeletonCard = () => (
-  <div className="rounded-xl bg-white p-4 shadow-sm border border-gray-100 animate-pulse">
+  <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100 animate-pulse">
     <div className="flex justify-between items-start">
       <div className="space-y-3 w-full">
         <div className="h-3 w-24 bg-gray-200 rounded"></div>
         <div className="h-8 w-16 bg-gray-200 rounded"></div>
       </div>
-      <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+      <div className="h-10 w-10 rounded-xl bg-gray-200"></div>
     </div>
   </div>
 );
@@ -131,13 +130,13 @@ const EmpExpense = () => {
     const getStatusChip = (status) => {
         switch (status?.toLowerCase()) {
             case 'pending':
-                return <Chip variant="ghost" color="amber" value="Pending" icon={<FaClock />} size="sm" className="rounded-full px-2" />;
+                return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1 w-fit"><FaClock className="text-[10px]" /> Pending</span>;
             case 'approved':
-                return <Chip variant="ghost" color="green" value="Approved" icon={<FaCheck />} size="sm" className="rounded-full px-2" />;
+                return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-100 flex items-center gap-1 w-fit"><FaCheck className="text-[10px]" /> Approved</span>;
             case 'rejected':
-                return <Chip variant="ghost" color="red" value="Rejected" icon={<FaTimes />} size="sm" className="rounded-full px-2" />;
+                return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-100 flex items-center gap-1 w-fit"><FaTimes className="text-[10px]" /> Rejected</span>;
             default:
-                return <Chip variant="ghost" color="blue-gray" value={status || '-'} size="sm" className="rounded-full px-2" />;
+                return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200 w-fit">{status || '-'}</span>;
         }
     }
 
@@ -157,34 +156,52 @@ const EmpExpense = () => {
         visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300 } }
     };
 
+    const StatCard = ({ title, value, icon, colorClass, bgColorClass }) => (
+        <motion.div
+            variants={itemVariants}
+            className={`relative overflow-hidden rounded-2xl p-5 ${bgColorClass} shadow-sm border border-transparent hover:shadow-md transition-all duration-300 group`}
+        >
+            <div className="flex items-center justify-between z-10 relative">
+                <div className="flex flex-col gap-1">
+                    <Typography className="text-sm font-medium text-white/90 font-poppins">
+                        {title}
+                    </Typography>
+                    <Typography className="text-2xl font-bold text-white font-poppins">
+                        {value}
+                    </Typography>
+                </div>
+                <div className={`p-3 rounded-xl bg-white/20 backdrop-blur-sm text-white ${colorClass}`}>
+                    {icon}
+                </div>
+            </div>
+            {/* Decorative circle */}
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all duration-500"></div>
+        </motion.div>
+    );
+
     return (
         <motion.div 
             initial="hidden" 
             animate="visible" 
             variants={containerVariants}
-            className='flex flex-col gap-6 p-4 md:p-6 min-h-screen bg-gray-50/50 font-poppins'
+            className='flex flex-col gap-6 p-6 min-h-screen bg-gray-50/50 font-poppins'
         >
             {/* Header */}
-            <motion.div variants={itemVariants} className='flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-gray-100'>
-                <div className='flex items-center gap-4'>
-                    <div className='p-3 bg-brand-50 rounded-xl text-brand-500'>
-                        <FaFileInvoiceDollar className='text-2xl' />
-                    </div>
-                    <div>
-                        <h1 className='text-2xl font-bold text-gray-800'>Expense Claims</h1>
-                        <p className='text-sm text-gray-500 mt-1'>Manage and track your reimbursement claims</p>
-                    </div>
+            <div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
+                <div>
+                    <h1 className='text-2xl font-bold text-gray-900'>Expense Claims</h1>
+                    <p className='text-sm text-gray-500 mt-1'>Manage and track your reimbursement claims</p>
                 </div>
                 <Button 
-                    className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 shadow-brand-500/20"
+                    className="flex items-center gap-2 bg-bgBlue hover:bg-blue-600 shadow-blue-500/20 hover:shadow-blue-500/40 rounded-xl py-2.5 px-6 normal-case font-medium"
                     onClick={handleAddExpense}
                 >
-                    <FaPlus /> New Claim
+                    <FaPlus className="text-sm" /> New Claim
                 </Button>
-            </motion.div>
+            </div>
 
             {/* Stats Cards */}
-            <motion.div variants={itemVariants} className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
                 {loading && (!expenseList || expenseList.length === 0) ? (
                     <>
                         <SkeletonCard />
@@ -194,61 +211,51 @@ const EmpExpense = () => {
                     </>
                 ) : (
                     <>
-                        <Card className='shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300'>
-                            <CardBody className='p-4 flex items-center justify-between'>
-                                <div>
-                                    <p className='text-xs text-gray-500 font-bold uppercase'>Total Claims</p>
-                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.total}</h3>
-                                </div>
-                                <div className='p-3 bg-blue-50 text-blue-500 rounded-full'><HiOutlineDocumentText size={20} /></div>
-                            </CardBody>
-                        </Card>
-                        <Card className='shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300'>
-                            <CardBody className='p-4 flex items-center justify-between'>
-                                <div>
-                                    <p className='text-xs text-gray-500 font-bold uppercase'>Total Amount</p>
-                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{formatAmount(stats.amount)}</h3>
-                                </div>
-                                <div className='p-3 bg-green-50 text-green-500 rounded-full'><HiCurrencyDollar size={20} /></div>
-                            </CardBody>
-                        </Card>
-                        <Card className='shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300'>
-                            <CardBody className='p-4 flex items-center justify-between'>
-                                <div>
-                                    <p className='text-xs text-gray-500 font-bold uppercase'>Pending</p>
-                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.pending}</h3>
-                                </div>
-                                <div className='p-3 bg-amber-50 text-amber-500 rounded-full'><FaClock size={20} /></div>
-                            </CardBody>
-                        </Card>
-                        <Card className='shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300'>
-                            <CardBody className='p-4 flex items-center justify-between'>
-                                <div>
-                                    <p className='text-xs text-gray-500 font-bold uppercase'>Approved</p>
-                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.approved}</h3>
-                                </div>
-                                <div className='p-3 bg-purple-50 text-purple-500 rounded-full'><FaCheck size={20} /></div>
-                            </CardBody>
-                        </Card>
+                        <StatCard 
+                            title="Total Claims" 
+                            value={stats.total} 
+                            icon={<HiOutlineDocumentText size={20} />} 
+                            bgColorClass="bg-[#3DA5F4]"
+                        />
+                        <StatCard 
+                            title="Total Amount" 
+                            value={formatAmount(stats.amount)} 
+                            icon={<HiCurrencyDollar size={20} />} 
+                            bgColorClass="bg-[#0ACF97]"
+                        />
+                        <StatCard 
+                            title="Pending" 
+                            value={stats.pending} 
+                            icon={<FaClock size={20} />} 
+                            bgColorClass="bg-[#FDA006]"
+                        />
+                        <StatCard 
+                            title="Approved" 
+                            value={stats.approved} 
+                            icon={<FaCheck size={20} />} 
+                            bgColorClass="bg-[#8bc9f8]"
+                        />
                     </>
                 )}
-            </motion.div>
+            </div>
 
             {/* Expenses List */}
             <motion.div variants={itemVariants}>
-                <Card className='rounded-2xl shadow-card border border-gray-100 overflow-hidden'>
-                    <div className="overflow-x-auto">
+                <div className='bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>
+                    <div className="overflow-x-auto customScroll">
                         <table className="w-full text-left min-w-[800px]">
-                            <thead className='bg-gray-50 border-b border-gray-200'>
+                            <thead className='bg-gray-50/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10'>
                                 <tr>
                                     {tableHeader.map((head, i) => (
-                                        <th key={i} className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                            {head}
+                                        <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
+                                            <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
+                                                {head}
+                                            </Typography>
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-50">
                                 {loading && (!expenseList || expenseList.length === 0) ? (
                                     <>
                                         {[...Array(6)].map((_, i) => <SkeletonRow key={i} />)}
@@ -260,49 +267,57 @@ const EmpExpense = () => {
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             transition={{ delay: index * 0.05 }}
-                                            className="hover:bg-gray-50/50 transition-colors"
+                                            className="hover:bg-blue-50/30 transition-colors group"
                                         >
-                                            <td className="py-4 px-6">
+                                            <td className="p-4 first:pl-6">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-brand-50 rounded-lg text-brand-500">
+                                                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center text-lg">
                                                         <FaReceipt />
                                                     </div>
                                                     <div>
-                                                        <Typography variant="small" color="blue-gray" className="font-bold">
+                                                        <Typography className="text-sm font-semibold text-gray-900 font-poppins">
                                                             {expense.expense_name || 'Expense Claim'}
                                                         </Typography>
-                                                        <Typography variant="small" className="text-gray-400 text-xs">
+                                                        <Typography className="text-xs text-gray-400 font-poppins">
                                                             ID: {expense.id?.toString().slice(-6) || 'N/A'}
                                                         </Typography>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-6 text-sm text-gray-600">
-                                                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium">
+                                            <td className="p-4">
+                                                <span className="px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium font-poppins">
                                                     {getCategoryLabel(expense)}
                                                 </span>
                                             </td>
-                                            <td className="py-4 px-6 text-sm font-medium text-gray-700">
-                                                {expense.created_by || 'Me'}
+                                            <td className="p-4">
+                                                <Typography className="text-sm font-medium text-gray-700 font-poppins">
+                                                    {expense.created_by || 'Me'}
+                                                </Typography>
                                             </td>
-                                            <td className="py-4 px-6 text-sm text-gray-600">
-                                                {formatDate(expense.created_on)}
+                                            <td className="p-4">
+                                                <Typography className="text-sm text-gray-600 font-poppins">
+                                                    {formatDate(expense.created_on)}
+                                                </Typography>
                                             </td>
-                                            <td className="py-4 px-6 text-sm font-bold text-gray-800">
-                                                {formatAmount(expense.amount)}
+                                            <td className="p-4">
+                                                <Typography className="text-sm font-bold text-gray-800 font-poppins">
+                                                    {formatAmount(expense.amount)}
+                                                </Typography>
                                             </td>
-                                            <td className="py-4 px-6">
+                                            <td className="p-4 last:pr-6">
                                                 {getStatusChip(expense.status)}
                                             </td>
                                         </motion.tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={6} className="py-12 text-center text-gray-400">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <img src={noRecordFound} alt="No record" className="w-40 opacity-70 mix-blend-multiply mb-4" />
-                                                <Typography color="gray" className="font-medium">No expense claims found</Typography>
-                                                <Button variant="text" color="blue" onClick={handleAddExpense} className="mt-2">
+                                        <td colSpan={6} className="p-12 text-center text-gray-400">
+                                            <div className="flex flex-col items-center justify-center gap-3">
+                                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-2">
+                                                    <FaReceipt className="text-3xl text-gray-300" />
+                                                </div>
+                                                <Typography className="font-medium font-poppins">No expense claims found</Typography>
+                                                <Button variant="text" color="blue" onClick={handleAddExpense} className="mt-2 normal-case font-medium">
                                                     Create your first claim
                                                 </Button>
                                             </div>
@@ -315,20 +330,20 @@ const EmpExpense = () => {
                     
                     {/* Load More Button */}
                     {hasMoreData && (
-                        <div className="p-4 border-t border-gray-100 flex justify-center">
+                        <div className="p-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
                             <Button 
                                 variant="text" 
                                 color="blue-gray" 
                                 onClick={loadMoreExpenses}
                                 disabled={loadingMore}
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 normal-case font-medium text-gray-600 hover:text-bgBlue"
                             >
                                 {loadingMore && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
                                 {loadingMore ? "Loading..." : "Load More"}
                             </Button>
                         </div>
                     )}
-                </Card>
+                </div>
             </motion.div>
 
             {/* Add Expense Drawer */}
