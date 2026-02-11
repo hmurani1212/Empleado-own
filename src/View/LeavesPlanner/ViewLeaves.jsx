@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BiSearch } from "react-icons/bi";
 import { Button, Typography } from "@material-tailwind/react";
 import { useNavigate, useParams } from "react-router";
@@ -6,12 +6,13 @@ import useLeavesPlanner from "../../ViewModel/LeavePlannerViewModel/LeavePlanner
 import { MdDelete } from "react-icons/md";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import { FaArrowLeft, FaPlus } from "react-icons/fa";
-import { ViewLeavesTableSkeleton } from "./LeavesPlannerSkeletons";
+import { ViewLeavesHeaderSkeleton, ViewLeavesTableSkeleton } from "./LeavesPlannerSkeletons";
 
 const ViewLeaves = () => {
   const {
     allViewLeave,
     viewLeavesLoading,
+    getViewLeavesList,
     openDialogSpecific,
     handleDeleteLeaves,
     handleDeleteSpecificLeaves,
@@ -25,6 +26,12 @@ const ViewLeaves = () => {
   const handleBackToLeave = () => {
     navigate("/leavesPlanner/leaves_group");
   };
+
+  useEffect(() => {
+    if (params.id) {
+      getViewLeavesList({ group_id: params.id });
+    }
+  }, [params.id]);
 
   const data = [
     "ID",
@@ -45,6 +52,9 @@ const ViewLeaves = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Header & Controls */}
+      {viewLeavesLoading ? (
+        <ViewLeavesHeaderSkeleton />
+      ) : (
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4 w-full md:w-auto">
           <Button 
@@ -75,6 +85,7 @@ const ViewLeaves = () => {
           <FaPlus size={12} /> Define Leave Type
         </Button>
       </div>
+      )}
 
       {/* Table */}
       {viewLeavesLoading ? (

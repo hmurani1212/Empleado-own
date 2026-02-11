@@ -8,7 +8,7 @@ import PublicHolidayCalendar from "./PublicHolidayCalendar";
 import usePublicHolidayServices from "../../ViewModel/LeavePlannerViewModel/publicHolidayServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { FaXmark } from "react-icons/fa6";
-import { PublicHolidayCalendarSkeleton } from "./LeavesPlannerSkeletons";
+import { PublicHolidayCalendarSkeleton, PublicHolidayControlsSkeleton } from "./LeavesPlannerSkeletons";
 
 const PublicHoliday = () => {
   const {
@@ -46,6 +46,9 @@ const PublicHoliday = () => {
   return (
     <>
       <div className="flex flex-col gap-3">
+        {publicHolidayLoading ? (
+          <PublicHolidayControlsSkeleton />
+        ) : (
         <div className="flex items-end justify-between">
           <div className="flex items-center gap-3">
             <div className="w-52">
@@ -120,6 +123,7 @@ const PublicHoliday = () => {
             </span>
           </div>
         </div>
+        )}
         <div>
           {publicHolidayLoading ? (
             <PublicHolidayCalendarSkeleton />

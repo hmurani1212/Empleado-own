@@ -17,6 +17,14 @@ const SideMenu = (props) => {
   // Filter tabs based on user role
   const filteredTabs = SidebarTabs.filter(tab => tab.roles.includes(role));
 
+  // Check if a tab should be active: current path must match or be a sub-route of the tab's URL
+  const isTabActive = (tabUrl) => {
+    if (!tabUrl || tabUrl === '#') return false;
+    if (tabUrl === '/') return location.pathname === '/';
+    const basePath = '/' + (tabUrl.split('/').filter(Boolean)[0] || '');
+    return location.pathname === basePath || location.pathname.startsWith(basePath + '/');
+  };
+
   return (
     <div className='flex flex-col w-full h-full bg-white'>
       <div className='flex-1 overflow-y-auto customScroll py-4 flex flex-col gap-1 overflow-x-hidden'>
@@ -55,29 +63,20 @@ const SideMenu = (props) => {
             <motion.div key={index} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
               <NavLink
                 to={tabUrl}
-                className={({ isActive }) => {
-                  // Special handling for HR Policies - keep active for all sub-routes
-                  let shouldBeActive = isActive;
-                  if (tab.id === 6) { // HR Policies has id 6
-                    shouldBeActive = location.pathname.startsWith('/hrpolicies');
-                  }
-                  
-                  // Adjust padding based on toggle state
+                className={() => {
+                  const shouldBeActive = isTabActive(tabUrl);
                   const paddingClass = toggleState ? "px-0 justify-center" : "px-4 mx-3";
                   const baseClasses = `relative flex items-center gap-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${paddingClass}`;
                   const activeClasses = "bg-brand-50 text-brand-600 shadow-sm";
                   const inactiveClasses = "text-gray-600 hover:bg-gray-50 hover:text-brand-600";
-                  
                   return `${baseClasses} ${shouldBeActive ? activeClasses : inactiveClasses}`;
                 }}
                 onClick={() => handleSideMenuTab(tab.id)}
                 title={toggleState ? tab.tabName : ''}
               >
-                {({ isActive }) => {
-                   let shouldBeActive = isActive;
-                   if (tab.id === 6) shouldBeActive = location.pathname.startsWith('/hrpolicies');
-
-                   return (
+                {() => {
+                  const shouldBeActive = isTabActive(tabUrl);
+                  return (
                     <>
                       <span className={`transition-colors duration-200 ${shouldBeActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-brand-500'} ${toggleState ? 'text-2xl' : 'text-lg'}`}>
                         {tab.icon}
@@ -88,7 +87,7 @@ const SideMenu = (props) => {
                         </span>
                       )}
                     </>
-                   )
+                  );
                 }}
               </NavLink>
             </motion.div>
