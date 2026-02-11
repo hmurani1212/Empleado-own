@@ -13,6 +13,7 @@ const usePerformanceServices = () => {
     const gettingPRCData = useStore((state) => state.gettingPRCData)
     const PRCData = useStore((state) => state.PRCData)
     const gettingNextPRCData = useStore((state) => state.gettingNextPRCData)
+    const PRCLoading = useStore((state) => state.PRCLoading)
 
 
     const [openMenuValue, setOpenMenuValue] = useState({});
@@ -133,7 +134,7 @@ const usePerformanceServices = () => {
     // }
 
 
-    return { performanceTitles, handleNavLinkClick, PRCData, openMenuValue, toggleMenuValue, performanceScrollRef, gettingPRCData }
+    return { performanceTitles, handleNavLinkClick, PRCData, openMenuValue, toggleMenuValue, performanceScrollRef, gettingPRCData, PRCLoading }
 
 }
 

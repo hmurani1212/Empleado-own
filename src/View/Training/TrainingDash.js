@@ -17,9 +17,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { showToast } from '../../Components/Toaster/Toaster'
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
+import TrainingSkeleton from './TrainingSkeleton'
 
 const TrainingDash = () => {
-  const { training_data, Training_datefn, delete_course_fn, getCourseCompleteDetails, } = TrainingService()
+  const { training_data, Training_datefn, delete_course_fn, getCourseCompleteDetails, isLoadingTrainingData } = TrainingService()
   const navigate = useNavigate()
 
   // Store original unfiltered courses for client-side filtering
@@ -289,8 +290,8 @@ const TrainingDash = () => {
   };
 
   return (
-    <div className='min-h-screen bg-gray-50/50 p-6 font-poppins'>
-        <div className='max-w-7xl mx-auto space-y-6'>
+    <div className='min-h-screen  p-6 font-poppins'>
+        <div className=' mx-auto space-y-6'>
             
             {/* Header Section */}
             <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
@@ -317,156 +318,160 @@ const TrainingDash = () => {
             </div>
 
             {/* Content Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="overflow-x-auto customScroll min-h-[400px]">
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
-                            <tr>
-                                {tableHeaders.map((head, i) => (
-                                    <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
-                                        <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
-                                            {head}
-                                        </Typography>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {coursesData.length > 0 ? (
-                                coursesData.map((course, index) => {
-                                    const statusInfo = getStatusInfo(course.status)
-                                    
-                                    return (
-                                        <tr 
-                                            key={course._id || index} 
-                                            className="hover:bg-blue-50/30 transition-colors group"
-                                        >
-                                            <td className="p-4 first:pl-6">
-                                                <Typography className="text-sm font-semibold text-gray-900 font-poppins">
-                                                    {course.course_name || 'N/A'}
-                                                </Typography>
-                                            </td>
-
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-xs">
-                                                        {course.created_by ? course.created_by.charAt(0).toUpperCase() : 'N'}
-                                                    </div>
-                                                    <Typography className="text-sm text-gray-700 font-medium font-poppins">
-                                                        {course.created_by || 'N/A'}
+            {isLoadingTrainingData ? (
+                <TrainingSkeleton />
+            ) : (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="overflow-x-auto customScroll min-h-[400px]">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+                                <tr>
+                                    {tableHeaders.map((head, i) => (
+                                        <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
+                                            <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
+                                                {head}
+                                            </Typography>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {coursesData.length > 0 ? (
+                                    coursesData.map((course, index) => {
+                                        const statusInfo = getStatusInfo(course.status)
+                                        
+                                        return (
+                                            <tr 
+                                                key={course._id || index} 
+                                                className="hover:bg-blue-50/30 transition-colors group"
+                                            >
+                                                <td className="p-4 first:pl-6">
+                                                    <Typography className="text-sm font-semibold text-gray-900 font-poppins">
+                                                        {course.course_name || 'N/A'}
                                                     </Typography>
-                                                </div>
-                                            </td>
+                                                </td>
 
-                                            <td className="p-4">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        openDrawer()
-                                                        settingDrawerSize(500)
-                                                        settingDrawerTitle('Course Employees')
-                                                        settingComponent(
-                                                            <CourseEmployeesList
-                                                                courseId={course._id}
-                                                                courseName={course.course_name}
-                                                            />
-                                                        )
-                                                    }}
-                                                    className="text-bgBlue hover:text-blue-700 text-sm font-medium transition-colors hover:underline"
-                                                >
-                                                    View Assigned
-                                                </button>
-                                            </td>
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-xs">
+                                                            {course.created_by ? course.created_by.charAt(0).toUpperCase() : 'N'}
+                                                        </div>
+                                                        <Typography className="text-sm text-gray-700 font-medium font-poppins">
+                                                            {course.created_by || 'N/A'}
+                                                        </Typography>
+                                                    </div>
+                                                </td>
 
-                                            <td className="p-4">
-                                                <Typography className="text-sm text-gray-600 font-poppins">
-                                                    {course.createdAt ? formatTimestamp(course.createdAt) : 'N/A'}
-                                                </Typography>
-                                            </td>
-
-                                            <td className="p-4 last:pr-6 relative">
-                                                <div
-                                                    ref={(el) => (triggerRefs.current[index] = el)}
-                                                    className="relative"
-                                                >
-                                                    <Button
-                                                        variant="text"
-                                                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-all shadow-sm normal-case text-gray-700"
+                                                <td className="p-4">
+                                                    <button
                                                         onClick={(e) => {
                                                             e.stopPropagation()
-                                                            toggleMenu(index, !openMenu[index])
+                                                            openDrawer()
+                                                            settingDrawerSize(500)
+                                                            settingDrawerTitle('Course Employees')
+                                                            settingComponent(
+                                                                <CourseEmployeesList
+                                                                    courseId={course._id}
+                                                                    courseName={course.course_name}
+                                                                />
+                                                            )
                                                         }}
+                                                        className="text-bgBlue hover:text-blue-700 text-sm font-medium transition-colors hover:underline"
                                                     >
-                                                        Action <FaChevronDown className={`text-[10px] transition-transform duration-200 ${openMenu[index] ? 'rotate-180' : ''}`} />
-                                                    </Button>
-                                                    
-                                                    <AnimatePresence>
-                                                        {openMenu[index] && (
-                                                            <motion.div
-                                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                                transition={{ duration: 0.15 }}
-                                                                className={`absolute right-0 z-50 w-48 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden ${index > coursesData.length - 3 ? 'bottom-full mb-2' : 'top-full'}`}
-                                                            >
-                                                                <div className="p-1">
-                                                                    {courseActionList.map((menuItem) => (
-                                                                        <MenuItem
-                                                                            key={menuItem.id}
-                                                                            className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation()
-                                                                                handleCourseAction(course, menuItem)
-                                                                                toggleMenu(index, false)
-                                                                            }}
-                                                                        >
-                                                                            <span className="p-1.5 rounded-md bg-gray-50 text-gray-500 group-hover:text-gray-700 transition-colors" style={{ color: menuItem.color, backgroundColor: `${menuItem.color}15` }}>
-                                                                                {menuItem.icon}
-                                                                            </span>
-                                                                            {menuItem.title}
-                                                                        </MenuItem>
-                                                                    ))}
-                                                                </div>
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
+                                                        View Assigned
+                                                    </button>
+                                                </td>
+
+                                                <td className="p-4">
+                                                    <Typography className="text-sm text-gray-600 font-poppins">
+                                                        {course.createdAt ? formatTimestamp(course.createdAt) : 'N/A'}
+                                                    </Typography>
+                                                </td>
+
+                                                <td className="p-4 last:pr-6 relative">
+                                                    <div
+                                                        ref={(el) => (triggerRefs.current[index] = el)}
+                                                        className="relative"
+                                                    >
+                                                        <Button
+                                                            variant="text"
+                                                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-all shadow-sm normal-case text-gray-700"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                toggleMenu(index, !openMenu[index])
+                                                            }}
+                                                        >
+                                                            Action <FaChevronDown className={`text-[10px] transition-transform duration-200 ${openMenu[index] ? 'rotate-180' : ''}`} />
+                                                        </Button>
+                                                        
+                                                        <AnimatePresence>
+                                                            {openMenu[index] && (
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                                    transition={{ duration: 0.15 }}
+                                                                    className={`absolute right-0 z-50 w-48 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden ${index > coursesData.length - 3 ? 'bottom-full mb-2' : 'top-full'}`}
+                                                                >
+                                                                    <div className="p-1">
+                                                                        {courseActionList.map((menuItem) => (
+                                                                            <MenuItem
+                                                                                key={menuItem.id}
+                                                                                className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+                                                                                    handleCourseAction(course, menuItem)
+                                                                                    toggleMenu(index, false)
+                                                                                }}
+                                                                            >
+                                                                                <span className="p-1.5 rounded-md bg-gray-50 text-gray-500 group-hover:text-gray-700 transition-colors" style={{ color: menuItem.color, backgroundColor: `${menuItem.color}15` }}>
+                                                                                    {menuItem.icon}
+                                                                                </span>
+                                                                                {menuItem.title}
+                                                                            </MenuItem>
+                                                                        ))}
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td colSpan={tableHeaders.length} className="p-12 text-center text-gray-400">
+                                            <div className="flex flex-col items-center justify-center gap-3">
+                                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+                                                    <FaBook className="text-3xl text-gray-300" />
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })
-                            ) : (
-                                <tr>
-                                    <td colSpan={tableHeaders.length} className="p-12 text-center text-gray-400">
-                                        <div className="flex flex-col items-center justify-center gap-3">
-                                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
-                                                <FaBook className="text-3xl text-gray-300" />
+                                                <Typography className="font-medium font-poppins">No courses found</Typography>
+                                                <Typography className="text-xs text-gray-400 max-w-[200px]">
+                                                    Try adjusting your search or add a new course to get started
+                                                </Typography>
                                             </div>
-                                            <Typography className="font-medium font-poppins">No courses found</Typography>
-                                            <Typography className="text-xs text-gray-400 max-w-[200px]">
-                                                Try adjusting your search or add a new course to get started
-                                            </Typography>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                
-                {/* Pagination / Load More */}
-                {shouldShowLoadMore && (
-                    <div className="p-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
-                        <Button
-                            variant="outlined"
-                            className="flex items-center gap-2 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300 normal-case"
-                            onClick={handleLoadMore}
-                        >
-                            Load More Courses
-                        </Button>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                )}
-            </div>
+                    
+                    {/* Pagination / Load More */}
+                    {shouldShowLoadMore && (
+                        <div className="p-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
+                            <Button
+                                variant="outlined"
+                                className="flex items-center gap-2 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300 normal-case"
+                                onClick={handleLoadMore}
+                            >
+                                Load More Courses
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            )}
 
             <ConfirmationDialog
                 openDialog={openDeleteConfirmDialog}

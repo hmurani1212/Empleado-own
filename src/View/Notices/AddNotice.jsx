@@ -15,11 +15,11 @@ const AddNotice = () => {
   }, [])
 
   return (
-    <div className='p-6'>
-      <form onSubmit={(e) => addNewNotice(e)} className="flex flex-col gap-6">
+    <div className='bg-white rounded-2xl'>
+      <form onSubmit={(e) => addNewNotice(e)} className="flex flex-col gap-6 p-4 ">
         
         {/* Branch & Department Group */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
             <div className='flex flex-col gap-2'>
                 <label className="text-sm font-semibold text-gray-700 font-poppins">Target Branch</label>
                 <div className="w-full">

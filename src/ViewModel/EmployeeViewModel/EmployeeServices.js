@@ -16,6 +16,7 @@ const useEmployees = () => {
 
     const getEmployeesList = useStore((state) => state.getEmployeesList)
     const allEmployees = useStore((state) => state.allEmployees)
+    const employeesListLoading = useStore((state) => state.employeesListLoading)
     const empMount = useStore((state) => state.empMount)
     const handleEmpMount = useStore((state) => state.handleEmpMount)
     const allBranches = useStore((state) => state.allBranches)
@@ -1177,6 +1178,7 @@ const useEmployees = () => {
 
     // Helper function to get employees with filters
     const getEmployeesWithFilters = async (newFilters, pageNumber = null) => {
+        useStore.setState({ employeesListLoading: true });
         try {
             // Use newFilters as the primary source, fallback to current state
             // If pageNumber is provided, use it; otherwise use page from newFilters or default to 1
@@ -1248,6 +1250,8 @@ const useEmployees = () => {
                 totalPages: 1,
                 hasMore: false
             });
+        } finally {
+            useStore.setState({ employeesListLoading: false });
         }
     };
 
@@ -1575,7 +1579,7 @@ const useEmployees = () => {
     };
 
     return {
-        empTitles, getEmployeesList, allEmployees, empMount, handleEmpMount, allBranches, handleFilterChange, handleFilterDeptChange, filterValues, getAllDepartments, filterDepartments,
+        empTitles, getEmployeesList, allEmployees, employeesListLoading, empMount, handleEmpMount, allBranches, handleFilterChange, handleFilterDeptChange, filterValues, getAllDepartments, filterDepartments,
         listView, handleListToggle, handleGridToggle, handleChangeEmployees, empStatus, handleStatusFilter, handelAlphabetSearch, alphaIndex, newEmpValues, handleNewEmpChange, getFindEmp,
         handleVerifyUserModalClose, verfiyUser, findingEmp, handleStepActive, activeStep, isFirstStep, isLastStep, handlePrev, handleNext, handleLastStep, handleFirstStep, allCountries,
         handleSelectChange, handleDOB, passwordToggle, validateAge, empBranches, dept_subDept, flattenOptions, customStyles,

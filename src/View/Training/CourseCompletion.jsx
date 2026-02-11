@@ -9,6 +9,7 @@ import TrainingService from '../../ViewModel/TraingingViewModel/TrainingService'
 import { showToast } from '../../Components/Toaster/Toaster'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import { motion } from 'framer-motion'
+import CourseCompletionSkeleton from './CourseCompletionSkeleton'
 
 const CourseCompletion = () => {
   const navigate = useNavigate()
@@ -312,14 +313,7 @@ const CourseCompletion = () => {
                     </td>
                   </tr>
                 ) : loading || isLoadingCourseAssignedEmployees ? (
-                  <tr>
-                    <td colSpan='8' className='p-12 text-center'>
-                      <div className='flex flex-col items-center justify-center gap-3'>
-                        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-                        <Typography className="text-sm text-gray-500">Loading data...</Typography>
-                      </div>
-                    </td>
-                  </tr>
+                  <CourseCompletionSkeleton />
                 ) : filteredData.length > 0 ? (
                   filteredData.map((item, index) => (
                     <tr key={item.id} className='hover:bg-blue-50/30 transition-colors'>

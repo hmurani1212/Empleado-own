@@ -4,6 +4,7 @@ import { showToast } from "../../Components/Toaster/Toaster"
 
 const employeeViewModel = (set, get) => ({
     allEmployees: [],
+    employeesListLoading: true,
     copyAllEmployees: [],
     deptEmp: [],
     copyFilterEmployees: [],

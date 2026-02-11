@@ -5,6 +5,7 @@ import { FaBook, FaPlayCircle, FaCheckCircle, FaFileAlt } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import useEmpTrainingService from '../../../ViewModel/EmpViewModel/EmpTrainingViewModel/EmpTrainingServices'
 import { motion } from 'framer-motion'
+import EmployeeTrainingSkeleton from './EmployeeTrainingSkeleton'
 
 const EmployeeTraining = () => {
   const navigate = useNavigate()
@@ -54,8 +55,8 @@ const EmployeeTraining = () => {
   }
 
   return (
-    <div className='min-h-screen bg-gray-50/50 p-6 font-poppins'>
-      <div className='max-w-7xl mx-auto space-y-6'>
+    <div className='min-h-screen  p-6 font-poppins'>
+      <div className='mx-auto space-y-6'>
         
         {/* Header Section */}
         <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
@@ -76,14 +77,7 @@ const EmployeeTraining = () => {
         </div>
 
         {loading ? (
-          <div className='flex justify-center items-center py-20'>
-            <div className='text-center'>
-              <div className='animate-spin rounded-full h-12 w-12 border-2 border-blue-500 border-t-transparent mx-auto mb-4'></div>
-              <Typography variant='small' color='gray' className="font-medium">
-                Loading courses...
-              </Typography>
-            </div>
-          </div>
+          <EmployeeTrainingSkeleton />
         ) : filteredCourses.length === 0 ? (
           <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center'>
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">

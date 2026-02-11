@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import useStore from "../../Store/store";
 import { formatTimestampToDate } from "../../services/__dateTimeServices";
+import { HistorySkeleton } from "./PerformanceSkeletons";
 // import ProfileManagement from './ProfileManagement';
 
 const History = ({
@@ -34,6 +35,7 @@ const History = ({
     employeeHistoryData,
     gettingEmployeeHistory,
     currentEmployeeId,
+    historyLoading,
   } = useStore();
 
   // Check if we're in profile view (employee-specific history)
@@ -132,14 +134,10 @@ const History = ({
     }
   };
 
-  if (loading) {
+  if (loading || historyLoading) {
     return (
       <div className="flex flex-col gap-6 py-2 pb-1">
-        <div className="text-center py-8">
-          <Typography variant="h6" color="gray" className="font-normal">
-            Loading history...
-          </Typography>
-        </div>
+        <HistorySkeleton />
       </div>
     );
   }

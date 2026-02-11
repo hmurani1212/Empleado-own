@@ -16,6 +16,7 @@ import { useOutletContext, useParams, useNavigate } from 'react-router'
 import useStore from '../../Store/store'
 import ProfileManagement from './ProfileManagement'
 import EmployeeSubFeed from './EmployeeSubFeed'
+import { SubGoalsSkeleton } from './PerformanceSkeletons'
 
 const SubGoals = () => {
     const { handleSubGoalList, goalsValue, handleToggleSubGoalDelete, deleteSubGoal, addGoalValue, toggleAddGoal, performance, handleSelectGoals,
@@ -27,7 +28,7 @@ const SubGoals = () => {
     const { handleProfileView, setShowReviewCycle, handleOpenRatingModal } = useOutletContext() || {}
 
     // Get data from store
-    const { subComptencyData, subGoalsData, gettingSubCompetency } = useStore()
+    const { subComptencyData, subGoalsData, gettingSubCompetency, subGoalsLoading, subCompetencyLoading } = useStore()
 
     // Get URL parameters and navigation
     const params = useParams()
@@ -217,7 +218,9 @@ const SubGoals = () => {
                 </div>
 
                 {/* Content based on current view */}
-                {currentView === 'goals' ? (
+                {(currentView === 'goals' && subGoalsLoading) || (currentView === 'competency' && subCompetencyLoading) ? (
+                    <SubGoalsSkeleton />
+                ) : currentView === 'goals' ? (
                     /* Sub Goals Table */
                     <table className="w-full min-w-max text-left h-full">
                     <thead className='sticky top-[-9px]'>

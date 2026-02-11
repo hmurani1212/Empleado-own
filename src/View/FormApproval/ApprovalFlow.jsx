@@ -6,6 +6,7 @@ import { FaEye, FaTrashAlt, FaClipboardCheck, FaTrash } from "react-icons/fa";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import { motion } from "framer-motion";
 import { PiEyeLight } from "react-icons/pi";
+import FormApprovalSkeleton from "./FormApprovalSkeleton";
 
 const ApprovalFlow = () => {
   const {
@@ -16,6 +17,7 @@ const ApprovalFlow = () => {
     handleDeleteApproval,
     openDialogForm,
     deleteApproval,
+    approvalFlowLoading,
   } = useFormApproval();
   
   // Updated headers to match modern style
@@ -49,7 +51,7 @@ const ApprovalFlow = () => {
 
   const itemVariants = {
     hidden: { y: 10, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300 } },
+    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 15 } },
   };
 
   return (
@@ -59,6 +61,9 @@ const ApprovalFlow = () => {
       variants={containerVariants}
       className="flex flex-col gap-4"
     >
+      {approvalFlowLoading ? (
+        <FormApprovalSkeleton headers={approvalData} />
+      ) : (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto customScroll">
           <table className="w-full text-left border-collapse">
@@ -148,6 +153,7 @@ const ApprovalFlow = () => {
           </table>
         </div>
       </div>
+      )}
       
       <ConfirmationDialog
         openDialog={openDialogForm}

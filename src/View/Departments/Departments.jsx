@@ -19,15 +19,36 @@ import { Outlet, useLocation, useParams } from "react-router";
 import useDropdownService from "../../services/__dropDownHoverService";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 
+/** Skeleton row mirroring table columns: Dept Name (left), Description, Employees, Head of Dept, Sub Depts, Designations, Actions */
 const SkeletonRow = () => (
   <tr className="animate-pulse border-b border-gray-100">
-    <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-48 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-6 w-16 bg-gray-200 rounded-full mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-6 w-16 bg-gray-200 rounded-full mx-auto"></div></td>
-    <td className="p-4"><div className="h-8 w-8 bg-gray-200 rounded-full mx-auto"></div></td>
-    <td className="p-4"><div className="h-8 w-20 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4 first:pl-6 text-left">
+      <div className="h-4 bg-gray-100 rounded w-32 max-w-[200px]" />
+    </td>
+    <td className="p-4 max-w-[250px]">
+      <div className="h-4 bg-gray-100 rounded w-full max-w-[220px] mx-auto" />
+    </td>
+    <td className="p-4">
+      <div className="flex items-center justify-center gap-2">
+        <div className="h-6 w-12 bg-gray-100 rounded-full" />
+        <div className="h-4 w-10 bg-gray-100 rounded" />
+      </div>
+    </td>
+    <td className="p-4">
+      <div className="h-4 bg-gray-100 rounded w-24 mx-auto" />
+    </td>
+    <td className="p-4">
+      <div className="flex items-center justify-center gap-2">
+        <div className="h-6 w-6 rounded-full bg-gray-100" />
+        <div className="h-4 w-10 bg-gray-100 rounded" />
+      </div>
+    </td>
+    <td className="p-4">
+      <div className="h-8 w-8 rounded-full bg-gray-100 mx-auto" />
+    </td>
+    <td className="p-4 last:pr-6">
+      <div className="h-8 w-16 bg-gray-100 rounded-lg mx-auto" />
+    </td>
   </tr>
 );
 
@@ -125,9 +146,9 @@ const Departments = () => {
       {location.pathname.includes("manage_sub_dep") ? (
         <Outlet />
       ) : (
-        <div className="min-h-screen bg-gray-50/50 p-6">
+        <div className="min-h-screen  ">
           {allDeptDetails?.length > 0 || isLoadingDeptPage ? (
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className=" mx-auto space-y-6">
               
               {/* Header Section */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -175,7 +196,7 @@ const Departments = () => {
 
                     <tbody className="divide-y divide-gray-50">
                       {isLoadingDeptPage ? (
-                         [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
+                         [...Array(6)].map((_, i) => <SkeletonRow key={i} />)
                       ) : (
                         displayDeptDetails.map((t_data, index) => (
                           <motion.tr
@@ -187,14 +208,9 @@ const Departments = () => {
                           >
                             {/* Dept Name */}
                             <td className="p-4 first:pl-6 text-left">
-                              <div className="flex items-center justify-start gap-3">
-                                <div className="p-2 bg-blue-50 rounded-lg text-blue-500 group-hover:bg-blue-100 transition-colors">
-                                   <HiOutlineOfficeBuilding size={18} />
-                                </div>
-                                <Typography className="text-sm font-semibold text-gray-900 font-poppins">
-                                  {t_data.name || t_data.dept_name}
-                                </Typography>
-                              </div>
+                              <Typography className="text-sm font-semibold text-gray-900 font-poppins">
+                                {t_data.name || t_data.dept_name}
+                              </Typography>
                             </td>
 
                             {/* Description */}

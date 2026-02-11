@@ -213,17 +213,73 @@ const Performance = () => {
     setSelectedGoalForComments(null);
   };
 
+  const renderTabs = () => (
+    <div className='bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-100 inline-flex flex-wrap gap-1'>
+      {performanceTitles
+        .filter((ele) => {
+          // Hide "Performance Review Cycle" tab when viewing individual employee details
+          if (showProfile && selectedEmployeeId) {
+            return ele.title !== "Performance Review Cycle";
+          }
+          return true;
+        })
+        .map((ele) => (
+          <button
+            key={ele.id}
+            onClick={(e) => {
+              e.preventDefault();
+              // If profile is open, handle tab change
+              if (showProfile && selectedEmployeeId) {
+                if (ele.title === "Goals") {
+                  handleTabChange("goals");
+                } else if (ele.title === "Competency") {
+                  handleTabChange("competency");
+                } else if (ele.title === "Feedback") {
+                  handleTabChange("feedback");
+                } else if (ele.title === "History") {
+                  handleTabChange("history");
+                }
+              } else {
+                // If no profile is open, use the service navigation
+                handleNavLinkClick(ele);
+              }
+            }}
+            className={`
+              relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out z-10
+              ${((showProfile && selectedEmployeeId && currentView === ele.title.toLowerCase()) ||
+                 (!showProfile && location.pathname === ele.link))
+                  ? "text-white shadow-md shadow-blue-500/20" 
+                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+              }
+            `}
+          >
+            {((showProfile && selectedEmployeeId && currentView === ele.title.toLowerCase()) ||
+              (!showProfile && location.pathname === ele.link)) && (
+              <motion.span
+                layoutId="activeTab"
+                className="absolute inset-0 bg-bgBlue rounded-xl -z-10"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            {ele.title}
+          </button>
+        ))}
+    </div>
+  );
+
   return (
-    <div className='min-h-screen bg-gray-50/50 p-6 font-poppins'>
-      <div className='max-w-7xl mx-auto space-y-6'>
+    <div className='min-h-screen  p-6 font-poppins'>
+      <div className=' mx-auto space-y-6'>
         
         {/* Header Section */}
         {!showProfile && (
-          <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+          <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100'>
             <div>
               <h1 className='text-2xl font-bold text-gray-900'>Performance</h1>
               <p className='text-sm text-gray-500 mt-1'>Manage goals, competencies, and reviews</p>
             </div>
+            {/* Tabs moved inside header for main view */}
+            {renderTabs()}
           </div>
         )}
 
@@ -244,58 +300,12 @@ const Performance = () => {
           )}
         </AnimatePresence>
 
-        {/* Navigation Tabs */}
-        <div className='bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-100 inline-flex flex-wrap gap-1'>
-            {performanceTitles
-              .filter((ele) => {
-                // Hide "Performance Review Cycle" tab when viewing individual employee details
-                if (showProfile && selectedEmployeeId) {
-                  return ele.title !== "Performance Review Cycle";
-                }
-                return true;
-              })
-              .map((ele) => (
-                <button
-                  key={ele.id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    // If profile is open, handle tab change
-                    if (showProfile && selectedEmployeeId) {
-                      if (ele.title === "Goals") {
-                        handleTabChange("goals");
-                      } else if (ele.title === "Competency") {
-                        handleTabChange("competency");
-                      } else if (ele.title === "Feedback") {
-                        handleTabChange("feedback");
-                      } else if (ele.title === "History") {
-                        handleTabChange("history");
-                      }
-                    } else {
-                      // If no profile is open, use the service navigation
-                      handleNavLinkClick(ele);
-                    }
-                  }}
-                  className={`
-                    relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out z-10
-                    ${((showProfile && selectedEmployeeId && currentView === ele.title.toLowerCase()) ||
-                       (!showProfile && location.pathname === ele.link))
-                        ? "text-white shadow-md shadow-blue-500/20" 
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                    }
-                  `}
-                >
-                  {((showProfile && selectedEmployeeId && currentView === ele.title.toLowerCase()) ||
-                    (!showProfile && location.pathname === ele.link)) && (
-                    <motion.span
-                      layoutId="activeTab"
-                      className="absolute inset-0 bg-bgBlue rounded-xl -z-10"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                  {ele.title}
-                </button>
-              ))}
-        </div>
+        {/* Render Tabs separately only when profile is shown (since header is hidden) */}
+        {showProfile && (
+          <div className="flex justify-start">
+            {renderTabs()}
+          </div>
+        )}
 
         {/* Content Area */}
         <motion.div

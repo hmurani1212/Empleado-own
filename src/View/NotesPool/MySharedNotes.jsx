@@ -24,9 +24,9 @@ const MySharedNotes = (props) => {
 
   const [searchValue, setSearchValue] = useState("");
 
-  const notes = notesFromProps || [];
+  const notes = notesFromProps;
 
-  const filteredNotes = notes.filter((note) =>
+  const filteredNotes = (notes || []).filter((note) =>
     note.note_title?.toLowerCase().includes(searchValue.toLowerCase())
   );
 

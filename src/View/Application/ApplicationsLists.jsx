@@ -10,7 +10,6 @@ import { FaRegEye } from "react-icons/fa";
 import { useLocation } from 'react-router-dom';
 import CustomSelect from '../../Components/CustomSelect/CustomSelect';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiOutlineDocumentText } from "react-icons/hi";
 
 const SkeletonRow = () => (
   <tr className="animate-pulse border-b border-gray-100">
@@ -261,8 +260,8 @@ function ApplicationsLists() {
         >
           {/* Controls Bar */}
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-            <div className="flex flex-col md:flex-row items-center gap-4 flex-wrap">
-              <div className="w-full md:w-56">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div className="w-full min-w-0">
                 <CustomSelect
                   placeHolderTitle="Filter by Branch"
                   value={selectedBranch}
@@ -274,7 +273,7 @@ function ApplicationsLists() {
                   customStyles={false}
                 />
               </div>
-              <div className="w-full md:w-56">
+              <div className="w-full min-w-0">
                 <CustomSelect
                   placeHolderTitle="Filter by Department"
                   value={selectedDepartment}
@@ -286,7 +285,7 @@ function ApplicationsLists() {
                   customStyles={false}
                 />
               </div>
-              <div className="w-full md:w-40">
+              <div className="w-full min-w-0">
                 <CustomSelect
                   placeHolderTitle="Filter by Status"
                   value={selectedStatus}
@@ -300,7 +299,7 @@ function ApplicationsLists() {
                   customStyles={false}
                 />
               </div>
-              <div className="w-full md:w-64">
+              <div className="w-full min-w-0">
                 <CustomSelect
                   placeHolderTitle="Search Employee"
                   value={selectedEmployee}
@@ -311,7 +310,6 @@ function ApplicationsLists() {
                   customStyles={false}
                 />
               </div>
-               {/* Print button removed or can be added back if essential */}
             </div>
           </div>
 
@@ -355,14 +353,9 @@ function ApplicationsLists() {
                           </div>
                         </td>
                         <td className="p-4 text-left">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-50 rounded-lg text-blue-500 group-hover:bg-blue-100 transition-colors">
-                                  <HiOutlineDocumentText size={16} />
-                                </div>
-                                <Typography className="text-sm font-semibold text-gray-900 font-poppins line-clamp-1" title={ele?.subject}>
-                                    {ele?.subject}
-                                </Typography>
-                            </div>
+                            <Typography className="text-sm font-semibold text-gray-900 font-poppins line-clamp-1" title={ele?.subject}>
+                                {ele?.subject}
+                            </Typography>
                         </td>
                         <td className="p-4">
                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-600 border border-purple-100">

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Option, Select } from "@material-tailwind/react";
 import useLeavesPlanner from "../../ViewModel/LeavePlannerViewModel/LeavePlannerServices";
 import CustomButton from "../../Components/CustomButton/CustomButton";
@@ -8,6 +8,7 @@ import PublicHolidayCalendar from "./PublicHolidayCalendar";
 import usePublicHolidayServices from "../../ViewModel/LeavePlannerViewModel/publicHolidayServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { FaXmark } from "react-icons/fa6";
+import { PublicHolidayCalendarSkeleton } from "./LeavesPlannerSkeletons";
 
 const PublicHoliday = () => {
   const {
@@ -35,9 +36,11 @@ const PublicHoliday = () => {
     handleAddPublicHoliday,
   } = usePublicHolidayServices();
 
+  const [publicHolidayLoading, setPublicHolidayLoading] = useState(true);
+
   useEffect(() => {
-    gettingBranchesForLeavePlanner();
-    console.log("publicHolidayValues", publicHolidayValue);
+    setPublicHolidayLoading(true);
+    gettingBranchesForLeavePlanner().finally(() => setPublicHolidayLoading(false));
   }, []);
 
   return (
@@ -118,20 +121,24 @@ const PublicHoliday = () => {
           </div>
         </div>
         <div>
-          <PublicHolidayCalendar
-            publicHolidayValue={publicHolidayValue}
-            handlePreviousMonth={handlePreviousMonth}
-            handleNextMonth={handleNextMonth}
-            handleSingleDayPublicHoliday={handleSingleDayPublicHoliday}
-            showSingleHoliday={showSingleHoliday}
-            toggleHandleSingleDayPublicHoliday={
-              toggleHandleSingleDayPublicHoliday
-            }
-            handleRemovePublicHoliday={handleRemovePublicHoliday}
-            addPublicHolidaysValue={addPublicHolidaysValue}
-            handleChangeAddPublicHoliday={handleChangeAddPublicHoliday}
-            handleAddPublicHoliday={handleAddPublicHoliday}
-          />
+          {publicHolidayLoading ? (
+            <PublicHolidayCalendarSkeleton />
+          ) : (
+            <PublicHolidayCalendar
+              publicHolidayValue={publicHolidayValue}
+              handlePreviousMonth={handlePreviousMonth}
+              handleNextMonth={handleNextMonth}
+              handleSingleDayPublicHoliday={handleSingleDayPublicHoliday}
+              showSingleHoliday={showSingleHoliday}
+              toggleHandleSingleDayPublicHoliday={
+                toggleHandleSingleDayPublicHoliday
+              }
+              handleRemovePublicHoliday={handleRemovePublicHoliday}
+              addPublicHolidaysValue={addPublicHolidaysValue}
+              handleChangeAddPublicHoliday={handleChangeAddPublicHoliday}
+              handleAddPublicHoliday={handleAddPublicHoliday}
+            />
+          )}
         </div>
       </div>
 

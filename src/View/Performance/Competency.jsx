@@ -14,6 +14,7 @@ import {
   useNavigate,
 } from "react-router";
 import { motion } from "framer-motion";
+import { PerformanceTableSkeleton } from "./PerformanceSkeletons";
 
 const Competency = () => {
   const {
@@ -31,6 +32,7 @@ const Competency = () => {
     deleteCompteny,
     handleSubmitAddCompetency,
     handleRemoveEmp,
+    competencyLoading,
   } = useCometencyServices();
 
   // Get the profile view handler from the parent component
@@ -122,6 +124,9 @@ const Competency = () => {
           </div>
 
           {/* Table */}
+          {competencyLoading ? (
+            <PerformanceTableSkeleton headers={tableHeader} />
+          ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
               <table className="min-w-full table-auto text-center">
@@ -195,6 +200,7 @@ const Competency = () => {
               </table>
             </div>
           </div>
+          )}
 
           {addCompetencyValue.show && (
             <PortalDrawer

@@ -5,6 +5,7 @@ import { FaThumbsUp, FaThumbsDown, FaTrophy } from "react-icons/fa";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import useFeedbackServices from "../../ViewModel/PerformnaceViewModel/feedbackServices";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import { FeedbackSkeleton } from "./PerformanceSkeletons";
 
 const Feedback = () => {
   const {
@@ -26,6 +27,7 @@ const Feedback = () => {
     handleSubmitFeedback,
     handleCancelFeedback,
     isSubmitting,
+    feedbackLoading,
   } = useFeedbackServices();
 
   // console.log('selectedEmployee selectedEmployee', selectedEmployee)
@@ -175,6 +177,8 @@ const Feedback = () => {
 
       {showQuickFeedback ? (
         renderQuickFeedbackForm()
+      ) : feedbackLoading ? (
+        <FeedbackSkeleton />
       ) : (
         <div className="bg-white rounded-[10px] drop-shadow-md p-2">
           <div className="h-[calc(100vh-100px)] overflow-auto customScroll">

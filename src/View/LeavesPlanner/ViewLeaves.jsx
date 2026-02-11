@@ -6,10 +6,12 @@ import useLeavesPlanner from "../../ViewModel/LeavePlannerViewModel/LeavePlanner
 import { MdDelete } from "react-icons/md";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import { FaArrowLeft, FaPlus } from "react-icons/fa";
+import { ViewLeavesTableSkeleton } from "./LeavesPlannerSkeletons";
 
 const ViewLeaves = () => {
   const {
     allViewLeave,
+    viewLeavesLoading,
     openDialogSpecific,
     handleDeleteLeaves,
     handleDeleteSpecificLeaves,
@@ -75,6 +77,9 @@ const ViewLeaves = () => {
       </div>
 
       {/* Table */}
+      {viewLeavesLoading ? (
+        <ViewLeavesTableSkeleton />
+      ) : (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
           <table className="min-w-full table-auto text-center">
@@ -139,6 +144,7 @@ const ViewLeaves = () => {
           </table>
         </div>
       </div>
+      )}
 
       <ConfirmationDialog
         openDialog={openDialogSpecific}
