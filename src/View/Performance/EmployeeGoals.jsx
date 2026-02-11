@@ -24,6 +24,7 @@ import CustomButton from "../../Components/CustomButton/CustomButton";
 import performanceApi from "../../Model/Data/Performance/Performance";
 import { showToast } from "../../Components/Toaster/Toaster";
 import { motion, AnimatePresence } from "framer-motion";
+import { SubGoalsSkeleton } from "./PerformanceSkeletons";
 
 const EmployeeGoals = () => {
   const location = useLocation();
@@ -35,6 +36,7 @@ const EmployeeGoals = () => {
     clearEmployeeGoals,
     refreshEmployeeGoals,
     currentEmployeeId,
+    subGoalsLoading,
   } = useStore();
   const {
     handleOpenRatingModal,
@@ -303,6 +305,9 @@ const EmployeeGoals = () => {
           </div>
 
           {/* Goals Table */}
+          {subGoalsLoading ? (
+            <SubGoalsSkeleton />
+          ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
               <table className="min-w-full table-auto text-center">
@@ -421,6 +426,7 @@ const EmployeeGoals = () => {
               </table>
             </div>
           </div>
+          )}
         </>
       )}
 

@@ -13,16 +13,33 @@ import EditBranchForm from "./EditBranchForm";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import branchImage from "../../assets/images/departement 1.png"; // Reusing the same image or a generic empty state image if available
 
+/** Skeleton row mirroring table columns: Branch ID, Branch Name (left), Branch Admin, Currency, Phone, Email, Creation Time, Actions */
 const SkeletonRow = () => (
   <tr className="animate-pulse border-b border-gray-100">
-    <td className="p-4"><div className="h-4 w-16 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-12 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-20 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-8 w-20 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4 first:pl-6">
+      <div className="h-5 w-12 bg-gray-100 rounded-md mx-auto" />
+    </td>
+    <td className="p-4 text-left">
+      <div className="h-4 bg-gray-100 rounded w-36 max-w-[200px]" />
+    </td>
+    <td className="p-4">
+      <div className="h-4 bg-gray-100 rounded w-24 mx-auto" />
+    </td>
+    <td className="p-4">
+      <div className="h-6 w-14 bg-gray-100 rounded-md mx-auto" />
+    </td>
+    <td className="p-4">
+      <div className="h-4 bg-gray-100 rounded w-24 mx-auto" />
+    </td>
+    <td className="p-4">
+      <div className="h-4 bg-gray-100 rounded w-32 mx-auto max-w-[180px]" />
+    </td>
+    <td className="p-4">
+      <div className="h-4 bg-gray-100 rounded w-28 mx-auto" />
+    </td>
+    <td className="p-4 last:pr-6">
+      <div className="h-8 w-16 bg-gray-100 rounded-lg mx-auto" />
+    </td>
   </tr>
 );
 
@@ -77,7 +94,7 @@ const BranchesList = (props) => {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                 [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
+                 [...Array(6)].map((_, i) => <SkeletonRow key={i} />)
               ) : branchesAll?.branches?.length > 0 ? (
                 branchesAll?.branches?.map((branch, index) => {
                   

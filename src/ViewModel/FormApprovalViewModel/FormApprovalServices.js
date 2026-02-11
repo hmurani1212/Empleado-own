@@ -9,8 +9,10 @@ const useFormApproval = () => {
     const mountCustomForm = useStore((state) => state.mountCustomForm)
     const allCustomForm = useStore((state) => state.allCustomForm)
     const gettingCustomForm = useStore((state) => state.gettingCustomForm)
+    const customFormLoading = useStore((state) => state.customFormLoading)
     const mountApprovalFlow = useStore((state) => state.mountApprovalFlow)
     const gettingFormApproval = useStore((state) => state.gettingFormApproval)
+    const approvalFlowLoading = useStore((state) => state.approvalFlowLoading)
     const allApprovalFlow = useStore((state) => state.allApprovalFlow)
     const openDrawer = useStore ((state) => state.openDrawer)
     const settingDrawerTitle = useStore ((state) => state.settingDrawerTitle)
@@ -76,7 +78,7 @@ const useFormApproval = () => {
 
 
 
-  return {formApprovalTitles, handleMountCustomForm, mountCustomForm, allCustomForm, gettingCustomForm, mountApprovalFlow, gettingFormApproval, allApprovalFlow, viewFormApproval, viewApproval, viewApprovalLoading, handleDeleteApproval, openDialogForm, deleteApproval}
+  return {formApprovalTitles, handleMountCustomForm, mountCustomForm, allCustomForm, gettingCustomForm, customFormLoading, mountApprovalFlow, gettingFormApproval, approvalFlowLoading, allApprovalFlow, viewFormApproval, viewApproval, viewApprovalLoading, handleDeleteApproval, openDialogForm, deleteApproval}
 }
 
 export default useFormApproval

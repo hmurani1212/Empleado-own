@@ -7,6 +7,7 @@ import { showToast } from "../../Components/Toaster/Toaster"
 const useFeedbackServices = () => {
     const gettingFeedback = useStore((state) => state.gettingFeedback)
     const feedbackData = useStore((state) => state.feedbackData)
+    const feedbackLoading = useStore((state) => state.feedbackLoading)
 
     const [feedbackValue, setFeedbackValue] = useState({
         searchText: ''
@@ -190,7 +191,8 @@ const useFeedbackServices = () => {
         handleThumbSelect,
         handleSubmitFeedback,
         handleCancelFeedback,
-        isSubmitting
+        isSubmitting,
+        feedbackLoading
     }
 }
 

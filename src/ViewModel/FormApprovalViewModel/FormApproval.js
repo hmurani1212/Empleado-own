@@ -3,8 +3,10 @@ import formApprovalApi from '../../Model/Data/FormApproval/FormApproval'
 
 const formApprovalViewModel = (set,get) => ({
     allCustomForm : [],
+    customFormLoading: false,
     mountCustomForm : false,
     allApprovalFlow : [],
+    approvalFlowLoading: false,
     viewApproval : [],
     viewApprovalLoading : false,
     mountApprovalFlow : false,
@@ -18,6 +20,7 @@ const formApprovalViewModel = (set,get) => ({
     },
 
     gettingCustomForm : async() => {
+        set({customFormLoading: true})
         try{
             const response = await formApprovalApi.getCustomFormList()
             const data = response.data
@@ -28,10 +31,13 @@ const formApprovalViewModel = (set,get) => ({
             }
         } catch(error) {
             console.log(error)
+        } finally {
+            set({customFormLoading: false})
         }
     },
 
     gettingFormApproval : async() => {
+        set({approvalFlowLoading: true})
         try{
             const response = await formApprovalApi.getApprovalFlowList()
             const data = response.data
@@ -42,6 +48,8 @@ const formApprovalViewModel = (set,get) => ({
             }
         } catch(error) {
             console.log(error)
+        } finally {
+            set({approvalFlowLoading: false})
         }
     },
 

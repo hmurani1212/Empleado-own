@@ -9,6 +9,7 @@ import noRecordFound from '../../../assets/employee_side_images/no record found.
 import { motion } from 'framer-motion';
 import { FaPlus, FaClock, FaCheck, FaTimes, FaCalendarAlt, FaHourglassHalf } from 'react-icons/fa';
 import { HiOutlineAdjustments } from "react-icons/hi";
+import { TimeAdjustmentStatsSkeleton, TimeAdjustmentTableSkeleton } from './EmpTimeAdjustmentSkeleton';
 
 const tableHeader = [
   "Actual Time", "Adjustment Date", "Requested Time", "Detail", "Status"
@@ -16,7 +17,7 @@ const tableHeader = [
 
 const EmpTimeAdjustment = () => {
     const {formValue, handleChangeAdjustRequest, toggleAddNewAdjustRequest, NewAdjustRequest, handleNewTimeRequest} = useNewAdjustRequest()
-    const {getTimeAjustmentData, timeAjustmentData} = useEmpTimeAdjustmentServices()
+    const {getTimeAjustmentData, timeAjustmentData, timeAdjustmentLoading} = useEmpTimeAdjustmentServices()
     
     useEffect(()=>{
         getTimeAjustmentData()
@@ -86,118 +87,128 @@ const EmpTimeAdjustment = () => {
 
             {/* Stats Cards */}
             <motion.div variants={itemVariants} className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-                <Card className='shadow-sm border border-gray-100'>
-                    <CardBody className='p-4 flex items-center justify-between'>
-                        <div>
-                            <p className='text-xs text-gray-500 font-bold uppercase'>Total Requests</p>
-                            <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.total}</h3>
-                        </div>
-                        <div className='p-3 bg-blue-50 text-blue-500 rounded-full'><FaClock size={20} /></div>
-                    </CardBody>
-                </Card>
-                <Card className='shadow-sm border border-gray-100'>
-                    <CardBody className='p-4 flex items-center justify-between'>
-                        <div>
-                            <p className='text-xs text-gray-500 font-bold uppercase'>Pending</p>
-                            <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.pending}</h3>
-                        </div>
-                        <div className='p-3 bg-amber-50 text-amber-500 rounded-full'><FaHourglassHalf size={20} /></div>
-                    </CardBody>
-                </Card>
-                <Card className='shadow-sm border border-gray-100'>
-                    <CardBody className='p-4 flex items-center justify-between'>
-                        <div>
-                            <p className='text-xs text-gray-500 font-bold uppercase'>Approved</p>
-                            <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.approved}</h3>
-                        </div>
-                        <div className='p-3 bg-green-50 text-green-500 rounded-full'><FaCheck size={20} /></div>
-                    </CardBody>
-                </Card>
-                <Card className='shadow-sm border border-gray-100'>
-                    <CardBody className='p-4 flex items-center justify-between'>
-                        <div>
-                            <p className='text-xs text-gray-500 font-bold uppercase'>Rejected</p>
-                            <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.rejected}</h3>
-                        </div>
-                        <div className='p-3 bg-red-50 text-red-500 rounded-full'><FaTimes size={20} /></div>
-                    </CardBody>
-                </Card>
+                {timeAdjustmentLoading ? (
+                    <TimeAdjustmentStatsSkeleton />
+                ) : (
+                    <>
+                        <Card className='shadow-sm border border-gray-100'>
+                            <CardBody className='p-4 flex items-center justify-between'>
+                                <div>
+                                    <p className='text-xs text-gray-500 font-bold uppercase'>Total Requests</p>
+                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.total}</h3>
+                                </div>
+                                <div className='p-3 bg-blue-50 text-blue-500 rounded-full'><FaClock size={20} /></div>
+                            </CardBody>
+                        </Card>
+                        <Card className='shadow-sm border border-gray-100'>
+                            <CardBody className='p-4 flex items-center justify-between'>
+                                <div>
+                                    <p className='text-xs text-gray-500 font-bold uppercase'>Pending</p>
+                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.pending}</h3>
+                                </div>
+                                <div className='p-3 bg-amber-50 text-amber-500 rounded-full'><FaHourglassHalf size={20} /></div>
+                            </CardBody>
+                        </Card>
+                        <Card className='shadow-sm border border-gray-100'>
+                            <CardBody className='p-4 flex items-center justify-between'>
+                                <div>
+                                    <p className='text-xs text-gray-500 font-bold uppercase'>Approved</p>
+                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.approved}</h3>
+                                </div>
+                                <div className='p-3 bg-green-50 text-green-500 rounded-full'><FaCheck size={20} /></div>
+                            </CardBody>
+                        </Card>
+                        <Card className='shadow-sm border border-gray-100'>
+                            <CardBody className='p-4 flex items-center justify-between'>
+                                <div>
+                                    <p className='text-xs text-gray-500 font-bold uppercase'>Rejected</p>
+                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.rejected}</h3>
+                                </div>
+                                <div className='p-3 bg-red-50 text-red-500 rounded-full'><FaTimes size={20} /></div>
+                            </CardBody>
+                        </Card>
+                    </>
+                )}
             </motion.div>
 
             {/* Request List */}
             <motion.div variants={itemVariants}>
-                <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left min-w-[800px]">
-                            <thead className='bg-gray-50 border-b border-gray-200'>
-                                <tr>
-                                    {tableHeader.map((head, i) => (
-                                        <th key={i} className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                            {head}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {timeAjustmentData?.length > 0 ? (
-                                    timeAjustmentData
-                                        .filter(ele => ele && ele._id)
-                                        .map((ele, index) => (
-                                            <motion.tr 
-                                                key={ele._id || index}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                transition={{ delay: index * 0.05 }}
-                                                className="hover:bg-gray-50/50 transition-colors"
-                                            >
-                                                <td className="py-4 px-6 text-sm text-gray-600">
-                                                    {ele?.entry_time ? formatDateDMY(ele.entry_time) : '-'}
-                                                </td>
-                                                <td className="py-4 px-6 text-sm font-medium text-gray-700">
-                                                    <div className="flex items-center gap-2">
-                                                        <FaCalendarAlt className="text-gray-400" />
-                                                        {ele?.form_data?.date ? formatDateDMY(ele?.form_data?.date) : '-'}
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 px-6 text-sm text-gray-600">
-                                                    <div className="flex flex-col text-xs">
-                                                        <span className="flex items-center gap-1">
-                                                            <span className="font-semibold text-gray-700 w-8">In:</span> 
-                                                            {formatTimeTo12Hour(ele?.form_data?.in_time || '')}
-                                                        </span>
-                                                        <span className="flex items-center gap-1 mt-1">
-                                                            <span className="font-semibold text-gray-700 w-8">Out:</span> 
-                                                            {formatTimeTo12Hour(ele?.form_data?.out_time || '')}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 px-6">
-                                                    <p className="text-sm text-gray-600 max-w-xs truncate" title={ele?.form_data?.reason}>
-                                                        {ele?.form_data?.reason || '-'}
-                                                    </p>
-                                                </td>
-                                                <td className="py-4 px-6">
-                                                    {getStatusChip(ele?.status)}
-                                                </td>
-                                            </motion.tr>
-                                        ))
-                                ) : (
+                {timeAdjustmentLoading ? (
+                    <TimeAdjustmentTableSkeleton />
+                ) : (
+                    <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left min-w-[800px]">
+                                <thead className='bg-gray-50 border-b border-gray-200'>
                                     <tr>
-                                        <td colSpan={5} className="py-12 text-center text-gray-400">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <img src={noRecordFound} alt="No record found" className='w-40 opacity-70 mix-blend-multiply mb-4' />
-                                                <Typography color="gray" className="font-medium">No time adjustment requests found!</Typography>
-                                                <Button variant="text" color="blue" onClick={NewAdjustRequest} className="mt-2">
-                                                    Create your first request
-                                                </Button>
-                                            </div>
-                                        </td>
+                                        {tableHeader.map((head, i) => (
+                                            <th key={i} className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                                {head}
+                                            </th>
+                                        ))}
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {timeAjustmentData?.length > 0 ? (
+                                        timeAjustmentData
+                                            .filter(ele => ele && ele._id)
+                                            .map((ele, index) => (
+                                                <motion.tr 
+                                                    key={ele._id || index}
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ delay: index * 0.05 }}
+                                                    className="hover:bg-gray-50/50 transition-colors"
+                                                >
+                                                    <td className="py-4 px-6 text-sm text-gray-600">
+                                                        {ele?.entry_time ? formatDateDMY(ele.entry_time) : '-'}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-sm font-medium text-gray-700">
+                                                        <div className="flex items-center gap-2">
+                                                            <FaCalendarAlt className="text-gray-400" />
+                                                            {ele?.form_data?.date ? formatDateDMY(ele?.form_data?.date) : '-'}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-6 text-sm text-gray-600">
+                                                        <div className="flex flex-col text-xs">
+                                                            <span className="flex items-center gap-1">
+                                                                <span className="font-semibold text-gray-700 w-8">In:</span> 
+                                                                {formatTimeTo12Hour(ele?.form_data?.in_time || '')}
+                                                            </span>
+                                                            <span className="flex items-center gap-1 mt-1">
+                                                                <span className="font-semibold text-gray-700 w-8">Out:</span> 
+                                                                {formatTimeTo12Hour(ele?.form_data?.out_time || '')}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-4 px-6">
+                                                        <p className="text-sm text-gray-600 max-w-xs truncate" title={ele?.form_data?.reason}>
+                                                            {ele?.form_data?.reason || '-'}
+                                                        </p>
+                                                    </td>
+                                                    <td className="py-4 px-6">
+                                                        {getStatusChip(ele?.status)}
+                                                    </td>
+                                                </motion.tr>
+                                            ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={5} className="py-12 text-center text-gray-400">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <img src={noRecordFound} alt="No record found" className='w-40 opacity-70 mix-blend-multiply mb-4' />
+                                                    <Typography color="gray" className="font-medium">No time adjustment requests found!</Typography>
+                                                    <Button variant="text" color="blue" onClick={NewAdjustRequest} className="mt-2">
+                                                        Create your first request
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                )}
             </motion.div>
 
             {/* Create Request Drawer */}

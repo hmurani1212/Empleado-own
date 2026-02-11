@@ -12,6 +12,7 @@ import CustomButton from "../../Components/CustomButton/CustomButton";
 const EmployeesList = (props) => {
   const {
     empListData,
+    loading: loadingProp,
     triggerRefs,
     getDropdownPosition,
     toggleMenuValue,
@@ -23,7 +24,7 @@ const EmployeesList = (props) => {
     currentStatus,
   } = props;
 
-  const isLoading = !empListData?.employees;
+  const isLoading = loadingProp !== undefined ? loadingProp : !empListData?.employees;
 
   const data = [
     "Employee ID",
@@ -80,18 +81,35 @@ const EmployeesList = (props) => {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-100">
-          {isLoading && (
-            <tr>
-              <td colSpan={data.length} className="p-10 text-center">
-                <div className="flex justify-center items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                  <Typography className="text-gray-500 text-sm font-medium">
-                    Loading employees...
-                  </Typography>
-                </div>
-              </td>
-            </tr>
-          )}
+          {isLoading &&
+            [...Array(6)].map((_, rowIndex) => (
+              <tr key={rowIndex} className="animate-pulse border-b border-gray-100">
+                <td className="px-4 py-4">
+                  <div className="h-4 bg-gray-100 rounded w-full max-w-[60px] mx-auto" />
+                </td>
+                <td className="px-4 py-4">
+                  <div className="h-4 bg-gray-100 rounded w-full max-w-[56px] mx-auto" />
+                </td>
+                <td className="px-4 py-4">
+                  <div className="h-4 bg-gray-100 rounded w-full max-w-[48px] mx-auto" />
+                </td>
+                <td className="px-4 py-4">
+                  <div className="h-4 bg-gray-100 rounded w-full max-w-[120px] mx-auto" />
+                </td>
+                <td className="px-4 py-4">
+                  <div className="h-4 bg-gray-100 rounded w-full max-w-[80px] mx-auto" />
+                </td>
+                <td className="px-4 py-4">
+                  <div className="h-6 bg-gray-100 rounded-full w-full max-w-[72px] mx-auto" />
+                </td>
+                <td className="px-4 py-4">
+                  <div className="h-4 bg-gray-100 rounded w-full max-w-[88px] mx-auto" />
+                </td>
+                <td className="px-4 py-4">
+                  <div className="h-8 bg-gray-100 rounded-lg w-full max-w-[64px] mx-auto" />
+                </td>
+              </tr>
+            ))}
           {!isLoading && empListData?.employees?.length > 0 && (
             [...(empListData?.employees ?? [])]
               .sort((a, b) => (a?.name || "").localeCompare(b?.name || "", undefined, { sensitivity: "base" }))

@@ -10,6 +10,7 @@ const useSubDept = ()=>{
 
     const gettingSubDept = useStore((state)=> state.gettingSubDept)
     const subDept = useStore((state)=> state.subDept)
+    const subDeptLoading = useStore((state)=> state.subDeptLoading)
     const settingMainParent = useStore((state)=> state.settingMainParent)
     const settingParentId = useStore((state)=> state.settingParentId)
     const mainParentID = useStore((state)=> state.mainParentID)
@@ -232,7 +233,7 @@ const useSubDept = ()=>{
     };
 
 
-    return { handleSubDept, subDept,handleNestedSubDept, backToParent, handleAddSubDept, submitSubDept,
+    return { handleSubDept, subDept, subDeptLoading, handleNestedSubDept, backToParent, handleAddSubDept, submitSubDept,
         newDesigValue,handleNewDesignations,
         handleInputChangeDes, handleRemoveNewDesignation, handleChangeDesignation, backToHome
      }

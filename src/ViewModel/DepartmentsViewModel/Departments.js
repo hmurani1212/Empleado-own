@@ -17,6 +17,7 @@ const departmentsViewModel = (set, get) => ({
     filterDepartments: [],
     allBranches: [],
     subDept: [],
+    subDeptLoading: false,
     deptFound: true,
     parentID: '',
     empDetailDept: [],
@@ -501,6 +502,7 @@ const departmentsViewModel = (set, get) => ({
 
 
     gettingSubDept: async (data) => {
+        set({ subDeptLoading: true });
         try {
             set({ deptFound: true })
             const response = await departmentsApi.getSubDept(data)
@@ -518,6 +520,8 @@ const departmentsViewModel = (set, get) => ({
             }
         } catch (err) {
 
+        } finally {
+            set({ subDeptLoading: false });
         }
     },
 

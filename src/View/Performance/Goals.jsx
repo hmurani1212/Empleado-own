@@ -16,6 +16,7 @@ import {
   useNavigate,
 } from "react-router";
 import { motion } from "framer-motion";
+import { PerformanceTableSkeleton } from "./PerformanceSkeletons";
 
 const Goals = () => {
   const tableHeader = [
@@ -39,6 +40,7 @@ const Goals = () => {
     handleViewEmployeeGoals,
     employeeGoalsData,
     handleGoalsSearch,
+    goalsLoading,
   } = useGoalServices();
 
   const location = useLocation();
@@ -114,6 +116,9 @@ const Goals = () => {
           </div>
 
           {/* Table */}
+          {goalsLoading ? (
+            <PerformanceTableSkeleton headers={tableHeader} />
+          ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
               <table className="min-w-full table-auto text-center">
@@ -188,6 +193,7 @@ const Goals = () => {
               </table>
             </div>
           </div>
+          )}
 
           {addGoalValue.show && (
             <PortalDrawer

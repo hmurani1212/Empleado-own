@@ -16,6 +16,8 @@ const useCometencyServices = ()=>{
     const gettingSubCompetency = useStore((state)=> state.gettingSubCompetency)
     const subComptencyData = useStore((state)=> state.subComptencyData)
     const deleteSingleCompetency = useStore((state)=> state.deleteSingleCompetency)
+    const competencyLoading = useStore((state) => state.competencyLoading)
+    const subCompetencyLoading = useStore((state) => state.subCompetencyLoading)
 
     const { getEmployeesByDeptId } = useDepartments();
     const navigate = useNavigate()
@@ -514,7 +516,9 @@ const useCometencyServices = ()=>{
         handleDeleteSubCompetencyToggle,
         competencyDeleteValue,
         confirmDeleteCompetency,
-        updateCompetencySummaryByEmployee
+        updateCompetencySummaryByEmployee,
+        competencyLoading,
+        subCompetencyLoading
         
     }
 }

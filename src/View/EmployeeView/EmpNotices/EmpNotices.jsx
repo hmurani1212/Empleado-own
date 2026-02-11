@@ -1,13 +1,13 @@
-import { Typography, Card, CardBody, Avatar } from '@material-tailwind/react';
+import { Card, CardBody } from '@material-tailwind/react';
 import React, { useEffect } from 'react';
 import useEmpNoticesServices from '../../../ViewModel/EmpViewModel/EmpNoticesViewModel/EmpNotices';
 import noRecordFound from '../../../assets/employee_side_images/no record found.gif';
 import { motion } from 'framer-motion';
-import { FaBell } from 'react-icons/fa6';
 import { HiSpeakerphone } from "react-icons/hi";
+import EmpNoticesTableSkeleton from './EmpNoticesSkeleton';
 
 const EmpNotices = () => {
-  const { getEmpNoticesData, noticesData } = useEmpNoticesServices();
+  const { getEmpNoticesData, noticesData, noticesLoading } = useEmpNoticesServices();
 
   useEffect(() => {
     getEmpNoticesData();
@@ -56,6 +56,9 @@ const EmpNotices = () => {
       </motion.div>
 
       <motion.div variants={itemVariants}>
+        {noticesLoading ? (
+          <EmpNoticesTableSkeleton />
+        ) : (
         <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
           <CardBody className="p-0">
              {/* Header Row */}
@@ -100,6 +103,7 @@ const EmpNotices = () => {
              </div>
           </CardBody>
         </Card>
+        )}
       </motion.div>
     </motion.div>
   );

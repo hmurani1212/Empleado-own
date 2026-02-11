@@ -20,6 +20,8 @@ const useGoalServices = ()=>{
     const gettingSubGoals = useStore((state)=> state.gettingSubGoals)
     const subGoalsData = useStore((state)=> state.subGoalsData)
     const deleteSingleGoal = useStore((state)=> state.deleteSingleGoal)
+    const goalsLoading = useStore((state) => state.goalsLoading)
+    const subGoalsLoading = useStore((state) => state.subGoalsLoading)
     
     // New employee goals functions
     const gettingGoalsByEmployeeId = useStore((state)=> state.gettingGoalsByEmployeeId)
@@ -686,7 +688,9 @@ const useGoalServices = ()=>{
         // Search functionality
         gettingGoals,
         handleGoalsSearch,
-        searchGoals
+        searchGoals,
+        goalsLoading,
+        subGoalsLoading
     }
     
 }

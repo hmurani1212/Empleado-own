@@ -11,6 +11,7 @@ const branchesViewModel2 = (set, get) => ({
             pages: 1
         }
     },
+    branchesListLoading: true,
     copyBranchesData: [],
     mountBranch: false,
     branchEdit: [],
@@ -30,6 +31,7 @@ const branchesViewModel2 = (set, get) => ({
     },
 
     gettingAllBranchesNew: async (data) => {
+        set({ branchesListLoading: true });
         try {
             const response = await getBranchesService(data);
             const respData = response.data;
@@ -94,6 +96,8 @@ const branchesViewModel2 = (set, get) => ({
                     }
                 });
             }
+        } finally {
+            set({ branchesListLoading: false });
         }
     },
 

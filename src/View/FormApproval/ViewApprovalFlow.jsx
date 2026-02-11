@@ -1,7 +1,8 @@
-import { Card, CardBody, Typography, Spinner } from '@material-tailwind/react'
+import { Card, CardBody, Typography } from '@material-tailwind/react'
 import React from 'react'
 import useFormApproval from '../../ViewModel/FormApprovalViewModel/FormApprovalServices'
 import { FaCheckCircle } from "react-icons/fa";
+import ViewApprovalFlowSkeleton from './ViewApprovalFlowSkeleton';
 
 const ViewApprovalFlow = () => {
     const {viewApproval, viewApprovalLoading} = useFormApproval()
@@ -9,12 +10,7 @@ const ViewApprovalFlow = () => {
     console.log('ViewApprovalFlow loading:', viewApprovalLoading)
     
     if (viewApprovalLoading) {
-        return (
-            <div className="flex justify-center items-center p-8">
-                <Spinner className="h-8 w-8" />
-                <span className="ml-2 text-[12px] text-[#698592]">Loading approval flow details...</span>
-            </div>
-        )
+        return <ViewApprovalFlowSkeleton />
     }
 
     if (!viewApproval || viewApproval.length === 0) {

@@ -29,7 +29,17 @@ const performanceViewModel = (set, get) => ({
     feedbackData: [],
     feedbackDataCopy: [],
 
+    // Loading states
+    PRCLoading: false,
+    goalsLoading: false,
+    competencyLoading: false,
+    feedbackLoading: false,
+    subGoalsLoading: false,
+    subCompetencyLoading: false,
+    historyLoading: false,
+
     gettingPRCData: async () => {
+        set({ PRCLoading: true })
         try {
             const response = await performanceApi.getPRC()
             // console.log('response', response)
@@ -39,11 +49,11 @@ const performanceViewModel = (set, get) => ({
                 set({ next: responseData.Next ?? '' });
                 set({ PRCDataCopy: responseData.DB_DATA })
             }
-
-
         }
         catch (err) {
             console.log(err)
+        } finally {
+            set({ PRCLoading: false })
         }
     },
 
@@ -113,6 +123,7 @@ const performanceViewModel = (set, get) => ({
     },
 
     gettingGoals: async (id, searchText = null) => {
+        set({ goalsLoading: true })
         try {
             let response;
             if (searchText) {
@@ -135,6 +146,8 @@ const performanceViewModel = (set, get) => ({
             set({ goalsData: [] })
             const error = err.response.data.ERROR_DESCRIPTION
             showToast(error, 'error')
+        } finally {
+            set({ goalsLoading: false })
         }
     },
 
@@ -231,6 +244,7 @@ const performanceViewModel = (set, get) => ({
     // },
 
     gettingCompetency: async (reviewCycleId = null, searchText = null) => {
+        set({ competencyLoading: true })
         try {
             const response = await performanceApi.getCompetency(reviewCycleId, searchText)
             const responseData = response.data
@@ -244,10 +258,13 @@ const performanceViewModel = (set, get) => ({
             set({ comptencyDataCopy: [] })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch competencies'
             showToast(error, 'error')
+        } finally {
+            set({ competencyLoading: false })
         }
     },
 
     gettingFeedback: async () => {
+        set({ feedbackLoading: true })
         try {
             const response = await performanceApi.getOngoingFeedback()
             const responseData = response.data
@@ -261,6 +278,8 @@ const performanceViewModel = (set, get) => ({
             set({ feedbackDataCopy: [] })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch feedback'
             showToast(error, 'error')
+        } finally {
+            set({ feedbackLoading: false })
         }
     },
 
@@ -360,6 +379,7 @@ const performanceViewModel = (set, get) => ({
 
     // New functions for employee-specific goals
     gettingGoalsByEmployeeId: async (employeeId) => {
+        set({ subGoalsLoading: true })
         console.log('Fetching goals for employee ID:', employeeId)
         try {
             const response = await performanceApi.getGoalsByEmployeeId(employeeId)
@@ -380,6 +400,8 @@ const performanceViewModel = (set, get) => ({
             set({ employeeGoalsData: [] })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch employee goals'
             showToast(error, 'error')
+        } finally {
+            set({ subGoalsLoading: false })
         }
     },
 
@@ -423,6 +445,7 @@ const performanceViewModel = (set, get) => ({
 
     // New function for employee-specific competencies
     gettingCompetencyByEmployeeId: async (employeeId) => {
+        set({ subCompetencyLoading: true })
         console.log('Fetching competencies for employee ID:', employeeId)
         try {
             const response = await performanceApi.getSubCompetency(employeeId)
@@ -443,6 +466,8 @@ const performanceViewModel = (set, get) => ({
             set({ employeeCompetencyData: [] })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch employee competencies'
             showToast(error, 'error')
+        } finally {
+            set({ subCompetencyLoading: false })
         }
     },
 
@@ -494,6 +519,7 @@ const performanceViewModel = (set, get) => ({
 
     // Function to get main history data
     gettingMainHistory: async () => {
+        set({ historyLoading: true })
         console.log('Fetching main history data')
         try {
             const response = await performanceApi.getMainHistory()
@@ -511,6 +537,8 @@ const performanceViewModel = (set, get) => ({
             set({ mainHistoryData: [] })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch history data'
             showToast(error, 'error')
+        } finally {
+            set({ historyLoading: false })
         }
     },
 
@@ -528,6 +556,7 @@ const performanceViewModel = (set, get) => ({
 
     // Function to get employee-specific history data
     gettingEmployeeHistory: async (employeeId) => {
+        set({ historyLoading: true })
         console.log('Fetching employee history data for:', employeeId)
         try {
             const response = await performanceApi.getHistory(employeeId)
@@ -545,6 +574,8 @@ const performanceViewModel = (set, get) => ({
             set({ employeeHistoryData: [] })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch employee history'
             showToast(error, 'error')
+        } finally {
+            set({ historyLoading: false })
         }
     },
 

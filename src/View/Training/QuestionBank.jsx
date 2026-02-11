@@ -8,6 +8,7 @@ import AssignQuestion from './AssignQuestion'
 import { showToast } from '../../Components/Toaster/Toaster'
 import CustomButton from '../../Components/CustomButton/CustomButton'
 import { motion, AnimatePresence } from 'framer-motion'
+import QuestionBankSkeleton from './QuestionBankSkeleton'
 
 const QuestionBank = () => {
   const navigate = useNavigate()
@@ -199,8 +200,8 @@ const QuestionBank = () => {
   }
 
   return (
-    <div className='min-h-screen bg-gray-50/50 p-6 font-poppins'>
-      <div className='max-w-7xl mx-auto space-y-6'>
+    <div className='min-h-screen  p-6 font-poppins'>
+      <div className=' mx-auto space-y-6'>
         
         {/* Header Section */}
         <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
@@ -245,12 +246,7 @@ const QuestionBank = () => {
         <div className='bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden'>
           <div className='p-6'>
             {loading ? (
-              <div className='flex items-center justify-center py-20'>
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <Typography className="text-sm text-gray-500 font-medium">Loading questions...</Typography>
-                </div>
-              </div>
+              <QuestionBankSkeleton />
             ) : resourcesWithQuestions.length > 0 ? (
               <div className='flex flex-col gap-4'>
                 {/* Global Select All (Optional) */}

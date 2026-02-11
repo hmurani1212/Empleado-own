@@ -2,7 +2,7 @@ import { Button, Typography, IconButton } from "@material-tailwind/react";
 import React, { useEffect } from "react";
 import useFormApproval from "../../ViewModel/FormApprovalViewModel/FormApprovalServices";
 import { formatTimestamp } from "../../services/__formApprovalServices";
-import { FaEye, FaFileSignature, FaClipboardList, FaUser } from "react-icons/fa";
+import { FaEye, FaFileSignature, FaClipboardList, FaUser, FaSpinner } from "react-icons/fa";
 import { PiEyeLight, PiSignature } from "react-icons/pi";
 import useCustomFormService from "../../ViewModel/FormApprovalViewModel/customFormService";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
@@ -14,9 +14,10 @@ import useEmpLeaveApplication from "../../ViewModel/EmpViewModel/EmpApplicationV
 import useNewAdjustRequest from "../../ViewModel/AttendanceViewModel/newAdjustRequest";
 import useEmpLoanApplication from "../../ViewModel/EmpViewModel/EmpApplicationViewModel/EmpLoanApplicationServices";
 import { motion } from "framer-motion";
+import FormApprovalSkeleton from "./FormApprovalSkeleton";
 
 const CustomForm = () => {
-  const { mountCustomForm, gettingCustomForm, allCustomForm } =
+  const { mountCustomForm, gettingCustomForm, allCustomForm, customFormLoading } =
     useFormApproval();
 
   const {
@@ -28,6 +29,7 @@ const CustomForm = () => {
     formModal,
     handleViewForm,
     closeFormModal,
+    assignAFLoadingId
   } = useCustomFormService();
 
   // Leave application hook for modal functionality
@@ -108,7 +110,7 @@ const CustomForm = () => {
 
   const itemVariants = {
     hidden: { y: 10, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300 } },
+    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 15 } },
   };
 
   return (
@@ -118,6 +120,9 @@ const CustomForm = () => {
       variants={containerVariants}
       className="flex flex-col gap-4"
     >
+      {customFormLoading ? (
+        <FormApprovalSkeleton headers={customHead} />
+      ) : (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto customScroll">
           <table className="w-full text-left border-collapse">
@@ -178,8 +183,13 @@ const CustomForm = () => {
                           variant="text"
                           className="flex items-center gap-2 text-amber-600 hover:bg-amber-50 normal-case font-medium px-3 py-2 rounded-lg"
                           onClick={() => viewAssignAF(data)}
+                          disabled={assignAFLoadingId === (data.id || data._id)}
                         >
-                          <PiSignature className="text-lg" />
+                          {assignAFLoadingId === (data.id || data._id) ? (
+                            <FaSpinner className="text-lg animate-spin" />
+                          ) : (
+                            <PiSignature className="text-lg" />
+                          )}
                           Assign AF
                         </Button>
                         <Button
@@ -210,6 +220,7 @@ const CustomForm = () => {
           </table>
         </div>
       </div>
+      )}
 
       {approvalFlowValue.show && (
         <PortalDrawer

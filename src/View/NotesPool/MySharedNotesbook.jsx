@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import useMyShareNoteHandler from "../../ViewModel/NotesPoolViewModel/myShareNoteHandler";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 
+import { NotebookSkeleton } from "./NotesPoolSkeletons";
+
 const MySharedNotesBook = () => {
   const {
     mySharednotebooks,
@@ -80,13 +82,7 @@ const MySharedNotesBook = () => {
             </div>
           </div>
 
-          {isLoading && (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 w-full">
-                {[1,2,3].map(i => (
-                <div key={i} className="h-[140px] bg-gray-100 rounded-2xl animate-pulse"></div>
-                ))}
-            </div>
-          )}
+          {isLoading && <NotebookSkeleton />}
 
           {/* Shared Notebooks */}
           {!isLoading && (

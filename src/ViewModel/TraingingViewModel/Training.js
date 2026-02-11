@@ -37,6 +37,11 @@ const TrainingiewModel = (set, get) => ({
     gettingAllTraingiList: async (data = {}) => {
         // console.log("Training API call with data:", data)
         try {
+            // Set loading state only for initial load (page 1) or when explicitly requested
+            if (!data.page || data.page === 1) {
+                set({ isLoadingTrainingData: true });
+            }
+
             const response = await trainingApi.getTrainigDate(data)
             const respData = response.data
 
@@ -108,8 +113,15 @@ const TrainingiewModel = (set, get) => ({
                     }
                 })
             }
+        } finally {
+            if (!data.page || data.page === 1) {
+                set({ isLoadingTrainingData: false });
+            }
         }
     },
+
+    // Loading state for training list
+    isLoadingTrainingData: false,
 
     // Reset training data to initial state
     resetTrainingData: () => {
