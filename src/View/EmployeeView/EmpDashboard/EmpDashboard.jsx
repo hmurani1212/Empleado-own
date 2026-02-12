@@ -20,6 +20,7 @@ import { IoEyeSharp } from "react-icons/io5";
 import { GrFormClose } from "react-icons/gr";
 import { MdDone, MdUpload } from "react-icons/md";
 import { GrPowerReset } from "react-icons/gr";
+import defaultUserAvatar from '../../../constants/avatar';
 
 const EmpDashboard = () => {
 
@@ -470,13 +471,15 @@ const EmpDashboard = () => {
 
   return (
     <div className={`flex flex-col gap-4 p-2`}>
-      <div className={`flex flex-wrap lg:flex-nowrap rounded-[10px] bg-white drop-shadow-md`}>
-        <div className='relative transition-all duration-300'
+      <div className={`flex flex-wrap lg:flex-nowrap rounded-[10px] bg-white drop-shadow-md min-h-0`}>
+        <div
+          className='relative flex items-center justify-center h-[210px] w-[170px] shrink-0 self-stretch overflow-hidden rounded-tl-lg rounded-bl-lg transition-all duration-300'
           onMouseEnter={() => setShowCamera(true)}
-          onMouseLeave={() => setShowCamera(false)}>
+          onMouseLeave={() => setShowCamera(false)}
+        >
           <img
-            className='w-fit h-fit object-cover rounded-tl-lg rounded-bl-lg transition-transform duration-300 ease-in-out'
-            src={"https://elephant.veevotech.com/files/4d5445774d6a5535/9_be46a70049bc2ae.jpg"}
+            className='w-full h-[170px] object-cover rounded-tl-lg rounded-bl-lg transition-transform duration-300 ease-in-out'
+            src={pInfo?.dp || defaultUserAvatar}
             alt='profile'
           />
           {showCamera && (
@@ -658,7 +661,7 @@ const EmpDashboard = () => {
             >
               <img
                 ref={imageRef}
-                src={isPreviewMode ? "https://elephant.veevotech.com/files/4d5445774d6a5535/9_be46a70049bc2ae.jpg" : (photoUrl || (photo && photo !== 'preview' ? URL.createObjectURL(photo) : ''))}
+                src={isPreviewMode ? (pInfo?.dp || defaultUserAvatar) : (photoUrl || (photo && photo !== 'preview' ? URL.createObjectURL(photo) : ''))}
                 alt="profile"
                 className={isCropped ? 'max-w-full max-h-full object-contain' : 'w-full h-full object-contain'}
                 onLoad={() => {

@@ -32,13 +32,15 @@ const SearchReactSelect = (props) => {
       maxHeight: '200px',
       height: 'auto',
     }),
-    option: base => ({
+    option: (base, state) => ({
       ...base,
       paddingLeft: '10px',
       fontSize: '14px',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
+      backgroundColor: state.isSelected ? '#f3f4f6' : state.isFocused ? '#f9fafb' : base.backgroundColor,
+      color: state.isSelected ? '#111827' : base.color,
     }),
     input: base => ({
       ...base,

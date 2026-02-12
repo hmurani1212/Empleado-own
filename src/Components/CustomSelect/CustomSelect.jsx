@@ -89,9 +89,10 @@ const CustomSelect = (props) => {
   const customStyles = {
         option: (provided, state) => ({
             ...provided,
-            paddingLeft: state.data.isChild ? '20px' : '10px',
-            fontSize: state.data.isChild ? '12px' : '14px',
-            color: state.data.isChild ? '#495057' : '14px',
+            paddingLeft: state.data?.isChild ? '20px' : '10px',
+            fontSize: state.data?.isChild ? '12px' : '14px',
+            color: state.isSelected ? '#111827' : (state.data?.isChild ? '#495057' : provided.color),
+            backgroundColor: state.isSelected ? '#f3f4f6' : state.isFocused ? '#f9fafb' : provided.backgroundColor,
         }),
     };
 
@@ -108,10 +109,17 @@ const CustomSelect = (props) => {
       color: '#495057',
       width: isTrue === true ? '100%' : '100%',
     }),
-    option: base => ({
+    option: (base, state) => ({
       ...base,
       paddingLeft: '10px',
       fontSize: `${optionFontSize}px`,
+      backgroundColor: state.isSelected ? '#f3f4f6' : state.isFocused ? '#f9fafb' : base.backgroundColor,
+      color: state.isSelected ? '#111827' : base.color,
+      ':active': {
+        ...base[':active'],
+        backgroundColor: '#e5e7eb',
+        color: '#111827',
+      },
     }),
     input: base => ({
       ...base,

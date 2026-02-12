@@ -10,6 +10,7 @@ import {
   TbLayoutSidebarRightCollapseFilled,
 } from "react-icons/tb";
 import empLogo from "../../assets/images/empleado-logo.png";
+import defaultUserAvatar from "../../constants/avatar";
 import useStore from "../../Store/store";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -36,6 +37,7 @@ function Header() {
   const handleTrueToggleState = useStore((state) => state.sideMenuToggleTrue);
   const handleFalseToggleState = useStore((state) => state.sideMenuToggleFalse);
   const mobilevToggleTrue = useStore((state) => state.mobilevToggleTrue);
+  const empDashboardData = useStore((state) => state.empDashboardData);
   const { toggleMenuHeader, openMenuHeader, switchAccessMenu, handleInbox, handleSwitchAccessClick, fetchSwitchAccessInstances, loading } =
     useHeader();
   const { getLiveBiometricDevices, liveBiometricDevices, updateLiveBiometricDevice } = useAttendance();
@@ -230,7 +232,6 @@ function Header() {
             </div>
           </div>
 
-<<<<<<< Updated upstream
           {/* Admin Info (Biometrics) & Support - Moved to Left */}
           {userRole === 'Admin' && (
              <div className="hidden xl:flex items-center gap-3 ml-4">
@@ -267,7 +268,7 @@ function Header() {
              </div>
           )}
         </div>
-=======
+
         {/* MIDDLE SECTION: Admin Info (Biometrics) */}
         {userRole === 'Admin' && (
           <div className="hidden xl:flex items-center gap-6 text-sm text-gray-500 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
@@ -284,7 +285,6 @@ function Header() {
              </div>
           </div>
         )}
->>>>>>> Stashed changes
 
         {/* RIGHT SECTION: ACTIONS & PROFILE */}
         <div className="flex items-center gap-3 md:gap-5">
@@ -376,7 +376,7 @@ function Header() {
                onClick={handleProfileMenuToggle}
              >
                 <Avatar
-                  src="https://docs.material-tailwind.com/img/face-2.jpg"
+                  src={empDashboardData?.section1?.dp || defaultUserAvatar}
                   alt="avatar"
                   size="sm"
                   variant="circular"

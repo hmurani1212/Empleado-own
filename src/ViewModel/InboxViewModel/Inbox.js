@@ -3,6 +3,42 @@ import InboxApi from "../../Model/Data/inboxDate/InboxApiData";
 import { showToast } from "../../Components/Toaster/Toaster";
 import { getUserData } from "../../Authentication/jwt_decode";
 
+const INBOX_MARKED_READ_STORAGE_KEY = 'inbox_marked_read_story_ids';
+
+const getMarkedReadStoryIds = () => {
+    try {
+        const raw = sessionStorage.getItem(INBOX_MARKED_READ_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+};
+
+const addMarkedReadStoryIds = (storyIds) => {
+    if (!storyIds || storyIds.length === 0) return;
+    try {
+        const existing = getMarkedReadStoryIds();
+        const set = new Set([...existing, ...storyIds]);
+        sessionStorage.setItem(INBOX_MARKED_READ_STORAGE_KEY, JSON.stringify([...set]));
+    } catch (e) {
+        console.warn('Inbox: could not persist marked-read ids', e);
+    }
+};
+
+const applyPersistedReadStatus = (stories) => {
+    const markedIds = getMarkedReadStoryIds();
+    if (markedIds.length === 0) return stories;
+    const idSet = new Set(markedIds);
+    return stories.map(story => {
+        const sid = story.story_id || story._id;
+        if (!sid || !idSet.has(sid)) return story;
+        const updatedUsers = Array.isArray(story.users) && story.users.length > 0
+            ? story.users.map(u => ({ ...u, read_status: 1 }))
+            : (story.users || []);
+        return { ...story, read_status: 1, users: updatedUsers };
+    });
+};
+
 const InboxViewModel = (set, get) => ({
     InboxData: [],
     selectedEmployeeStories: [],
@@ -71,9 +107,10 @@ const InboxViewModel = (set, get) => ({
                     stories: 1, // Default count for display
                     applications: [] // Empty applications array for compatibility
                 }));
+                const withReadStatus = applyPersistedReadStatus(mappedStories);
                 const hasNextPage = !!data?.NEXT_PAGE;
                 set({
-                    InboxData: mappedStories,
+                    InboxData: withReadStatus,
                     hasMorePages: hasNextPage,
                     nextPageUrl: data?.NEXT_PAGE || null,
                     isLoadingInbox: false,
@@ -95,6 +132,42 @@ const InboxViewModel = (set, get) => ({
                 isLoadingInbox: false
             })
         }
+    },
+
+    markAllInboxAsRead: () => {
+        const state = get();
+        const currentInboxData = state.InboxData || [];
+        if (currentInboxData.length === 0) return;
+        const storyIds = currentInboxData.map(s => s.story_id || s._id).filter(Boolean);
+        addMarkedReadStoryIds(storyIds);
+        const updatedInboxData = currentInboxData.map(story => {
+            const updatedUsers = Array.isArray(story.users) && story.users.length > 0
+                ? story.users.map(user => ({ ...user, read_status: 1 }))
+                : (story.users || []);
+            return {
+                ...story,
+                read_status: 1,
+                users: updatedUsers
+            };
+        });
+        set({ InboxData: updatedInboxData });
+    },
+
+    markInboxStoriesAsRead: (storyIds) => {
+        if (!storyIds || storyIds.length === 0) return;
+        const idSet = new Set(storyIds.map(String));
+        const state = get();
+        const currentInboxData = state.InboxData || [];
+        addMarkedReadStoryIds([...idSet]);
+        const updatedInboxData = currentInboxData.map(story => {
+            const sid = story.story_id || story._id;
+            if (!sid || !idSet.has(String(sid))) return story;
+            const updatedUsers = Array.isArray(story.users) && story.users.length > 0
+                ? story.users.map(u => ({ ...u, read_status: 1 }))
+                : (story.users || []);
+            return { ...story, read_status: 1, users: updatedUsers };
+        });
+        set({ InboxData: updatedInboxData });
     },
 
     getFilteredInboxData: async (name = '', status = null, read_status = null, appType = null) => {
@@ -125,9 +198,10 @@ const InboxViewModel = (set, get) => ({
                     stories: 1, // Default count for display
                     applications: [] // Empty applications array for compatibility
                 }));
+                const withReadStatus = applyPersistedReadStatus(mappedStories);
                 const hasNextPage = !!data?.NEXT_PAGE;
                 set({
-                    InboxData: mappedStories,
+                    InboxData: withReadStatus,
                     hasMorePages: hasNextPage,
                     nextPageUrl: data?.NEXT_PAGE || null,
                     isLoadingInbox: false,
@@ -201,9 +275,10 @@ const InboxViewModel = (set, get) => ({
                     stories: 1,
                     applications: []
                 }));
+                const withReadStatus = applyPersistedReadStatus(mappedStories);
                 const hasNextPage = !!data?.NEXT_PAGE;
                 set((state) => ({
-                    InboxData: [...state.InboxData, ...mappedStories],
+                    InboxData: [...state.InboxData, ...withReadStatus],
                     hasMorePages: hasNextPage,
                     nextPageUrl: data?.NEXT_PAGE || null,
                     isLoadingMoreInbox: false,

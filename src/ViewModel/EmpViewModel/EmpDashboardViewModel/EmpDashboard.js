@@ -134,8 +134,10 @@ const empDashboardViewModel = (set, get) => ({
 
                 const lateComingDays = dbData.attendance_data.DB_DATA.late_coming_days || [];
                 const lateComingDaysData = lateComingDays.filter(
-                    day => day.late_minutes > 0 || day.adjusted_late_min > 0
+                    day => day.late_minutes > 0
                 );
+
+                // console.log('attedance history data', attendanceData)
 
                 const matchedAttendance = attendanceData.reduce((acc, attendance) => {
                     const attendanceDate = attendance.date_string;
@@ -202,7 +204,7 @@ const empDashboardViewModel = (set, get) => ({
                     //     availed: dbData.attendance_data.data.leave_availed,
                     //     total_leaves: dbData.attendance_data.data.allowed_leaves
                     // },
-                    reminders: dbData.reminders || []
+                    reminders: dbData.reminders ?? responseData.reminders ?? []
                 }
                 // console.log('transformedData', transformedData.section2)
 

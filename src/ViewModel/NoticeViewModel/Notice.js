@@ -2,10 +2,15 @@ import { showToast } from '../../Components/Toaster/Toaster';
 import departmentsApi from '../../Model/Data/Departments/Departments';
 import noticesApi from '../../Model/Data/Notices/Notices';
 
+// Synchronous in-flight guard so only one getAllDepartmentsNotices runs at a time (handles Strict Mode double-mount)
+let getAllDepartmentsNoticesInFlight = false;
+let getBranchesOnlyInFlight = false;
+
 const noticeViewModel = (set, get) => ({
     noticesDepartment: [],
     noticesBranches : [],
     filterDepartmentsNotices: [],
+    departmentsLoadedForBranchId: null,
     allNoticesList: [],
     noticeMount: false,
     viewNoticeData : [],
@@ -20,11 +25,13 @@ const noticeViewModel = (set, get) => ({
 
     // Fetch only branches - 1 API call. Used when Add Notice page loads.
     getBranchesOnly: async () => {
+        if (getBranchesOnlyInFlight) return;
         const currentState = get();
         if (currentState.noticesBranches && currentState.noticesBranches.length > 0) {
             return;
         }
-        set({ departmentsLoading: true, filterDepartmentsNotices: [] });
+        getBranchesOnlyInFlight = true;
+        set({ departmentsLoading: true, filterDepartmentsNotices: [], departmentsLoadedForBranchId: null });
         try {
             const response = await departmentsApi.gettingAllDepartments();
             const data = response.data;
@@ -41,11 +48,18 @@ const noticeViewModel = (set, get) => ({
             }
         } catch (err) {
             set({ departmentsLoading: false });
+        } finally {
+            getBranchesOnlyInFlight = false;
         }
     },
 
-    // Fetch departments only when user selects a branch. For "All Branches" uses list/all; for specific branch uses manageDepartments.
+    // Fetch departments only when user selects a branch. One API call per branch selection; cached for same branch.
     getDepartmentsByBranch: async (branchId) => {
+        const currentState = get();
+        const normalizedBranchId = branchId === undefined || branchId === null ? null : String(branchId);
+        if (currentState.departmentsLoadedForBranchId === normalizedBranchId && currentState.filterDepartmentsNotices?.length > 0) {
+            return;
+        }
         set({ departmentsLoading: true });
         try {
             let departments = [{ id: '0', name: 'All Departments' }];
@@ -76,6 +90,7 @@ const noticeViewModel = (set, get) => ({
                 noticesDepartment: departments,
                 filterDepartmentsNotices: departments,
                 departmentsLoaded: true,
+                departmentsLoadedForBranchId: normalizedBranchId,
                 departmentsLoading: false,
             });
         } catch (err) {
@@ -84,8 +99,16 @@ const noticeViewModel = (set, get) => ({
     },
 
     getAllDepartmentsNotices: async () => {
+        // Set in-flight FIRST so any concurrent caller (same tick) cannot pass the guard
+        if (getAllDepartmentsNoticesInFlight) {
+            return;
+        }
+        getAllDepartmentsNoticesInFlight = true;
+
         const currentState = get();
+        // Use cached data when already loaded
         if (currentState.departmentsLoaded && currentState.noticesDepartment.length > 0) {
+            getAllDepartmentsNoticesInFlight = false;
             return;
         }
         set({ departmentsLoading: true });
@@ -127,6 +150,8 @@ const noticeViewModel = (set, get) => ({
             }
         } catch (err) {
             set({ departmentsLoading: false });
+        } finally {
+            getAllDepartmentsNoticesInFlight = false;
         }
     },
 
@@ -150,9 +175,13 @@ const noticeViewModel = (set, get) => ({
     },
 
     getAllNoticesList: async (params = {}, forceReload = false, loadMore = false) => {
+        const currentState = get();
+        // Use cache when returning to list: skip API if we already have data and not forcing reload
+        if (!forceReload && !loadMore && currentState.allNoticesList?.length > 0) {
+            return;
+        }
+
         try{
-            const currentState = get();
-            
             // Build API parameters with defaults
             const finalParams = {
                 page: params.page !== undefined ? params.page : 1,

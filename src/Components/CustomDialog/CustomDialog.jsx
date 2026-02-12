@@ -38,11 +38,11 @@ const CustomDialog = (props) => {
       }}
     >
         <DialogHeader className='justify-between'>
-          <div className={`flex flex-1 items-center justify-center ${backgroundColor ? 'text-white' : ''}`}>
+          <div className={`flex flex-1 items-center justify-center ${backgroundColor ? '!text-white' : ''}`}>
           {title}
           </div>
           <div>
-          <IoClose onClick={handleOpen} className={`cursor-pointer ${backgroundColor ? 'text-white' : ''}`}/>
+          <IoClose onClick={handleOpen} className={`cursor-pointer ${backgroundColor ? '!text-white' : ''}`}/>
           </div>
           </DialogHeader>
         <DialogBody className={`customScroll overflow-y-auto overflow-x-hidden ${compo ? 'max-h-[calc(100vh-200px)]' : 'min-h-[auto]'}`}>

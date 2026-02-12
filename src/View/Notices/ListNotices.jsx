@@ -69,24 +69,16 @@ const ListNotices = () => {
     "Actions",
   ];
 
-  // Fetch notices list only on first visit (when list is empty). When returning from Add Notice,
-  // the list persists in store - no refetch. When a new notice is added, addNewNoticeState updates the list without calling list API.
+  // Fetch notices list when List Notices tab is shown. Use cache when returning (forceReload: false).
+  // API is skipped in store when cache exists; refetch only after add/edit/delete (forceReload: true).
   useEffect(() => {
-<<<<<<< Updated upstream
     const fetchData = async () => {
       setInitialLoading(true);
-      await getAllNoticesList({ page: 1, limit: 10 }, true, false);
+      await getAllNoticesList({ page: 1, limit: 10 }, false, false);
       setCurrentPageId(1);
       setInitialLoading(false);
     };
     fetchData();
-=======
-    if (!allNoticesList || allNoticesList.length === 0) {
-      getAllNoticesList({ page: 1, limit: 10 }, true, false);
-    }
-    setCurrentPageId(1);
->>>>>>> Stashed changes
-    // Branch/department options are loaded when user opens "Filter by Branch" (onMenuOpen) to avoid extra APIs on first load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -197,22 +189,12 @@ const ListNotices = () => {
             </div>
           </div>
         </div>
-<<<<<<< Updated upstream
 
         {/* Notices Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="relative w-full min-h-[calc(100vh-250px)] overflow-auto customScroll">
             <table className="min-w-full table-auto text-center">
               <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
-=======
-        <div className="bg-white rounded-[10px] drop-shadow-md p-2 mt-2">
-          <div className="relative w-full min-h-[calc(100vh-100px)] overflow-auto customScroll">
-            <table className="min-w-full table-fixed text-center">
-            <colgroup>
-              <col span="6" />
-            </colgroup>
-              <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
->>>>>>> Stashed changes
                 <tr>
                   {data?.map((head, i) => (
                     <th key={i} className={`p-4 first:pl-6 last:pr-6 whitespace-nowrap ${
@@ -242,7 +224,7 @@ const ListNotices = () => {
                         ele !== undefined &&
                         ele.timestamp
                     )
-                    ?.sort((a, b) => b.timestamp - a.timestamp)
+                    ?.sort((a, b) => b.timestamp - a.timestamp) // Sort by timestamp in descending order
                     .map((ele, index) => {
                       const currentMonth = new Date(
                         ele.timestamp * 1000
@@ -326,7 +308,6 @@ const ListNotices = () => {
                           </td>
 
                           {/* Employee Name */}
-<<<<<<< Updated upstream
                           <td className="p-4">
                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                               ele.emp_name 
@@ -335,16 +316,6 @@ const ListNotices = () => {
                             }`}>
                               {ele.emp_name || "All Branches"}
                             </span>
-=======
-                          <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[clamp(10px,0.8vw,13px)] text-[#474747] font-Urbanist"
-                            >
-                              {ele.branch_name || "All Branches"}
-                            </Typography>
->>>>>>> Stashed changes
                           </td>
 
                           {/* Formatted Timestamp */}

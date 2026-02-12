@@ -23,8 +23,7 @@ import {
   MdEvent
 } from 'react-icons/md'
 import useStore from '../../Store/store'
-// Import user profile icon image
-// import userProfileIcon from '../../src/assets/images/user-profile-icon.png'
+import defaultUserAvatar from '../../constants/avatar'
 
 // Helper function to get notification icon based on type
 const getNotificationIcon = (actionTypeId) => {
@@ -62,7 +61,7 @@ const NotificationItem = ({ notification, formatNotificationTime, handleNotifica
             <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-200 bg-blue-100 flex items-center justify-center">
               {!imageError ? (
                 <img
-                  src="https://elephant.veevotech.com/files/4d6a4d774e444930/9_9a9781ecfa76ca3.jpeg"
+                  src={defaultUserAvatar}
                   alt="User Profile"
                   className="w-full h-full object-cover"
                   onError={() => setImageError(true)}

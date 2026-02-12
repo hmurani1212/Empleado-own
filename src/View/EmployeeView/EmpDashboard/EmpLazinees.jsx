@@ -78,7 +78,6 @@ const EmpLazinees = () => {
 
   // Get attendance data
   const attendanceData = empDashboardData?.attendance;
-  console.log('what is the attendanceData of employee laziness ?????????????', attendanceData)
 
   // Get reminders from dashboard data and sync with local state
   const dashboardReminders = useMemo(() => {
@@ -147,11 +146,9 @@ const EmpLazinees = () => {
     );
   };
 
-  // Filter state
+  // Filter state: no date by default so "All" shows all reminders on first load
   const [selectedFilter, setSelectedFilter] = useState("All");
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  ); // Format: YYYY-MM-DD
+  const [selectedDate, setSelectedDate] = useState(""); // Format: YYYY-MM-DD when set; empty = no date filter
 
   // Filter reminders based on selected filter and date
   const getFilteredReminders = () => {
@@ -377,8 +374,7 @@ const EmpLazinees = () => {
 
               {/* Tasks List - Scrollable on Y-axis */}
               <div
-                className="flex flex-col gap-3 overflow-y-auto flex-1 min-h-0"
-                style={{ maxHeight: "400px" }}
+                className="flex flex-col gap-3 overflow-y-auto flex-1 min-h-0 max-h-[150px]"
               >
                 {filteredReminders.length > 0 ? (
                   filteredReminders.map((reminder, index) => (
@@ -537,10 +533,11 @@ const EmpLazinees = () => {
                     const usedLateMin = attendanceData?.total_late_minutes || 0;
                     const allowedLateMin =
                       attendanceData?.allowed_late_min || 1;
-                    const percentage = Math.min(
-                      100,
-                      (usedLateMin > 0 ? usedLateMin : attendanceData?.total_used_late_min / allowedLateMin) * 100
-                    );
+                      
+                      const percentage = Math.min(
+                        100,
+                        ((usedLateMin > 0 ? usedLateMin : attendanceData?.total_used_late_min) / allowedLateMin) * 100
+                      );
                     const circumference = 2 * Math.PI * 52;
                     const offset = circumference * (1 - percentage / 100);
                     const strokeColor =

@@ -4,27 +4,14 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
 const Notices = () => {
-<<<<<<< Updated upstream
-  const {noticeTitles, getAllDepartmentsNotices} = useNotice()
-=======
-  
-  const { noticeTitles, getBranchesOnly } = useNotice()
->>>>>>> Stashed changes
+  const {noticeTitles} = useNotice()
   const location = useLocation();
   const navigate = useNavigate()
 
-  const handleNavLinkClick = (e, link, id) => {
+  const handleNavLinkClick = (e, link)=>{
     e.preventDefault()
-<<<<<<< Updated upstream
     navigate(link)
-    if(id === 2){
-      getAllDepartmentsNotices()
-=======
-    naivgate(link)
-    if (id === 2) {
-      getBranchesOnly()
->>>>>>> Stashed changes
-    }
+    // Add Notice page loads branches/departments once in its own useEffect; no need to call here (avoids duplicate APIs)
   }
 
   return (
@@ -45,7 +32,7 @@ const Notices = () => {
               <NavLink 
                 key={ele.id}
                 to={ele.link}
-                onClick={(e) => handleNavLinkClick(e, ele.link, ele.id)}
+                onClick={(e) => handleNavLinkClick(e, ele.link)}
                 className={({ isActive }) => `
                   relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out z-10
                   ${location.pathname === ele.link 
