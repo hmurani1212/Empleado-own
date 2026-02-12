@@ -445,18 +445,18 @@ const DashboardCountData = (props) => {
                         <Typography 
                           variant="small" 
                           className={`font-normal truncate ${normalTextColor}`} 
-                          title={ele.department || 'N/A'}
+                          title={ele.department || '--'}
                         >
-                          {ele.department || 'N/A'}
+                          {ele.department || '--'}
                         </Typography>
                       </td>
                       <td className={`${classes} p-3 whitespace-nowrap`}>
                         <Typography 
                           variant="small" 
                           className={`font-normal truncate ${normalTextColor}`} 
-                          title={ele.designation || 'N/A'}
+                          title={ele.designation || '--'}
                         >
-                          {ele.designation || 'N/A'}
+                          {ele.designation || '--'}
                         </Typography>
                       </td>
                       <td className={`${classes} p-3 whitespace-nowrap`}>

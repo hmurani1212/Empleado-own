@@ -13,7 +13,7 @@ const EmpApplication = () => {
   const { active, handleApplicationToggle } = useEmpApplcationServices()
   const { handleApplicationType, medicalFormValue, toggleMedicalAllowance, handleChangeMedicalAllowance, handleSelectMedicalAllowance, handleMedicalAllowanceSubmission,
     tadaFormValue, toggleTadaAllowance, handleChangeTADA, handleAddTadaForm,
-    leaveApplcationValue, handleToggleLeaveApplication, addEmpLeaveApplication, handleApplicationChange, generateLeaveDays, handleLeaveTypeChange, handleHalfDayChange, employeeDefinedLeaves,
+    leaveApplcationValue, handleToggleLeaveApplication, addEmpLeaveApplication, handleApplicationChange, generateLeaveDays, handleLeaveTypeChange, handleHalfDayChange, employeeDefinedLeaves, paidLeaveConfigEnabled,
     loanApplicationValue, handleToggleLoanApplication, addEmpLoanApplication, handleLoanApplicationChange
 
   } = useApplicationHook();
@@ -141,6 +141,7 @@ const EmpApplication = () => {
                     handleLeaveTypeChange={handleLeaveTypeChange}
                     handleHalfDayChange={handleHalfDayChange}
                     employeeDefinedLeaves={employeeDefinedLeaves}
+                    paidLeaveConfigEnabled={paidLeaveConfigEnabled}
                   />
                   :
                   null

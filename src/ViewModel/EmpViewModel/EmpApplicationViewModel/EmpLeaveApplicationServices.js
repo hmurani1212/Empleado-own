@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { showToast } from "../../../Components/Toaster/Toaster"
 import empApplicationApi from "../../../Model/Data/EmpData/EmpApplication/EmpApplication"
 import applicationApi from "../../../Model/Data/Applications/Applications"
+import leavesPlannerApi from "../../../Model/Data/LeavesPlanner/LeavesPlanner"
 import { getDecodedToken } from "../../../Authentication/jwt_decode"
 import axios from "axios"
 
@@ -21,6 +22,8 @@ const useEmpLeaveApplication = ()=>{
 
     // State for employee-defined leaves from API
     const [employeeDefinedLeaves, setEmployeeDefinedLeaves] = useState({})
+    // Paid leave option visibility: when PAID_LEAVES config_value is 1, show "Paid leave" in Adjust In
+    const [paidLeaveConfigEnabled, setPaidLeaveConfigEnabled] = useState(false)
 
 
     const handleToggleLeaveApplication = ()=>{
@@ -110,6 +113,19 @@ const useEmpLeaveApplication = ()=>{
         }));
     };
 
+    // Function to fetch PAID_LEAVES config; when config_value is 1, show "Paid leave" option
+    const fetchPaidLeavesConfig = async () => {
+        try {
+            const response = await leavesPlannerApi.getPaidLeavesConfig();
+            const resData = response?.data;
+            const configValue = resData?.DB_DATA?.config_value;
+            setPaidLeaveConfigEnabled(configValue === "1" || configValue === 1);
+        } catch (err) {
+            console.error('Error fetching PAID_LEAVES config:', err);
+            setPaidLeaveConfigEnabled(false);
+        }
+    };
+
     // Function to fetch employee-defined leaves (without emp_id for employee side)
     const fetchEmployeeDefinedLeaves = async () => {
         try {
@@ -134,10 +150,11 @@ const useEmpLeaveApplication = ()=>{
         }
     };
 
-    // Fetch employee-defined leaves when component mounts or form is shown
+    // Fetch employee-defined leaves and PAID_LEAVES config when form is shown
     useEffect(() => {
         if (leaveApplcationValue.show) {
             fetchEmployeeDefinedLeaves();
+            fetchPaidLeavesConfig();
         }
     }, [leaveApplcationValue.show]);
 
@@ -221,10 +238,10 @@ const useEmpLeaveApplication = ()=>{
         // Prepare arrays for leave data
         const leaveDates = leaveDays.map(day => day.date);
         // Send the leave ID (value) from selectedLeaveType, not the label
+        // Send leave_adjust_in: 2 = Leave without pay, 1 = Paid leave, or leave type ID from API
         const leaveAdjustIn = leaveDays.map(day => {
-            // If selectedLeaveType is an object with value property, use value
-            // Otherwise use the value directly (it should be the ID)
-            return day.selectedLeaveType?.value || day.selectedLeaveType || 'without_pay';
+            const val = day.selectedLeaveType?.value ?? day.selectedLeaveType;
+            return val !== undefined && val !== null && val !== '' ? String(val) : '2';
         });
         const halfDay = leaveDays.map(day => day.isHalfDay ? '1' : '0');
         const fileUrls = attachmentUrl ? [attachmentUrl] : [];
@@ -311,6 +328,7 @@ const useEmpLeaveApplication = ()=>{
         handleLeaveTypeChange,
         handleHalfDayChange,
         employeeDefinedLeaves,
+        paidLeaveConfigEnabled,
         fetchEmployeeDefinedLeaves
     }
 

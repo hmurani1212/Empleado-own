@@ -10,7 +10,7 @@ const useApplicationHook = ()=>{
 
   const {tadaFormValue, handleTadaAllowance, toggleTadaAllowance,handleChangeTADA, handleAddTadaForm} = useTADAServices()
 
-  const {leaveApplcationValue, handleToggleLeaveApplication, addEmpLeaveApplication,handleApplicationChange, generateLeaveDays, handleLeaveTypeChange, handleHalfDayChange, employeeDefinedLeaves } = useEmpLeaveApplication()
+  const { leaveApplcationValue, handleToggleLeaveApplication, addEmpLeaveApplication, handleApplicationChange, generateLeaveDays, handleLeaveTypeChange, handleHalfDayChange, employeeDefinedLeaves, paidLeaveConfigEnabled } = useEmpLeaveApplication()
 
   const {loanApplicationValue, handleToggleLoanApplication, addEmpLoanApplication, handleApplicationChange: handleLoanApplicationChange} = useEmpLoanApplication()
 
@@ -44,8 +44,8 @@ const useApplicationHook = ()=>{
   return {
     handleApplicationType, medicalFormValue,toggleMedicalAllowance,handleChangeMedicalAllowance,handleSelectMedicalAllowance,handleMedicalAllowanceSubmission,
     tadaFormValue, toggleTadaAllowance,handleChangeTADA, handleAddTadaForm,
-    handleToggleLeaveApplication, leaveApplcationValue,addEmpLeaveApplication,handleApplicationChange,
-    generateLeaveDays, handleLeaveTypeChange, handleHalfDayChange, employeeDefinedLeaves,
+    handleToggleLeaveApplication, leaveApplcationValue, addEmpLeaveApplication, handleApplicationChange,
+    generateLeaveDays, handleLeaveTypeChange, handleHalfDayChange, employeeDefinedLeaves, paidLeaveConfigEnabled,
     loanApplicationValue, handleToggleLoanApplication, addEmpLoanApplication, handleLoanApplicationChange
   }
 }

@@ -30,7 +30,8 @@ const noticeViewModel = (set, get) => ({
         if (currentState.noticesBranches && currentState.noticesBranches.length > 0) {
             return;
         }
-        set({ departmentsLoading: true, filterDepartmentsNotices: [] });
+        getBranchesOnlyInFlight = true;
+        set({ departmentsLoading: true, filterDepartmentsNotices: [], departmentsLoadedForBranchId: null });
         try {
             const response = await departmentsApi.gettingAllDepartments();
             const data = response.data;
@@ -47,11 +48,18 @@ const noticeViewModel = (set, get) => ({
             }
         } catch (err) {
             set({ departmentsLoading: false });
+        } finally {
+            getBranchesOnlyInFlight = false;
         }
     },
 
-    // Fetch departments only when user selects a branch. For "All Branches" uses list/all; for specific branch uses manageDepartments.
+    // Fetch departments only when user selects a branch. One API call per branch selection; cached for same branch.
     getDepartmentsByBranch: async (branchId) => {
+        const currentState = get();
+        const normalizedBranchId = branchId === undefined || branchId === null ? null : String(branchId);
+        if (currentState.departmentsLoadedForBranchId === normalizedBranchId && currentState.filterDepartmentsNotices?.length > 0) {
+            return;
+        }
         set({ departmentsLoading: true });
         try {
             let departments = [{ id: '0', name: 'All Departments' }];
@@ -82,6 +90,7 @@ const noticeViewModel = (set, get) => ({
                 noticesDepartment: departments,
                 filterDepartmentsNotices: departments,
                 departmentsLoaded: true,
+                departmentsLoadedForBranchId: normalizedBranchId,
                 departmentsLoading: false,
             });
         } catch (err) {
@@ -90,6 +99,12 @@ const noticeViewModel = (set, get) => ({
     },
 
     getAllDepartmentsNotices: async () => {
+        // Set in-flight FIRST so any concurrent caller (same tick) cannot pass the guard
+        if (getAllDepartmentsNoticesInFlight) {
+            return;
+        }
+        getAllDepartmentsNoticesInFlight = true;
+
         const currentState = get();
         if (currentState.noticesBranches && currentState.noticesBranches.length > 0) {
             return;

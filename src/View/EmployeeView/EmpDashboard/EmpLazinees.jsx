@@ -78,7 +78,6 @@ const EmpLazinees = () => {
 
   // Get attendance data
   const attendanceData = empDashboardData?.attendance;
-  console.log('what is the attendanceData of employee laziness ?????????????', attendanceData)
 
   // Get reminders from dashboard data and sync with local state
   const dashboardReminders = useMemo(() => {

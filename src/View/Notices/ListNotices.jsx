@@ -78,7 +78,6 @@ const ListNotices = () => {
     "Created Date",
     "Actions",
   ];
-
   // Fetch notices list on mount (page 1)
   useEffect(() => {
     const fetchFirstPage = async () => {
@@ -91,6 +90,16 @@ const ListNotices = () => {
       }
     };
     fetchFirstPage();
+  // Fetch notices list when List Notices tab is shown. Use cache when returning (forceReload: false).
+  // API is skipped in store when cache exists; refetch only after add/edit/delete (forceReload: true).
+  useEffect(() => {
+    const fetchData = async () => {
+      setInitialLoading(true);
+      await getAllNoticesList({ page: 1, limit: 10 }, false, false);
+      setCurrentPageId(1);
+      setInitialLoading(false);
+    };
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -224,9 +233,17 @@ const ListNotices = () => {
                     <SkeletonRow key={idx} />
                   ))
                 ) : allNoticesList && allNoticesList.length > 0 ? (
-                  allNoticesList
+                  allNoticesLis
                     .filter((n) => n && n.timestamp)
                     .sort((a, b) => b.timestamp - a.timestamp)
+                    .filter(
+                      (ele) =>
+                        ele &&
+                        ele !== null &&
+                        ele !== undefined &&
+                        ele.timestamp
+                    )
+                    ?.sort((a, b) => b.timestamp - a.timestamp) // Sort by timestamp in descending order
                     .map((ele, index) => {
                       const currentMonth = new Date(
                         ele.timestamp * 1000
@@ -305,8 +322,8 @@ const ListNotices = () => {
                               </Typography>
                             </div>
                           </td>
-
                           {/* Recipient */}
+                          {/* Employee Name */}
                           <td className="p-4">
                             <span
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
