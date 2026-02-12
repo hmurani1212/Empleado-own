@@ -14,6 +14,8 @@ const useNotice = () => {
 
     const noticesBranches = useStore((state) => state.noticesBranches)
     const getAllDepartmentsNotices = useStore((state) => state.getAllDepartmentsNotices)
+    const getBranchesOnly = useStore((state) => state.getBranchesOnly)
+    const getDepartmentsByBranch = useStore((state) => state.getDepartmentsByBranch)
     const noticesFilterBranches = useStore((state) => state.noticesFilterBranches)
     const noticesDepartment = useStore((state) => state.noticesDepartment)
     const filterDepartmentsNotices = useStore ((state)=> state.filterDepartmentsNotices)
@@ -77,16 +79,17 @@ const useNotice = () => {
         }))
 
         if(name === 'branch_id'){
-            noticesFilterBranches(noticeDeptId)
-            // Clear employee selection when branch changes
+            // Load departments for selected branch (one API call); clear department and employee
+            getDepartmentsByBranch(noticeDeptId);
             setAddNoticeValue((prevState) => ({
                 ...prevState,
                 emp_id: '',
                 deptt_id: ''
             }));
             setEmployeeOptions([]);
+            setEmployeeOptionsFull([]);
         }
-        
+
         if(name === 'deptt_id'){
             // Clear employee selection when department changes
             setAddNoticeValue((prevState) => ({
@@ -94,8 +97,9 @@ const useNotice = () => {
                 emp_id: ''
             }));
             setEmployeeOptions([]);
-            
-            // Fetch employees from the selected department
+            setEmployeeOptionsFull([]);
+
+            // Fetch employees from the selected department (once; search is frontend-only)
             fetchEmployeesByDepartment(noticeDeptId);
         }
     }
@@ -111,33 +115,33 @@ const useNotice = () => {
           emp_id: ''
         }));
         setEmployeeOptions([]);
+        setEmployeeOptionsFull([]);
       }
     };
 
     const [employeeOptions, setEmployeeOptions] = useState([]);
-    
-    // Function to fetch employees from selected department
+    // Full list for current department; search filters this on the frontend (no API on type)
+    const [employeeOptionsFull, setEmployeeOptionsFull] = useState([]);
+
+    // Function to fetch employees from selected department (called once when department is selected)
     const fetchEmployeesByDepartment = async (deptId) => {
-        
+        setEmployeeOptionsFull([]);
+        setEmployeeOptions([]);
         try {
-            // Fetch employees directly by department ID for better performance
             const response = await departmentsApi.getDeptEmployees(deptId);
             const data = response.data;
-            
+
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
                 const departmentEmployees = data.DB_DATA.employees || [];
-                
-                // Set employees as options for dropdown
                 const employeeData = departmentEmployees.map((employee) => ({
                     label: employee.name || 'Unknown Employee',
-                    value: Number(employee.id) || 0, 
+                    value: Number(employee.id) || 0,
                 }));
-                
-                setEmployeeOptions(employeeData);                
+                setEmployeeOptionsFull(employeeData);
+                setEmployeeOptions(employeeData);
             } else {
                 setEmployeeOptions([]);
             }
-            
         } catch (error) {
             setEmployeeOptions([]);
         }
@@ -168,49 +172,26 @@ const useNotice = () => {
         }
     };
     
-    const handleNoticesSearchEmp = (name, actionMeta)=>{
-
+    const handleNoticesSearchEmp = (searchTerm, actionMeta) => {
         if (actionMeta.action === 'input-change') {
-            noticesEmpNameSearch(name)
-        } else {
-            console.error(" Action not input-change:", actionMeta.action);
+            filterEmployeeOptionsBySearch(searchTerm);
         }
+    };
 
-    }
-
-    const noticesEmpNameSearch = async(searchTerm) => {
-
-        try{
-            // If a department is selected, fetch employees from that department
-            // Otherwise, fetch all employees for search
-            let employeesToSearch = [];
-
-            if (addNoticeValue.deptt_id && addNoticeValue.deptt_id !== '0') {
-                // Fetch employees from the selected department using the correct API
-                const response = await departmentsApi.getDeptEmployees(addNoticeValue.deptt_id);
-                const data = response.data;
-
-                if(response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                    employeesToSearch = data.DB_DATA.employees || [];
-                } else {
-                    console.error('Failed to fetch employees for department:', data.ERROR_DESCRIPTION);
-                }
-            } else {
-                employeesToSearch = [];
-            }
-            const filteredEmployees = employeesToSearch;
-
-                const employeeData = filteredEmployees.map((employee) => ({
-                    label: employee.name,
-                    value: Number(employee.id), 
-                }));
-
-                setEmployeeOptions(employeeData)
-        } catch(err) {
-            setEmployeeOptions([]);
+    // Filter employee dropdown by search text on the frontend (no API call)
+    const filterEmployeeOptionsBySearch = (searchTerm) => {
+        const term = (searchTerm || '').toString().trim().toLowerCase();
+        if (!term) {
+            setEmployeeOptions(employeeOptionsFull);
+            return;
         }
-        
-    }
+        const filtered = employeeOptionsFull.filter((opt) => {
+            const label = (opt.label || '').toString().toLowerCase();
+            const valueStr = (opt.value != null ? String(opt.value) : '').toLowerCase();
+            return label.includes(term) || valueStr.includes(term);
+        });
+        setEmployeeOptions(filtered);
+    };
 
   
 
@@ -232,15 +213,10 @@ const useNotice = () => {
     
 
     const handleChangeEmpName = (emp_name, event) => {
-        const empsearch = event.id
-        
-        // const { name, value } = selected;
         setAddNoticeValue((prevState) => ({
             ...prevState,
-            [emp_name]: empsearch
+            [emp_name]: event
         }));
-    
-        noticesEmpNameSearch(empsearch);
     }
 
     const handleDeptChange = (dept_name, event) => {
@@ -408,6 +384,8 @@ const useNotice = () => {
             
             if((response.status === 201 || response.status === 200) && respData.STATUS === 'SUCCESSFUL'){
                 showToast('Notice added Successfully!', 'success');
+                // Refresh list so List Notices shows the new notice when user navigates there
+                await getAllNoticesList({ page: 1, limit: 10 }, true, false);
                 navigate('/notices/list_notices')
                 setAddNoticeValue({
                     branch_id: '',
@@ -493,10 +471,11 @@ const useNotice = () => {
                 send_email_notice: resData.DB_DATA.send_email_notice || false,
             }))
             
-            // Trigger department filtering based on the fetched branch_id
-            if(resData.DB_DATA.branch_id || resData.DB_DATA.branch_name) {
-                const branchId = resData.DB_DATA.branch_id || resData.DB_DATA.branch_name;
-                noticesFilterBranches(branchId);
+            // Ensure branches and departments for this branch are loaded for the edit form
+            const branchId = resData.DB_DATA.branch_id ?? resData.DB_DATA.branch_name;
+            if (branchId !== undefined && branchId !== null) {
+                await getBranchesOnly();
+                await getDepartmentsByBranch(branchId);
             }
             
         }
@@ -652,8 +631,8 @@ const useNotice = () => {
     }
     
  return {
-    noticeTitles, noticesBranches, noticesDepartment, getAllDepartmentsNotices, noticesFilterBranches, handleChangeDept, addNoticeValue, handleAddNoticeBranch,
-    filterDepartmentsNotices, employeeOptions,handleDeptChange, setAddNoticeValue, handleNewNotice, handleCheckboxChange, showEmployeeName, noticesEmpNameSearch, handleChangeEmpName, addNewNotice, allNoticesList,
+    noticeTitles, noticesBranches, noticesDepartment, getAllDepartmentsNotices, getBranchesOnly, getDepartmentsByBranch, noticesFilterBranches, handleChangeDept, addNoticeValue, handleAddNoticeBranch,
+    filterDepartmentsNotices, employeeOptions, handleDeptChange, setAddNoticeValue, handleNewNotice, handleCheckboxChange, showEmployeeName, handleChangeEmpName, addNewNotice, allNoticesList,
     getAllNoticesList, noticeMount, noticesMenuItems, toggleMenuNotices, openMenu, openDialog, handleDelete, handleMenuItemsNotices, deleteNotices, viewNoticeData, getViewNotice, openViewDialog, setOpenViewDialog,
     handleView, handleNoticesSearchEmp, loading, showNoticeDrawer, closeNoticeDrawer, loading,
     handleEditNotice,

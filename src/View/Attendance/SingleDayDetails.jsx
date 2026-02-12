@@ -256,25 +256,29 @@ const SingleDayDetails = (props) => {
                 id: data?.id || 12345, // Use the ID from the data or fallback
             };
 
-            // Add time pairs dynamically - in_time, out_time, in_time2, out_time2, etc.
+            // Add time pairs that exist - in_time, out_time, in_time2, out_time2, etc.
             timePairs.forEach((pair, index) => {
                 const inTimeFormatted = convertTimeToHHMM(pair.in);
                 const outTimeFormatted = convertTimeToHHMM(pair.out);
-                
-                // Ensure empty strings are converted to 0
                 const inTime = inTimeFormatted && inTimeFormatted.trim() !== '' ? inTimeFormatted : 0;
                 const outTime = outTimeFormatted && outTimeFormatted.trim() !== '' ? outTimeFormatted : 0;
-                
+
                 if (index === 0) {
-                    // First pair uses in_time and out_time
                     payload.in_time = inTime;
                     payload.out_time = outTime;
                 } else {
-                    // Additional pairs use in_time2, out_time2, in_time3, out_time3, etc.
                     payload[`in_time${index + 1}`] = inTime;
                     payload[`out_time${index + 1}`] = outTime;
                 }
             });
+
+            // Explicitly send 0 for removed time pairs so backend clears them
+            const maxPairsToClear = 4;
+            for (let i = timePairs.length; i < maxPairsToClear; i++) {
+                const suffix = i + 1;
+                payload[`in_time${suffix}`] = 0;
+                payload[`out_time${suffix}`] = 0;
+            }
 
             // Call the API
             const result = await dailyAttAdjust(payload);

@@ -149,11 +149,12 @@ const CreateNew = () => {
   return (
     <div className='w-full max-w-7xl mx-auto'>
       <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-8 min-h-[600px] flex flex-col'>
-        <div className="mb-8">
+        <div className="mb-8 px-6 md:px-10">
           <Stepper
             activeStep={stepsValue.activeStep}
             lineClassName="bg-gray-100 h-1"
             activeLineClassName="bg-bgBlue"
+            className="py-2"
           >
             {['Policy Mapping', 'Payroll Settings', 'Working Hours', 'Overtime & Leave'].map((label, index) => {
               const isDisabled = index > stepsValue.activeStep + 1;

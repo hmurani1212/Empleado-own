@@ -7,6 +7,9 @@ import { showToast } from "../../Components/Toaster/Toaster";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import employeesApi from "../../Model/Data/Employees/Employees";
 
+const ALL_BRANCHES_OPTION = { value: 0, label: "All Branches" };
+const ALL_DEPARTMENTS_OPTION = { value: 0, label: "All Departments" };
+
 const ReportForm = ({ reportType, onClose }) => {
   const [formData, setFormData] = useState({
     branch_id: null,
@@ -143,7 +146,8 @@ const ReportForm = ({ reportType, onClose }) => {
       try {
         setLoading(true);
         const deptData = await gettingDepartmentsServices(selectedBranch.value);
-        setDepartments(deptData || []);
+        const deptOptions = Array.isArray(deptData) ? deptData : [];
+        setDepartments([ALL_DEPARTMENTS_OPTION, ...deptOptions]);
       } catch (error) {
         console.error("Error fetching departments:", error);
         showToast("Error loading departments", "error");
@@ -183,8 +187,8 @@ const ReportForm = ({ reportType, onClose }) => {
 
     try {
       const requestData = {
-        branch_id: formData.branch_id.value,
-        dept_id: formData.department_id.value,
+        branch_id: formData.branch_id?.value ?? 0,
+        dept_id: formData.department_id?.value ?? 0,
         ...(payslipData.timeFilter?.value && {
           time_duration_filter: payslipData.timeFilter.value,
         }),
@@ -648,12 +652,13 @@ const ReportForm = ({ reportType, onClose }) => {
               <CustomSelect
                 placeHolderTitle="Branch"
                 value={formData.branch_id}
-                options={
-                  branches_payroll?.map((branch) => ({
+                options={[
+                  ALL_BRANCHES_OPTION,
+                  ...(branches_payroll?.map((branch) => ({
                     value: branch.id,
                     label: branch.branch_name,
-                  })) || []
-                }
+                  })) || []),
+                ]}
                 onChangeHandler={handleBranchChange}
                 customStyles={true}
                 isSearchable={true}
@@ -669,13 +674,13 @@ const ReportForm = ({ reportType, onClose }) => {
               <CustomSelect
                 placeHolderTitle="Department"
                 value={formData.department_id}
-                options={departments || []}
+                options={departments}
                 onChangeHandler={handleDepartmentChange}
                 className="rounded-[10px]"
                 cStyle={true}
                 isSearchable={true}
                 isClearable={false}
-                // disabled={!formData.branch_id || loading}
+                disabled={!formData.branch_id || loading}
               />
               {loading && (
                 <p className="text-xs text-gray-500 mt-1">

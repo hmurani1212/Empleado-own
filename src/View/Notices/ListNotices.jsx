@@ -69,16 +69,16 @@ const ListNotices = () => {
     "Actions",
   ];
 
-  // Always fetch notices list when List notices tab is shown (first time or when navigating here)
+  // Fetch notices list when List Notices tab is shown. Use cache when returning (forceReload: false).
+  // API is skipped in store when cache exists; refetch only after add/edit/delete (forceReload: true).
   useEffect(() => {
     const fetchData = async () => {
       setInitialLoading(true);
-      await getAllNoticesList({ page: 1, limit: 10 }, true, false);
+      await getAllNoticesList({ page: 1, limit: 10 }, false, false);
       setCurrentPageId(1);
       setInitialLoading(false);
     };
     fetchData();
-    // Branch/department options are loaded when user opens "Filter by Branch" (onMenuOpen) to avoid extra APIs on first load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

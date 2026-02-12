@@ -126,6 +126,19 @@ const AddEditEmployeeCheckList = (props) => {
                 {Array.isArray(employeeCheckListValue?.requestInput) ? 
                     employeeCheckListValue.requestInput.map((ele, i) => (
                     <div key={i}>
+                        {i !== 0 && (
+                            <div className='border-t border-gray-200 pt-2 mt-3 first:mt-0'>
+                                <div className='flex justify-end mb-2'>
+                                    <span
+                                        className='bg-customRed-100 text-white w-6 h-6 flex items-center justify-center rounded cursor-pointer hover:opacity-90'
+                                        onClick={() => removeRequestInput(i)}
+                                        title='Remove this request input'
+                                    >
+                                        <FaXmark className='w-3 h-3' />
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                         <div className='space-y-2'>
                             <label className='text-[#698592] text-[12px]'>Info Title</label>
                             <input
@@ -177,13 +190,6 @@ const AddEditEmployeeCheckList = (props) => {
                                 />
                             </div>
                         )}
-                        {i !== 0 &&
-                            <div className='flex justify-end mt-3'>
-                                <span className='bg-customRed-100 text-white w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer'
-                                    onClick={()=>removeRequestInput(i)}
-                                ><FaXmark /></span>
-                            </div>
-                        }
                     </div>
                 
                     )) : (

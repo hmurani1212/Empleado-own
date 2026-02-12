@@ -858,14 +858,20 @@ const payrollApi = {
         
         const requestData = {
             filter: 'increments',
+            branch_id: data.branch_id ?? 0,
+            dept_id: data.dept_id ?? 0,
             emp_ids: data.emp_ids || [],
-            time_duration_filter: data.time_duration_filter || 'year'
+            time_duration_filter: data.time_duration_filter || 'time_frame'
         }
 
         // Add year for year filter
         if (data.time_duration_filter === 'year') {
             requestData.year = data.year
         }
+
+        // Add date range for time_frame filter
+        if (data.time1) requestData.time1 = data.time1
+        if (data.time2) requestData.time2 = data.time2
 
         return payRollinstancemodule.request({
             method: 'POST',

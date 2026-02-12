@@ -494,17 +494,45 @@ Telephone#: 03439902848`;
                 <div className="flex-shrink-0 w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                   <FaFile className="text-[#3DA5F4] text-lg" />
                 </div>
-                <div className="flex flex-col items-start justify-start gap-1">
+                <div className="flex flex-col items-start justify-start gap-1 min-w-0 flex-1">
                   <span className="text-gray-600 font-normal text-sm">File:</span>
-                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">
-                    {applicationData?.form_data?.file_url?.length > 0
-                      ? `${applicationData?.form_data?.file_url[0]} file(s)`
-                      : "No file Attached!"}
-                  </span>
+                  {(() => {
+                    const rawUrls = applicationData?.form_data?.file_url != null
+                      ? (Array.isArray(applicationData.form_data.file_url)
+                          ? applicationData.form_data.file_url.filter(Boolean)
+                          : [applicationData.form_data.file_url])
+                      : applicationData?.form_data?.file
+                        ? (Array.isArray(applicationData.form_data.file) ? applicationData.form_data.file.filter(Boolean) : [applicationData.form_data.file])
+                        : [];
+                    const validUrls = rawUrls
+                      .map(url => typeof url === 'string' ? url.trim() : (url?.url || url?.href || String(url)))
+                      .filter(href => href && href.startsWith('http'));
+                    if (validUrls.length === 0) {
+                      return (
+                        <span className="text-gray-500 font-Urbanist text-sm">No file attached</span>
+                      );
+                    }
+                    return (
+                      <div className="flex flex-col gap-1">
+                        {validUrls.map((href, idx) => {
+                          const label = validUrls.length > 1 ? `File ${idx + 1}` : 'View file';
+                          return (
+                            <a
+                              key={idx}
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#3DA5F4] font-Urbanist font-semibold text-sm hover:underline break-all text-left"
+                            >
+                              {label}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
-                <div className="flex-1">
-
-                </div>
+                <div className="flex-1 min-w-0" />
               </div>
             </div>
 
