@@ -203,31 +203,29 @@ const usePublicHolidayServices = ()=>{
     const gettingAllPoliciesForAllBranches = async(branches = null)=>{
         try {
             // Get policies from all branches
-            const allPolicies = []
-            const branchesToUse = branches || publicHolidayValue.branchesList || []
+            // Instead of looping through all branches which causes multiple API calls,
+            // we call the API once with branch_id = 0 to fetch all policies
+            const response = await getPoliciesListFrequentByBranchId(0)
+            const responseData = response.data
             
-            for(const branch of branchesToUse){
-                try {
-                    const response = await getPoliciesListFrequentByBranchId(branch.id)
-                    const responseData = response.data
-                    if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
-                        const policies = responseData.DB_DATA.policies || []
-                        allPolicies.push(...policies)
-                    }
-                } catch (error) {
-                    console.error(`Error fetching policies for branch ${branch.id}:`, error)
-                }
+            if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
+                const policies = responseData.DB_DATA.policies || []
+                
+                // Remove duplicates based on policy id
+                const uniquePolicies = policies.filter((policy, index, self) => 
+                    index === self.findIndex(p => p.id === policy.id)
+                )
+                
+                setPublicHolidayValue((prevState)=>({
+                    ...prevState,
+                    policyList: uniquePolicies
+                }))
+            } else {
+                setPublicHolidayValue((prevState)=>({
+                    ...prevState,
+                    policyList:[]
+                }))
             }
-            
-            // Remove duplicates based on policy id
-            const uniquePolicies = allPolicies.filter((policy, index, self) => 
-                index === self.findIndex(p => p.id === policy.id)
-            )
-            
-            setPublicHolidayValue((prevState)=>({
-                ...prevState,
-                policyList: uniquePolicies
-            }))
 
         } catch (error) {
             setPublicHolidayValue((prevState)=>({

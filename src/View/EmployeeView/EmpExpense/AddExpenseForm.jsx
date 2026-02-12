@@ -138,19 +138,19 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
     }
 
     return (
-        <div className='p-6 h-full flex flex-col'>
+        <div className='p-6 h-full flex flex-col font-poppins bg-gray-50/50'>
             <div className="flex-1 overflow-y-auto customScroll pr-2 pb-20">
                 <form id="expenseForm" onSubmit={handleSubmit} className='space-y-6'>
                     
                     {/* Basic Info Section */}
-                    <Card className="border border-gray-200 shadow-none">
-                        <CardBody className="p-5 space-y-5">
-                            <Typography variant="h6" color="blue-gray" className="flex items-center gap-2">
-                                <span className="w-1 h-6 bg-brand-500 rounded-full"></span>
+                    <Card className="border border-gray-200 shadow-sm rounded-2xl">
+                        <CardBody className="p-6 space-y-6">
+                            <Typography variant="h6" color="blue-gray" className="flex items-center gap-3 font-bold">
+                                <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
                                 General Information
                             </Typography>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className='md:col-span-2'>
                                     <Input 
                                         label="Expense Title *" 
@@ -159,6 +159,10 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                                         onChange={handleInputChange}
                                         color="blue"
                                         size="lg"
+                                        className="!border-gray-200 focus:!border-blue-500 rounded-lg"
+                                        labelProps={{
+                                            className: "text-gray-500 peer-placeholder-shown:text-gray-500",
+                                        }}
                                     />
                                 </div>
                                 <div className='md:col-span-2'>
@@ -169,6 +173,10 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                                         onChange={handleInputChange}
                                         color="blue"
                                         rows={3}
+                                        className="!border-gray-200 focus:!border-blue-500 rounded-lg"
+                                        labelProps={{
+                                            className: "text-gray-500 peer-placeholder-shown:text-gray-500",
+                                        }}
                                     />
                                 </div>
                                 <div>
@@ -179,25 +187,37 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                                         value={formData.date}
                                         onChange={handleInputChange}
                                         color="blue"
+                                        className="!border-gray-200 focus:!border-blue-500 rounded-lg"
+                                        labelProps={{
+                                            className: "text-gray-500 peer-placeholder-shown:text-gray-500",
+                                        }}
                                     />
                                 </div>
-                                <div className="flex items-center gap-6 pl-2">
-                                    <Typography variant="small" color="gray" className="font-medium">Type:</Typography>
+                                <div className="flex items-center gap-6 pl-2 bg-gray-50 rounded-lg border border-gray-100 px-4">
+                                    <Typography variant="small" color="gray" className="font-semibold text-gray-700">Type:</Typography>
                                     <Radio 
                                         name="expenseType" 
-                                        label="Expense Claim" 
+                                        label={<span className="font-medium text-gray-700">Expense Claim</span>}
                                         value={0}
                                         checked={formData.expenseType === 0}
                                         onChange={handleInputChange}
                                         color="blue"
+                                        className="hover:before:opacity-0"
+                                        containerProps={{
+                                            className: "p-2",
+                                        }}
                                     />
                                     <Radio 
                                         name="expenseType" 
-                                        label="Cash Advance" 
+                                        label={<span className="font-medium text-gray-700">Cash Advance</span>}
                                         value={1}
                                         checked={formData.expenseType === 1}
                                         onChange={handleInputChange}
                                         color="blue"
+                                        className="hover:before:opacity-0"
+                                        containerProps={{
+                                            className: "p-2",
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -206,15 +226,15 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
 
                     {/* Items Section */}
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <Typography variant="h6" color="blue-gray" className="flex items-center gap-2">
-                                <span className="w-1 h-6 bg-brand-500 rounded-full"></span>
+                        <div className="flex justify-between items-center px-1">
+                            <Typography variant="h6" color="blue-gray" className="flex items-center gap-3 font-bold">
+                                <span className="w-1.5 h-6 bg-blue-500 rounded-full"></span>
                                 Expense Items
                             </Typography>
                             <Button 
                                 size="sm" 
                                 variant="text" 
-                                className="flex items-center gap-2 text-brand-500 hover:bg-brand-50"
+                                className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 normal-case font-medium"
                                 onClick={addItem}
                             >
                                 <FaPlus /> Add Another Item
@@ -230,16 +250,16 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ duration: 0.2 }}
                                 >
-                                    <Card className="border border-gray-200 shadow-sm overflow-visible">
-                                        <CardBody className="p-5 relative">
+                                    <Card className="border border-gray-200 shadow-sm overflow-visible rounded-2xl">
+                                        <CardBody className="p-6 relative">
                                             {/* Remove Button */}
                                             {formData.items.length > 1 && (
-                                                <div className="absolute top-2 right-2">
+                                                <div className="absolute top-3 right-3 z-10">
                                                     <IconButton 
                                                         variant="text" 
                                                         color="red" 
                                                         size="sm"
-                                                        className="rounded-full hover:bg-red-50"
+                                                        className="rounded-full hover:bg-red-50 transition-colors"
                                                         onClick={() => removeItem(index)}
                                                     >
                                                         <FaTrash className="text-xs" />
@@ -247,20 +267,24 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                                                 </div>
                                             )}
 
-                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                                                <div className="md:col-span-1 flex items-center justify-center md:justify-start">
-                                                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600">
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                                                <div className="md:col-span-1 flex items-start justify-center md:justify-start pt-2">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 shadow-sm">
                                                         {index + 1}
                                                     </div>
                                                 </div>
                                                 
-                                                <div className="md:col-span-11 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                <div className="md:col-span-11 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                                     <div className="md:col-span-2">
                                                         <Input 
                                                             label="Item Name *" 
                                                             value={item.item}
                                                             onChange={(e) => handleItemChange(index, 'item', e.target.value)}
                                                             color="blue"
+                                                            className="!border-gray-200 focus:!border-blue-500 rounded-lg"
+                                                            labelProps={{
+                                                                className: "text-gray-500 peer-placeholder-shown:text-gray-500",
+                                                            }}
                                                         />
                                                     </div>
                                                     
@@ -270,9 +294,13 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                                                             value={item.category.toString()}
                                                             onChange={(val) => handleItemChange(index, 'category', parseInt(val))}
                                                             color="blue"
+                                                            className="!border-gray-200 focus:!border-blue-500 rounded-lg"
+                                                            labelProps={{
+                                                                className: "text-gray-500",
+                                                            }}
                                                         >
                                                             {expenseCategories.map(cat => (
-                                                                <Option key={cat.value} value={cat.value.toString()}>
+                                                                <Option key={cat.value} value={cat.value.toString()} className="font-medium">
                                                                     {cat.label}
                                                                 </Option>
                                                             ))}
@@ -287,12 +315,16 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                                                             onChange={(e) => handleItemChange(index, 'amount', e.target.value)}
                                                             color="blue"
                                                             min="0"
+                                                            className="!border-gray-200 focus:!border-blue-500 rounded-lg"
+                                                            labelProps={{
+                                                                className: "text-gray-500 peer-placeholder-shown:text-gray-500",
+                                                            }}
                                                             icon={<span className="text-xs font-bold text-gray-500">PKR</span>}
                                                         />
                                                     </div>
 
-                                                    <div className="md:col-span-4 border-t border-gray-100 pt-3 mt-1">
-                                                        <div className="flex items-center gap-4">
+                                                    <div className="md:col-span-4 border-t border-gray-100 pt-4 mt-2">
+                                                        <div className="flex flex-wrap items-center gap-4">
                                                             <div className="relative">
                                                                 <input
                                                                     type="file"
@@ -302,14 +334,14 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
                                                                 />
                                                                 <label 
                                                                     htmlFor={`file-${index}`}
-                                                                    className="flex items-center gap-2 cursor-pointer py-2 px-4 rounded-lg border border-dashed border-gray-300 hover:border-brand-500 hover:bg-brand-50 transition-all text-sm text-gray-600"
+                                                                    className="flex items-center gap-2 cursor-pointer py-2.5 px-5 rounded-xl border border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all text-sm font-medium text-gray-600 hover:text-blue-600"
                                                                 >
-                                                                    <FaCloudUploadAlt className="text-brand-500 text-lg" />
+                                                                    <FaCloudUploadAlt className="text-lg" />
                                                                     {item.attachment ? "Change Receipt" : "Upload Receipt"}
                                                                 </label>
                                                             </div>
                                                             {item.attachment && (
-                                                                <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                                                                <div className="flex items-center gap-2 text-sm font-medium text-green-700 bg-green-50 px-4 py-2 rounded-xl border border-green-100">
                                                                     <FaFileAlt />
                                                                     <span className="truncate max-w-[200px]">{item.attachment.name}</span>
                                                                 </div>
@@ -328,14 +360,14 @@ const AddExpenseForm = ({ onSubmit, onCancel, onReset }) => {
             </div>
 
             {/* Footer Actions - Fixed at bottom */}
-            <div className="pt-4 mt-2 border-t border-gray-100 flex justify-end gap-3 bg-white">
-                <Button variant="outlined" color="gray" onClick={onCancel} className="border-gray-300 text-gray-700">
+            <div className="pt-4 mt-2 border-t border-gray-100 flex justify-end gap-3 bg-white/80 backdrop-blur-sm sticky bottom-0 z-10">
+                <Button variant="outlined" color="gray" onClick={onCancel} className="border-gray-300 text-gray-700 hover:bg-gray-50 normal-case font-medium rounded-xl">
                     Cancel
                 </Button>
                 <Button 
                     type="submit" 
                     form="expenseForm"
-                    className="bg-brand-500 hover:bg-brand-600 shadow-brand-500/20"
+                    className="bg-bgBlue hover:bg-blue-600 shadow-blue-500/20 hover:shadow-blue-500/40 normal-case font-medium rounded-xl"
                 >
                     Submit Expense
                 </Button>

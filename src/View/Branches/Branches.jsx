@@ -13,7 +13,7 @@ import '../../index.css'
 
 
 const Branches = () => {
-  const { branchStatus, statusBranch, mountBranch, creatingNewBranch, branchesAllnew, handleChangeBranch, showDrawer, formatPhoneNumberTable, OpenAddBranchDrawer, closeBranchDrawer, gettingAllBranchesNew, currentFilterStatus, isLoading } = useBranches2()
+  const { branchStatus, statusBranch, mountBranch, creatingNewBranch, branchesAllnew, handleChangeBranch, showDrawer, formatPhoneNumberTable, OpenAddBranchDrawer, closeBranchDrawer, gettingAllBranchesNew, currentFilterStatus, branchesListLoading } = useBranches2()
   const data = ['Branch ID', 'Branch Name', 'Branch Admin', 'Currency', 'Phone', 'Email', 'Creation Time', 'Actions']
 
   useEffect(() => {
@@ -32,8 +32,8 @@ const Branches = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50/50 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen ">
+        <div className=" mx-auto space-y-6">
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
@@ -81,7 +81,7 @@ const Branches = () => {
 
           <BranchesList
             data={data}
-            loading={isLoading}
+            loading={branchesListLoading}
             gettingAllBranchesNew={gettingAllBranchesNew}
             branchesAll={branchesAllnew}
             formatPhoneNumberTable={formatPhoneNumberTable}

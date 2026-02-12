@@ -28,6 +28,7 @@ const useLeavesPlanner = () => {
     const addNewLeaveGroupState = useStore((state)=>state.addNewLeaveGroupState)
     const closeDrawer = useStore ((state) => state.closeDrawer)
     const allViewLeave = useStore ((state) => state.allViewLeave)
+    const viewLeavesLoading = useStore ((state) => state.viewLeavesLoading)
     const getViewLeavesList = useStore ((state) => state.getViewLeavesList)
     const leavesPlannerSearch = useStore ((state) => state.leavesPlannerSearch)
     const deleteLeaves = useStore ((state) => state.deleteLeaves)
@@ -710,7 +711,7 @@ const useLeavesPlanner = () => {
 
    
     return { leavesPlannerTitles, allLeavesGroup, getLeavesList, getPaidLeavesConfig, addLeaveGroupDrawer, leavesBranches, getAllDepartmentsLeaves, isLoading, handleMountLeave, mountLeave,
-        addGroupValues, handleLeaveBranch, handleLeave, addNewLeaveGroup, handleLeaveView, allViewLeave, handleLeavesChange, leavesSearch, openMenu, toggleMenuLeaves,
+        addGroupValues, handleLeaveBranch, handleLeave, addNewLeaveGroup, handleLeaveView, allViewLeave, viewLeavesLoading, handleLeavesChange, leavesSearch, openMenu, toggleMenuLeaves,
         leavesNoticesItems, handleMenuItemsLeaves, openDialogLeaves, handleDeleteLeavesDialog, handleDeleteGroups, handleDeleteLeaves, viewId, handleDeleteSpecificLeaves,
         openDialogSpecific, addDefineLeave, addLeaveTypeValues, handleLeaveTypesValue, handleSelectChangeMonth, addDefineLeaveType, handleLeaveTypeSearch, handleChangeToggle, type,
         policiesList, googleCalenderHolidays, holidayValues, allCountries,setAddGroupValues,getDropdownPosition,triggerRefs,selectBranchHandler,UpdateLeaveGroup, importEmpLeaves, handleSelectChangeBranch, paidLeaveValues, 

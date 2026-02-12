@@ -5,6 +5,7 @@ import { FaBook, FaPlayCircle, FaCheckCircle, FaFileAlt } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import useEmpTrainingService from '../../../ViewModel/EmpViewModel/EmpTrainingViewModel/EmpTrainingServices'
 import { motion } from 'framer-motion'
+import EmployeeTrainingSkeleton from './EmployeeTrainingSkeleton'
 
 const EmployeeTraining = () => {
   const navigate = useNavigate()
@@ -54,114 +55,93 @@ const EmployeeTraining = () => {
   }
 
   return (
-    <div className='p-6'>
-      <div className='mb-6'>
-        <Typography variant='h4' color='blue-gray' className='mb-2'>
-          My Training Courses
-        </Typography>
-        <Typography variant='small' color='gray' className='font-normal'>
-          Access your assigned training courses and learning materials
-        </Typography>
-      </div>
-
-      <Card className='mb-6'>
-        <CardBody>
-          <div className='flex items-center gap-4'>
-            <div className='flex-1'>
-              <Input
-                label='Search Courses'
-                icon={<BiSearch />}
-                value={searchTerm}
-                onChange={handleSearchChange}
-                color='blue'
-              />
-            </div>
+    <div className='min-h-screen  p-6 font-poppins'>
+      <div className='mx-auto space-y-6'>
+        
+        {/* Header Section */}
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
+          <div>
+            <h1 className='text-2xl font-bold text-gray-900'>My Training</h1>
+            <p className='text-sm text-gray-500 mt-1'>Access your assigned courses and track your progress</p>
           </div>
-        </CardBody>
-      </Card>
-
-      {loading ? (
-        <div className='flex justify-center items-center py-20'>
-          <div className='text-center'>
-            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4'></div>
-            <Typography variant='small' color='gray'>
-              Loading courses...
-            </Typography>
+          
+          <div className="relative w-full md:w-72">
+            <input
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
+              placeholder="Search courses..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+            <BiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
           </div>
         </div>
-      ) : filteredCourses.length === 0 ? (
-        <Card>
-          <CardBody className='text-center py-20'>
-            <FaBook className='text-6xl text-gray-300 mx-auto mb-4' />
-            <Typography variant='h5' color='blue-gray' className='mb-2'>
+
+        {loading ? (
+          <EmployeeTrainingSkeleton />
+        ) : filteredCourses.length === 0 ? (
+          <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center'>
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaBook className='text-4xl text-gray-300' />
+            </div>
+            <Typography variant='h6' color='blue-gray' className='mb-2 font-semibold'>
               {searchTerm ? 'No courses found' : 'No courses assigned'}
             </Typography>
-            <Typography variant='small' color='gray'>
+            <Typography variant='small' color='gray' className='max-w-xs mx-auto'>
               {searchTerm 
-                ? 'Try adjusting your search terms' 
-                : 'You don\'t have any training courses assigned yet'}
+                ? 'Try adjusting your search terms to find what you looking for' 
+                : 'You currently do not have any training courses assigned to you.'}
             </Typography>
-          </CardBody>
-        </Card>
-      ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {filteredCourses.map((course, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-            >
-              <Card className='hover:shadow-xl transition-shadow duration-300 h-full'>
-                <CardBody className='flex flex-col h-full'>
-                  <div className='flex items-start justify-between mb-4'>
-                    <div className='flex-1'>
-                      <Typography variant='h6' color='blue-gray' className='mb-2 line-clamp-2'>
-                        {course.course_name}
-                      </Typography>
+          </div>
+        ) : (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+            {filteredCourses.map((course, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+              >
+                <div className='group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-100 transition-all duration-300 h-full flex flex-col overflow-hidden relative'>
+                  {/* Decorative top bar */}
+                  <div className="h-1.5 w-full bg-gradient-to-r from-blue-400 to-blue-600"></div>
+                  
+                  <div className='p-6 flex-1 flex flex-col'>
+                    <div className='flex items-start justify-between mb-4'>
+                      <div className='flex-1 pr-4'>
+                        <Typography className='text-lg font-bold text-gray-800 mb-2 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors'>
+                          {course.course_name}
+                        </Typography>
+                      </div>
+                      <div className='w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors'>
+                        <FaBook className='text-lg text-blue-500' />
+                      </div>
                     </div>
-                    <div className='ml-2'>
-                      <FaBook className='text-2xl text-blue-500' />
-                    </div>
-                  </div>
 
-                  <div className='flex-1 mb-4'>
-                    <div className='flex items-center gap-2 mb-3'>
-                      <FaFileAlt className='text-gray-500' />
-                      <Typography variant='small' color='gray'>
+                    <div className='flex items-center gap-2 mb-6'>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 text-xs font-medium text-gray-600 border border-gray-100">
+                        <FaFileAlt className='text-gray-400' />
                         {course.resources?.length || 0} Resources
-                      </Typography>
+                      </div>
+                      {/* You can add more badges here like "In Progress" or "Completed" if available in data */}
+                    </div>
+
+                    <div className='mt-auto pt-4 border-t border-gray-100'>
+                      <Button
+                        fullWidth
+                        className='flex items-center justify-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white shadow-none hover:shadow-md transition-all duration-300 normal-case font-medium rounded-xl py-2.5'
+                        onClick={() => handleViewCourse(index)}
+                      >
+                        <FaPlayCircle className="text-sm" />
+                        View Course
+                      </Button>
                     </div>
                   </div>
-
-                  <div className='mt-auto space-y-2'>
-                    <Button
-                      size='sm'
-                      color='blue'
-                      className='w-full flex items-center justify-center gap-2'
-                      onClick={() => handleViewCourse(index)}
-                    >
-                      <FaPlayCircle />
-                      View Course
-                    </Button>
-                    {/* {course.completed_date && course.completed_date !== 0 && !course.is_assessment && (
-                      <Button
-                        size='sm'
-                        color='green'
-                        className='w-full flex items-center justify-center gap-2'
-                        onClick={() => handleTakeAssessment(course)}
-                      >
-                        <FaCheckCircle />
-                        Take Assessment
-                      </Button>
-                    )} */}
-                  </div>
-                </CardBody>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

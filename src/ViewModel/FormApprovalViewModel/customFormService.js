@@ -12,6 +12,8 @@ const useCustomFormService = ()=>{
         loading:false,
     })
 
+    const [assignAFLoadingId, setAssignAFLoadingId] = useState(null)
+
     // State for different form modals
     const [formModal, setFormModal] = useState({
         show: false,
@@ -20,6 +22,7 @@ const useCustomFormService = ()=>{
     })
 
     const viewAssignAF = async(data)=>{
+        setAssignAFLoadingId(data.id || data._id)
         try{
             // Call gettingCustomForm to get approval flow templates
             const response = await formApprovalApi.getApprovalFlowList()
@@ -41,6 +44,8 @@ const useCustomFormService = ()=>{
         }catch(err){
             console.log('Error fetching approval flow templates:', err)
             showToast('Failed to fetch approval flow templates', 'error')
+        } finally {
+            setAssignAFLoadingId(null)
         }
         
         setApprovalFlowSerivce((prevState)=>({
@@ -159,7 +164,8 @@ const useCustomFormService = ()=>{
         handlesSelectAAF,
         formModal,
         handleViewForm,
-        closeFormModal
+        closeFormModal,
+        assignAFLoadingId
     }
 
 }

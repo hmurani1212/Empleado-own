@@ -2,11 +2,11 @@ import empTimeAdjustmentApi from "../../../Model/Data/EmpData/EmpTimeAdjustment/
 
 const empTimeAdjustmentViewModel = (set, get)=>({
 
-
     timeAjustmentData :[],
-
+    timeAdjustmentLoading: true,
 
     getTimeAjustmentData:async()=>{
+        set({ timeAdjustmentLoading: true });
         try{
             const response = await empTimeAdjustmentApi.getAllRequest()
             ///onsole.log('response', response)
@@ -17,6 +17,8 @@ const empTimeAdjustmentViewModel = (set, get)=>({
             }
         }catch(err){
 
+        } finally {
+            set({ timeAdjustmentLoading: false });
         }
     },
     addnewTimeAdjustment:(data)=>{

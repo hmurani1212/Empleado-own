@@ -18,6 +18,39 @@ import useDropdownService from "../../services/__dropDownHoverService";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 
+/** Skeleton row for sub-department table: Dept Name (left), Employees, Head, Sub Depts, Designations, Action */
+const SubDeptSkeletonRow = () => (
+  <tr className="animate-pulse border-b border-gray-100">
+    <td className="p-4 first:pl-6 text-left">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0" />
+        <div className="h-4 bg-gray-100 rounded w-36 max-w-[200px]" />
+      </div>
+    </td>
+    <td className="p-4">
+      <div className="flex items-center justify-center gap-2">
+        <div className="h-6 w-12 bg-gray-100 rounded-full" />
+        <div className="h-4 w-10 bg-gray-100 rounded" />
+      </div>
+    </td>
+    <td className="p-4">
+      <div className="h-4 bg-gray-100 rounded w-24 mx-auto" />
+    </td>
+    <td className="p-4">
+      <div className="flex items-center justify-center gap-2">
+        <div className="h-6 w-6 rounded-full bg-gray-100" />
+        <div className="h-4 w-10 bg-gray-100 rounded" />
+      </div>
+    </td>
+    <td className="p-4">
+      <div className="h-8 w-8 rounded-full bg-gray-100 mx-auto" />
+    </td>
+    <td className="p-4 last:pr-6">
+      <div className="h-8 w-16 bg-gray-100 rounded-lg mx-auto" />
+    </td>
+  </tr>
+);
+
 const ManageSubDepartments = () => {
   const subDeptHeader = [
     "Department Name",
@@ -43,6 +76,7 @@ const ManageSubDepartments = () => {
   } = useDepartments();
   const {
     subDept,
+    subDeptLoading,
     handleNestedSubDept,
     backToParent,
     handleAddSubDept,
@@ -53,8 +87,8 @@ const ManageSubDepartments = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen">
+      <div className=" mx-auto space-y-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -102,7 +136,9 @@ const ManageSubDepartments = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {subDept?.length > 0 ? (
+                {subDeptLoading ? (
+                  [...Array(6)].map((_, i) => <SubDeptSkeletonRow key={i} />)
+                ) : subDept?.length > 0 ? (
                   subDept?.map((department, index) => (
                     <motion.tr
                       key={index}

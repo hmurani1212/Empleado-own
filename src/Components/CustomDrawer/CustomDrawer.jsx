@@ -34,9 +34,15 @@ const CustomDrawer = (props) => {
   };
 
   return (
-    <Drawer open={open} onClose={handleDrawerClose} 
-      className="px-4 py-2 customDrwerScroll h-full overflow-auto" placement={direction} size={widthSize}
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+    <Drawer 
+      open={open} 
+      onClose={handleDrawerClose} 
+      className="px-4 py-2 customDrwerScroll h-full overflow-auto bg-white shadow-2xl" 
+      placement={direction} 
+      size={widthSize}
+      overlayProps={{
+        className: "fixed inset-0 w-full h-full !bg-transparent !backdrop-blur-none z-[9995]",
+      }}
     >
         <div className="flex items-center justify-between px-[0.10vw] py-[0.5vw]">
           {customImg ? 

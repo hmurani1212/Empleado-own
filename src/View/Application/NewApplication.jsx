@@ -41,11 +41,12 @@ function NewApplication() {
 
     // Helper to set both ID and Name for all app types
     const setEmpData = (type) => {
-        if (type === '1' || type === '3' || type === '4' || type === '5') { // Medical, etc.
+        const typeStr = String(type);
+        if (typeStr === '1' || typeStr === '3' || typeStr === '4' || typeStr === '5') { // Medical, etc.
              handleSelectChangeMedicalApp('emp_id', empId);
              handleSelectChangeMedicalApp('emp_name', empName);
         }
-        if (type === '2' || type === '3' || type === '4' || type === '5') { // TA/DA, etc.
+        if (typeStr === '2' || typeStr === '3' || typeStr === '4' || typeStr === '5') { // TA/DA, etc.
              handleSelectChangeTaDaApp('emp_id', empId);
              handleSelectChangeTaDaApp('emp_name', empName);
         }
@@ -57,8 +58,10 @@ function NewApplication() {
   // Get selected employee object for CustomSelect value
   const getSelectedEmployeeOption = () => {
     let selectedEmpId = '';
-    if (applicationType === '1') selectedEmpId = medicalAppValue?.emp_id;
-    else if (applicationType === '2') selectedEmpId = taDaAppValue?.emp_id;
+    const appTypeStr = String(applicationType);
+    
+    if (appTypeStr === '1') selectedEmpId = medicalAppValue?.emp_id;
+    else if (appTypeStr === '2') selectedEmpId = taDaAppValue?.emp_id;
     else selectedEmpId = medicalAppValue?.emp_id || taDaAppValue?.emp_id;
 
     if (selectedEmpId) {

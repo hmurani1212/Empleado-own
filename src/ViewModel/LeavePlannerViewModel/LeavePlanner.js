@@ -9,6 +9,7 @@ const leavesPlannerViewModel = (set, get) => ({
     leavesBranches : [],
     allViewLeave : [],
     copyAllViewLeave : [],
+    viewLeavesLoading : false,
     policiesList: [],
     countriesGoogleForm:[],
     branchesGoogleForm:[],
@@ -188,7 +189,7 @@ const leavesPlannerViewModel = (set, get) => ({
     },
 
     getViewLeavesList: async(groupId)=>{
-        
+        set({ viewLeavesLoading: true });
         try {
             const response = await leavesPlannerApi.getViewLeaves(groupId)
             const data = response.data
@@ -204,6 +205,8 @@ const leavesPlannerViewModel = (set, get) => ({
             
         } catch(err){
             console.log(err)
+        } finally {
+            set({ viewLeavesLoading: false });
         }
 
     },

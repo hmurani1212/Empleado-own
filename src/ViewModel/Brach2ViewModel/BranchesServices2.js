@@ -17,6 +17,7 @@ import mainBranchApi from "../../Model/Data/Branches/Branches"  // Renamed for c
 const useBranches2 = () => {
     const gettingAllBranchesNew = useStore((state) => state.gettingAllBranchesNew)
     const branchesAllnew = useStore((state) => state.branchesAllNew)
+    const branchesListLoading = useStore((state) => state.branchesListLoading)
     const filterBranches = useStore((state) => state.FilterBranchesSearch)
     const allCountries = useStore((state) => state.allCountries)
     const gettingCountries = useStore((state) => state.gettingCountries)
@@ -950,7 +951,7 @@ const useBranches2 = () => {
         confirmAdminDeleteHandler, deleteAdminConfirm, triggerRefs, getDropdownPosition, deleteBranch, getBranchEmployees, showToast,
         getAdministrativePermissions, assignAdministrativePermission, removeAdministrativePermission, setEmpIdBranchAdmin, setRoleGrant,
         currentFilterStatus, goToNextPage, goToPreviousPage, goToPage,
-
+        branchesListLoading,
 
     }
 }

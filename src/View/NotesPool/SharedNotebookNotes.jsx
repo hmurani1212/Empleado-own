@@ -20,6 +20,8 @@ import useDropdownService from '../../services/__dropDownHoverService'
 import notesPoolApi from '../../Model/Data/NotesPool/NotesPool'
 import { showToast } from '../../Components/Toaster/Toaster'
 
+import { NoteSkeleton } from "./NotesPoolSkeletons";
+
 const SharedNotebookNotes = ({ notebook, onBack }) => {
   const [selectedNote, setSelectedNote] = useState(null)
   const [showNoteDialog, setShowNoteDialog] = useState(false)
@@ -211,10 +213,7 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
 
       <div className="grid w-full gap-5 grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
         {loading ? (
-          <div className='col-span-full text-center py-8'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto'></div>
-            <p className='mt-2 text-gray-500'>Loading notes...</p>
-          </div>
+          <NoteSkeleton />
         ) : (
           <>
             {/* Add Note Card (if permitted) */}

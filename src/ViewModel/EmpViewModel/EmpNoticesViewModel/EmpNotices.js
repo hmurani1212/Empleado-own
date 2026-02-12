@@ -4,9 +4,11 @@ import empNoticesApi from "../../../Model/Data/EmpData/EmpNotices/EmpNotices"
 const useEmpNoticesServices = ()=>{
 
     const [noticesData, setNoticeData] = useState([])
+    const [noticesLoading, setNoticesLoading] = useState(true)
 
 
     const getEmpNoticesData = async()=>{
+        setNoticesLoading(true)
         try {
             const response = await empNoticesApi.getEmpNoticesData()
             console.log('response', response)
@@ -18,12 +20,14 @@ const useEmpNoticesServices = ()=>{
             
         } catch (error) {
             
+        } finally {
+            setNoticesLoading(false)
         }
     }
 
 
 
-    return {getEmpNoticesData, noticesData}
+    return {getEmpNoticesData, noticesData, noticesLoading}
 
 }
 

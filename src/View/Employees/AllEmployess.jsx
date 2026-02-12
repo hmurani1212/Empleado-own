@@ -106,7 +106,7 @@ const CustomBranchSelect = ({ label, value, options = [], onChange }) => {
 };
 
 const AllEmployess = () => {
-    const { allEmployees,  empMount,  getAllDepartments,  handleFilterChange, handleFilterDeptChange,
+    const { allEmployees, employeesListLoading, empMount,  getAllDepartments,  handleFilterChange, handleFilterDeptChange,
         handleListToggle,handleGridToggle,listView, handleChangeEmployees, empStatus, handleStatusFilter, handelAlphabetSearch, alphaIndex,
         toggleMenuValue,openMenuValue, getEmployeesWithFilters, paginationData, goToNextPage, goToPreviousPage, goToPage,
     empBranches, fetchingAllBranches, setInitialStatus, filterValues } = useEmployees()
@@ -357,6 +357,7 @@ const AllEmployess = () => {
                 >
                     <EmployeesList 
                         empListData={filteredEmployees || allEmployees}
+                        loading={employeesListLoading}
                         getDropdownPosition={getDropdownPosition} 
                         triggerRefs={triggerRefs}
                         openMenuValue={openMenuValue}
@@ -377,6 +378,7 @@ const AllEmployess = () => {
                 >
                     <GridEmployee 
                         empListData={filteredEmployees || allEmployees}
+                        loading={employeesListLoading}
                         paginationData={paginationData}
                         onNextPage={goToNextPage}
                         onPreviousPage={goToPreviousPage}

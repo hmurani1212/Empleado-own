@@ -21,6 +21,8 @@ import ConfirmationDialog from "../../Components/ConfirmationDialog/Confirmation
 import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import ShareNoteBook from "./ShareNoteBook";
 
+import { NotebookSkeleton } from "./NotesPoolSkeletons";
+
 const Notesbook = () => {
   const { notesState, handleNotes, notes, noteBookTitle, handleBackToNotebooks } = useOutletContext();
 
@@ -110,13 +112,7 @@ const Notesbook = () => {
         </div>
 
         {/* LOADING */}
-        {isLoading && (
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 w-full">
-             {[1,2,3].map(i => (
-                <div key={i} className="h-[140px] bg-gray-100 rounded-2xl animate-pulse"></div>
-             ))}
-          </div>
-        )}
+        {isLoading && <NotebookSkeleton />}
 
         {!isLoading && notebooks?.length > 0 && (
           <motion.div

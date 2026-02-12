@@ -12,6 +12,8 @@ import useNoteHandler from "../../ViewModel/NotesPoolViewModel/NoteHandler";
 import EditorData from "./EditorData";
 import { MdEditDocument } from "react-icons/md";
 
+import { StarredNoteSkeleton } from "./NotesPoolSkeletons";
+
 const StarredNotes = () => {
   const [loading, setLoading] = useState(true);
 
@@ -83,13 +85,11 @@ const StarredNotes = () => {
           </div>
         </div>
 
-        <div className="grid w-full gap-4 grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
         {loading ? (
-          <div className='col-span-full text-center py-8'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto'></div>
-            <p className='mt-2 text-gray-500'>Loading notes...</p>
-          </div>
-        ) : validStarredNotes?.length > 0
+          <StarredNoteSkeleton />
+        ) : (
+        <div className="grid w-full gap-4 grid-cols-[repeat(auto-fill,minmax(190px,1fr))]">
+        {validStarredNotes?.length > 0
           ? validStarredNotes.map((ele, i) => {
             const noteTitle =
             ele.note?.note_title ||
@@ -225,7 +225,8 @@ const StarredNotes = () => {
               No notebook exist
             </span>
           </div>)}
-      </div>
+        </div>
+        )}
 
       {/* Note viewing dialog */}
       {addNoteValue.showNote && (

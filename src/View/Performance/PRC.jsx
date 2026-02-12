@@ -12,6 +12,7 @@ import { PRCActionList } from "../../services/__performanceServices";
 import { FaChevronDown } from "react-icons/fa6";
 import ViewPRC from "./ViewPRC";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
+import { PerformanceTableSkeleton } from "./PerformanceSkeletons";
 
 const PRC = () => {
   const tableHeader = [
@@ -79,6 +80,7 @@ const PRC = () => {
     openMenuValue,
     performanceScrollRef,
     gettingPRCData,
+    PRCLoading,
   } = usePerformanceServices();
 
   const { getDropdownPosition, triggerRefs } = useDropdownService();
@@ -123,6 +125,9 @@ const PRC = () => {
         </div>
       </div>
       <div className="bg-white rounded-[10px] drop-shadow-md p-2">
+        {PRCLoading ? (
+          <PerformanceTableSkeleton headers={tableHeader} />
+        ) : (
         <div
           className="h-[calc(100vh-100px)] overflow-auto customScroll"
           ref={performanceScrollRef}
@@ -296,6 +301,7 @@ const PRC = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {(PRCAddValue.show || viewPRC.show) && (

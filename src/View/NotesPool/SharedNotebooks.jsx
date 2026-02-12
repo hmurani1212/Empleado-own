@@ -15,6 +15,8 @@ import useSharedNotebookHandler from '../../ViewModel/NotesPoolViewModel/SharedN
 import CustomDialog from '../../Components/CustomDialog/CustomDialog';
 import ShareNoteBook from './ShareNoteBook';
 
+import { NotebookSkeleton } from './NotesPoolSkeletons';
+
 const SharedNotebooks = () => {
   const location = useLocation();
   const { sharednotebooks, sharednotebookCount, toggleMenuValue, openMenuValue } = useNotesPoolServices()
@@ -122,13 +124,7 @@ const SharedNotebooks = () => {
         </div>
       </div>
 
-      {isLoading && (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 w-full">
-            {[1,2,3].map(i => (
-            <div key={i} className="h-[140px] bg-gray-100 rounded-2xl animate-pulse"></div>
-            ))}
-        </div>
-      )}
+      {isLoading && <NotebookSkeleton />}
 
       {!isLoading && (
       <div className='grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-5 w-full'>

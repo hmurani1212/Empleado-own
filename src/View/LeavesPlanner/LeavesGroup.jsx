@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
+import { LeavesGroupTableSkeleton } from "./LeavesPlannerSkeletons";
 
 const LeavesGroup = () => {
   const {
@@ -36,6 +37,7 @@ const LeavesGroup = () => {
   } = useLeavesPlanner();
 
   const [selectedBranch, setSelectedBranch] = useState(null);
+  const [leavesGroupLoading, setLeavesGroupLoading] = useState(true);
 
   const data = [
     "ID",
@@ -47,12 +49,17 @@ const LeavesGroup = () => {
   ];
 
   useEffect(() => {
-    if (!mountLeave) {
-      getLeavesList();
-      getAllDepartmentsLeaves();
-      getPaidLeavesConfig();
+    if (mountLeave) {
+      setLeavesGroupLoading(false);
+    } else {
+      setLeavesGroupLoading(true);
+      Promise.all([
+        getLeavesList(),
+        getAllDepartmentsLeaves(),
+        getPaidLeavesConfig(),
+      ]).finally(() => setLeavesGroupLoading(false));
     }
-  }, []);
+  }, [mountLeave]);
 
   const location = useLocation();
 
@@ -147,6 +154,9 @@ const LeavesGroup = () => {
           </div>
 
           {/* Table */}
+          {leavesGroupLoading ? (
+            <LeavesGroupTableSkeleton />
+          ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
               <table className="min-w-full table-auto text-center">
@@ -273,6 +283,7 @@ const LeavesGroup = () => {
               </table>
             </div>
           </div>
+          )}
 
           <ConfirmationDialog
             openDialog={openDialogLeaves}

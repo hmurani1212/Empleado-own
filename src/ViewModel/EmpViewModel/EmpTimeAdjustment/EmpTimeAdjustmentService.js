@@ -4,10 +4,12 @@ const useEmpTimeAdjustmentServices = ()=>{
 
     const getTimeAjustmentData = useStore((state)=> state.getTimeAjustmentData)
     const timeAjustmentData = useStore((state)=> state.timeAjustmentData)
+    const timeAdjustmentLoading = useStore((state)=> state.timeAdjustmentLoading)
 
     return {
         getTimeAjustmentData,
-        timeAjustmentData
+        timeAjustmentData,
+        timeAdjustmentLoading
     }
 
 }

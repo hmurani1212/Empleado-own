@@ -9,9 +9,10 @@ import useEmployeeActionService from "../../ViewModel/EmployeeViewModel/Employee
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import SalaryDetails from "./SalaryDetails";
 import { useState, useEffect } from "react";
+import { EmployeesGridSkeleton } from "./EmployeesSkeletons";
 
 const GridEmployee = (props) => {
-    const { empListData, paginationData, onNextPage, onPreviousPage, onGoToPage, currentStatus } = props;
+    const { empListData, loading: loadingProp, paginationData, onNextPage, onPreviousPage, onGoToPage, currentStatus } = props;
     
     const [openMenuValue, setOpenMenuValue] = useState({});
     
@@ -66,10 +67,14 @@ const GridEmployee = (props) => {
     //     console.log(' ele ele ele', ele)
     // })
     // console.log('empListData empListData', empListData)
+    const isLoading = loadingProp !== undefined ? loadingProp : !empListData?.employees;
+
     return (
         <div>
             <div className='grid grid-cols-4 gap-3'>
-                {empListData?.employees?.length > 0 ? <>
+                {isLoading ? (
+                    <EmployeesGridSkeleton />
+                ) : empListData?.employees?.length > 0 ? <>
                     {empListData?.employees?.map((ele, index) => (
                         <Card className="border border-[#3DA5F4] bg-[#F8F9FF] shadow-none" key={index}>
                             <CardBody className='p-1'>
@@ -145,14 +150,15 @@ const GridEmployee = (props) => {
 
                         </Card>
                     ))}
-                </> : <div>
+                </> : (
+                <div>
                     <div className="w-full h-[200px] flex items-center justify-center">
                         <Typography variant="h6" color="blue-gray" className="font-normal">
                             No employees found
                         </Typography>
                     </div>
-
-                </div>}
+                </div>
+                )}
 
             </div>
             
