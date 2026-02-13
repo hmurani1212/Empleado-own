@@ -27,7 +27,7 @@ const SideMenu = (props) => {
 
   return (
     <div className='flex flex-col w-full h-full bg-white'>
-      <div className='flex-1 overflow-y-auto customScroll py-4 flex flex-col gap-1 overflow-x-hidden'>
+      <div className='flex-1 overflow-y-auto scrollbarHidden py-4 flex flex-col gap-1 overflow-x-hidden'>
         {filteredTabs.map((tab, index) => {
           const containerItem = SidebarTabsContainer.find(item => item.id === tab.id);
           const tabUrl = containerItem ? containerItem.tabUrl : '#';

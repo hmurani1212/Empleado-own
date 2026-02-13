@@ -14,7 +14,7 @@ import CourseCompletionSkeleton from './CourseCompletionSkeleton'
 const CourseCompletion = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { training_data, getCourseAssignedEmployees, isLoadingCourseAssignedEmployees } = TrainingService()
+  const { training_data, getCourseAssignedEmployees } = TrainingService()
   
   const openDrawer = useStore((state) => state.openDrawer)
   const settingDrawerTitle = useStore((state) => state.settingDrawerTitle)
@@ -312,7 +312,7 @@ const CourseCompletion = () => {
                       </div>
                     </td>
                   </tr>
-                ) : loading || isLoadingCourseAssignedEmployees ? (
+                ) : loading ? (
                   <CourseCompletionSkeleton />
                 ) : filteredData.length > 0 ? (
                   filteredData.map((item, index) => (

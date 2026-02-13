@@ -88,6 +88,17 @@
         width: 6px !important;
     }
 
+    /* Hide scrollbar but keep element scrollable - use on overflow-auto/overflow-y-auto elements */
+    .scrollbarHidden {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and old Edge */
+    }
+    .scrollbarHidden::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+        width: 0;
+        height: 0;
+    }
+
                 
 
     .bg-image-custom {

@@ -9,6 +9,7 @@ import { showToast } from '../../Components/Toaster/Toaster'
 import CustomButton from '../../Components/CustomButton/CustomButton'
 import { motion, AnimatePresence } from 'framer-motion'
 import QuestionBankSkeleton from './QuestionBankSkeleton'
+import { FaBook } from 'react-icons/fa6'
 
 const QuestionBank = () => {
   const navigate = useNavigate()
