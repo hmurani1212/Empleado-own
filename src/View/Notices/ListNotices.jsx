@@ -38,6 +38,7 @@ const SkeletonRow = () => (
 );
 
 const ListNotices = () => {
+  
   const {
     allNoticesList,
     getAllNoticesList,
@@ -78,8 +79,8 @@ const ListNotices = () => {
     "Created Date",
     "Actions",
   ];
-
-  // Fetch notices list on mount (page 1)
+  // Fetch notices list on mount (page 1). Use cache when returning (forceReload: false).
+  // API is skipped in store when cache exists; refetch only after add/edit/delete (forceReload: true).
   useEffect(() => {
     const fetchFirstPage = async () => {
       setInitialLoading(true);
@@ -224,6 +225,7 @@ const ListNotices = () => {
                     <SkeletonRow key={idx} />
                   ))
                 ) : allNoticesList && allNoticesList.length > 0 ? (
+                  allNoticesList
                   allNoticesList
                     .filter((n) => n && n.timestamp)
                     .sort((a, b) => b.timestamp - a.timestamp)
