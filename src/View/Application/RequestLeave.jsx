@@ -30,11 +30,13 @@ function RequestLeave({ applicationData, onClose }) {
     return `${formattedDay} ${formattedMonth}, ${formattedYear}`;
   }
 
-  // Format adjust_in values
+  // Format adjust_in values (1 = Paid leave, 2 = Leave without pay, or leave type name from API)
   const formatAdjustIn = (value) => {
-    if (!value) return '-';
-    // Convert snake_case to Title Case
-    return value
+    if (value === undefined || value === null || value === '') return '-';
+    if (value === '1' || value === 1) return 'Paid leave';
+    if (value === '2' || value === 2) return 'Leave without pay';
+    // Convert snake_case to Title Case for other values
+    return String(value)
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');

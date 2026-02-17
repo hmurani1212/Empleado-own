@@ -10,7 +10,7 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
     title: '',
     description: '',
     reminder: '',
-    notificationMethod: ''
+    notificationMethods: [] // multiple options: 'App push notification' | 'Email' | 'App/Web Notifications'
   })
 
   const handleInputChange = (e) => {
@@ -29,10 +29,12 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
   }
 
   const handleNotificationSelect = (method) => {
-    setFormData(prev => ({
-      ...prev,
-      notificationMethod: method
-    }))
+    setFormData(prev => {
+      const current = prev.notificationMethods || []
+      const isSelected = current.includes(method)
+      const next = isSelected ? current.filter((m) => m !== method) : [...current, method]
+      return { ...prev, notificationMethods: next }
+    })
   }
 
   // Convert reminder option to timestamp
@@ -58,17 +60,13 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
     }
   }
 
-  // Get notification method values
-  const getNotificationValues = (method) => {
-    switch (method) {
-      case 'App push notification':
-        return { via_push_app: 1, via_email: 0, via_web: 0 }
-      case 'Email':
-        return { via_push_app: 0, via_email: 1, via_web: 0 }
-      case 'App/Web Notifications':
-        return { via_push_app: 0, via_email: 0, via_web: 1 }
-      default:
-        return { via_push_app: 0, via_email: 0, via_web: 0 }
+  // Get notification method values for API (supports multiple selected methods)
+  const getNotificationValues = (methods) => {
+    const list = Array.isArray(methods) ? methods : []
+    return {
+      via_push_app: list.includes('App push notification') ? 1 : 0,
+      via_email: list.includes('Email') ? 1 : 0,
+      via_web: list.includes('App/Web Notifications') ? 1 : 0
     }
   }
 
@@ -91,14 +89,14 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
       return
     }
     
-    if (!formData.notificationMethod) {
-      toast.error('Please select a notification method')
+    if (!formData.notificationMethods?.length) {
+      toast.error('Please select at least one notification method')
       return
     }
 
     // Prepare API data
     const reminderTimestamp = getReminderTimestamp(formData.reminder)
-    const notificationValues = getNotificationValues(formData.notificationMethod)
+    const notificationValues = getNotificationValues(formData.notificationMethods)
     
     const apiData = {
       title: formData.title,
@@ -124,7 +122,7 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
         title: '',
         description: '',
         reminder: '',
-        notificationMethod: ''
+        notificationMethods: []
       })
       onClose()
     } else {
@@ -203,26 +201,29 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
             </div>
           </div>
 
-          {/* Notification Method Options */}
+          {/* Notification Method Options (multi-select) */}
           <div>
             <label className="block text-gray-800 font-medium mb-3">
               Send Reminder via
             </label>
-            <div className="flex gap-2">
-              {['App push notification', 'Email', 'App/Web Notifications'].map((method) => (
-                <button
-                  key={method}
-                  type="button"
-                  onClick={() => handleNotificationSelect(method)}
-                  className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    formData.notificationMethod === method
-                      ? 'bg-bgBlue text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {method}
-                </button>
-              ))}
+            <div className="flex flex-wrap justify-between gap-2">
+              {['App push notification', 'Email', 'App/Web Notifications'].map((method) => {
+                const isSelected = (formData.notificationMethods || []).includes(method)
+                return (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => handleNotificationSelect(method)}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isSelected
+                        ? 'bg-bgBlue text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {method}
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
