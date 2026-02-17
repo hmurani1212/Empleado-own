@@ -10,6 +10,25 @@ const TABLE_HEAD_LEAVES_GROUP = [
   "Action",
 ];
 
+/**
+ * Skeleton for Leave Groups controls bar - mirrors LeavesGroup.jsx controls (branch select, search, paid toggle, Add New Group button).
+ */
+export const LeavesGroupControlsSkeleton = () => {
+  return (
+    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row items-center justify-between gap-4 animate-pulse">
+      <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+        <div className="w-full md:w-56 h-10 bg-gray-100 rounded-xl" />
+        <div className="w-full md:w-64 h-10 bg-gray-100 rounded-xl" />
+        <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 w-full md:w-auto">
+          <div className="h-4 bg-gray-100 rounded w-24" />
+          <div className="w-11 h-6 bg-gray-100 rounded-full" />
+        </div>
+      </div>
+      <div className="w-full lg:w-40 h-10 bg-gray-100 rounded-xl" />
+    </div>
+  );
+};
+
 const TABLE_HEAD_VIEW_LEAVES = [
   "ID",
   "Title",
@@ -26,14 +45,52 @@ const TABLE_HEAD_VIEW_LEAVES = [
   "Action",
 ];
 
+/**
+ * Skeleton for View Leaves header/controls - mirrors ViewLeaves.jsx (Back button, search, Define Leave Type button).
+ */
+export const ViewLeavesHeaderSkeleton = () => {
+  return (
+    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse">
+      <div className="flex items-center gap-4 w-full md:w-auto">
+        <div className="h-10 w-24 bg-gray-100 rounded-xl" />
+        <div className="w-full md:w-64 h-10 bg-gray-100 rounded-xl" />
+      </div>
+      <div className="w-full md:w-48 h-10 bg-gray-100 rounded-xl" />
+    </div>
+  );
+};
+
+/**
+ * Skeleton for Public Holiday controls - mirrors PublicHoliday.jsx (Select Branch, Policy, Integrate with Google Calendar).
+ */
+export const PublicHolidayControlsSkeleton = () => {
+  return (
+    <div className="flex flex-col gap-3 animate-pulse">
+      <div className="flex items-end justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-52">
+            <div className="h-4 bg-gray-100 rounded w-24 mb-2 mx-2" />
+            <div className="h-10 bg-gray-100 rounded-lg w-52" />
+          </div>
+          <div className="w-52">
+            <div className="h-4 bg-gray-100 rounded w-16 mb-2 mx-2" />
+            <div className="h-10 bg-gray-100 rounded-lg w-52" />
+          </div>
+        </div>
+        <div className="h-10 w-56 bg-gray-100 rounded-lg" />
+      </div>
+    </div>
+  );
+};
+
 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /**
- * Skeleton for Leave Groups table - mirrors LeavesGroup.jsx table layout
+ * Skeleton for Leave Groups table - mirrors LeavesGroup.jsx table layout (same wrapper and scroll container).
  */
 export const LeavesGroupTableSkeleton = () => {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden font-poppins">
       <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
         <table className="min-w-full table-auto text-center">
           <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
@@ -81,11 +138,11 @@ export const LeavesGroupTableSkeleton = () => {
 };
 
 /**
- * Skeleton for View Leaves table - mirrors ViewLeaves.jsx table layout
+ * Skeleton for View Leaves table - mirrors ViewLeaves.jsx table layout (same wrapper and scroll container).
  */
 export const ViewLeavesTableSkeleton = () => {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden font-poppins">
       <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
         <table className="min-w-full table-auto text-center">
           <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">

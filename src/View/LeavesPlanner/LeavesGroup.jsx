@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
-import { LeavesGroupTableSkeleton } from "./LeavesPlannerSkeletons";
+import { LeavesGroupControlsSkeleton, LeavesGroupTableSkeleton } from "./LeavesPlannerSkeletons";
 
 const LeavesGroup = () => {
   const {
@@ -95,6 +95,9 @@ const LeavesGroup = () => {
       ) : (
         <div className="flex flex-col gap-6">
           {/* Controls Bar */}
+          {leavesGroupLoading ? (
+            <LeavesGroupControlsSkeleton />
+          ) : (
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row items-center justify-between gap-4">
             <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
               <div className="w-full md:w-56">
@@ -152,6 +155,7 @@ const LeavesGroup = () => {
               Add New Group
             </Button>
           </div>
+          )}
 
           {/* Table */}
           {leavesGroupLoading ? (

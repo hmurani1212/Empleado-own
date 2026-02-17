@@ -447,7 +447,7 @@ function Dashboard() {
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                           {pendingCheckListHeaders.map((head, i) => (
-                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                            <th key={i} className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap ${(head === 'ACTION' || head === 'Action' || head === 'View Profile') ? 'text-center align-middle' : ''}`}>
                               {head}
                             </th>
                           ))}
@@ -549,7 +549,7 @@ function Dashboard() {
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                           {meet_greetHeaders.map((head, i) => (
-                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                            <th key={i} className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap ${(head === 'ACTION' || head === 'Action' || head === 'View Profile') ? 'text-center align-middle' : ''}`}>
                               {head}
                             </th>
                           ))}

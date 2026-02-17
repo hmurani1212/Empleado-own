@@ -330,6 +330,12 @@ const Inbox = () => {
       );
     }
 
+<<<<<<< HEAD
+    // Do not apply local read_status filter when Read/Unread is selected: data was already
+    // fetched via getFilteredInboxData(read_status=0|1). API returns the correct list but may
+    // not set read_status on each story (e.g. Read response has read_status: null), so re-filtering
+    // here would clear the list. Trust the API response for Read/Unread.
+=======
     // Apply local read status filter: use receiver in users, or story-level read_status when users is empty (API format)
     if (readStatusFilter !== null) {
       const wantRead = Number(readStatusFilter);
@@ -356,6 +362,7 @@ const Inbox = () => {
         return Number(storyAppType) === wantType;
       });
     }
+>>>>>>> main
 
     setFilteredInboxData(filteredData);
   }, [InboxData, debouncedSearchTerm, readStatusFilter, readTypeFilter]);
@@ -774,12 +781,24 @@ const Inbox = () => {
     }
   };
 
+<<<<<<< HEAD
+  // Function to check if a story has unread messages (support story-level read_status and story.users[].read_status)
+  const hasUnreadMessages = (story) => {
+    if (story.read_status !== undefined && story.read_status !== null) {
+      return story.read_status === 0;
+    }
+    if (story.users && Array.isArray(story.users)) {
+      return story.users.some(user => user.read_status === 0);
+    }
+    return true; // treat missing read_status as unread
+=======
   // Function to check if a story has unread messages (uses users[].read_status or story-level read_status when users empty)
   const hasUnreadMessages = (story) => {
     if (story.users && Array.isArray(story.users) && story.users.length > 0) {
       return story.users.some(user => user.read_status === 0);
     }
     return story.read_status === 0 || story.read_status == null;
+>>>>>>> main
   };
 
 

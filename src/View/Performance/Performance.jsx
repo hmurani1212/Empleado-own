@@ -268,7 +268,8 @@ const Performance = () => {
   );
 
   return (
-    <div className='min-h-screen  p-6 font-poppins'>
+    
+    <div className='min-h-screen font-poppins'>
       <div className=' mx-auto space-y-6'>
         
         {/* Header Section */}

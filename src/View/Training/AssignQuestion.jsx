@@ -9,17 +9,16 @@ const AssignQuestion = ({ questionIds, questionNames, closeDrawer }) => {
   // Get functions directly from store
   const assignQuestionsByBranchDept = useStore((state) => state.assignQuestionsByBranchDept)
   const isLoadingQuestionAssignment = useStore((state) => state.isLoadingQuestionAssignment)
-  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, Get_All_Employeefn, Get_All_Employee } = useEmployees()
+  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept } = useEmployees()
   
   const [selectedBranch, setSelectedBranch] = useState(null)
   const [selectedDepartment, setSelectedDepartment] = useState(null)
   const [selectedEmployees, setSelectedEmployees] = useState([])
   const [loading, setLoading] = useState(false)
 
-  // Fetch branches and employees on mount
+  // Fetch branches on mount (departments loaded when branch is selected)
   useEffect(() => {
     fetchingAllBranches()
-    Get_All_Employeefn()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -86,73 +85,55 @@ const AssignQuestion = ({ questionIds, questionNames, closeDrawer }) => {
       : [])
   ]
 
-  // Create department options with "All Departments" option
+  // Departments list: API returns DB_DATA = { departments: [...], pagination } or sometimes array
+  const departmentsList = Array.isArray(dept_subDept)
+    ? dept_subDept
+    : (dept_subDept?.departments || [])
+
   const departmentOptions = [
     { value: 0, label: 'All Departments' },
-    ...(Array.isArray(dept_subDept)
-      ? dept_subDept.map((dept) => ({
-          value: dept.id || dept.dept_id,
-          label: dept.name || dept.dept_name,
-          id: dept.id || dept.dept_id
-        }))
-      : dept_subDept?.departments
-      ? dept_subDept.departments.map((dept) => ({
-          value: dept.id || dept.dept_id,
-          label: dept.name || dept.dept_name,
-          id: dept.id || dept.dept_id
-        }))
-      : [])
+    ...departmentsList.map((dept) => ({
+      value: dept.id || dept.dept_id,
+      label: dept.name || dept.dept_name,
+      id: dept.id || dept.dept_id
+    }))
   ]
 
-  // Create employee options from employee store data, filtered by branch and department
-  const employeeOptions = [
-    { value: 0, label: 'All Employees' },
-    ...(Array.isArray(Get_All_Employee)
-      ? Get_All_Employee
-          .filter(emp => {
-            // Filter by branch if selected and not "All Branches" (value 0)
-            if (selectedBranch?.value && selectedBranch.value !== 0 && selectedBranch.value !== '0') {
-              const branchValue = Number(selectedBranch.value) || selectedBranch.value
-              const branchId = Number(selectedBranch.id) || selectedBranch.id
-              const empBranchId = Number(emp.branch_id) || emp.branch_id
-              const empBranchObjId = Number(emp.branch?.id) || emp.branch?.id
-              
-              if (empBranchId !== branchValue && 
-                  empBranchId !== branchId && 
-                  empBranchObjId !== branchValue && 
-                  empBranchObjId !== branchId &&
-                  emp.branch !== branchValue &&
-                  emp.branch !== branchId) {
-                return false
-              }
-            }
-            
-            // Filter by department if selected and not "All Departments" (value 0)
-            if (selectedDepartment?.value && selectedDepartment.value !== 0 && selectedDepartment.value !== '0') {
-              const deptValue = Number(selectedDepartment.value) || selectedDepartment.value
-              const deptId = Number(selectedDepartment.id) || selectedDepartment.id
-              const empDeptId = Number(emp.department_id) || Number(emp.dept_id) || emp.department_id || emp.dept_id
-              const empDeptObjId = Number(emp.department?.id) || emp.department?.id
-              
-              if (empDeptId !== deptValue && 
-                  empDeptId !== deptId && 
-                  empDeptObjId !== deptValue && 
-                  empDeptObjId !== deptId &&
-                  emp.department !== deptValue &&
-                  emp.department !== deptId) {
-                return false
-              }
-            }
-            
-            return true
-          })
-          .map((emp) => ({
-            value: emp.id || emp.oneid || emp.emp_id,
-            label: `${emp.name || 'N/A'} (${emp.emp_id || emp.id || 'N/A'})`,
-            id: emp.id || emp.oneid || emp.emp_id
-          }))
-      : [])
-  ]
+  // Build employee options from departments API (each department has employees array: [{ id, name }])
+  const employeeOptions = (() => {
+    const base = [{ value: 0, label: 'All Employees' }]
+    if (!selectedDepartment || selectedDepartment.value === undefined || selectedDepartment.value === null) {
+      return base
+    }
+    const deptValue = selectedDepartment.value === 0 || selectedDepartment.value === '0' ? 0 : Number(selectedDepartment.value) || selectedDepartment.value
+
+    if (deptValue === 0) {
+      const seen = new Set()
+      const list = departmentsList
+        .flatMap((dept) => (dept.employees || []))
+        .filter((emp) => {
+          if (seen.has(emp.id)) return false
+          seen.add(emp.id)
+          return true
+        })
+        .map((emp) => ({
+          value: emp.id,
+          label: `${emp.name || 'N/A'} (${emp.id})`,
+          id: emp.id
+        }))
+      return [...base, ...list]
+    }
+
+    const department = departmentsList.find(
+      (d) => (d.id || d.dept_id) === deptValue || Number(d.id || d.dept_id) === deptValue
+    )
+    const employees = (department?.employees || []).map((emp) => ({
+      value: emp.id,
+      label: `${emp.name || 'N/A'} (${emp.id})`,
+      id: emp.id
+    }))
+    return [...base, ...employees]
+  })()
 
   // Handle form submission
   const handleSubmit = async (e) => {

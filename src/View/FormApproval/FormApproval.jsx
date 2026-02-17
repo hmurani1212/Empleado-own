@@ -32,7 +32,7 @@ const FormApproval = () => {
   };
 
   return (
-    <div className="min-h-screen  p-6 font-poppins">
+    <div className="min-h-screen  font-poppins">
       <div className="mx-auto space-y-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
