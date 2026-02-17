@@ -268,21 +268,7 @@ function Header() {
           )}
         </div>
         {/* MIDDLE SECTION: Admin Info (Biometrics) */}
-        {userRole === 'Admin' && (
-          <div className="hidden xl:flex items-center gap-6 text-sm text-gray-500 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
-             <div className="flex items-center gap-2 cursor-pointer hover:text-brand-600 transition-colors" onClick={() => setShowLiveBiometricDevices(true)}>
-                <span className="font-medium text-gray-600">Machines:</span>
-                <span className="bg-blue-100 text-brand-600 px-2 py-0.5 rounded text-xs font-semibold">{liveBiometricDevices.allCount || 0}</span>
-             </div>
-             <div className="h-4 w-px bg-gray-300"></div>
-             <div 
-               className="flex items-center gap-2" 
-             >
-                <span className="font-medium">Live:</span>
-                <span className="bg-green-100 text-green-600 px-2 py-0.5 rounded text-xs font-semibold">{liveBiometricDevices.liveCount || 0}</span>
-             </div>
-          </div>
-        )}
+        
 
         {/* MIDDLE SECTION: Admin Info (Biometrics) */}
         {/* {userRole === 'Admin' && (
