@@ -225,7 +225,7 @@ const ListNotices = () => {
                     <SkeletonRow key={idx} />
                   ))
                 ) : allNoticesList && allNoticesList.length > 0 ? (
-                  allNoticesList
+                 
                   allNoticesList
                     .filter((n) => n && n.timestamp)
                     .sort((a, b) => b.timestamp - a.timestamp)
