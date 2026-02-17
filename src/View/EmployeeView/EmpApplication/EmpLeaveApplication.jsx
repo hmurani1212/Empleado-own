@@ -3,17 +3,17 @@ import CustomButton from '../../../Components/CustomButton/CustomButton'
 import CustomSelect from '../../../Components/CustomSelect/CustomSelect'
 
 const EmpLeaveApplication = (props) => {
-    const { leaveApplcationValue,addEmpLeaveApplication, handleApplicationChange, generateLeaveDays, handleLeaveTypeChange, handleHalfDayChange, employeeDefinedLeaves } = props
-    
-    // Build leave type options from employee-defined leaves API response
-    // Format: { value: id, label: name } - same as admin side
-    // The API response is an object like { "1": "Annual Leave", "2": "Sick Leave", ... }
+    const { leaveApplcationValue, addEmpLeaveApplication, handleApplicationChange, generateLeaveDays, handleLeaveTypeChange, handleHalfDayChange, employeeDefinedLeaves, paidLeaveConfigEnabled } = props
+
+    // Build leave type options: placeholder, employee-defined leaves, Leave without pay (2), Paid leave (1) if config enabled
     const leaveTypeOptions = [
         { value: "", label: "-- Choose leave adjustment --" },
         ...Object.entries(employeeDefinedLeaves || {}).map(([id, name]) => ({
             value: id,
             label: name
-        }))
+        })),
+        { value: "2", label: "Leave without pay" },
+        ...(paidLeaveConfigEnabled ? [{ value: "1", label: "Paid leave" }] : [])
     ]
   return (
     <form className='space-y-4' onSubmit={addEmpLeaveApplication}>

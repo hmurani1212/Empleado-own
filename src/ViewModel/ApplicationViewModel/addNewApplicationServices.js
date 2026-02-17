@@ -162,63 +162,67 @@ const useNewApplication = () => {
         // Set application type only after validation passes
         setApplicationType(val.id)
 
-        // Handle Leave Application (id: 3) - Open drawer
+        // Handle Leave Application (id: 3) - Open drawer if employee already selected
         if (val.id === 3 || val.id === '3') {
-
-            // Check if employee is selected before opening drawer
             const selectedEmpId = medicalAppValue.emp_id || taDaAppValue.emp_id;
-
             if (!selectedEmpId) {
                 showToast('Please select an employee', 'error');
-                return; // Don't open drawer if no employee selected
+                return;
             }
-
-            // Fetch employee-specific leave types before opening drawer (AWAIT to ensure data loads)
-            const fetchedLeaves = await fetchEmployeeDefinedLeaves(selectedEmpId);
-
-            // Reset leave application state to ensure clean date strings
-            setLeaveAppValue({
-                leave_type: "",
-                subject: "",
-                description: "",
-                start_date: "", // Ensure clean date string
-                end_date: "",   // Ensure clean date string
-                total_days: "",
-                emergency_contact: "",
-                work_handover: "",
-                supporting_docs: "",
-                emp_id: selectedEmpId, // Set the selected employee ID
-                emp_name: medicalAppValue.emp_name || taDaAppValue.emp_name || "" // Set the selected employee name
-            });
-
-            // Reset separate date states
-            setStartDate("");
-            setEndDate("");
-
-            // Reset generated leave days
-            setLeaveDays([]);
-
-            // Build leave type options from the fetched data
-            const currentLeaveOptions = [
-                { value: "", label: "-- Choose leave adjustment --" },
-                ...Object.entries(fetchedLeaves || {}).map(([id, name]) => ({
-                    value: id,
-                    label: name
-                }))
-            ];
-
-            console.log('Opening drawer with leave options:', currentLeaveOptions);
-
-            // Set component first, then title, then size, then open
-            settingComponent(<LeaveApplicationDrawerContent
-                selectedEmpId={selectedEmpId}
-                selectedEmpName={medicalAppValue.emp_name || taDaAppValue.emp_name || ""}
-                leaveTypeOptions={currentLeaveOptions}
-            />);
-            settingDrawerTitle('Leave Application');
-            settingDrawerSize(600); // Increased width by 30% (from 500 to 650)
-            openDrawer();
+            await openLeaveApplicationDrawer(selectedEmpId, medicalAppValue.emp_name || taDaAppValue.emp_name || "");
         }
+    };
+
+    // Open Leave Application drawer for a given employee (used when type is already Leave Application and user selects employee)
+    const openLeaveApplicationDrawer = async (selectedEmpId, selectedEmpName) => {
+        if (!selectedEmpId) {
+            showToast('Please select an employee', 'error');
+            return;
+        }
+        const empName = selectedEmpName || medicalAppValue.emp_name || taDaAppValue.emp_name || "";
+
+        const fetchedLeaves = await fetchEmployeeDefinedLeaves(selectedEmpId);
+        let paidLeaveEnabled = false;
+        try {
+            const configRes = await leavesPlannerApi.getPaidLeavesConfig();
+            const configValue = configRes?.data?.DB_DATA?.config_value;
+            paidLeaveEnabled = configValue === "1" || configValue === 1;
+        } catch (err) {
+            console.error('Error fetching PAID_LEAVES config:', err);
+        }
+
+        setLeaveAppValue({
+            leave_type: "",
+            subject: "",
+            description: "",
+            start_date: "",
+            end_date: "",
+            total_days: "",
+            emergency_contact: "",
+            work_handover: "",
+            supporting_docs: "",
+            emp_id: selectedEmpId,
+            emp_name: empName
+        });
+        setStartDate("");
+        setEndDate("");
+        setLeaveDays([]);
+
+        const currentLeaveOptions = [
+            { value: "", label: "-- Choose leave adjustment --" },
+            ...Object.entries(fetchedLeaves || {}).map(([id, name]) => ({ value: id, label: name })),
+            { value: "2", label: "Leave without pay" },
+            ...(paidLeaveEnabled ? [{ value: "1", label: "Paid leave" }] : [])
+        ];
+
+        settingComponent(<LeaveApplicationDrawerContent
+            selectedEmpId={selectedEmpId}
+            selectedEmpName={empName}
+            leaveTypeOptions={currentLeaveOptions}
+        />);
+        settingDrawerTitle('Leave Application');
+        settingDrawerSize(600);
+        openDrawer();
     };
 
     const handleChangeMedicalApp = (e) => {
@@ -875,6 +879,7 @@ const useNewApplication = () => {
         // Leave Application functions
         handleLeaveApplication, handleChangeLeaveApp, leaveAppValue, setLeaveAppValue,
         handleSelectChangeLeaveApp, handleLeaveDateChange, createLeavePayload, validateLeaveForm,
+        openLeaveApplicationDrawer,
         // Leave days generation functions
         generateLeaveDays, leaveDays, handleLeaveTypeChange, handleHalfDayChange, leaveTypeOptions,
         // Date states

@@ -22,6 +22,8 @@ function NewApplication() {
     handleTaDaApplication, handleChangeTaDaApp, taDaAppValue,
     handleSelectChangeTaDaApp, handleTaDaDateChange, handleTaDaFileUpload,
     taDaUploadedFiles,
+    // Leave Application drawer
+    openLeaveApplicationDrawer,
     // Leave Encashment functions
     handleLeaveEncashment, handleChangeLeaveEncash, leaveEncashValue,
   } = useNewApplication()
@@ -35,24 +37,29 @@ function NewApplication() {
   // Handle employee selection
   const handleEmployeeSelect = (option) => {
     if (!option) return;
-    
+
     const empId = option.value;
-    const empName = option.label.split(' (ID:')[0]; // Extract name if label has format "Name (ID: ...)" or just use full label
+    const empName = option.label.split(' (ID:')[0].trim(); // Extract name if label has format "Name (ID: ...)" or just use full label
 
     // Helper to set both ID and Name for all app types
     const setEmpData = (type) => {
         const typeStr = String(type);
-        if (typeStr === '1' || typeStr === '3' || typeStr === '4' || typeStr === '5') { // Medical, etc.
+        if (typeStr === '1' || typeStr === '3' || typeStr === '4' || typeStr === '5') {
              handleSelectChangeMedicalApp('emp_id', empId);
              handleSelectChangeMedicalApp('emp_name', empName);
         }
-        if (typeStr === '2' || typeStr === '3' || typeStr === '4' || typeStr === '5') { // TA/DA, etc.
+        if (typeStr === '2' || typeStr === '3' || typeStr === '4' || typeStr === '5') {
              handleSelectChangeTaDaApp('emp_id', empId);
              handleSelectChangeTaDaApp('emp_name', empName);
         }
     };
 
     setEmpData(applicationType);
+
+    // When Application Type is Leave Application (3), open the sidebar immediately after selecting employee
+    if (String(applicationType) === '3' && openLeaveApplicationDrawer) {
+      openLeaveApplicationDrawer(empId, empName);
+    }
   };
 
   // Get selected employee object for CustomSelect value

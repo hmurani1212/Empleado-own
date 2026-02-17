@@ -106,6 +106,86 @@ const noticeViewModel = (set, get) => ({
         getAllDepartmentsNoticesInFlight = true;
 
         const currentState = get();
+        if (currentState.noticesBranches && currentState.noticesBranches.length > 0) {
+            return;
+        }
+        getBranchesOnlyInFlight = true;
+        set({ departmentsLoading: true, filterDepartmentsNotices: [], departmentsLoadedForBranchId: null });
+        set({ departmentsLoading: true });
+        try {
+            const response = await departmentsApi.gettingAllDepartments();
+            const data = response.data;
+            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+                const branches = data.DB_DATA?.branches || [];
+                const ownObjectBranches = { id: '0', branch_name: 'All Branches' };
+                const updatedBranches = [ownObjectBranches, ...branches];
+                set({
+                    noticesBranches: updatedBranches,
+                    departmentsLoading: false,
+                });
+            } else {
+                set({ departmentsLoading: false });
+            }
+        } catch (err) {
+            set({ departmentsLoading: false });
+        } finally {
+            getBranchesOnlyInFlight = false;
+        }
+    },
+
+    // Fetch departments only when user selects a branch. One API call per branch selection; cached for same branch.
+    getDepartmentsByBranch: async (branchId) => {
+        const currentState = get();
+        const normalizedBranchId = branchId === undefined || branchId === null ? null : String(branchId);
+        if (currentState.departmentsLoadedForBranchId === normalizedBranchId && currentState.filterDepartmentsNotices?.length > 0) {
+            return;
+        }
+        set({ departmentsLoading: true });
+        try {
+            let departments = [{ id: '0', name: 'All Departments' }];
+            if (branchId === '0' || branchId === 0 || !branchId) {
+                const response = await departmentsApi.get_all_Department(0);
+                const data = response?.data;
+                if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                    const deptList = data.DB_DATA?.departments || data.DB_DATA || [];
+                    const flatDepts = Array.isArray(deptList) ? deptList : [];
+                    departments = [{ id: '0', name: 'All Departments' }, ...flatDepts];
+                }
+            } else {
+                const response = await departmentsApi.manageDepartments(branchId);
+                const data = response?.data;
+                if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                    const branchDepts = data.DB_DATA?.departments || [];
+                    const storeState = get();
+                    const branch = storeState.noticesBranches?.find((b) => String(b.id) === String(branchId));
+                    const withBranchId = branchDepts.map((dept) => ({
+                        ...dept,
+                        branch_id: branchId,
+                        branch_name: branch?.branch_name,
+                    }));
+                    departments = [{ id: '0', name: 'All Departments' }, ...withBranchId];
+                }
+            }
+            set({
+                noticesDepartment: departments,
+                filterDepartmentsNotices: departments,
+                departmentsLoaded: true,
+                departmentsLoadedForBranchId: normalizedBranchId,
+                departmentsLoading: false,
+            });
+        } catch (err) {
+            set({ departmentsLoading: false });
+        }
+    },
+
+    getAllDepartmentsNotices: async () => {
+        // Set in-flight FIRST so any concurrent caller (same tick) cannot pass the guard
+        if (getAllDepartmentsNoticesInFlight) {
+            return;
+        }
+        getAllDepartmentsNoticesInFlight = true;
+
+        const currentState = get();
         // Use cached data when already loaded
         if (currentState.departmentsLoaded && currentState.noticesDepartment.length > 0) {
             getAllDepartmentsNoticesInFlight = false;

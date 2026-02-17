@@ -66,21 +66,13 @@ const useNotice = () => {
 
     })
 
-
-    const handleAddNoticeBranch = (name, event)=>{
-    
-        // Handle both direct values (Material Tailwind) and objects (CustomSelect/React-Select)
+    const handleAddNoticeBranch = (name, event) => {
         const value = event?.value !== undefined ? event.value : event;
-        const noticeDeptId = value;
-
-        setAddNoticeValue ((prevState)=>({
+        setAddNoticeValue((prevState) => ({
             ...prevState,
-            [name] : event, // Keep original event (object/value) for UI state
-        }))
-
-        if(name === 'branch_id'){
-            // Load departments for selected branch (one API call); clear department and employee
-            getDepartmentsByBranch(noticeDeptId);
+            [name]: event,
+        }));
+        if (name === 'branch_id') {
             setAddNoticeValue((prevState) => ({
                 ...prevState,
                 emp_id: '',
@@ -88,19 +80,18 @@ const useNotice = () => {
             }));
             setEmployeeOptions([]);
             setEmployeeOptionsFull([]);
+            getDepartmentsByBranch(value);
         }
-
-        if(name === 'deptt_id'){
-            // Clear employee selection when department changes
+        if (name === 'deptt_id') {
             setAddNoticeValue((prevState) => ({
                 ...prevState,
                 emp_id: ''
             }));
             setEmployeeOptions([]);
             setEmployeeOptionsFull([]);
-
-            // Fetch employees from the selected department (once; search is frontend-only)
-            fetchEmployeesByDepartment(noticeDeptId);
+            if (showEmployeeName) {
+                fetchEmployeesByDepartment(value || '0');
+            }
         }
     }
 
@@ -141,9 +132,11 @@ const useNotice = () => {
                 setEmployeeOptions(employeeData);
             } else {
                 setEmployeeOptions([]);
+                setEmployeeOptionsFull([]);
             }
         } catch (error) {
             setEmployeeOptions([]);
+            setEmployeeOptionsFull([]);
         }
     };
 
@@ -171,7 +164,6 @@ const useNotice = () => {
             return false;
         }
     };
-    
     const handleNoticesSearchEmp = (searchTerm, actionMeta) => {
         if (actionMeta.action === 'input-change') {
             filterEmployeeOptionsBySearch(searchTerm);
@@ -192,8 +184,6 @@ const useNotice = () => {
         });
         setEmployeeOptions(filtered);
     };
-
-  
 
     const handleNewNotice = (e) => {
         const { name, value, type, checked } = e.target;
@@ -386,6 +376,20 @@ const useNotice = () => {
                 showToast('Notice added Successfully!', 'success');
                 // Refresh list so List Notices shows the new notice when user navigates there
                 await getAllNoticesList({ page: 1, limit: 10 }, true, false);
+                // Add new notice to list without calling list API - use API response or build from form data
+                const createdNotice = respData.DB_DATA;
+                const noticeId = createdNotice?.notice_ids?.[0] ?? createdNotice?.id ?? createdNotice?.notice_id ?? respData.id;
+                const branchNameFromForm = addNoticeValue.branch_id === '0' || addNoticeValue.branch_id === 0
+                    ? 'All Branches'
+                    : (noticesBranches?.find((b) => String(b.id) === String(addNoticeValue.branch_id))?.branch_name || '');
+                const noticeForList = {
+                    id: noticeId,
+                    title: createdNotice?.title || addNoticeValue.title,
+                    timestamp: createdNotice?.timestamp || Math.floor(Date.now() / 1000),
+                    branch_name: createdNotice?.branch_name || branchNameFromForm,
+                    description: createdNotice?.description || addNoticeValue.notice,
+                };
+                addNewNoticeState(noticeForList);
                 navigate('/notices/list_notices')
                 setAddNoticeValue({
                     branch_id: '',
