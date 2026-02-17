@@ -592,7 +592,7 @@ const AddNewEmployee = () => {
                   <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">OneID Empleado password</label>
                   <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-2/4 right-3 -translate-y-2/4">
                     <span className="cursor-pointer" onClick={passwordToggle}>
-                      {newEmpValues.showPassword ? <GrHide /> : <BiShow />}
+                      {newEmpValues.showPassword ? <GrHide  className="relative top-3"/> : <BiShow className="relative top-3" />}
                     </span>
                   </div>
                   <input
@@ -681,7 +681,7 @@ const AddNewEmployee = () => {
                   <CustomSelect
                     placeHolderTitle="Department"
                     value={newEmpValues?.department}
-                    options={get_all_department?.map((dep) => ({
+                    options={(get_all_department || []).map((dep) => ({
                       value: dep.id,
                       label: dep.name,
                     }))}

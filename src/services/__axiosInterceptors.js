@@ -60,6 +60,98 @@ export const setupAuthInterceptor = (axiosInstance, instanceName = 'Unknown') =>
             if (response.config && response.config._requestTracker) {
                 authErrorHandler.removePendingRequest(response.config._requestTracker);
             }
+
+            // CRITICAL: Check for ERROR status in successful responses (HTTP 200 with ERROR in body)
+            // Some APIs return 200 status with ERROR status in response body
+            if (response.data && typeof response.data === 'object') {
+                const statusValue = response.data.STATUS || response.data.status;
+                const errorFilter = response.data.ERROR_FILTER || response.data.error_filter;
+                const errorCode = response.data.ERROR_CODE || response.data.error_code;
+
+                // If STATUS is "ERROR" and it's an authentication error, handle it
+                if (statusValue === 'ERROR' || statusValue === 'error') {
+                    // Check if it's an authentication error
+                    // Priority 1: Check ERROR_FILTER
+                    if (errorFilter === 'USER_NOT_AUTHENTICATED') {
+                        console.log(`🔴 Auth error detected in successful response (${instanceName}) by ERROR_FILTER:`, errorFilter);
+                        console.log('📋 Error details:', { 
+                            status: response.status, 
+                            errorCode, 
+                            errorFilter, 
+                            errorDescription: response.data.ERROR_DESCRIPTION 
+                        });
+
+                        // Create error-like object to pass to handler
+                        const authError = {
+                            response: {
+                                status: response.status,
+                                data: response.data
+                            },
+                            config: response.config || {}
+                        };
+
+                        // Handle auth error - this will redirect immediately
+                        authErrorHandler.handleAuthError(authError, response.config || {});
+                        
+                        // Return rejected promise to prevent further processing
+                        return Promise.reject(authError);
+                    }
+
+                    // Priority 2: Check ERROR_CODE against known auth error codes
+                    const knownAuthCodes = ['VTWE-401002', 'ONEID-148736154', 'USER_NOT_AUTHENTICATED', 'TOKEN_EXPIRED', 'INVALID_TOKEN', 'UNAUTHORIZED'];
+                    if (errorCode && knownAuthCodes.includes(errorCode)) {
+                        console.log(`🔴 Auth error detected in successful response (${instanceName}) by ERROR_CODE:`, errorCode);
+                        console.log('📋 Error details:', { 
+                            status: response.status, 
+                            errorCode, 
+                            errorFilter, 
+                            errorDescription: response.data.ERROR_DESCRIPTION 
+                        });
+
+                        // Create error-like object to pass to handler
+                        const authError = {
+                            response: {
+                                status: response.status,
+                                data: response.data
+                            },
+                            config: response.config || {}
+                        };
+
+                        // Handle auth error - this will redirect immediately
+                        authErrorHandler.handleAuthError(authError, response.config || {});
+                        
+                        // Return rejected promise to prevent further processing
+                        return Promise.reject(authError);
+                    }
+
+                    // Priority 3: Check ERROR_FILTER against known auth codes
+                    if (errorFilter && knownAuthCodes.includes(errorFilter)) {
+                        console.log(`🔴 Auth error detected in successful response (${instanceName}) by ERROR_FILTER:`, errorFilter);
+                        console.log('📋 Error details:', { 
+                            status: response.status, 
+                            errorCode, 
+                            errorFilter, 
+                            errorDescription: response.data.ERROR_DESCRIPTION 
+                        });
+
+                        // Create error-like object to pass to handler
+                        const authError = {
+                            response: {
+                                status: response.status,
+                                data: response.data
+                            },
+                            config: response.config || {}
+                        };
+
+                        // Handle auth error - this will redirect immediately
+                        authErrorHandler.handleAuthError(authError, response.config || {});
+                        
+                        // Return rejected promise to prevent further processing
+                        return Promise.reject(authError);
+                    }
+                }
+            }
+
             return response;
         },
         (error) => {
@@ -68,18 +160,39 @@ export const setupAuthInterceptor = (axiosInstance, instanceName = 'Unknown') =>
                 authErrorHandler.removePendingRequest(error.config._requestTracker);
             }
 
+            // Log all errors for debugging (especially 401/403)
+            if (error.response) {
+                const { status, data } = error.response;
+                console.log(`📡 Error intercepted in ${instanceName}:`, {
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    httpStatus: status,
+                    responseStatus: data?.STATUS,
+                    errorFilter: data?.ERROR_FILTER,
+                    errorCode: data?.ERROR_CODE,
+                    errorDescription: data?.ERROR_DESCRIPTION
+                });
+            }
+
             // Check if this is an authentication error
-            if (authErrorHandler.isAuthenticationError(error)) {
-                return authErrorHandler.handleAuthError(error, error.config);
+            const isAuthError = authErrorHandler.isAuthenticationError(error);
+            if (isAuthError) {
+                console.log(`🔴 Auth error confirmed in ${instanceName}, handling logout and redirect...`);
+                // Handle auth error - this will redirect immediately
+                authErrorHandler.handleAuthError(error, error.config || {});
+                // Return rejected promise (redirect already happened)
+                return Promise.reject(error);
             }
 
             // For non-auth errors, just reject the promise
-            console.error(`Response error in ${instanceName}:`, {
-                url: error.config?.url,
-                method: error.config?.method,
-                status: error.response?.status,
-                message: error.message
-            });
+            if (error.response?.status !== 401 && error.response?.status !== 403) {
+                console.error(`Response error in ${instanceName}:`, {
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    status: error.response?.status,
+                    message: error.message
+                });
+            }
 
             return Promise.reject(error);
         }

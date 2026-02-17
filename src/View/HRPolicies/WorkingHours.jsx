@@ -7,6 +7,20 @@ import {
 } from "../../services/__hrPoliciesServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 
+// CSS to hide --:-- placeholder in time inputs
+const timeInputStyle = `
+  input[type="time"]:invalid::-webkit-datetime-edit-text,
+  input[type="time"]:invalid::-webkit-datetime-edit-hour-field,
+  input[type="time"]:invalid::-webkit-datetime-edit-minute-field {
+    color: transparent;
+  }
+  input[type="time"]:focus::-webkit-datetime-edit-text,
+  input[type="time"]:focus::-webkit-datetime-edit-hour-field,
+  input[type="time"]:focus::-webkit-datetime-edit-minute-field {
+    color: #474747;
+  }
+`;
+
 const WorkingHours = (props) => {
   const {
     newhrPolicesValues,
@@ -41,6 +55,7 @@ const WorkingHours = (props) => {
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-5xl mx-auto">
+      <style>{timeInputStyle}</style>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-700 font-poppins">Shift Start Time</label>

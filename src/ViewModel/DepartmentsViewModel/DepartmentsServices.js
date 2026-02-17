@@ -543,6 +543,7 @@ const useDepartments = () => {
     const getAllDepartments = useStore((state) => state.getAllDepartments)
     const departments_b = useStore((state) => state.departments_b)
     const allBranches = useStore((state) => state.allBranches)
+    const getBranchEmployeeList = useStore((state) => state.getBranchEmployeeList)
     const setNewDepartment = useStore((state) => state.setNewDepartment)
     const getManageDept = useStore((state) => state.getManageDept)
     const allDeptDetails = useStore((state) => state.allDeptDetails)
@@ -1001,6 +1002,7 @@ const useDepartments = () => {
         departments_b,
         getAllDepartments,
         allBranches,
+        getBranchEmployeeList,
         setNewDepartment,
         handleBranchDept,
         getManageDept,
@@ -1041,7 +1043,6 @@ const useDepartments = () => {
         handleDeleteDesignation,
         openDialogDesig,
         handleDialogDesig,
-        branchId,
         empDetailDept,
         empDetailDeptLoading,
         getEmployeesByDeptId,

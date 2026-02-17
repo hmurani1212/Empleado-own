@@ -6,6 +6,7 @@ const useSideMenu = ()=>{
     // Removed unused dashboardDataFunc and getEmployeesList - these are now handled by individual components
     const handleEmpMount = useStore((state)=> state.handleEmpMount)
     const getAllDepartments = useStore((state)=> state.getAllDepartments)
+    const getBranchEmployeeList = useStore((state)=> state.getBranchEmployeeList)
     const mobilevToggleFalse = useStore((state)=> state.mobilevToggleFalse)
     const gettingAllBranches = useStore((state)=> state.gettingAllBranches)
     const handleMountBranch = useStore((state)=> state.handleMountBranch)
@@ -58,18 +59,23 @@ const useSideMenu = ()=>{
                     // Removed duplicate dashboardDataFunc call
                     break;
                 case 2:
-                    handleEmpMount()
+                    // Employee Attendance (for Employee role)
                     break;
                 case 3:
-                    handleMountDept()
-                    getAllDepartments()
+                    // Employees (id: 3)
+                    handleEmpMount()
                     break;
                 case 4:
-                    
+                    // Departments (id: 4) - Call getBranchEmployeeList
+                    // This calls get_branch_employee API (not get_branches)
+                    handleMountDept()
+                    getBranchEmployeeList()
+                    break;
+                case 5:
+                    // Branches (id: 5) - Call gettingAllBranches
                     const data = {status: 1}
                     gettingAllBranches(data)
                     handleMountBranch()
-
                     break;
 
                 case 5:

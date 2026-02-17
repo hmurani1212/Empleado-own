@@ -24,7 +24,7 @@ const hireViewModel = (set, get) => ({
             if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
                 set({ allVacanciesList_data: data.DB_DATA, })
             } else if (response.status === 200 && data.STATUS === 'ERROR') {
-                set({ allVacanciesList_data: [], allVacanciesList_data: [] })
+                set({ allVacanciesList_data: [] })
             }
         } catch (error) {
             console.log(error)
