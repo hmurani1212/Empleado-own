@@ -357,7 +357,7 @@ function Header() {
                onClick={handleProfileMenuToggle}
              >
                 <Avatar
-                  src="https://docs.material-tailwind.com/img/face-2.jpg"
+                  src="https://emp.veevotech.com/files/images/"
                   alt="avatar"
                   size="sm"
                   variant="circular"

@@ -21,6 +21,7 @@ import { Card, CardBody, Avatar, Button, Progress, Typography, Chip } from "@mat
 import { motion } from "framer-motion";
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import EmployeeFooter from './footer';
+import EmployeeDashboardSkeleton from './EmployeeDashboardSkeleton';
 
 const EmployeeDashboard = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -38,6 +39,10 @@ const EmployeeDashboard = () => {
     // Fetch role-based dashboard data
     fetchRoleBasedData();
   }, [fetchRoleBasedData]);
+
+  if (loading) {
+    return <EmployeeDashboardSkeleton />;
+  }
 
   // Calendar Logic
   const monthNames = [
@@ -118,7 +123,7 @@ const EmployeeDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 lg:p-6 font-poppins">
-      <motion.div 
+      <motion.div
         initial="hidden"
         animate="visible"
         variants={containerVariants}
