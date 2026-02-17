@@ -4,6 +4,8 @@ const useInboxServives = () => {
 
     const InboxData = useStore((state) => state.InboxData)
     const StoryLisyAll = useStore((state) => state.getEmployeesAll);
+    const markAllInboxAsRead = useStore((state) => state.markAllInboxAsRead);
+    const markInboxStoriesAsRead = useStore((state) => state.markInboxStoriesAsRead);
     const getFilteredInboxData = useStore((state) => state.getFilteredInboxData);
     const loadMoreInboxData = useStore((state) => state.loadMoreInboxData);
     const hasMorePages = useStore((state) => state.hasMorePages);
@@ -148,6 +150,8 @@ const useInboxServives = () => {
         handleStepActive,
         stepsValue,
         StoryLisyAll,
+        markAllInboxAsRead,
+        markInboxStoriesAsRead,
         InboxData,
         getFilteredInboxData,
         loadMoreInboxData: handleLoadMoreInbox,

@@ -1130,16 +1130,11 @@ const MakingPayments = () => {
     setCurrentPageId(0);
     setAccumulatedEmployees([]);
 
-    // First load: All branches + current year (current month in MMYY)
-    const now = new Date();
-    const currentMonthStr = String(now.getMonth() + 1).padStart(2, "0");
-    const currentYearStr = String(now.getFullYear()).slice(-2);
+    // First load: All branches, no filter - filter by month only when user selects "Specific month"
     const initialParams = {
       page: 0,
       limit: 15,
       branch_id: 0,
-      filter: "month",
-      search: `${currentMonthStr}${currentYearStr}`,
     };
     gettingPayslips(initialParams, true); // Force reload to get fresh data
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1275,8 +1270,8 @@ const MakingPayments = () => {
     setEmployees(filteredEmployees);
   };
 
-  // Helper function to build filter params (overridePage = 0-based page when navigating to a specific page)
-  const buildFilterParams = (includePagination = false, overridePage = undefined) => {
+  // Helper function to build filter params (overridePage = 0-based page, overrideSelectedDate = use this date instead of state for specific_month)
+  const buildFilterParams = (includePagination = false, overridePage = undefined, overrideSelectedDate = undefined) => {
     const params = {};
     
     // Pagination params
@@ -1319,11 +1314,14 @@ const MakingPayments = () => {
       const term = mainEmployeeIdSearch.trim();
       params.filter = /^\d+$/.test(term) ? "emp_id" : "emp_name";
       params.search = term;
-    } else if (mainFilter?.value === "specific_month" && mainSelectedDate) {
-      const month = String(mainSelectedDate.getMonth() + 1).padStart(2, "0");
-      const year = String(mainSelectedDate.getFullYear()).slice(-2);
-      params.filter = "month";
-      params.search = `${month}${year}`;
+    } else if (mainFilter?.value === "specific_month") {
+      const dateToUse = overrideSelectedDate ?? mainSelectedDate;
+      if (dateToUse) {
+        const month = String(dateToUse.getMonth() + 1).padStart(2, "0");
+        const year = String(dateToUse.getFullYear()).slice(-2);
+        params.filter = "month";
+        params.search = `${month}${year}`;
+      }
     }
 
     return params;
@@ -1505,8 +1503,8 @@ const MakingPayments = () => {
     setCurrentPageId(0);
     setAccumulatedEmployees([]);
     
-    // Reload from API with new date filter
-    const params = buildFilterParams(false);
+    // Use date directly - state updates are async, so pass it to avoid stale value
+    const params = buildFilterParams(false, undefined, date);
     await gettingPayslips(params, true);
   };
 
@@ -1530,8 +1528,8 @@ const MakingPayments = () => {
     setCurrentPageId(0);
     setAccumulatedEmployees([]);
     
-    // Reload from API with new month filter
-    const params = buildFilterParams(false);
+    // Use date directly - state updates are async, so pass it to avoid stale/previous value
+    const params = buildFilterParams(false, undefined, date);
     await gettingPayslips(params, true);
   };
 
@@ -1555,8 +1553,8 @@ const MakingPayments = () => {
     setCurrentPageId(0);
     setAccumulatedEmployees([]);
     
-    // Reload from API with current month filter
-    const params = buildFilterParams(false);
+    // Use today directly - state updates are async
+    const params = buildFilterParams(false, undefined, today);
     await gettingPayslips(params, true);
   };
 

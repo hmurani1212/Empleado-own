@@ -457,20 +457,44 @@ const useEmployees = () => {
 
         }))
     }
+    // Normalize mobile to +92xxxxxxxxxx for API (accepts with or without country code)
+    const normalizeMobileForApi = (raw) => {
+        if (!raw || typeof raw !== 'string') return raw
+        const digits = raw.replace(/\D/g, '')
+        if (digits.length === 11 && digits.startsWith('0')) {
+            return '+92' + digits.slice(1)
+        }
+        if (digits.length === 10 && digits.startsWith('3')) {
+            return '+92' + digits
+        }
+        if (digits.length === 12 && digits.startsWith('92')) {
+            return '+' + digits
+        }
+        if (raw.trim().startsWith('+') && digits.length >= 10) {
+            return raw.trim().startsWith('+92') ? '+92' + digits.slice(2).slice(0, 10) : raw
+        }
+        return raw
+    }
+
     const validateFindUser = () => {
-        if (newEmpValues.mobile === '') {
+        if (!newEmpValues.mobile || String(newEmpValues.mobile).trim() === '') {
             showToast('Enter Contact Number', 'error')
             return
         }
 
-        // Validate mobile number format: must start with +92 and be exactly 13 digits
-        const mobileRegex = /^\+92\d{10}$/;
-        if (!mobileRegex.test(newEmpValues.mobile)) {
-            showToast('Enter the correct number', 'error')
+        const raw = String(newEmpValues.mobile).trim()
+        const digitsOnly = raw.replace(/\D/g, '')
+
+        // Accept: 03xxxxxxxxx (11), 3xxxxxxxxx (10), 92xxxxxxxxxx (12), or with + prefix
+        const isLocalPak = digitsOnly.length === 11 && digitsOnly.startsWith('03') && /^\d{11}$/.test(digitsOnly)
+        const isTenDigitPak = digitsOnly.length === 10 && digitsOnly.startsWith('3') && /^\d{10}$/.test(digitsOnly)
+        const is92Pak = digitsOnly.length === 12 && digitsOnly.startsWith('92')
+
+        if (!(isLocalPak || isTenDigitPak || is92Pak)) {
+            showToast('Enter a valid mobile number (with or without country code)', 'error')
             return
         }
 
-        // Email is now optional on first step
         return true
     }
 
@@ -620,7 +644,8 @@ const useEmployees = () => {
 
     const getFindEmp = async () => {
         setLoading(true)
-        const data = { mobile: newEmpValues.mobile, email: newEmpValues.email }
+        const mobileForApi = normalizeMobileForApi(newEmpValues.mobile) || newEmpValues.mobile
+        const data = { mobile: mobileForApi, email: newEmpValues.email }
         try {
             const response = await employeesApi.findEmployee(data);
             const resData = response.data;
@@ -842,8 +867,7 @@ const useEmployees = () => {
             fetchHrPolicyDropdown(selectedOption.value);
             get_all_department_fn(selectedOption.value);
             gettingSalayTemplate(selectedOption.value);
-            gettingDesignation(selectedOption.value, false)
-            // true indicates it's a branch_id
+            gettingDesignation(selectedOption.value, true) // true = branch_id for designation API
             fetchingAllEmployess(selectedOption.value);
         } else if (field === 'department') {
             setNewEmpValues((prevState) => ({
@@ -851,8 +875,7 @@ const useEmployees = () => {
                 [field]: selectedOption,
                 designation: null // Reset designation when department changes
             }));
-            ///gettingDesignation(selectedOption.value, false); // false indicates it's a dept_id
-            gettingDesignation(selectedOption.value, true);
+            gettingDesignation(selectedOption.value, false); // false = dept_id for designation API
         } else {
             setNewEmpValues((prevState) => ({
                 ...prevState,

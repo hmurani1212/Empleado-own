@@ -233,7 +233,7 @@ function ApplicationsLists() {
   };
 
   const getStatusStyle = (status) => {
-    const statusStr = String(status).toLowerCase();
+    const statusStr = String(status ?? '').toLowerCase().trim();
     if (status === 1 || statusStr === "approved" || statusStr === "1") return "bg-emerald-50 text-emerald-600 border border-emerald-100";
     if (status === 2 || statusStr === "rejected" || statusStr === "2") return "bg-red-50 text-red-600 border border-red-100";
     if (status === 0 || status === 3 || statusStr === "pending" || statusStr === "0" || statusStr === "3") return "bg-amber-50 text-amber-600 border border-amber-100";
@@ -241,10 +241,12 @@ function ApplicationsLists() {
   };
 
   const getStatusText = (status) => {
-    if (status === 1 || String(status) === '1') return "Approved";
-    if (status === 2 || String(status) === '2') return "Rejected";
-    if (status === 0 || status === 3 || String(status) === '0' || String(status) === '3') return "Pending";
-    return "N/A";
+    if (status == null || status === '') return "N/A";
+    const s = String(status).toLowerCase().trim();
+    if (status === 1 || s === '1' || s === 'approved') return "Approved";
+    if (status === 2 || s === '2' || s === 'rejected') return "Rejected";
+    if (status === 0 || status === 3 || s === '0' || s === '3' || s === 'pending') return "Pending";
+    return String(status);
   };
 
   return (

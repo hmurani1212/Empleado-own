@@ -55,10 +55,20 @@ const readStatusFilterOptions = [
 
 const readTypeFilterOptions = [
   { value: null, label: "Select Type" },
-  { value: 0, label: "Time Adjustment Request" }, // app_type=0, form_id 44
-  { value: 1, label: "Leave Application" },
-  { value: 2, label: "Loan Application" },
+  { value: 0, label: "Time Adjustment Request" }, // form_id 44, type ATT_TIME_ADJUSTMENT
+  { value: 1, label: "Leave Application" },       // form_id 7, type LEAVE_REQUEST
+  { value: 2, label: "Loan Application" },        // form_id 47, type LOAN_APPLICATION
 ];
+
+// Map API story type/form_id to filter app_type (0, 1, 2)
+const getStoryAppType = (story) => {
+  const type = (story.type || '').toUpperCase();
+  const formId = story.form_id;
+  if (type === 'ATT_TIME_ADJUSTMENT' || formId === 44) return 0;
+  if (type === 'LEAVE_REQUEST' || formId === 7) return 1;
+  if (type === 'LOAN_APPLICATION' || formId === 47) return 2;
+  return undefined;
+};
 
 const Inbox = () => {
   // Get user role for access control
@@ -84,23 +94,14 @@ const Inbox = () => {
       const receiver = String(user.receiver || '');
       return receiver === userReceiverId;
     });
-    
-    // Debug logging (can be removed later)
-    if (story.story_id && matchedUser) {
-      console.log('getUserReceiverInfo check:', {
-        story_id: story.story_id,
-        userOneId,
-        userReceiverId,
-        matchedUser: matchedUser,
-        userStatus: matchedUser.type_base_info
-      });
-    }
-    
+
     return matchedUser || null;
   };
 
   const {
     StoryLisyAll,
+    markAllInboxAsRead,
+    markInboxStoriesAsRead,
     InboxData,
     getFilteredInboxData,
     loadMoreInboxData,
@@ -231,6 +232,7 @@ const Inbox = () => {
   const [readStatusFilter, setReadStatusFilter] = useState(null); // null = all, 1 = read, 0 = unread
   const [readTypeFilter, setReadTypeFilter] = useState(null); // null = all, 0/1/2 = app_type filter
   const [filteredInboxData, setFilteredInboxData] = useState([]);
+  const [selectedStoryIdsForRead, setSelectedStoryIdsForRead] = useState([]); // story IDs checked for "Mark Read"
   const [showApplicationInfo, setShowApplicationInfo] = useState(false);
   const [selectedApplicationData, setSelectedApplicationData] = useState(null);
   const [currentStoryStatus, setCurrentStoryStatus] = useState(null); // Track current story status
@@ -328,10 +330,39 @@ const Inbox = () => {
       );
     }
 
+<<<<<<< HEAD
     // Do not apply local read_status filter when Read/Unread is selected: data was already
     // fetched via getFilteredInboxData(read_status=0|1). API returns the correct list but may
     // not set read_status on each story (e.g. Read response has read_status: null), so re-filtering
     // here would clear the list. Trust the API response for Read/Unread.
+=======
+    // Apply local read status filter: use receiver in users, or story-level read_status when users is empty (API format)
+    if (readStatusFilter !== null) {
+      const wantRead = Number(readStatusFilter);
+      filteredData = filteredData.filter(story => {
+        if (story.users && Array.isArray(story.users) && story.users.length > 0) {
+          const receiverInfo = getUserReceiverInfo(story);
+          if (receiverInfo != null && typeof receiverInfo.read_status !== 'undefined') {
+            return Number(receiverInfo.read_status) === wantRead;
+          }
+          return Number(story.users[0].read_status) === wantRead;
+        }
+        // API returns story-level read_status and often empty users[]: use story.read_status, treat null as unread (0)
+        const storyRead = story.read_status != null ? Number(story.read_status) : 0;
+        return storyRead === wantRead;
+      });
+    }
+
+    // Apply local type filter: use app_type from API or derive from story.type / form_id
+    if (readTypeFilter !== null) {
+      const wantType = Number(readTypeFilter);
+      filteredData = filteredData.filter(story => {
+        const storyAppType = story.app_type ?? story.app_type_id ?? getStoryAppType(story);
+        if (storyAppType === undefined) return true;
+        return Number(storyAppType) === wantType;
+      });
+    }
+>>>>>>> main
 
     setFilteredInboxData(filteredData);
   }, [InboxData, debouncedSearchTerm, readStatusFilter, readTypeFilter]);
@@ -349,30 +380,39 @@ const Inbox = () => {
   };
 
   const handleReadStatusFilterChange = (selectedOption) => {
-    setReadStatusFilter(selectedOption.value);
+    setReadStatusFilter(selectedOption?.value ?? null);
   };
 
   const handleReadTypeFilterChange = (selectedOption) => {
     setReadTypeFilter(selectedOption?.value ?? null);
   };
 
-  // Handle Mark All Read
-  const handleMarkAllRead = () => {
-    // Update all stories in filteredInboxData to mark them as read
-    const updatedInboxData = filteredInboxData.map(story => {
-      const updatedUsers = story.users?.map(user => ({
-        ...user,
-        read_status: 1
-      })) || [];
-      
-      return {
-        ...story,
-        users: updatedUsers
-      };
+  const toggleStorySelectedForRead = (storyId, e) => {
+    if (e) e.stopPropagation();
+    const id = storyId || '';
+    setSelectedStoryIdsForRead(prev => {
+      if (prev.includes(id)) return prev.filter(s => s !== id);
+      return [...prev, id];
     });
+  };
 
-    setFilteredInboxData(updatedInboxData);
-    showToast('All messages marked as read', 'success');
+  // Mark Read: if any checkboxes selected, mark only those; otherwise show message
+  const handleMarkAllRead = () => {
+    if (selectedStoryIdsForRead.length > 0) {
+      markInboxStoriesAsRead(selectedStoryIdsForRead);
+      setFilteredInboxData(prev => prev.map(story => {
+        const sid = String(story.story_id || story._id || '');
+        if (!selectedStoryIdsForRead.includes(sid)) return story;
+        const updatedUsers = Array.isArray(story.users) && story.users.length > 0
+          ? story.users.map(u => ({ ...u, read_status: 1 }))
+          : (story.users || []);
+        return { ...story, read_status: 1, users: updatedUsers };
+      }));
+      setSelectedStoryIdsForRead([]);
+      showToast('Selected messages marked as read', 'success');
+    } else {
+      showToast('Select at least one item to mark as read', 'info');
+    }
   };
 
   const handleStoryClick = (story) => {
@@ -741,6 +781,7 @@ const Inbox = () => {
     }
   };
 
+<<<<<<< HEAD
   // Function to check if a story has unread messages (support story-level read_status and story.users[].read_status)
   const hasUnreadMessages = (story) => {
     if (story.read_status !== undefined && story.read_status !== null) {
@@ -750,6 +791,14 @@ const Inbox = () => {
       return story.users.some(user => user.read_status === 0);
     }
     return true; // treat missing read_status as unread
+=======
+  // Function to check if a story has unread messages (uses users[].read_status or story-level read_status when users empty)
+  const hasUnreadMessages = (story) => {
+    if (story.users && Array.isArray(story.users) && story.users.length > 0) {
+      return story.users.some(user => user.read_status === 0);
+    }
+    return story.read_status === 0 || story.read_status == null;
+>>>>>>> main
   };
 
 
@@ -847,13 +896,13 @@ const Inbox = () => {
                         ...base,
                         fontSize: '13px',
                         fontWeight: state.isSelected ? '600' : '400',
-                        backgroundColor: state.isSelected ? '#3da5f4' : state.isFocused ? '#f0f9ff' : 'white',
-                        color: state.isSelected ? 'white' : '#374151',
+                        backgroundColor: state.isSelected ? '#f3f4f6' : state.isFocused ? '#f9fafb' : 'white',
+                        color: state.isSelected ? '#111827' : '#374151',
                         cursor: 'pointer',
                         padding: '8px 12px',
                         ':active': {
-                          backgroundColor: '#3da5f4',
-                          color: 'white',
+                          backgroundColor: '#e5e7eb',
+                          color: '#111827',
                         },
                       }),
                       singleValue: (base) => ({
@@ -906,13 +955,13 @@ const Inbox = () => {
                         ...base,
                         fontSize: '13px',
                         fontWeight: state.isSelected ? '600' : '400',
-                        backgroundColor: state.isSelected ? '#3da5f4' : state.isFocused ? '#f0f9ff' : 'white',
-                        color: state.isSelected ? 'white' : '#374151',
+                        backgroundColor: state.isSelected ? '#f3f4f6' : state.isFocused ? '#f9fafb' : 'white',
+                        color: state.isSelected ? '#111827' : '#374151',
                         cursor: 'pointer',
                         padding: '8px 12px',
                         ':active': {
-                          backgroundColor: '#3da5f4',
-                          color: 'white',
+                          backgroundColor: '#e5e7eb',
+                          color: '#111827',
                         },
                       }),
                       singleValue: (base) => ({
@@ -988,6 +1037,8 @@ const Inbox = () => {
                   {filteredInboxData?.map((story, index) => {
                     const isSelected = selectedStory && selectedStory.story_id === story.story_id;
                     const isUnread = hasUnreadMessages(story);
+                    const storyId = story.story_id || story._id || '';
+                    const isCheckedForRead = selectedStoryIdsForRead.includes(String(storyId));
                     
                     return (
                       <motion.div
@@ -1004,6 +1055,25 @@ const Inbox = () => {
                         } border`}
                         onClick={() => handleStoryClick(story)}
                       >
+                         {/* Checkbox for Mark Read */}
+                         <div
+                           role="checkbox"
+                           aria-checked={isCheckedForRead}
+                           aria-label={`Mark as read: ${story?.title || 'application'}`}
+                           title="Select to mark as read"
+                           onClick={(e) => toggleStorySelectedForRead(storyId, e)}
+                           className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors flex-shrink-0 ${
+                             isCheckedForRead
+                               ? 'bg-customBlue border-customBlue'
+                               : 'bg-white border-gray-400 hover:border-gray-500'
+                           }`}
+                         >
+                           {isCheckedForRead && (
+                             <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                               <polyline points="2,6 5,9 10,3" />
+                             </svg>
+                           )}
+                         </div>
                          {/* Selection Indicator Bar */}
                          {isSelected && (
                           <motion.div 

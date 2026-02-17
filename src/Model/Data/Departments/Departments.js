@@ -49,13 +49,16 @@ const departmentsApi = {
         })
     },
 
-    getDeptEmployees: function (dept_id, page = 1, limit = 10) {
+    getDeptEmployees: function (dept_id, page = 1, limit = 10, search = '') {
         const params = new URLSearchParams();
         if (dept_id !== 0 && dept_id !== '0' && dept_id !== null && dept_id !== undefined) {
             params.append('dept_id', dept_id);
         }
         params.append('page', page);
         params.append('limit', limit);
+        if (search && String(search).trim() !== '') {
+            params.append('text', String(search).trim());
+        }
         return axiosInstancecoremodule.request({
             method: 'GET',
             url: `/api/v1/employees?${params.toString()}`
@@ -71,14 +74,15 @@ const departmentsApi = {
     },
 
     // Function to get all employees (for All Department case)
-    getAllEmployees: function (page = 1, limit = 10) {
+    getAllEmployees: function (page = 1, limit = 10, search = '') {
+        const params = { page, limit };
+        if (search && String(search).trim() !== '') {
+            params.text = String(search).trim();
+        }
         return axiosInstancecoremodule.request({
             method: 'GET',
             url: `/api/v1/employees`,
-            params: {
-                page: page,
-                limit: limit
-            }
+            params
         })
     },
 

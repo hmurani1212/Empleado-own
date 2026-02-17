@@ -1,12 +1,16 @@
 import { showToast } from '../../Components/Toaster/Toaster';
 import departmentsApi from '../../Model/Data/Departments/Departments';
-import employeesApi from '../../Model/Data/Departments/Departments';
 import noticesApi from '../../Model/Data/Notices/Notices';
+
+// Synchronous in-flight guard so only one getAllDepartmentsNotices runs at a time (handles Strict Mode double-mount)
+let getAllDepartmentsNoticesInFlight = false;
+let getBranchesOnlyInFlight = false;
 
 const noticeViewModel = (set, get) => ({
     noticesDepartment: [],
     noticesBranches : [],
     filterDepartmentsNotices: [],
+    departmentsLoadedForBranchId: null,
     allNoticesList: [],
     noticeMount: false,
     viewNoticeData : [],
@@ -19,36 +23,110 @@ const noticeViewModel = (set, get) => ({
     },
     // copyAllNoticesList : [],
 
-    getAllDepartmentsNotices: async () => {
-        // Check if departments are already loaded and cached
+    // Fetch only branches - 1 API call. Used when Add Notice page loads.
+    getBranchesOnly: async () => {
+        if (getBranchesOnlyInFlight) return;
         const currentState = get();
-        if (currentState.departmentsLoaded && currentState.noticesDepartment.length > 0) {
+        if (currentState.noticesBranches && currentState.noticesBranches.length > 0) {
             return;
         }
-
-        // Set loading state
-        set({ departmentsLoading: true });
-
+        getBranchesOnlyInFlight = true;
+        set({ departmentsLoading: true, filterDepartmentsNotices: [], departmentsLoadedForBranchId: null });
         try {
             const response = await departmentsApi.gettingAllDepartments();
-            const employees = await employeesApi.getAllEmployees();
-            const data = response.data
+            const data = response.data;
+            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+                const branches = data.DB_DATA?.branches || [];
+                const ownObjectBranches = { id: '0', branch_name: 'All Branches' };
+                const updatedBranches = [ownObjectBranches, ...branches];
+                set({
+                    noticesBranches: updatedBranches,
+                    departmentsLoading: false,
+                });
+            } else {
+                set({ departmentsLoading: false });
+            }
+        } catch (err) {
+            set({ departmentsLoading: false });
+        } finally {
+            getBranchesOnlyInFlight = false;
+        }
+    },
 
-            if(response.status === 200 && data.STATUS === "SUCCESSFUL"){
-                const branches = data.DB_DATA.branches
-                const ownObjectBranches = {id: '0', branch_name: 'All Branches'}
+    // Fetch departments only when user selects a branch. One API call per branch selection; cached for same branch.
+    getDepartmentsByBranch: async (branchId) => {
+        const currentState = get();
+        const normalizedBranchId = branchId === undefined || branchId === null ? null : String(branchId);
+        if (currentState.departmentsLoadedForBranchId === normalizedBranchId && currentState.filterDepartmentsNotices?.length > 0) {
+            return;
+        }
+        set({ departmentsLoading: true });
+        try {
+            let departments = [{ id: '0', name: 'All Departments' }];
+            if (branchId === '0' || branchId === 0 || !branchId) {
+                const response = await departmentsApi.get_all_Department(0);
+                const data = response?.data;
+                if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                    const deptList = data.DB_DATA?.departments || data.DB_DATA || [];
+                    const flatDepts = Array.isArray(deptList) ? deptList : [];
+                    departments = [{ id: '0', name: 'All Departments' }, ...flatDepts];
+                }
+            } else {
+                const response = await departmentsApi.manageDepartments(branchId);
+                const data = response?.data;
+                if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                    const branchDepts = data.DB_DATA?.departments || [];
+                    const storeState = get();
+                    const branch = storeState.noticesBranches?.find((b) => String(b.id) === String(branchId));
+                    const withBranchId = branchDepts.map((dept) => ({
+                        ...dept,
+                        branch_id: branchId,
+                        branch_name: branch?.branch_name,
+                    }));
+                    departments = [{ id: '0', name: 'All Departments' }, ...withBranchId];
+                }
+            }
+            set({
+                noticesDepartment: departments,
+                filterDepartmentsNotices: departments,
+                departmentsLoaded: true,
+                departmentsLoadedForBranchId: normalizedBranchId,
+                departmentsLoading: false,
+            });
+        } catch (err) {
+            set({ departmentsLoading: false });
+        }
+    },
 
-                // Fetch departments for all branches in parallel for better performance
+    getAllDepartmentsNotices: async () => {
+        // Set in-flight FIRST so any concurrent caller (same tick) cannot pass the guard
+        if (getAllDepartmentsNoticesInFlight) {
+            return;
+        }
+        getAllDepartmentsNoticesInFlight = true;
+
+        const currentState = get();
+        // Use cached data when already loaded
+        if (currentState.departmentsLoaded && currentState.noticesDepartment.length > 0) {
+            getAllDepartmentsNoticesInFlight = false;
+            return;
+        }
+        set({ departmentsLoading: true });
+        try {
+            const response = await departmentsApi.gettingAllDepartments();
+            const data = response.data;
+            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+                const branches = data.DB_DATA.branches;
+                const ownObjectBranches = { id: '0', branch_name: 'All Branches' };
                 const departmentPromises = branches.map(async (branch) => {
                     try {
                         const deptResponse = await departmentsApi.manageDepartments(branch.id);
-                        if(deptResponse.status === 200 && deptResponse.data.STATUS === "SUCCESSFUL") {
+                        if (deptResponse.status === 200 && deptResponse.data.STATUS === "SUCCESSFUL") {
                             const branchDepartments = deptResponse.data.DB_DATA.departments || [];
-                            // Add branch_id to each department for filtering
-                            return branchDepartments.map(dept => ({
+                            return branchDepartments.map((dept) => ({
                                 ...dept,
                                 branch_id: branch.id,
-                                branch_name: branch.branch_name
+                                branch_name: branch.branch_name,
                             }));
                         }
                         return [];
@@ -56,29 +134,25 @@ const noticeViewModel = (set, get) => ({
                         return [];
                     }
                 });
-
-                // Wait for all API calls to complete in parallel
                 const departmentResults = await Promise.all(departmentPromises);
-
-                // Flatten the results into a single array
-                let allDepartments = [{id: '0', name: 'All Departments'}];
+                let allDepartments = [{ id: '0', name: 'All Departments' }];
                 allDepartments = [...allDepartments, ...departmentResults.flat()];
-
                 const updatedBranches = [ownObjectBranches, ...branches];
-
                 set({
                     noticesDepartment: allDepartments,
                     noticesBranches: updatedBranches,
+                    filterDepartmentsNotices: allDepartments,
                     departmentsLoading: false,
-                    departmentsLoaded: true
-                })
+                    departmentsLoaded: true,
+                });
             } else {
                 set({ departmentsLoading: false });
             }
         } catch (err) {
             set({ departmentsLoading: false });
+        } finally {
+            getAllDepartmentsNoticesInFlight = false;
         }
-
     },
 
     noticesFilterBranches:(id)=>{
@@ -101,9 +175,13 @@ const noticeViewModel = (set, get) => ({
     },
 
     getAllNoticesList: async (params = {}, forceReload = false, loadMore = false) => {
+        const currentState = get();
+        // Use cache when returning to list: skip API if we already have data and not forcing reload
+        if (!forceReload && !loadMore && currentState.allNoticesList?.length > 0) {
+            return;
+        }
+
         try{
-            const currentState = get();
-            
             // Build API parameters with defaults
             const finalParams = {
                 page: params.page !== undefined ? params.page : 1,
@@ -187,12 +265,11 @@ const noticeViewModel = (set, get) => ({
             console.log(err)
         }
     },
-    addNewNoticeState:(data)=>{
+    addNewNoticeState: (data) => {
+        const currentList = get().allNoticesList || [];
         set({
-            allNoticesList: [...new Set([data, ...get().allNoticesList])],
-            
-        })
-
+            allNoticesList: [data, ...currentList],
+        });
     },
    
 

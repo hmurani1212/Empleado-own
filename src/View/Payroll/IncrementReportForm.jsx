@@ -9,9 +9,13 @@ import employeesApi from '../../Model/Data/Employees/Employees'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 
+const ALL_BRANCHES_OPTION = { value: 0, label: 'All Branches' }
+const ALL_DEPARTMENTS_OPTION = { value: 0, label: 'All Departments' }
+
 const IncrementReportForm = () => {
   // Get global drawer close function
   const closeDrawer = useStore((state) => state.closeDrawer)
+
   const [formData, setFormData] = useState({
     fromDate: '',
     toDate: '',
@@ -144,8 +148,8 @@ const IncrementReportForm = () => {
 
     try {
       const requestData = {
-        branch_id: formData.branch_id.value,
-        dept_id: formData.department_id.value,
+        branch_id: formData.branch_id?.value ?? 0,
+        dept_id: formData.department_id?.value ?? 0,
         time1: formData.fromDate,
         time2: formData.toDate,
         ...(formData.selectedEmployee && { emp_ids: [formData.selectedEmployee.id] })
@@ -209,7 +213,8 @@ const IncrementReportForm = () => {
       try {
         setLoading(true)
         const deptData = await gettingDepartmentsServices(selectedBranch.value)
-        setDepartments(deptData || [])
+        const deptOptions = Array.isArray(deptData) ? deptData : []
+        setDepartments([ALL_DEPARTMENTS_OPTION, ...deptOptions])
       } catch (error) {
         console.error('Error fetching departments:', error)
         showToast('Error loading departments', 'error')
@@ -414,10 +419,10 @@ const IncrementReportForm = () => {
           <CustomSelect
             placeHolderTitle="Choose branch"
             value={formData.branch_id}
-            options={branches_payroll?.map((branch) => ({ 
+            options={[ALL_BRANCHES_OPTION, ...(branches_payroll?.map((branch) => ({ 
               value: branch.id, 
               label: branch.branch_name 
-            })) || []}
+            })) || [])]}
             onChangeHandler={handleBranchChange}
             customStyles={false}
             isSearchable={true}
@@ -431,7 +436,7 @@ const IncrementReportForm = () => {
           <CustomSelect
             placeHolderTitle="Filter by dept"
             value={formData.department_id}
-            options={departments || []}
+            options={departments}
             onChangeHandler={handleDepartmentChange}
             customStyles={false}
             isSearchable={true}

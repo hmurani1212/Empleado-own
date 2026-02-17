@@ -1,17 +1,21 @@
 import { Button, Checkbox, Input, Option, Select, Textarea } from '@material-tailwind/react'
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import useNotice from '../../ViewModel/NoticeViewModel/NoticeServices'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect';
 import { Loader2 } from 'lucide-react';
 
 const AddNotice = () => {
-  const {noticesBranches, addNoticeValue, getAllDepartmentsNotices, handleAddNoticeBranch, handleDeptChange, employeeOptions, addNewNotice, filterDepartmentsNotices, handleCheckboxChange, handleChangeEmpName, showEmployeeName, handleNewNotice,
+  const {noticesBranches, addNoticeValue, getBranchesOnly, handleAddNoticeBranch, handleDeptChange, employeeOptions, addNewNotice, filterDepartmentsNotices, handleCheckboxChange, handleChangeEmpName, showEmployeeName, handleNewNotice,
     handleNoticesSearchEmp, fetchAllEmployees, loading
   } = useNotice();
 
+  const hasFetchedBranches = useRef(false);
+
   useEffect(() => {
-    getAllDepartmentsNotices()
-    // fetchAllEmployees()
+    if (hasFetchedBranches.current) return;
+    hasFetchedBranches.current = true;
+    getBranchesOnly();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
