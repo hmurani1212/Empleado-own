@@ -86,9 +86,9 @@ const NotificationItem = ({ notification, formatNotificationTime, handleNotifica
                 <p className={`text-sm leading-relaxed ${isUnread ? 'text-gray-900 font-medium' : 'text-gray-800'}`}>
                   {notification.notification}
                 </p>
-                <span className="text-xs text-gray-500 mt-1 block">
+                {/* <span className="text-xs text-gray-500 mt-1 block">
                   {formatNotificationTime(notification.entry_time)}
-                </span>
+                </span> */}
               </div>
 
               {/* Unread Indicator */}

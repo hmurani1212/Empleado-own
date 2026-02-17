@@ -325,8 +325,6 @@ const useEmployees = () => {
         one_id: '',
         org_id: '',
         mobile_no: '',
-
-
     })
     const [loading, setLoading] = useState(false)
     const [isAddingEmployee, setIsAddingEmployee] = useState(false)
@@ -465,7 +463,7 @@ const useEmployees = () => {
         // Validate mobile number format: must start with +92 and be exactly 13 digits
         const mobileRegex = /^\+92\d{10}$/;
         if (!mobileRegex.test(newEmpValues.mobile)) {
-            showToast('Enter the correct number', 'error')
+            showToast('Please Enter Number in +92 Format', 'error')
             return
         }
 
@@ -802,7 +800,7 @@ const useEmployees = () => {
                 showToast(errorMessage, 'error');
                 console.log('Error details:', err);
             }
-        }finally{
+        } finally {
             setLoading(false)
         }
     }
@@ -839,19 +837,34 @@ const useEmployees = () => {
             gettingSubBranches(selectedOption.value);
             // gettingPolicies(selectedOption.value);
             fetchHrPolicyDropdown(selectedOption.value);
-            get_all_department_fn(selectedOption.value);
+            // get_all_department_fn(selectedOption.value);
             gettingSalayTemplate(selectedOption.value);
-            gettingDesignation(selectedOption.value, false)
+            // gettingDesignation(selectedOption.value, false)
             // true indicates it's a branch_id
             fetchingAllEmployess(selectedOption.value);
         } else if (field === 'department') {
+            console.log('Department selected:', selectedOption);
             setNewEmpValues((prevState) => ({
                 ...prevState,
                 [field]: selectedOption,
                 designation: null // Reset designation when department changes
             }));
-            ///gettingDesignation(selectedOption.value, false); // false indicates it's a dept_id
-            gettingDesignation(selectedOption.value, true);
+            // Get designations for the selected department
+            // First try to get designations from the department object in the store or local state
+            const departments = get_all_department || [];
+            const localDepts = dept_subDept || [];
+            const allDepts = departments.length > 0 ? departments : localDepts;
+            const selectedDept = allDepts.find(dept => dept.id === selectedOption.value);
+            
+            if (selectedDept && selectedDept.designations && Array.isArray(selectedDept.designations) && selectedDept.designations.length > 0) {
+                // Use designations from the department object
+                console.log('Using designations from department object:', selectedDept.designations);
+                setDesignations(selectedDept.designations);
+            } else {
+                // Fallback: Call API to get designations by department ID
+                console.log('Fetching designations from API for department:', selectedOption.value);
+                gettingDesignation(selectedOption.value, false); // false indicates it's a dept_id
+            }
         } else {
             setNewEmpValues((prevState) => ({
                 ...prevState,
@@ -872,19 +885,25 @@ const useEmployees = () => {
         try {
             const response = await employeesApi.gettingSubDepts(data)
             const resData = response.data
-            console.log('Departments API response:', resData);
+            console.log('Departments API response:', resData.DB_DATA?.departments);
             if (resData.STATUS === "SUCCESSFUL") {
-                setDept_subDept(resData.DB_DATA)
+                const departments = resData.DB_DATA?.departments || [];
+                setDept_subDept(departments);
+                // Update store's get_all_department directly with departments array
+                // This makes departments available in the component via get_all_department
+                useStore.setState({ get_all_department: departments });
                 // Clear designations when departments change
                 setDesignations([])
-                // console.log('Departments set:', resData.DB_DATA);
+                console.log('Departments set in store:', departments);
             } else {
                 setDept_subDept([])
+                useStore.setState({ get_all_department: [] });
                 setDesignations([])
             }
         } catch (err) {
             console.error("Error fetching departments:", err)
             setDept_subDept([])
+            useStore.setState({ get_all_department: [] });
             setDesignations([])
         }
     }
@@ -1181,7 +1200,7 @@ const useEmployees = () => {
             // Use newFilters as the primary source, fallback to current state
             // If pageNumber is provided, use it; otherwise use page from newFilters or default to 1
             const targetPage = pageNumber !== null ? pageNumber : (newFilters.page || 1);
-            
+
             const currentFilters = {
                 text: filterValues.searchEmployee,
                 page: targetPage,

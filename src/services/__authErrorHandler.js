@@ -60,100 +60,107 @@ class AuthErrorHandler {
 
         const { status, data } = error.response;
         
-        // First check for specific error codes in response data
+        // Extract error details (case-insensitive)
+        let errorCode, errorFilter, errorDescription, statusValue;
+        
         if (data && typeof data === 'object') {
-            const errorCode = data.ERROR_CODE || data.error_code || data.code;
-            const errorFilter = data.ERROR_FILTER || data.error_filter || data.filter;
-            const errorDescription = data.ERROR_DESCRIPTION || data.error_description || data.message;
-            const statusValue = data.STATUS || data.status;
+            errorCode = data.ERROR_CODE || data.error_code || data.code || data.ErrorCode;
+            errorFilter = data.ERROR_FILTER || data.error_filter || data.filter || data.ErrorFilter;
+            errorDescription = data.ERROR_DESCRIPTION || data.error_description || data.message || data.ErrorDescription;
+            statusValue = data.STATUS || data.status || data.Status;
+        }
 
-            // Priority 1: Check if STATUS is "ERROR" and ERROR_FILTER is USER_NOT_AUTHENTICATED
-            if (statusValue === 'ERROR' || statusValue === 'error') {
-                // If ERROR_FILTER is USER_NOT_AUTHENTICATED, it's definitely an auth error
-                if (errorFilter === 'USER_NOT_AUTHENTICATED') {
-                    console.log('🔴 Authentication error detected by ERROR_FILTER:', errorFilter);
-                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
+        // PRIORITY 1: HTTP 401/403 status codes - treat as auth error if they have ERROR status or auth indicators
+        if (status === 401 || status === 403) {
+            // If we have error data with ERROR status and auth indicators, it's definitely an auth error
+            if (data && typeof data === 'object') {
+                // Check if STATUS is ERROR and has auth-related indicators
+                if ((statusValue === 'ERROR' || statusValue === 'error') && 
+                    (errorFilter === 'USER_NOT_AUTHENTICATED' || 
+                     errorCode === 'ONEID-148736154' ||
+                     errorCode === 'VTWE-401002' ||
+                     (errorCode && this.authErrorCodes.includes(errorCode)) ||
+                     (errorFilter && this.authErrorCodes.includes(errorFilter)))) {
+                    console.log('🔴 Authentication error detected by HTTP 401/403 with ERROR status');
+                    console.log('📋 Error details:', { status, errorCode, errorFilter, statusValue, errorDescription });
                     return true;
                 }
                 
-                // Check if any of our known auth error codes match
-                if (errorCode && this.authErrorCodes.includes(errorCode)) {
-                    console.log('🔴 Authentication error detected by error code:', errorCode);
-                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
-                    return true;
-                }
-
-                // Check error filter against auth codes
-                if (errorFilter && this.authErrorCodes.includes(errorFilter)) {
-                    console.log('🔴 Authentication error detected by error filter:', errorFilter);
-                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
+                // Even without ERROR status, if we have USER_NOT_AUTHENTICATED or known auth codes, it's an auth error
+                if (errorFilter === 'USER_NOT_AUTHENTICATED' || 
+                    errorCode === 'ONEID-148736154' ||
+                    errorCode === 'VTWE-401002' ||
+                    (errorCode && this.authErrorCodes.includes(errorCode)) ||
+                    (errorFilter && this.authErrorCodes.includes(errorFilter))) {
+                    console.log('🔴 Authentication error detected by HTTP 401/403 with auth indicators');
+                    console.log('📋 Error details:', { status, errorCode, errorFilter, errorDescription });
                     return true;
                 }
             }
-
-            // Priority 2: Check if any of our known auth error codes match (regardless of STATUS)
-            if (errorCode && this.authErrorCodes.includes(errorCode)) {
-                console.log('🔴 Authentication error detected by error code:', errorCode);
-                console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
-                return true;
-            }
-
-            // Priority 3: Check error filter
-            if (errorFilter && this.authErrorCodes.includes(errorFilter)) {
-                console.log('🔴 Authentication error detected by error filter:', errorFilter);
-                console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
-                return true;
-            }
-
-            // Priority 4: Check error description for common auth error patterns
-            if (errorDescription && typeof errorDescription === 'string') {
-                const lowerDesc = errorDescription.toLowerCase();
-                if (lowerDesc.includes('token') && 
-                    (lowerDesc.includes('expired') || lowerDesc.includes('invalid'))) {
-                    console.log('🔴 Authentication error detected by description:', errorDescription);
-                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
-                    return true;
-                }
-                if (lowerDesc.includes('unauthorized') || 
-                    lowerDesc.includes('not authenticated') ||
-                    lowerDesc.includes('authentication failed') ||
-                    lowerDesc.includes('please login again')) {
-                    console.log('🔴 Authentication error detected by description:', errorDescription);
-                    console.log('📋 Error details:', { errorCode, errorFilter, errorDescription, status });
+            
+            // If 401/403 but no specific error data, check if token is expired
+            if (!data || (!errorCode && !errorFilter)) {
+                if (!this.isTokenValid()) {
+                    console.log('🔴 Authentication error detected by HTTP 401/403 - Token is expired');
                     return true;
                 }
             }
         }
 
-        // Priority 5: Check HTTP status codes - if 401/403 with ERROR status, treat as auth error
-        if (status === 401 || status === 403) {
-            // If response has ERROR status and authentication-related data, it's an auth error
-            if (data && typeof data === 'object') {
-                const statusValue = data.STATUS || data.status;
-                const errorFilter = data.ERROR_FILTER || data.error_filter;
-                const errorCode = data.ERROR_CODE || data.error_code;
-                
-                // If STATUS is ERROR and has auth-related indicators, it's an auth error
-                if ((statusValue === 'ERROR' || statusValue === 'error') && 
-                    (errorFilter === 'USER_NOT_AUTHENTICATED' || 
-                     this.authErrorCodes.includes(errorCode) ||
-                     this.authErrorCodes.includes(errorFilter))) {
-                    console.log('🔴 Authentication error detected by 401/403 status with ERROR status:', status);
-                    console.log('📋 Error details:', { errorCode, errorFilter, statusValue, status });
-                    return true;
-                }
+        // PRIORITY 2: Check if STATUS is "ERROR" and ERROR_FILTER is USER_NOT_AUTHENTICATED (regardless of HTTP status)
+        if (data && typeof data === 'object' && (statusValue === 'ERROR' || statusValue === 'error')) {
+            // If ERROR_FILTER is USER_NOT_AUTHENTICATED, it's definitely an auth error
+            if (errorFilter === 'USER_NOT_AUTHENTICATED') {
+                console.log('🔴 Authentication error detected by ERROR_FILTER: USER_NOT_AUTHENTICATED');
+                console.log('📋 Error details:', { status, errorCode, errorFilter, errorDescription });
+                return true;
             }
             
-            // Additional check: if there's no specific error data, check if token is expired
-            if (!data || (!data.ERROR_CODE && !data.error_code && !data.ERROR_FILTER && !data.error_filter)) {
-                // Check if our token is actually expired before treating this as auth error
-                if (!this.isTokenValid()) {
-                    console.log('🔴 Generic authentication error detected by status:', status, '- Token is expired');
-                    return true;
-                } else {
-                    console.log('ℹ️ Ignoring 401/403 error - Token is still valid, likely business logic error');
-                    return false;
-                }
+            // Check if any of our known auth error codes match
+            if (errorCode && (errorCode === 'ONEID-148736154' || errorCode === 'VTWE-401002' || this.authErrorCodes.includes(errorCode))) {
+                console.log('🔴 Authentication error detected by ERROR_CODE:', errorCode);
+                console.log('📋 Error details:', { status, errorCode, errorFilter, errorDescription });
+                return true;
+            }
+
+            // Check error filter against auth codes
+            if (errorFilter && this.authErrorCodes.includes(errorFilter)) {
+                console.log('🔴 Authentication error detected by ERROR_FILTER:', errorFilter);
+                console.log('📋 Error details:', { status, errorCode, errorFilter, errorDescription });
+                return true;
+            }
+        }
+
+        // PRIORITY 3: Check if any of our known auth error codes match (regardless of STATUS or HTTP status)
+        if (errorCode && (errorCode === 'ONEID-148736154' || errorCode === 'VTWE-401002' || this.authErrorCodes.includes(errorCode))) {
+            console.log('🔴 Authentication error detected by ERROR_CODE:', errorCode);
+            console.log('📋 Error details:', { status, errorCode, errorFilter, errorDescription });
+            return true;
+        }
+
+        // PRIORITY 4: Check error filter
+        if (errorFilter && (errorFilter === 'USER_NOT_AUTHENTICATED' || this.authErrorCodes.includes(errorFilter))) {
+            console.log('🔴 Authentication error detected by ERROR_FILTER:', errorFilter);
+            console.log('📋 Error details:', { status, errorCode, errorFilter, errorDescription });
+            return true;
+        }
+
+        // PRIORITY 5: Check error description for common auth error patterns
+        if (errorDescription && typeof errorDescription === 'string') {
+            const lowerDesc = errorDescription.toLowerCase();
+            if (lowerDesc.includes('token') && 
+                (lowerDesc.includes('expired') || lowerDesc.includes('invalid'))) {
+                console.log('🔴 Authentication error detected by description (token expired/invalid):', errorDescription);
+                console.log('📋 Error details:', { status, errorCode, errorFilter, errorDescription });
+                return true;
+            }
+            if (lowerDesc.includes('unauthorized') || 
+                lowerDesc.includes('not authenticated') ||
+                lowerDesc.includes('authentication failed') ||
+                lowerDesc.includes('please login again')) {
+                console.log('🔴 Authentication error detected by description (auth failed):', errorDescription);
+                console.log('📋 Error details:', { status, errorCode, errorFilter, errorDescription });
+                return true;
             }
         }
 
@@ -165,38 +172,77 @@ class AuthErrorHandler {
      */
     clearAuthData() {
         try {
-            // Clear JWT token and related auth data
-            localStorage.removeItem('jwt');
-            localStorage.removeItem('org_oneid');
-            localStorage.removeItem('oneid');
-            localStorage.removeItem('org_name');
-            localStorage.removeItem('user_email');
-            localStorage.removeItem('full_username');
-            localStorage.removeItem('full_dp');
-            localStorage.removeItem('role_id');
-            localStorage.removeItem('role_db_id');
-            localStorage.removeItem('other_permissions');
-            localStorage.removeItem('oneid_role_permissions');
-            
-            // Clear any other auth-related data
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && (
-                    key.includes('auth') || 
-                    key.includes('token') || 
-                    key.includes('user') ||
-                    key.includes('org')
-                )) {
-                    keysToRemove.push(key);
+            // List of known JWT token keys that might be stored
+            const knownAuthKeys = [
+                'jwt',
+                'org_oneid',
+                'oneid',
+                'org_name',
+                'org_id',
+                'user_email',
+                'user_full_name',
+                'full_username',
+                'full_dp',
+                'role_id',
+                'role_db_id',
+                'scope',
+                'other_permissions',
+                'oneid_role_permissions',
+                'org_oneid',
+                'oneid_role_permissions'
+            ];
+
+            // Remove known auth keys
+            knownAuthKeys.forEach(key => {
+                try {
+                    localStorage.removeItem(key);
+                } catch (e) {
+                    // Ignore errors for individual key removal
                 }
+            });
+            
+            // Clear any other auth-related data by checking all localStorage keys
+            const keysToRemove = [];
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key) {
+                        const lowerKey = key.toLowerCase();
+                        // Check if key contains auth-related terms
+                        if (lowerKey.includes('auth') || 
+                            lowerKey.includes('token') || 
+                            lowerKey.includes('user') ||
+                            lowerKey.includes('org') ||
+                            lowerKey.includes('role') ||
+                            lowerKey.includes('permission') ||
+                            lowerKey.includes('oneid') ||
+                            lowerKey.includes('scope')) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Error iterating localStorage:', e);
             }
             
-            keysToRemove.forEach(key => localStorage.removeItem(key));
+            // Remove all identified keys
+            keysToRemove.forEach(key => {
+                try {
+                    localStorage.removeItem(key);
+                } catch (e) {
+                    // Ignore errors for individual key removal
+                }
+            });
             
-            // console.log('Authentication data cleared from localStorage');
+            console.log('✅ Authentication data cleared from localStorage');
         } catch (error) {
-            console.error('Error clearing authentication data:', error);
+            console.error('❌ Error clearing authentication data:', error);
+            // Even if clearing fails, try to clear at least the JWT token
+            try {
+                localStorage.removeItem('jwt');
+            } catch (e) {
+                console.error('❌ Failed to clear JWT token:', e);
+            }
         }
     }
 
@@ -257,19 +303,23 @@ class AuthErrorHandler {
             });
             this.pendingRequests = [];
 
-            // Clear auth data
+            // Clear auth data FIRST (synchronous)
             console.log('🧹 Clearing authentication data...');
             this.clearAuthData();
 
-            // Update Zustand store state asynchronously (non-blocking)
+            // Update Zustand store state (non-blocking, don't wait for it)
             // Use dynamic import to avoid circular dependencies
             import('../Store/store').then(storeModule => {
                 const useStore = storeModule.default;
                 if (useStore && useStore.getState) {
-                    const setAuthenticationState = useStore.getState().setAuthenticationState;
-                    if (setAuthenticationState) {
-                        setAuthenticationState(false, false);
-                        console.log('✅ Store state updated');
+                    try {
+                        const setAuthenticationState = useStore.getState().setAuthenticationState;
+                        if (setAuthenticationState) {
+                            setAuthenticationState(false, false);
+                            console.log('✅ Store state updated');
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ Error updating store state:', e);
                     }
                 }
             }).catch(err => {
@@ -277,21 +327,52 @@ class AuthErrorHandler {
                 console.warn('⚠️ Could not update store state (non-critical):', err);
             });
 
-            // Force immediate redirect - use replace to prevent back button issues
-            console.log('🚀 Redirecting to login page now...');
+            // CRITICAL: Force immediate redirect - MUST happen synchronously
+            // Don't wait for anything, redirect immediately
+            console.log('🚀 Redirecting to login page NOW...');
             console.log('📍 Current URL:', window.location.href);
             console.log('📍 Target URL: /login');
             
-            // Use window.location.replace for immediate redirect (doesn't add to history)
-            window.location.replace('/login');
+            // Get the base path for the application
+            const basePath = window.location.origin;
+            const loginPath = `${basePath}/login`;
             
-            // Fallback: if replace doesn't work, use href
-            setTimeout(() => {
-                if (window.location.pathname !== '/login') {
-                    console.warn('⚠️ Replace failed, trying href redirect...');
-                    window.location.href = '/login';
+            // Use window.location.replace for immediate redirect (doesn't add to history)
+            // This is synchronous and will immediately navigate
+            try {
+                console.log('🔄 Using window.location.replace...');
+                window.location.replace(loginPath);
+                
+                // If we're still here after 100ms, try href as fallback
+                setTimeout(() => {
+                    if (window.location.pathname !== '/login') {
+                        console.warn('⚠️ Replace may have failed, trying href redirect...');
+                        try {
+                            window.location.href = loginPath;
+                        } catch (e) {
+                            console.error('❌ Both redirect methods failed:', e);
+                            // Last resort: try relative path
+                            try {
+                                window.location.href = '/login';
+                            } catch (e2) {
+                                console.error('❌ All redirect methods failed:', e2);
+                            }
+                        }
+                    }
+                }, 100);
+            } catch (e) {
+                console.error('❌ Error with replace, trying href:', e);
+                try {
+                    window.location.href = loginPath;
+                } catch (e2) {
+                    // Last resort: try relative path
+                    try {
+                        window.location.href = '/login';
+                    } catch (e3) {
+                        console.error('❌ All redirect methods failed:', e3);
+                    }
                 }
-            }, 100);
+            }
 
         } catch (error) {
             console.error('❌ Error during redirect to login:', error);
@@ -402,6 +483,9 @@ class AuthErrorHandler {
 
 // Create singleton instance
 const authErrorHandler = new AuthErrorHandler();
+
+// Expose authErrorCodes for external access (e.g., interceptors)
+authErrorHandler.authErrorCodes = authErrorHandler.authErrorCodes;
 
 export default authErrorHandler;
 

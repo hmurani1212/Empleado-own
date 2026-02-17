@@ -63,7 +63,7 @@ const EmployeeDetails = () => {
                                     {data?.department?.name || 'N/A'}
                                 </div>
                                 <div className='text-[12px] text-[#9B9B9B]'>
-                                    {data?.designationObj?.title || 'N/A'}
+                                    {data?.designation || 'N/A'}
                                 </div>
                             </div>
                         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Button, Textarea } from '@material-tailwind/react';
+import { Typography, Button, Textarea, Tooltip } from '@material-tailwind/react';
 import { FaPlus, FaTimes, FaEdit } from 'react-icons/fa';
 import useStore from '../../Store/store';
 import AddSignatureForm from '../../Components/AddSignatureForm/AddSignatureForm';
@@ -596,38 +596,82 @@ const Settings = () => {
           <div className="space-y-0">
             {/* Mobile Attendance Toggle */}
             <div className="flex justify-between items-center py-4 border-b border-gray-200 min-h-[60px]">
-              <Typography variant="small" className="text-gray-700 font-medium">
-                Mobile Attendance
-              </Typography>
-              <button
-                onClick={handleMobileAttendanceToggle}
-                disabled={isTogglingMobileAttendance}
-                className={`px-4 py-1 rounded text-xs font-semibold transition-colors min-w-[100px] ${
-                  isConfigured
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                } ${isTogglingMobileAttendance ? 'opacity-50 cursor-not-allowed' : ''}`}
+              <div className="flex items-center">
+                <Tooltip 
+                  content={
+                    <div className="text-xs">
+                      <div>Allow Employee to mark</div>
+                      <div>attendance from mobile application</div>
+                    </div>
+                  } 
+                  placement="top"
+                >
+                  <Typography variant="small" className="text-gray-700 font-medium cursor-help">
+                    Mobile Attendance
+                  </Typography>
+                </Tooltip>
+              </div>
+              <Tooltip 
+                content={
+                  <div className="text-xs">
+                    <div>Allow Employee to mark</div>
+                    <div>attendance from mobile application</div>
+                  </div>
+                } 
+                placement="top"
               >
-                {isTogglingMobileAttendance ? 'UPDATING...' : (isConfigured ? 'CONFIGURED' : 'CONFIGURE')}
-              </button>
+                <button
+                  onClick={handleMobileAttendanceToggle}
+                  disabled={isTogglingMobileAttendance}
+                  className={`px-4 py-1 rounded text-xs font-semibold transition-colors min-w-[100px] ${
+                    isConfigured
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  } ${isTogglingMobileAttendance ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  {isTogglingMobileAttendance ? 'UPDATING...' : (isConfigured ? 'CONFIGURED' : 'CONFIGURE')}
+                </button>
+              </Tooltip>
             </div>
 
             {/* Attendance Location Logs Toggle */}
             <div className="flex justify-between items-center py-4 border-b border-gray-200 min-h-[60px]">
-              <Typography variant="small" className="text-gray-700 font-medium">
-                Attendance Location logs
-              </Typography>
-              <button
-                onClick={handleLocationLogsToggle}
-                disabled={isTogglingLocationLog}
-                className={`px-4 py-1 rounded text-xs font-semibold transition-colors min-w-[100px] ${
-                  locationLogsEnabled
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : 'bg-red-100 text-red-700 hover:bg-red-200'
-                } ${isTogglingLocationLog ? 'opacity-50 cursor-not-allowed' : ''}`}
+              <div className="flex items-center">
+                <Tooltip 
+                  content={
+                    <div className="text-xs">
+                      <div>Enable Employee Mobile</div>
+                      <div>Attendance Location Tracking</div>
+                    </div>
+                  } 
+                  placement="top"
+                >
+                  <Typography variant="small" className="text-gray-700 font-medium cursor-help">
+                    Attendance Location logs
+                  </Typography>
+                </Tooltip>
+              </div>
+              <Tooltip 
+                content={
+                  <div className="text-xs">
+                    <div>Enable Employee Mobile</div>
+                    <div>Attendance Location Tracking</div>
+                  </div>
+                } 
+                placement="top"
               >
-                {isTogglingLocationLog ? 'UPDATING...' : (locationLogsEnabled ? 'ENABLED' : 'DISABLED')}
-              </button>
+                <button
+                  onClick={handleLocationLogsToggle}
+                  disabled={isTogglingLocationLog}
+                  className={`px-4 py-1 rounded text-xs font-semibold transition-colors min-w-[100px] ${
+                    locationLogsEnabled
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-red-100 text-red-700 hover:bg-red-200'
+                  } ${isTogglingLocationLog ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  {isTogglingLocationLog ? 'UPDATING...' : (locationLogsEnabled ? 'ENABLED' : 'DISABLED')}
+                </button>
+              </Tooltip>
             </div>
 
             {/* Configuration Status Message */}
