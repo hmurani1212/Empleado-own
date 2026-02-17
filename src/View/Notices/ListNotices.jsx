@@ -226,16 +226,9 @@ const ListNotices = () => {
                   ))
                 ) : allNoticesList && allNoticesList.length > 0 ? (
                   allNoticesList
+                  allNoticesList
                     .filter((n) => n && n.timestamp)
                     .sort((a, b) => b.timestamp - a.timestamp)
-                    .filter(
-                      (ele) =>
-                        ele &&
-                        ele !== null &&
-                        ele !== undefined &&
-                        ele.timestamp
-                    )
-                    ?.sort((a, b) => b.timestamp - a.timestamp) // Sort by timestamp in descending order
                     .map((ele, index) => {
                       const currentMonth = new Date(
                         ele.timestamp * 1000
@@ -314,8 +307,8 @@ const ListNotices = () => {
                               </Typography>
                             </div>
                           </td>
+
                           {/* Recipient */}
-                          {/* Employee Name */}
                           <td className="p-4">
                             <span
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
