@@ -47,7 +47,11 @@ const SingleDayDetails = (props) => {
     const total = Number(seconds) || 0
     const hours = Math.floor(total / 3600)
     const minutes = Math.floor((total % 3600) / 60)
+<<<<<<< Updated upstream
     return `${hours} Hours, ${minutes} Minutes`
+=======
+    return `${hours}h ${minutes}m`
+>>>>>>> Stashed changes
   }
 
   useEffect(() => {
@@ -287,16 +291,24 @@ const SingleDayDetails = (props) => {
             transition={{ duration: 0.3 }}
             className="shrink-0"
           >
+<<<<<<< Updated upstream
             <div className="relative rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)] p-6 mb-6 overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/60 before:via-transparent before:to-transparent before:pointer-events-none before:rounded-2xl">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4 font-poppins">Today&apos;s Summary</p>
               {/* Time Pairs Row */}
               <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
+=======
+            <div className="relative rounded-xl bg-white border border-slate-200/80 shadow-sm p-4 mb-3 overflow-hidden">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2.5 font-poppins">Today&apos;s Summary</p>
+              {/* Time Pairs Row */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+>>>>>>> Stashed changes
                 {timePairs.map((pair, idx) => (
                   <motion.div
                     key={idx}
                     variants={itemVariants}
                     initial="hidden"
                     animate="visible"
+<<<<<<< Updated upstream
                     className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gradient-to-br from-white to-slate-50/90 border border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)]"
                   >
                     <div className="flex items-center gap-2">
@@ -309,11 +321,26 @@ const SingleDayDetails = (props) => {
                       <LogOut className="w-4 h-4 text-amber-500 shrink-0" aria-hidden />
                       <span className="text-sm text-slate-600">Out{timePairs.length > 1 ? ` ${idx + 1}` : ''}:</span>
                       <span className="text-sm font-semibold text-slate-900">{formatTimeDisplay(pair.out)}</span>
+=======
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50/80 border border-slate-200/60"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <LogIn className="w-3.5 h-3.5 text-blue-500 shrink-0" aria-hidden />
+                      <span className="text-xs text-slate-600">In{timePairs.length > 1 ? idx + 1 : ''}:</span>
+                      <span className="text-xs font-semibold text-slate-900">{formatTimeDisplay(pair.in)}</span>
+                    </div>
+                    <span className="text-slate-300 text-xs">→</span>
+                    <div className="flex items-center gap-1.5">
+                      <LogOut className="w-3.5 h-3.5 text-amber-500 shrink-0" aria-hidden />
+                      <span className="text-xs text-slate-600">Out{timePairs.length > 1 ? idx + 1 : ''}:</span>
+                      <span className="text-xs font-semibold text-slate-900">{formatTimeDisplay(pair.out)}</span>
+>>>>>>> Stashed changes
                     </div>
                   </motion.div>
                 ))}
               </div>
               {/* Hours Stats Row */}
+<<<<<<< Updated upstream
               <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-slate-100">
                 <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 border border-emerald-200/60 shadow-[0_1px_3px_rgba(5,150,105,0.08),inset_0_1px_0_0_rgba(255,255,255,0.7)]">
                   <Timer className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden />
@@ -329,6 +356,23 @@ const SingleDayDetails = (props) => {
                   <Timer className="w-4 h-4 text-violet-600 shrink-0" aria-hidden />
                   <span className="text-xs font-medium text-violet-700">Overtime</span>
                   <span className="text-sm font-semibold text-violet-900">{secondsToHoursMinutesVerbose(data?.overtime)}</span>
+=======
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-3 border-t border-slate-100">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50/80 border border-emerald-200/60">
+                  <Timer className="w-3.5 h-3.5 text-emerald-600 shrink-0" aria-hidden />
+                  <span className="text-[10px] font-medium text-emerald-700">Expected</span>
+                  <span className="text-xs font-semibold text-emerald-900">{secondsToHoursMinutesVerbose(data?.expected)}</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50/80 border border-blue-200/60">
+                  <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" aria-hidden />
+                  <span className="text-[10px] font-medium text-blue-700">Earned</span>
+                  <span className="text-xs font-semibold text-blue-900">{secondsToHoursMinutesVerbose(data?.earned)}</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-50/80 border border-violet-200/60">
+                  <Timer className="w-3.5 h-3.5 text-violet-600 shrink-0" aria-hidden />
+                  <span className="text-[10px] font-medium text-violet-700">OT</span>
+                  <span className="text-xs font-semibold text-violet-900">{secondsToHoursMinutesVerbose(data?.overtime)}</span>
+>>>>>>> Stashed changes
                 </div>
               </div>
             </div>
@@ -344,6 +388,7 @@ const SingleDayDetails = (props) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
+<<<<<<< Updated upstream
             className="flex flex-col items-center justify-center gap-8 py-12"
           >
             <div className="flex flex-col items-center gap-4">
@@ -354,16 +399,37 @@ const SingleDayDetails = (props) => {
               <p className="text-sm text-slate-500">Mark attendance for this day</p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">
+=======
+            className="flex flex-col items-center justify-center gap-4 py-6"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-14 h-14 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-200/80">
+                <Calendar className="w-7 h-7 text-slate-500" aria-hidden />
+              </div>
+              <p className="text-sm font-semibold text-slate-800 font-poppins text-center">{getStatusLabel()}</p>
+              <p className="text-xs text-slate-500">Mark attendance for this day</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+>>>>>>> Stashed changes
               <motion.button
                 type="button"
                 onClick={() => handleMarkAction('present')}
                 disabled={isSubmitting}
+<<<<<<< Updated upstream
                 whileHover={{ scale: 1.03, boxShadow: '0 20px 25px -5px rgba(5, 150, 105, 0.2)' }}
                 whileTap={{ scale: 0.98 }}
                 style={{ background: 'linear-gradient(180deg, #10b981 0%, #059669 50%, #047857 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(5, 150, 105, 0.35), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <CheckCircle2 className="w-4 h-4" aria-hidden />}
+=======
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{ background: 'linear-gradient(180deg, #10b981 0%, #059669 50%, #047857 100%)', color: '#ffffff' }}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-xs font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              >
+                {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <CheckCircle2 className="w-3.5 h-3.5" aria-hidden />}
+>>>>>>> Stashed changes
                 <span style={{ color: '#ffffff' }}>{isSubmitting ? 'Processing...' : 'Mark Present'}</span>
               </motion.button>
               <motion.button
@@ -372,10 +438,17 @@ const SingleDayDetails = (props) => {
                 disabled={isSubmitting}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+<<<<<<< Updated upstream
                 style={{ background: 'linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(245, 158, 11, 0.35), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Calendar className="w-4 h-4" aria-hidden />}
+=======
+                style={{ background: 'linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)', color: '#ffffff' }}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg text-xs font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              >
+                {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <Calendar className="w-3.5 h-3.5" aria-hidden />}
+>>>>>>> Stashed changes
                 <span style={{ color: '#ffffff' }}>{isSubmitting ? 'Processing...' : 'Mark as Holiday'}</span>
               </motion.button>
             </div>
@@ -388,23 +461,39 @@ const SingleDayDetails = (props) => {
             animate="visible"
             className="flex flex-col flex-1 min-h-0"
           >
+<<<<<<< Updated upstream
             <div className="flex-1 overflow-y-auto customScroll pr-1 -mr-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4 font-poppins">Time Entries</p>
+=======
+            <div className="flex-1 overflow-y-auto customScroll pr-1 -mr-1 min-h-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2 font-poppins">Time Entries</p>
+>>>>>>> Stashed changes
               {timePairs.map((pair, index) => (
                 <motion.div
                   key={index}
                   variants={itemVariants}
+<<<<<<< Updated upstream
                   className="mb-4 rounded-2xl bg-white border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.03),inset_0_1px_0_0_rgba(255,255,255,0.9)] overflow-hidden"
                 >
                   <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-slate-50 to-slate-100/80 border-b border-slate-200/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8)]">
                     <span className="text-sm font-semibold text-slate-700 font-poppins">Time Pair {index + 1}</span>
+=======
+                  className="mb-2 rounded-xl bg-white border border-slate-200/80 shadow-sm overflow-hidden"
+                >
+                  <div className="flex items-center justify-between px-3 py-2 bg-slate-50/80 border-b border-slate-100">
+                    <span className="text-xs font-semibold text-slate-700 font-poppins">Time Pair {index + 1}</span>
+>>>>>>> Stashed changes
                     {timePairs.length > 1 && (
                       <motion.button
                         type="button"
                         onClick={() => handleRemoveTimePair(index)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
+<<<<<<< Updated upstream
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-200"
+=======
+                        className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-50 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-200"
+>>>>>>> Stashed changes
                         aria-label={`Remove time pair ${index + 1}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" aria-hidden />
@@ -412,24 +501,43 @@ const SingleDayDetails = (props) => {
                       </motion.button>
                     )}
                   </div>
+<<<<<<< Updated upstream
                   <div className="p-5 space-y-4">
                     <div className="flex items-center gap-3">
                       <label className="text-sm font-medium text-slate-600 w-16 shrink-0">In {index + 1}</label>
+=======
+                  <div className="p-3 flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2 flex-1 min-w-[120px]">
+                      <label className="text-xs font-medium text-slate-600 w-10 shrink-0">In {index + 1}</label>
+>>>>>>> Stashed changes
                       <input
                         type="time"
                         value={pair.in}
                         onChange={(e) => handleTimeChange(index, 'in', e.target.value)}
+<<<<<<< Updated upstream
                         className="flex-1 min-w-0 text-sm text-slate-800 rounded-xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 px-4 py-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
                         aria-label={`In time ${index + 1}`}
                       />
                     </div>
                     <div className="flex items-center gap-3">
                       <label className="text-sm font-medium text-slate-600 w-16 shrink-0">Out {index + 1}</label>
+=======
+                        className="flex-1 min-w-0 text-xs text-slate-800 rounded-lg border border-slate-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all"
+                        aria-label={`In time ${index + 1}`}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-[120px]">
+                      <label className="text-xs font-medium text-slate-600 w-10 shrink-0">Out {index + 1}</label>
+>>>>>>> Stashed changes
                       <input
                         type="time"
                         value={pair.out}
                         onChange={(e) => handleTimeChange(index, 'out', e.target.value)}
+<<<<<<< Updated upstream
                         className="flex-1 min-w-0 text-sm text-slate-800 rounded-xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 px-4 py-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
+=======
+                        className="flex-1 min-w-0 text-xs text-slate-800 rounded-lg border border-slate-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all"
+>>>>>>> Stashed changes
                         aria-label={`Out time ${index + 1}`}
                       />
                     </div>
@@ -437,13 +545,21 @@ const SingleDayDetails = (props) => {
                 </motion.div>
               ))}
 
+<<<<<<< Updated upstream
               <motion.div variants={itemVariants} className="flex justify-center py-3">
+=======
+              <motion.div variants={itemVariants} className="flex justify-center py-2">
+>>>>>>> Stashed changes
                 <motion.button
                   type="button"
                   onClick={handleAddTimePair}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+<<<<<<< Updated upstream
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-dashed border-slate-200/80 text-slate-500 text-sm font-medium bg-gradient-to-b from-slate-50/50 to-white hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50/70 hover:shadow-[0_2px_8px_-2px_rgba(16,185,129,0.2)] focus:outline-none focus:ring-2 focus:ring-emerald-200 transition-all"
+=======
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border-2 border-dashed border-slate-200 text-slate-500 text-xs font-medium hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50/70 transition-all"
+>>>>>>> Stashed changes
                 >
                   <Plus className="w-4 h-4" aria-hidden />
                   Add Time Pair
@@ -452,10 +568,17 @@ const SingleDayDetails = (props) => {
             </div>
 
             {/* Action Buttons Footer */}
+<<<<<<< Updated upstream
             <div className="shrink-0 pt-6 mt-4 border-t border-slate-200/80 bg-gradient-to-b from-white via-slate-50/50 to-white rounded-2xl px-4 py-5 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
               <motion.div
                 variants={itemVariants}
                 className="flex flex-wrap justify-center gap-3"
+=======
+            <div className="shrink-0 pt-3 mt-3 border-t border-slate-200/80 bg-white/80 rounded-xl px-3 py-3">
+              <motion.div
+                variants={itemVariants}
+                className="flex flex-wrap justify-center gap-2"
+>>>>>>> Stashed changes
               >
                 <motion.button
                   type="button"
@@ -464,7 +587,11 @@ const SingleDayDetails = (props) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   style={{ background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(37, 99, 235, 0.4), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
+<<<<<<< Updated upstream
                   className="inline-flex items-center gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+=======
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg !text-white text-xs font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+>>>>>>> Stashed changes
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : null}
                   {isSubmitting ? 'Saving...' : 'Adjust Timings'}
@@ -476,7 +603,11 @@ const SingleDayDetails = (props) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   style={{ background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(220, 38, 38, 0.4), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
+<<<<<<< Updated upstream
                   className="inline-flex items-center gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+=======
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg !text-white text-xs font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+>>>>>>> Stashed changes
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <XCircle className="w-4 h-4" aria-hidden />}
                   {isSubmitting ? 'Processing...' : 'Mark Absent'}
@@ -488,7 +619,11 @@ const SingleDayDetails = (props) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   style={{ background: 'linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(245, 158, 11, 0.35), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
+<<<<<<< Updated upstream
                   className="inline-flex items-center gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+=======
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg !text-white text-xs font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+>>>>>>> Stashed changes
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Calendar className="w-4 h-4" aria-hidden />}
                   {isSubmitting ? 'Processing...' : 'Mark Holiday'}

@@ -70,7 +70,7 @@ const CustomDialog = (props) => {
             <IoClose className="w-5 h-5" />
           </button>
           </DialogHeader>
-        <DialogBody className={`customScroll overflow-y-auto overflow-x-hidden text-slate-700 bg-gradient-to-b from-slate-100/80 via-slate-50/60 to-slate-100/80 ${compo ? 'max-h-[calc(100vh-220px)] p-6' : 'min-h-[auto]'} ${bodyClassName || ''}`}>
+        <DialogBody className={`customScroll overflow-y-auto overflow-x-hidden text-slate-700 bg-gradient-to-b from-slate-100/80 via-slate-50/60 to-slate-100/80 ${compo ? 'max-h-[calc(100vh-180px)] p-4' : 'min-h-[auto]'} ${bodyClassName || ''}`}>
           {compo}
         </DialogBody>
         {footer &&
