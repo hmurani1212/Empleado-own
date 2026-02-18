@@ -162,7 +162,6 @@ const Calendar = (props) => {
       <CustomDialog 
         openDialog = {singleDayService.show}
         handleOpen = {toggleSingleAttendance}
-        backgroundColor = '#6691cc'
         compo = {
           <SingleDayDetails 
             singleDayService = {singleDayService}

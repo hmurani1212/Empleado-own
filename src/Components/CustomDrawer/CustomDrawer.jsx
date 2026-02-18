@@ -37,37 +37,37 @@ const CustomDrawer = (props) => {
     <Drawer 
       open={open} 
       onClose={handleDrawerClose} 
-      className="px-4 py-2 customDrwerScroll h-full overflow-auto bg-white shadow-2xl" 
+      className="flex flex-col overflow-hidden h-full bg-white shadow-2xl border-l border-slate-100" 
       placement={direction} 
       size={widthSize}
       overlayProps={{
         className: "fixed inset-0 w-full h-full !bg-transparent !backdrop-blur-none z-[9995]",
       }}
     >
-        <div className="flex items-center justify-between px-[0.10vw] py-[0.5vw]">
-          {customImg ? 
-            <img src={image} alt='logo' 
-              height="30"
-              width="130"
-            />
-          :
-          <Typography className='text-lg font-medium font-Urbanist text-gray-800'>
-            {title}
-          </Typography>
-
-          }
-          {/* <IconButton variant="text" color="blue-gray" onClick={closeDrawer}> */}
-          <button
-            onClick={closeDrawer}
-            className="w-[20px] h-[20px] hover:text-red-500 flex justify-center items-center hover:rotate-180 transition-all duration-300 "
-            title="Close"
-          >
-            <FaTimes size={16} />
-          </button>
-          {/* </IconButton> */}
+        {/* Sticky header - stays visible when content scrolls */}
+        <div className="shrink-0 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/50 px-4 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
+          <div className="flex items-center justify-between">
+            {customImg ? 
+              <img src={image} alt='logo' 
+                height="30"
+                width="130"
+              />
+            :
+            <h2 className="text-base font-semibold font-poppins text-slate-800 tracking-tight">
+              {title}
+            </h2>
+            }
+            <button
+              onClick={handleDrawerClose}
+              className="p-2 -m-2 rounded-lg text-slate-500 hover:text-red-500 hover:bg-slate-100 flex justify-center items-center transition-all duration-200"
+              title="Close"
+            >
+              <FaTimes size={16} />
+            </button>
+          </div>
         </div>
-        <hr className='mb-2' />
-        <div>
+        {/* Scrollable content area */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden customDrwerScroll px-4 pb-4">
             {compo}
         </div>
       </Drawer>

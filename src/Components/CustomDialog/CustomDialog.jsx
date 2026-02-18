@@ -3,7 +3,7 @@ import React from 'react'
 import { IoClose } from "react-icons/io5";
 
 const CustomDialog = (props) => {
-  const { openDialog , handleOpen, title, compo, handleConfirm, size, showBtns, confirmBtn, switchBtn=false, footer=true, outsidePress=true, backgroundColor} = props
+  const { openDialog , handleOpen, title, compo, handleConfirm, size, showBtns, confirmBtn, switchBtn=false, footer=true, outsidePress=true, backgroundColor, headerClassName, bodyClassName} = props
   
   // Check if size contains custom CSS classes
   const isCustomSize = size && (size.includes('h-[') || size.includes('w-['))
@@ -15,6 +15,7 @@ const CustomDialog = (props) => {
   
   // Create custom className with proper Material Tailwind overrides
   const customClassName = isCustomSize ? `${widthClass} ${heightClass} max-w-none` : ''
+  const hasHeaderBg = !!backgroundColor
 
   const customTheme = {
     dialog: {
@@ -22,7 +23,7 @@ const CustomDialog = (props) => {
         base: {
           backdrop: {
             backgroundColor: "bg-black/10",
-            backdropFilter: "backdrop-blur-sm",
+            backdropFilter: "backdrop-blur-xs",
           },
         },
       },
@@ -36,33 +37,40 @@ const CustomDialog = (props) => {
       handler={handleOpen} 
       size={dialogSize} 
       animate={{
-        mount: { scale: 1, y: 0 },
-        unmount: { scale: 0.9, y: -100 },
+        mount: { scale: 1, y: 0, opacity: 1 },
+        unmount: { scale: 0.96, y: -20, opacity: 0 },
       }}
      
       style={{
         backgroundColor: backgroundColor ? '#6691cc' : backgroundColor,
+        borderRadius: '1rem',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset',
+        overflow: 'hidden',
         ...(isCustomSize ? {
           '--tw-w': size.includes('w-[') ? size.match(/w-\[([^\]]+)\]/)?.[1] : undefined,
           '--tw-h': size.includes('h-[') ? size.match(/h-\[([^\]]+)\]/)?.[1] : undefined,
           width: size.includes('w-[') ? size.match(/w-\[([^\]]+)\]/)?.[1] : undefined,
           height: 'auto',
-          // height: size.includes('h-[') ? size.match(/h-\[([^\]]+)\]/)?.[1] : undefined,
           maxWidth: 'none',
           maxHeight: 'none'
         } : {}),
         ...(backgroundColor ? { backgroundColor: backgroundColor } : {})
       }}
     >
-        <DialogHeader className='justify-between'>
-          <div className={`flex flex-1 items-center justify-center ${backgroundColor ? '!text-white' : ''}`}>
+        <DialogHeader className={`justify-between shrink-0 px-5 py-4 ${hasHeaderBg ? 'border-b border-white/20' : 'border-b border-slate-200/80 bg-gradient-to-b from-white via-slate-50/90 to-slate-100/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8)]'} ${headerClassName || ''} ${hasHeaderBg ? '!text-white !bg-transparent' : 'text-slate-800'}`}>
+          <div className={`flex flex-1 items-center justify-center font-poppins text-lg sm:text-xl font-semibold tracking-tight ${hasHeaderBg ? '!text-white' : 'text-slate-800'}`}>
           {title}
           </div>
-          <div>
-          <IoClose onClick={handleOpen} className={`cursor-pointer ${backgroundColor ? '!text-white' : ''}`}/>
-          </div>
+          <button
+            type="button"
+            onClick={handleOpen}
+            aria-label="Close"
+            className={`p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 ${hasHeaderBg ? 'text-white hover:bg-white/20 focus:ring-white/50' : 'text-slate-500 hover:bg-slate-100 focus:ring-slate-300'}`}
+          >
+            <IoClose className="w-5 h-5" />
+          </button>
           </DialogHeader>
-        <DialogBody className={`customScroll overflow-y-auto overflow-x-hidden ${compo ? 'max-h-[calc(100vh-200px)]' : 'min-h-[auto]'}`}>
+        <DialogBody className={`customScroll overflow-y-auto overflow-x-hidden text-slate-700 bg-gradient-to-b from-slate-100/80 via-slate-50/60 to-slate-100/80 ${compo ? 'max-h-[calc(100vh-180px)] p-4' : 'min-h-[auto]'} ${bodyClassName || ''}`}>
           {compo}
         </DialogBody>
         {footer &&

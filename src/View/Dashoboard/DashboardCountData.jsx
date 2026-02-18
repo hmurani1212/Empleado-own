@@ -7,7 +7,6 @@ import { CiClock2 } from 'react-icons/ci'
 import { FaUser, FaBuilding, FaCalendarAlt, FaClock, FaUserTie } from 'react-icons/fa'
 import * as XLSX from 'xlsx';
 import { showToast } from '../../Components/Toaster/Toaster'
-import { color } from 'framer-motion'
 
 const DashboardCountData = (props) => {
     const { data , exportData, sendSms, loading, title} = props
@@ -180,10 +179,10 @@ const DashboardCountData = (props) => {
     }
 
   return (
-    <div className='flex flex-col gap-2 w-full'>
+    <div className='flex flex-col gap-4 w-full min-h-0 flex-1'>
       
-      <div className='flex items-center justify-between gap-4'>
-        <div className='flex-1 min-w-[200px] max-w-[300px]'>
+      <div className='flex items-center justify-between gap-3 flex-wrap shrink-0 pb-3 border-b border-slate-100'>
+        <div className='flex-1 min-w-[160px] max-w-[280px]'>
           <Input 
             className='' 
             label={isLateComers ? "Search Late Comers" : "Search Employee"} 
@@ -194,15 +193,15 @@ const DashboardCountData = (props) => {
           />
         </div>
         {filteredData && filteredData.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
+          <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-white to-slate-50/80 rounded-xl border border-slate-100 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.9)]">
             {isLateComers ? (
               <CiClock2 className="text-[#3da5f4] text-[16px]" />
             ) : (
               <FaUser className="text-[#3da5f4] text-[16px]" />
             )}
-            <Typography variant="small" className="text-[#474747] font-semibold text-[12px]">
+            <span className="text-slate-700 font-semibold text-[12px]">
               {filteredData.length} {filteredData.length === 1 ? 'Record' : 'Records'}
-            </Typography>
+            </span>
           </div>
         )}
           {/* <div>
@@ -217,16 +216,16 @@ const DashboardCountData = (props) => {
           }
             </div> */}
       </div>
-      <div className='relative h-[calc(100vh-170px)] border overflow-x-auto overflow-y-auto customDrwerScroll text-[12px]'>
+      <div className='relative flex-1 min-h-[200px] overflow-y-auto overflow-x-hidden customDrwerScroll text-[12px] rounded-2xl border border-slate-100 bg-gradient-to-b from-white/80 to-slate-50/40 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.8)]'>
         {loading ? (
           <div className='flex justify-center items-center h-full'>
             <span className='text-[#3da5f4]'>Loading {isTodayAttendance ? 'attendance' : 'late comers'} data...</span>
           </div>
         ) : filteredData && filteredData.length > 0 ? (
-          <div className="w-full min-w-max">
+          <div className="w-full">
             {/* Summary Section for Late Comers */}
             {isLateComers && (
-              <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+              <div className="mb-4 p-4 bg-gradient-to-br from-white to-slate-50/90 rounded-2xl border border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CiClock2 className="text-[#3da5f4] text-[20px]" />
@@ -237,15 +236,15 @@ const DashboardCountData = (props) => {
                   {isLateComers && (
                     <div className="flex items-center gap-4 text-[11px]">
                       <div className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-green-100 border border-green-400"></span>
+                        <span className="w-3 h-3 rounded-full bg-green-100 border border-green-200"></span>
                         <span className="text-gray-600">0-5 min</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-400"></span>
+                        <span className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-200"></span>
                         <span className="text-gray-600">6-15 min</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-red-100 border border-red-400"></span>
+                        <span className="w-3 h-3 rounded-full bg-red-100 border border-red-200"></span>
                         <span className="text-gray-600">15+ min</span>
                       </div>
                     </div>
@@ -261,7 +260,7 @@ const DashboardCountData = (props) => {
               ).length;
               
               return (
-                <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                <div className="mb-4 p-4 bg-gradient-to-br from-white to-slate-50/90 rounded-2xl border border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#3da5f4]"></span>
@@ -271,15 +270,15 @@ const DashboardCountData = (props) => {
                     </div>
                     <div className="flex items-center gap-4 text-[11px]">
                       <div className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-blue-100 border border-blue-400"></span>
+                        <span className="w-3 h-3 rounded-full bg-blue-100 border border-blue-200"></span>
                         <span className="text-gray-600">Present</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-red-100 border border-red-400"></span>
+                        <span className="w-3 h-3 rounded-full bg-red-100 border border-red-200"></span>
                         <span className="text-gray-600">Absent</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-400"></span>
+                        <span className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-200"></span>
                         <span className="text-gray-600">Off</span>
                       </div>
                     </div>
@@ -287,54 +286,61 @@ const DashboardCountData = (props) => {
                 </div>
               );
             })()}
-            <table className="w-full text-center text-sm border-collapse table-auto min-w-max">
-          <thead className='sticky top-0 left-0 shadow-sm'>
-            <tr>
-              {isTodayAttendance ? (
-                // Today's Attendance Headers - styled like Late Comers
-                <>
-                  <th className="border border-blue-gray-200 bg-gradient-to-r from-blue-50 to-blue-gray-50 p-3 sticky top-0 z-10 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2">
-                      <FaUser className="text-[14px] text-[#3da5f4]" />
-                      <Typography variant="small" color="blue-gray" className="font-semibold text-[13px] leading-none text-[#474747] capitalize truncate">
-                        Name
-                      </Typography>
+            {isTodayAttendance ? (
+              /* Today's Attendance - Card List Layout */
+              <div className="space-y-2.5 p-1">
+                {filteredData.map((ele, index) => {
+                  const rowKey = ele.id || ele.emp_id || `row-${index}`;
+                  const isAbsent = ele.in_time === "Absent";
+                  const isOff = ele.in_time === "Off";
+                  const initials = (ele.name || '??').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                  const statusConfig = isAbsent 
+                    ? { label: 'Absent', bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' }
+                    : isOff 
+                    ? { label: 'Off', bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' }
+                    : { label: 'Present', bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' };
+                  const avatarBg = isAbsent ? 'bg-red-100' : isOff ? 'bg-amber-100' : 'bg-blue-100';
+                  const avatarText = isAbsent ? 'text-red-700' : isOff ? 'text-amber-700' : 'text-blue-600';
+
+                  return (
+                    <div
+                      key={rowKey}
+                      className={`group flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 hover:shadow-md ${
+                        isAbsent ? 'bg-red-50/60 border-red-100 hover:border-red-200' 
+                        : isOff ? 'bg-amber-50/40 border-amber-100 hover:border-amber-200' 
+                        : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${avatarBg} ${avatarText}`}>
+                        {initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-slate-800 truncate">{ele.name || '--'}</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[11px] text-slate-500 truncate">{ele.department || '--'}</span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-[11px] text-slate-500 truncate">{ele.designation || '--'}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
+                          {statusConfig.label}
+                        </span>
+                        <div className="text-[11px] text-slate-600">
+                          <span className="font-medium text-blue-600">{ele.in_time}</span>
+                          <span className="text-slate-400 mx-1">→</span>
+                          <span className="font-medium">{ele.out_time || '--'}</span>
+                        </div>
+                      </div>
                     </div>
-                  </th>
-                  <th className="border border-blue-gray-200 bg-gradient-to-r from-blue-50 to-blue-gray-50 p-3 sticky top-0 z-10 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2">
-                      <FaBuilding className="text-[14px] text-[#3da5f4]" />
-                      <Typography variant="small" color="blue-gray" className="font-semibold text-[13px] leading-none text-[#474747] capitalize truncate">
-                        Department
-                      </Typography>
-                    </div>
-                  </th>
-                  <th className="border border-blue-gray-200 bg-gradient-to-r from-blue-50 to-blue-gray-50 p-3 sticky top-0 z-10 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2">
-                      <FaUserTie className="text-[14px] text-[#3da5f4]" />
-                      <Typography variant="small" color="blue-gray" className="font-semibold text-[13px] leading-none text-[#474747] capitalize truncate">
-                        Designation
-                      </Typography>
-                    </div>
-                  </th>
-                  <th className="border border-blue-gray-200 bg-gradient-to-r from-blue-50 to-blue-gray-50 p-3 sticky top-0 z-10 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2">
-                      <FaClock className="text-[14px] text-[#3da5f4]" />
-                      <Typography variant="small" color="blue-gray" className="font-semibold text-[13px] leading-none text-[#474747] capitalize truncate">
-                        In Time
-                      </Typography>
-                    </div>
-                  </th>
-                  <th className="border border-blue-gray-200 bg-gradient-to-r from-blue-50 to-blue-gray-50 p-3 sticky top-0 z-10 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2">
-                      <FaClock className="text-[14px] text-[#3da5f4]" />
-                      <Typography variant="small" color="blue-gray" className="font-semibold text-[13px] leading-none text-[#474747] capitalize truncate">
-                        Out Time
-                      </Typography>
-                    </div>
-                  </th>
-                </>
-              ) : (
+                  );
+                })}
+              </div>
+            ) : (
+              <table className="w-full text-sm border-collapse table-fixed rounded-xl overflow-hidden" style={{ tableLayout: 'fixed' }}>
+          <thead className="sticky top-0 z-20">
+            <tr className="bg-gradient-to-b from-slate-50 to-slate-100/80 border-b border-slate-100 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.08),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
+              {(
                 // Late Comers Headers (dynamic) - use first item from filteredData or original data to get headers
                 (() => {
                   const headerSource = filteredData.length > 0 ? filteredData[0] : (data && data.length > 0 ? data[0] : {})
@@ -389,7 +395,7 @@ const DashboardCountData = (props) => {
                   return orderedHeaders.map((head) => {
                     const icon = getFieldIcon(head);
                     return (
-                      <th key={head} className="border border-blue-gray-200 bg-gradient-to-r from-blue-50 to-blue-gray-50 p-3 sticky top-0 z-10 whitespace-nowrap">
+                      <th key={head} className="border-b border-r border-slate-100/80 bg-transparent px-3 py-3 text-left">
                         <div className="flex items-center justify-center gap-2">
                           {icon}
                           <Typography variant="small" color="blue-gray" className="font-semibold text-[13px] leading-none text-[#474747] capitalize truncate">
@@ -406,8 +412,7 @@ const DashboardCountData = (props) => {
           <tbody className=''>
             {filteredData.map((ele, index) => {
               const isLast = index === filteredData.length - 1;
-              // Use darker border for Today's Attendance, lighter for Late Comers
-              const borderClass = isTodayAttendance ? "border border-blue-gray-200" : "border border-blue-gray-50";
+              const borderClass = "border-b border-slate-50/80";
               const classes = `${borderClass} text-[12px]`;
               // Use a unique key - prefer id if available, otherwise use index
               const rowKey = ele.id || ele.emp_id || `row-${index}`;
@@ -415,7 +420,7 @@ const DashboardCountData = (props) => {
               // Determine row styling based on in_time
               const isAbsent = ele.in_time === "Absent";
               const isOff = ele.in_time === "Off";
-              const rowBgClass = isAbsent ? 'bg-red-50 hover:bg-red-100' : 'bg-white hover:bg-blue-gray-50';
+              const rowBgClass = isAbsent ? 'bg-red-50/60 hover:bg-red-50/80' : isOff ? 'bg-amber-50/40 hover:bg-amber-50/60' : 'bg-white/90 hover:bg-slate-50/50';
               // Text colors: all fields use normal weight
               const nameTextColor = isAbsent ? 'text-red-800' : 'text-[#474747]';
               const normalTextColor = isAbsent ? 'text-red-800' : 'text-gray-700';
@@ -429,63 +434,7 @@ const DashboardCountData = (props) => {
                   key={rowKey} 
                   className={`${rowBgClass} transition-colors duration-150`}
                 >
-                  {isTodayAttendance ? (
-                    // Today's Attendance Row - styled exactly like Late Comers with conditional colors
-                    <>
-                      <td className={`${classes} p-3 whitespace-nowrap`}>
-                        <Typography 
-                          variant="small" 
-                          className={`font-normal truncate ${nameTextColor}`} 
-                          title={ele.name}
-                        >
-                          {ele.name}
-                        </Typography>
-                      </td>
-                      <td className={`${classes} p-3 whitespace-nowrap`}>
-                        <Typography 
-                          variant="small" 
-                          className={`font-normal truncate ${normalTextColor}`} 
-                          title={ele.department || '--'}
-                        >
-                          {ele.department || '--'}
-                        </Typography>
-                      </td>
-                      <td className={`${classes} p-3 whitespace-nowrap`}>
-                        <Typography 
-                          variant="small" 
-                          className={`font-normal truncate ${normalTextColor}`} 
-                          title={ele.designation || '--'}
-                        >
-                          {ele.designation || '--'}
-                        </Typography>
-                      </td>
-                      <td className={`${classes} p-3 whitespace-nowrap`}>
-                        <Typography 
-                          variant="small" 
-                          className={`font-normal truncate ${inTimeTextColor}`} 
-                          title={ele.in_time}
-                        >
-                          {ele.in_time}
-                        </Typography>
-                      </td>
-                      <td className={`${classes} p-3 whitespace-nowrap`}>
-                        <Typography 
-                          variant="small" 
-                          className={`font-normal truncate ${outTimeTextColor}`} 
-                          title={ele.out_time}
-                        >
-                          {ele.out_time}
-                        </Typography>
-                      </td>
-                      {/* <td className={classes}>
-                        <Typography variant="small" color="blue-gray" className={`font-normal capitalize ${ele.status === 'present' ? 'text-green-600' : 'text-red-600'}`}>
-                          {ele.status}
-                        </Typography>
-                      </td> */}
-                    </>
-                  ) : (
-                    // Late Comers Row (dynamic) - render all fields from the data object with beautiful formatting
-                    (() => {
+                  {(() => {
                       const headerSource = filteredData.length > 0 ? filteredData[0] : (data && data.length > 0 ? data[0] : {})
                       // Filter out 'id' and 'in_time' fields
                       const headers = Object.keys(headerSource).filter(key => key !== 'id' && key.toLowerCase() !== 'in_time');
@@ -542,7 +491,7 @@ const DashboardCountData = (props) => {
                         const displayValue = typeof formattedValue === 'object' ? formattedValue.text : formattedValue;
                         
                         return (
-                          <td key={key} className={`${classes} p-3 whitespace-nowrap`}>
+                          <td key={key} className={`${classes} px-3 py-2.5`}>
                             {isLateMinutes && lateMinutesStyle ? (
                               <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[12px] font-medium ${lateMinutesStyle.bg} ${lateMinutesStyle.color} whitespace-nowrap`}>
                                 <CiClock2 className="mr-1" />
@@ -564,13 +513,13 @@ const DashboardCountData = (props) => {
                           </td>
                         );
                       });
-                    })()
-                  )}
+                    })()}
                 </tr>
               );
             })}
           </tbody>
           </table>
+            )}
           </div>
         ) : (
           <div className='flex justify-center items-center h-full'>
@@ -583,18 +532,17 @@ const DashboardCountData = (props) => {
           </div>
         )}
       </div>
-      {exportData && 
+      {exportData && (
         <div className='flex justify-end items-center'>
           <Button 
             className="flex items-center gap-3 px-4 border border-[#0ACF97] py-2 text-[#0ACF97] rounded-full bg-[#EDFFF0] hover:shadow-[#EDFFF0]/20 focus:shadow-[#EDFFF0]/20 active:shadow-[#EDFFF0]/10"
             onClick={handleExport}
-            
           >
             <TbFileExport className='text-[16px]'/>
             Export
           </Button>
         </div>
-        }
+      )}
     </div>
   )
 }
