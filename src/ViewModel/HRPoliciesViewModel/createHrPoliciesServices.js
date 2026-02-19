@@ -655,7 +655,9 @@ const useCreatePolicies = () => {
       p_ps_from: parseInt(newhrPolicesValues.dayFrom?.value) || 0,
       p_ps_to: parseInt(newhrPolicesValues.dayTo?.value) || 0,
       ps_month: newhrPolicesValues.selectedMonth?.value || 'current',
-      allowed_offs: parseInt(newhrPolicesValues.offDayAllowedMonth) || 0,
+      allowed_offs: newhrPolicesValues.offDayAllowedMonth !== '' && newhrPolicesValues.offDayAllowedMonth !== null && newhrPolicesValues.offDayAllowedMonth !== undefined 
+        ? parseInt(newhrPolicesValues.offDayAllowedMonth) 
+        : 0,
 
       // === TIME BASE SPECIFIC FIELDS (for generationType = 1) ===
       req_working_hours: newhrPolicesValues.generationType?.value === 1 ? parseFloat(newhrPolicesValues.reqWorkingHrs) || 0 : 0,

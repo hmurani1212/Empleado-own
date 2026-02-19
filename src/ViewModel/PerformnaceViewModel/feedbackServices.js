@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import performanceApi from "../../Model/Data/Performance/Performance"
 import employeesApi from "../../Model/Data/Employees/Employees"
 import useStore from "../../Store/store"
 import { showToast } from "../../Components/Toaster/Toaster"
+import { useDebounce } from "../../services/__debounceServices"
 
 const useFeedbackServices = () => {
     const gettingFeedback = useStore((state) => state.gettingFeedback)
@@ -27,13 +28,18 @@ const useFeedbackServices = () => {
         }))
     }
 
+    // Create debounced search function
+    const debouncedSearch = useDebounce((searchText) => {
+        gettingFeedback(searchText)
+    }, 500)
+
     const handleSearchFeedback = (searchText) => {
         setFeedbackValue((prevState) => ({
             ...prevState,
             searchText: searchText
         }))
-        // Filter feedback data based on search text
-        // This could be implemented with local filtering or API call
+        // Call API with search text (debounced)
+        debouncedSearch(searchText)
     }
 
     const toggleQuickFeedback = () => {

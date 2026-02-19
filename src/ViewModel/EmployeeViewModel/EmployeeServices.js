@@ -91,6 +91,9 @@ const useEmployees = () => {
 
     // Profile Update Invite function
     const sendProfileUpdateInvite = useStore((state) => state.sendProfileUpdateInvite);
+    
+    // Update Profile Image function
+    const updateEmployeeProfileImage = useStore((state) => state.updateEmployeeProfileImage);
 
     // Logo functions
     const orgLogo = useStore((state) => state.orgLogo);
@@ -1040,11 +1043,22 @@ const useEmployees = () => {
     }
 
     const flattenOptions = (data) => {
-        // console.log('flattenOptions called with data:', data?.departments);
+        // console.log('flattenOptions called with data:', data);
 
         let flattenedOptions = [];
 
-        const send_data = data?.departments
+        // Handle both array and object with departments property
+        let send_data;
+        if (Array.isArray(data)) {
+            // If data is already an array, use it directly
+            send_data = data;
+        } else if (data?.departments && Array.isArray(data.departments)) {
+            // If data is an object with departments property
+            send_data = data.departments;
+        } else {
+            // Fallback: try to use data as is if it's an array
+            send_data = Array.isArray(data) ? data : [];
+        }
 
         // Handle the actual API response structure
         if (send_data && Array.isArray(send_data)) {
@@ -1688,6 +1702,8 @@ const useEmployees = () => {
         sendReportingEmail,
         // Profile Update Invite function
         sendProfileUpdateInvite,
+        // Update Profile Image function
+        updateEmployeeProfileImage,
         // Logo functions
         orgLogo,
         isLoadingLogo,

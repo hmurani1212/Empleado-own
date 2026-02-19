@@ -179,10 +179,11 @@ const performanceApi = {
         })
     },
 
-    getOngoingFeedback: function () {
+    getOngoingFeedback: function (params = {}) {
         return performanceAxiosInstance.request({
             method: 'GET',
-            url: '/performance_management/get_ongoing_feedback'
+            url: '/performance_management/get_ongoing_feedback',
+            params: params
         })
     },
 

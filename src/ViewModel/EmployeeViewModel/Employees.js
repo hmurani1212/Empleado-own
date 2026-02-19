@@ -934,16 +934,43 @@ const employeeViewModel = (set, get) => ({
         try {
             const response = await employeesApi.getDigitalSignature()
             const data = response.data
-            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+            
+            // Debug logging
+            console.log('Digital Signature API Response:', { status: response.status, data });
+            
+            // Handle both 200 (OK) and 304 (Not Modified) status codes
+            if (response.status === 200 && data && data.STATUS === "SUCCESSFUL") {
                 // DB_DATA is a single object (not array) since organization has only ONE digital signature
                 const signature = data.DB_DATA || null
+                console.log('Setting digital signature from 200 response:', signature);
                 set({ digitalSignature: signature, isLoadingDigitalSignature: false })
                 return { success: true, data: signature }
+            } else if (response.status === 304) {
+                // For 304, check if we have data in response
+                if (data && data.STATUS === "SUCCESSFUL" && data.DB_DATA) {
+                    const signature = data.DB_DATA || null
+                    console.log('Setting digital signature from 304 response with data:', signature);
+                    set({ digitalSignature: signature, isLoadingDigitalSignature: false })
+                    return { success: true, data: signature }
+                } else {
+                    // 304 with no data - keep existing state if available
+                    const existingSignature = get().digitalSignature
+                    console.log('304 response with no data, using existing signature:', existingSignature);
+                    set({ isLoadingDigitalSignature: false })
+                    if (existingSignature && (existingSignature.field_value || existingSignature.signature_text)) {
+                        return { success: true, data: existingSignature }
+                    } else {
+                        // No existing data - return null
+                        return { success: true, data: null }
+                    }
+                }
             } else {
+                console.log('Unexpected response status or data:', { status: response.status, data });
                 set({ isLoadingDigitalSignature: false })
-                return { success: false, error: data.ERROR_DESCRIPTION || 'Failed to fetch digital signature' }
+                return { success: false, error: data?.ERROR_DESCRIPTION || 'Failed to fetch digital signature' }
             }
         } catch (error) {
+            console.error('Error fetching digital signature:', error);
             set({ isLoadingDigitalSignature: false })
             return { success: false, error: error.message || 'Failed to fetch digital signature' }
         }
@@ -1273,6 +1300,22 @@ const employeeViewModel = (set, get) => ({
         } catch (error) {
             console.error('Error sending profile update invite:', error)
             return { success: false, error: error.message || 'Failed to send profile update invitation' }
+        }
+    },
+
+    // Update employee profile image
+    updateEmployeeProfileImage: async (formData) => {
+        try {
+            const response = await employeesApi.updateEmployeeProfileImage(formData)
+            const data = response.data
+            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+                return { success: true, message: data.MESSAGE || 'Profile image updated successfully!' }
+            } else {
+                return { success: false, error: data.ERROR_DESCRIPTION || 'Failed to update profile image' }
+            }
+        } catch (error) {
+            console.error('Error updating profile image:', error)
+            return { success: false, error: error.response?.data?.ERROR_DESCRIPTION || error.message || 'Failed to update profile image' }
         }
     }
 

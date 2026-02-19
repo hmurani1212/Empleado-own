@@ -1,6 +1,5 @@
 import { Typography, Badge, Button } from "@material-tailwind/react";
 import React, { useEffect } from "react";
-import { BiSearch } from "react-icons/bi";
 import { FaThumbsUp, FaThumbsDown, FaTrophy } from "react-icons/fa";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import useFeedbackServices from "../../ViewModel/PerformnaceViewModel/feedbackServices";
@@ -61,7 +60,7 @@ const Feedback = () => {
             onClick={() => handleThumbSelect("1")}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
               selectedThumb === "1"
-                ? "bg-green-500 scale-110 shadow-lg"
+                ? "bg-green-800 scale-110 shadow-lg"
                 : "bg-green-400 hover:bg-green-500"
             }`}
           >
@@ -71,7 +70,7 @@ const Feedback = () => {
             onClick={() => handleThumbSelect("0")}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
               selectedThumb === "0"
-                ? "bg-red-500 scale-110 shadow-lg"
+                ? "bg-red-800 scale-110 shadow-lg"
                 : "bg-red-400 hover:bg-red-500"
             }`}
           >
@@ -81,7 +80,7 @@ const Feedback = () => {
             onClick={() => handleThumbSelect("2")}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
               selectedThumb === "2"
-                ? "bg-orange-500 scale-110 shadow-lg"
+                ? "bg-orange-800 scale-110 shadow-lg"
                 : "bg-orange-400 hover:bg-orange-500"
             }`}
           >
@@ -144,24 +143,7 @@ const Feedback = () => {
 
   return (
     <div className="flex flex-col gap-6 py-2 pb-1">
-      <div className="flex items-end justify-between">
-        <div className="flex gap-2">
-          <div className="relative w-64">
-            <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">Search Employee</label>
-            <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-1/2 mt-3 right-3 -translate-y-2/4">
-              <span>
-                <BiSearch />
-              </span>
-            </div>
-            <input
-              className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-              placeholder="Search Employee"
-              name="name"
-              value={feedbackValue.searchText}
-              onChange={(e) => handleSearchFeedback(e.target.value)}
-            />
-          </div>
-        </div>
+      <div className="flex items-end justify-end">
         <CustomButton
           variant="filled"
           color="blue"

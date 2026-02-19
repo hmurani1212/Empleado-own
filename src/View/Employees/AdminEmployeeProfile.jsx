@@ -51,6 +51,7 @@ import {
     FaLaptop,
     FaChartLine,
     FaEye,
+    FaCamera,
 } from "react-icons/fa";
 // import FaTimes from "react-icons/fa";
 import { BsPersonGear } from "react-icons/bs";
@@ -99,6 +100,9 @@ import AddingPrivileges from "../../View/Dashoboard/AddingPrivileges";
 import usePriviligesService from "../../ViewModel/EmployeeViewModel/PreviligesService";
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { Link } from "react-router-dom";
+import { File_BASE_URL } from "../../Model/BaseUri";
+import { getImageUrlFromEmployeeData } from "../../utils/imageUrlUtils";
+import ProfileImageUpload from "../../Components/ProfileImageUpload/ProfileImageUpload";
 
 import { Stepper, Step } from "@material-tailwind/react";
 import DatePicker from "react-datepicker";
@@ -182,6 +186,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     const [openSalarySettingsDrawer, setOpenSalarySettingsDrawer] =
         useState(false);
     const [openBankAccountDrawer, setOpenBankAccountDrawer] = useState(false);
+    const [openProfileImageUploadDrawer, setOpenProfileImageUploadDrawer] = useState(false);
     const [openDeleteConfirmDialog, setOpenDeleteConfirmDialog] = useState(false);
     const [assetToDelete, setAssetToDelete] = useState(null);
     const [roleToDelete, setRoleToDelete] = useState(null);
@@ -6940,24 +6945,59 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm min-w-0 max-w-full">
                 <div className="flex flex-col md:flex-row min-w-0">
                     {/* Left Section - Profile Picture */}
-                    <div className="w-full md:w-40 lg:w-48 flex-shrink-0 h-40 sm:h-48 md:h-48 relative overflow-hidden min-w-0">
-                        {employeeData?.Official_Info
-                            ?.dp ? (
-                            <Avatar
-                                src={employeeData.Official_Info
-                                    .dp}
-                                alt={employeeData?.employee?.name || "Profile"}
-                                variant="rounded"
-                                className="!w-full !h-full !rounded-none md:!rounded-l-lg"
-                                style={{
-                                    borderRadius: 0
-                                }}
-                            />
-                        ) : (
-                            <div className="w-full h-full bg-gray-300 flex items-center justify-center rounded-none md:rounded-l-lg">
-                                <FaUser className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-900" />
-                            </div>
-                        )}
+                    <div className="w-full md:w-40 lg:w-48 flex-shrink-0 h-40 sm:h-48 md:h-48 relative overflow-hidden min-w-0 group">
+                        {(() => {
+                            // Get image URL from full employee data - automatically extracts dp, dp_folder, and gender
+                            const profileImageUrl = getImageUrlFromEmployeeData(employeeData);
+
+                            console.log('Full Image URL:', profileImageUrl);
+                            console.log('Employee Data Structure:', {
+                                hasDB_DATA: !!employeeData?.DB_DATA,
+                                hasOfficial_Info: !!employeeData?.Official_Info,
+                                dp: employeeData?.DB_DATA?.Official_Info?.dp || employeeData?.Official_Info?.dp,
+                                dp_folder: employeeData?.DB_DATA?.Official_Info?.dp_folder || employeeData?.Official_Info?.dp_folder || 'NOT FOUND (using default 1)'
+                            });
+
+                            // Check if we have a valid image URL (not the default)
+                            const hasValidImage = profileImageUrl && !profileImageUrl.includes('/images/icons/');
+
+                            return hasValidImage ? (
+                                <Avatar
+                                    src={profileImageUrl}
+                                    alt={employeeData?.basic_information?.emp_name || employeeData?.employee?.name || "Profile"}
+                                    variant="rounded"
+                                    className="!w-full !h-full !rounded-none md:!rounded-l-lg"
+                                    style={{
+                                        borderRadius: 0
+                                    }}
+                                    onError={(e) => {
+                                        console.error('Image failed to load:', profileImageUrl);
+                                        // If image fails to load, show default icon
+                                        e.target.style.display = 'none';
+                                        const parent = e.target.parentElement;
+                                        if (parent) {
+                                            parent.innerHTML = '<div class="w-full h-full bg-gray-300 flex items-center justify-center rounded-none md:rounded-l-lg"><svg class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg></div>';
+                                        }
+                                    }}
+                                    onLoad={() => {
+                                        console.log('Image loaded successfully:', profileImageUrl);
+                                    }}
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-300 flex items-center justify-center rounded-none md:rounded-l-lg">
+                                    <FaUser className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-900" />
+                                </div>
+                            );
+                        })()}
+                        
+                        {/* Camera Icon Overlay */}
+                        <button
+                            onClick={() => setOpenProfileImageUploadDrawer(true)}
+                            className="absolute bottom-2 right-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2.5 shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 z-10"
+                            title="Upload profile picture"
+                        >
+                            <FaCamera className="w-4 h-4" />
+                        </button>
                     </div>
 
                     {/* Right Section - Employee Information */}
@@ -8732,6 +8772,39 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         </div>
                     </form>
                 }
+            />
+
+            {/* Profile Image Upload Drawer */}
+            <PortalDrawer
+                open={openProfileImageUploadDrawer}
+                closeDrawer={() => setOpenProfileImageUploadDrawer(false)}
+                compo={
+                    <ProfileImageUpload
+                        employeeId={employeeData?.Official_Info?.id || employeeData?.DB_DATA?.Official_Info?.id || employeeId}
+                        onUploadSuccess={async () => {
+                            // Refresh employee data after successful upload
+                            try {
+                                if (gettingEmployeeProfile && employeeId) {
+                                    const response = await gettingEmployeeProfile(employeeId);
+                                    if (response && response?.DB_DATA) {
+                                        setEmployeeData(response.DB_DATA);
+                                    }
+                                } else if (gettingEmployeeById && employeeId) {
+                                    const response = await gettingEmployeeById(employeeId);
+                                    if (response && response?.DB_DATA) {
+                                        setEmployeeData(response.DB_DATA);
+                                    }
+                                }
+                            } catch (error) {
+                                console.error("Error refreshing employee data:", error);
+                            }
+                        }}
+                        onClose={() => setOpenProfileImageUploadDrawer(false)}
+                    />
+                }
+                title="Employee profile pic"
+                direction="right"
+                widthSize="500px"
             />
         </div>
     );

@@ -5,8 +5,10 @@ import useStore from '../../Store/store';
 import AddSignatureForm from '../../Components/AddSignatureForm/AddSignatureForm';
 import AddDigitalSignatureForm from '../../Components/AddDigitalSignatureForm/AddDigitalSignatureForm';
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices';
+import employeesApi from '../../Model/Data/Employees/Employees';
 import ConfirmationDialog from '../../Components/ConfirmationDialog/ConfirmationDialog';
 import { showToast } from '../../Components/Toaster/Toaster';
+import CustomSelect from '../../Components/CustomSelect/CustomSelect';
 
 const Settings = () => {
   const [activeSection, setActiveSection] = useState('signatures');
@@ -32,6 +34,14 @@ const Settings = () => {
   // Reporting Email state
   const [selectedBranch, setSelectedBranch] = useState('');
   const [reportingEmailInput, setReportingEmailInput] = useState('');
+
+  // Excel Heading state
+  const [excelHeadingBranch, setExcelHeadingBranch] = useState('');
+  const [excelHeadingHeaderText, setExcelHeadingHeaderText] = useState('');
+
+  // Branches for Excel Heading dropdown
+  const [excelHeadingBranches, setExcelHeadingBranches] = useState([]);
+  const [isLoadingExcelHeadingBranches, setIsLoadingExcelHeadingBranches] = useState(false);
 
   // Drawer functions from store
   const openDrawer = useStore((state) => state.openDrawer);
@@ -78,6 +88,28 @@ const Settings = () => {
     updateOrgLogo
   } = useEmployees();
 
+  // Function to fetch branches for Excel Heading using get_branch_employee API
+  const fetchExcelHeadingBranches = async () => {
+    setIsLoadingExcelHeadingBranches(true);
+    try {
+      const response = await employeesApi.gettingAllBranches();
+      const data = response.data;
+      
+      if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+        // Extract branches from DB_DATA.branches array
+        const branches = data.DB_DATA?.branches || [];
+        setExcelHeadingBranches(branches);
+      } else {
+        setExcelHeadingBranches([]);
+      }
+    } catch (error) {
+      console.error('Error fetching branches for Excel Heading:', error);
+      setExcelHeadingBranches([]);
+    } finally {
+      setIsLoadingExcelHeadingBranches(false);
+    }
+  };
+
   // Fetch data based on active section
   useEffect(() => {
     if (activeSection === 'signatures') {
@@ -93,6 +125,8 @@ const Settings = () => {
       getRetirementData();
     } else if (activeSection === 'reporting_mail') {
       getReportingEmails();
+    } else if (activeSection === 'excel_heading') {
+      fetchExcelHeadingBranches();
     }
   }, [activeSection, getSignatures, getDigitalSignature, getOrgLogo, getBirthdayTemplate, getMobileAttendanceConfig, getRetirementData, getReportingEmails]);
 
@@ -285,33 +319,111 @@ const Settings = () => {
         ) : (
         <div className="text-gray-600">
             <Typography variant="small" className="mb-2 font-semibold">Digital Signature:</Typography>
-            {digitalSignature && digitalSignature.signature_text ? (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2">
-                <Typography variant="small" className="text-gray-800">
-                  {digitalSignature.signature_text}
+            {(() => {
+              // Debug: Log the digitalSignature state
+              console.log('Digital Signature State:', digitalSignature);
+              
+              // Check for field_value (new API structure) or signature_text (legacy)
+              const signatureValue = digitalSignature?.field_value || digitalSignature?.signature_text;
+              
+              return signatureValue ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2">
+                  <Typography variant="small" className="text-gray-800">
+                    {signatureValue}
+                  </Typography>
+                </div>
+              ) : (
+                <Typography variant="small" className="text-gray-500 italic">
+                  No data found!
                 </Typography>
-              </div>
-            ) : (
-          <Typography variant="small" className="text-gray-500 italic">
-            No data found!
-          </Typography>
-            )}
+              );
+            })()}
         </div>
         )}
       </div>
     </div>
   );
 
-  const renderExcelHeadingSection = () => (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <Typography variant="h6" className="text-gray-800 mb-4">
-        Excel Heading Configuration
-      </Typography>
-      <Typography variant="small" className="text-gray-500">
-        Configure Excel export headings and formatting options.
-      </Typography>
-    </div>
-  );
+  const handleExcelHeadingSave = () => {
+    const branchId = excelHeadingBranch?.value ?? excelHeadingBranch;
+    if (branchId === undefined || branchId === null || branchId === '') {
+      showToast('Please select a branch', 'error');
+      return;
+    }
+    if (!excelHeadingHeaderText.trim()) {
+      showToast('Please enter the header text', 'error');
+      return;
+    }
+    if (excelHeadingHeaderText.length > 100) {
+      showToast('Header text must be max 100 characters', 'error');
+      return;
+    }
+    // TODO: wire to API when backend endpoint is ready
+    showToast('Excel heading save to be connected to API', 'info');
+  };
+
+  const renderExcelHeadingSection = () => {
+    const branchesList = Array.isArray(excelHeadingBranches) ? excelHeadingBranches : [];
+    const branchOptions = branchesList.map((branch) => ({
+      value: branch.id,
+      label: branch.branch_name
+    }));
+    const selectedBranchOption = excelHeadingBranch && (typeof excelHeadingBranch === 'object' && 'value' in excelHeadingBranch)
+      ? excelHeadingBranch
+      : excelHeadingBranch != null && excelHeadingBranch !== ''
+        ? { value: excelHeadingBranch, label: branchesList.find((b) => b.id === excelHeadingBranch || b.id == excelHeadingBranch)?.branch_name || 'Branch' }
+        : null;
+
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <Typography variant="h6" className="text-blue-500 mb-6">
+          Excel Heading
+        </Typography>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block mb-2">
+              <Typography variant="small" className="text-gray-700 font-medium">
+                Select Branch
+              </Typography>
+            </label>
+            <CustomSelect
+              placeHolderTitle="Choose a branch"
+              value={selectedBranchOption}
+              options={branchOptions}
+              onChangeHandler={(option) => setExcelHeadingBranch(option)}
+              customStyles={false}
+              isSearchable={true}
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2">
+              <Typography variant="small" className="text-gray-700 font-medium">
+                Put the header in below field
+              </Typography>
+            </label>
+            <input
+              type="text"
+              value={excelHeadingHeaderText}
+              onChange={(e) => setExcelHeadingHeaderText(e.target.value.slice(0, 100))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="Max 100 character"
+              maxLength={100}
+            />
+          </div>
+
+          <Button
+            className="bg-[#3DA5F4] hover:bg-[#2B8CE6]"
+            onClick={handleExcelHeadingSave}
+            disabled={!selectedBranchOption || !excelHeadingHeaderText.trim()}
+          >
+            Save
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
