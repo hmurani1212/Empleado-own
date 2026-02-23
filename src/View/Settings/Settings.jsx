@@ -5,6 +5,7 @@ import useStore from '../../Store/store';
 import AddSignatureForm from '../../Components/AddSignatureForm/AddSignatureForm';
 import AddDigitalSignatureForm from '../../Components/AddDigitalSignatureForm/AddDigitalSignatureForm';
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices';
+import employeesApi from '../../Model/Data/Employees/Employees';
 import ConfirmationDialog from '../../Components/ConfirmationDialog/ConfirmationDialog';
 import { showToast } from '../../Components/Toaster/Toaster';
 import CustomSelect from '../../Components/CustomSelect/CustomSelect';
@@ -39,8 +40,8 @@ const Settings = () => {
   const [excelHeadingHeaderText, setExcelHeadingHeaderText] = useState('');
 
   // Branches for Excel Heading dropdown
-  const branchesAll = useStore((state) => state.branchesAll);
-  const gettingAllBranches = useStore((state) => state.gettingAllBranches);
+  const [excelHeadingBranches, setExcelHeadingBranches] = useState([]);
+  const [isLoadingExcelHeadingBranches, setIsLoadingExcelHeadingBranches] = useState(false);
 
   // Drawer functions from store
   const openDrawer = useStore((state) => state.openDrawer);
@@ -87,6 +88,28 @@ const Settings = () => {
     updateOrgLogo
   } = useEmployees();
 
+  // Function to fetch branches for Excel Heading using get_branch_employee API
+  const fetchExcelHeadingBranches = async () => {
+    setIsLoadingExcelHeadingBranches(true);
+    try {
+      const response = await employeesApi.gettingAllBranches();
+      const data = response.data;
+      
+      if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+        // Extract branches from DB_DATA.branches array
+        const branches = data.DB_DATA?.branches || [];
+        setExcelHeadingBranches(branches);
+      } else {
+        setExcelHeadingBranches([]);
+      }
+    } catch (error) {
+      console.error('Error fetching branches for Excel Heading:', error);
+      setExcelHeadingBranches([]);
+    } finally {
+      setIsLoadingExcelHeadingBranches(false);
+    }
+  };
+
   // Fetch data based on active section
   useEffect(() => {
     if (activeSection === 'signatures') {
@@ -103,9 +126,9 @@ const Settings = () => {
     } else if (activeSection === 'reporting_mail') {
       getReportingEmails();
     } else if (activeSection === 'excel_heading') {
-      gettingAllBranches?.({ limit: 1000 });
+      fetchExcelHeadingBranches();
     }
-  }, [activeSection, getSignatures, getDigitalSignature, getOrgLogo, getBirthdayTemplate, getMobileAttendanceConfig, getRetirementData, getReportingEmails, gettingAllBranches]);
+  }, [activeSection, getSignatures, getDigitalSignature, getOrgLogo, getBirthdayTemplate, getMobileAttendanceConfig, getRetirementData, getReportingEmails]);
 
   // Update birthday template text when data is fetched
   useEffect(() => {
@@ -296,17 +319,25 @@ const Settings = () => {
         ) : (
         <div className="text-gray-600">
             <Typography variant="small" className="mb-2 font-semibold">Digital Signature:</Typography>
-            {digitalSignature && digitalSignature.signature_text ? (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2">
-                <Typography variant="small" className="text-gray-800">
-                  {digitalSignature.signature_text}
+            {(() => {
+              // Debug: Log the digitalSignature state
+              console.log('Digital Signature State:', digitalSignature);
+              
+              // Check for field_value (new API structure) or signature_text (legacy)
+              const signatureValue = digitalSignature?.field_value || digitalSignature?.signature_text;
+              
+              return signatureValue ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-2">
+                  <Typography variant="small" className="text-gray-800">
+                    {signatureValue}
+                  </Typography>
+                </div>
+              ) : (
+                <Typography variant="small" className="text-gray-500 italic">
+                  No data found!
                 </Typography>
-              </div>
-            ) : (
-          <Typography variant="small" className="text-gray-500 italic">
-            No data found!
-          </Typography>
-            )}
+              );
+            })()}
         </div>
         )}
       </div>
@@ -332,7 +363,7 @@ const Settings = () => {
   };
 
   const renderExcelHeadingSection = () => {
-    const branchesList = Array.isArray(branchesAll) ? branchesAll : [];
+    const branchesList = Array.isArray(excelHeadingBranches) ? excelHeadingBranches : [];
     const branchOptions = branchesList.map((branch) => ({
       value: branch.id,
       label: branch.branch_name

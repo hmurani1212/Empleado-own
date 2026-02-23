@@ -4,6 +4,7 @@ import { IoMdMore } from "react-icons/io";
 import { motion } from "framer-motion";
 import useShiftManagement from "../../ViewModel/ShiftManagementViewModel/ShiftManagementServices";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
+import { buildEmployeeImageUrl } from "../../utils/imageUrlUtils";
 
 const TeamMemberCard = (props) => {
   const { allTeamMembers, display } = props;
@@ -33,7 +34,11 @@ const TeamMemberCard = (props) => {
                   <div>
                     <img
                       className="rounded-full w-[40px] h-[40px]"
-                      src={`https://emp-beta.veevotech.com/${ele.dp}`}
+                      src={buildEmployeeImageUrl(ele)}
+                      alt={ele.name || 'Team Member'}
+                      onError={(e) => {
+                        e.target.src = 'https://emp-beta.veevotech.com/images/icons/empm.jpg';
+                      }}
                     />
                   </div>
                 </div>

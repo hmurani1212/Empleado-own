@@ -263,10 +263,14 @@ const performanceViewModel = (set, get) => ({
         }
     },
 
-    gettingFeedback: async () => {
+    gettingFeedback: async (searchText = '') => {
         set({ feedbackLoading: true })
         try {
-            const response = await performanceApi.getOngoingFeedback()
+            const params = {};
+            if (searchText && searchText.trim()) {
+                params.text = searchText.trim();
+            }
+            const response = await performanceApi.getOngoingFeedback(params)
             const responseData = response.data
             if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
                 set({ feedbackData: responseData.DB_DATA })

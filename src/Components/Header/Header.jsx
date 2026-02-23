@@ -31,6 +31,7 @@ import VideoTutorial from "../VideoTutorial/VideoTutorial";
 import { showToast } from "../Toaster/Toaster";
 import useAttendance from "../../ViewModel/AttendanceViewModel/AttendanceServices";
 import { formatTimestamp } from "../../View/Branches/utils";
+import ReportForm from "../ReportForm/ReportForm";
 
 function Header() {
   const toggleState = useStore((state) => state.sideMenuToggleState);
@@ -263,6 +264,21 @@ function Header() {
                 <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 text-gray-400 hover:text-brand-600 transition-colors duration-300 cursor-default">
                     <BsQuestionCircle size={14} className="text-gray-400" />
                     <span className="text-[11px] font-semibold tracking-wide font-poppins">Support: <span className="text-gray-600 font-bold">+92-304-1118333</span></span>
+                </div>
+
+                {/* Report Link */}
+                <div 
+                  className="hidden lg:flex items-center px-3 py-1.5 cursor-pointer"
+                  onClick={() => {
+                    openDrawer();
+                    settingDrawerSize(650);
+                    settingDrawerTitle('Report');
+                    settingComponent(<ReportForm />);
+                  }}
+                >
+                  <span className="text-[11px] font-semibold tracking-wide font-poppins text-brand-500 hover:text-brand-600 transition-colors duration-300">
+                    Report
+                  </span>
                 </div>
              </div>
           )}

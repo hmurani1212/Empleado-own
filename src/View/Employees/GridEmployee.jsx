@@ -10,6 +10,7 @@ import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import SalaryDetails from "./SalaryDetails";
 import { useState, useEffect } from "react";
 import { EmployeesGridSkeleton } from "./EmployeesSkeletons";
+import { buildEmployeeImageUrl } from "../../utils/imageUrlUtils";
 
 const GridEmployee = (props) => {
     const { empListData, loading: loadingProp, paginationData, onNextPage, onPreviousPage, onGoToPage, currentStatus } = props;
@@ -127,8 +128,14 @@ const GridEmployee = (props) => {
                                         <div>
                                             {/* {console.log('ele?.dp', ele?.dp)} */}
                                             {/* {ele?.dp == null ? console.log("Dp is not foud") : console.log("I Found the dp thats fine ")} */}
-                                            {ele?.dp == null ? <img className='rounded-full w-[50px] h-[50px]' src={`https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6rKwDbEN_M9FCcve-ozbDkUUn6VkEZ7xfVw&s`} alt='Employee' /> : <img className='rounded-full w-[50px] h-[50px]' src={`https://emp-beta.veevotech.com/${ele?.dp}`} alt='Employee' />}
-                                            {/* <img className='rounded-full w-[50px] h-[50px]' src={`https://emp-beta.veevotech.com/${ele?.dp}`} alt='Employee' /> */}
+                                            <img 
+                                                className='rounded-full w-[50px] h-[50px]' 
+                                                src={buildEmployeeImageUrl(ele)} 
+                                                alt='Employee'
+                                                onError={(e) => {
+                                                    e.target.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6rKwDbEN_M9FCcve-ozbDkUUn6VkEZ7xfVw&s';
+                                                }}
+                                            />
                                         </div>
                                         <div className='text-[#474747] text-[13px] flex items-center gap-2'>
                                             <span >Empleado ID</span>

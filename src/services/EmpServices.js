@@ -192,6 +192,42 @@ export const empActionList = [
 ]
 
 export const exportEmployeesToExcel = (employeesData) => {
+  // Helper function to extract mobile number from contacts array
+  const getMobileNumber = (employee) => {
+    if (!employee?.contacts || !Array.isArray(employee.contacts)) {
+      return '';
+    }
+    
+    // Find mobile contact - prioritize contact_type "mobile", then check for mobile_network
+    // Exclude email contacts
+    const mobileContact = employee.contacts.find(contact => {
+      const contactType = contact?.contact_type?.toLowerCase() || '';
+      const isEmail = contactType === 'email';
+      
+      // Skip email contacts
+      if (isEmail) return false;
+      
+      // Check if it's explicitly marked as mobile
+      if (contactType === 'mobile' || contactType.includes('mobile')) {
+        return true;
+      }
+      
+      // Check if mobile_network exists (indicates it's a mobile number)
+      if (contact?.mobile_network && contact.mobile_network !== '0' && contact.mobile_network !== '') {
+        return true;
+      }
+      
+      // Check if contact starts with + (phone number format)
+      if (contact?.contact && typeof contact.contact === 'string' && contact.contact.startsWith('+')) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    return mobileContact?.contact || '';
+  };
+
   // Define the columns for the table
   const columns = [
     'Employee ID',
@@ -200,7 +236,8 @@ export const exportEmployeesToExcel = (employeesData) => {
     'Name',
     'Placement',
     'Department',
-    'Mobile#'
+    'Mobile#',
+    'Blood Group'
   ];
 
   // Transform the data into the format required for Excel
@@ -211,7 +248,8 @@ export const exportEmployeesToExcel = (employeesData) => {
     employee?.name || '',
     employee?.branch?.branch_name || '',
     employee?.department?.name || '',
-    employee?.mobile || ''
+    getMobileNumber(employee),
+    employee?.blood_group || ''
   ]);
 
   // Create worksheet data with headers
@@ -229,7 +267,8 @@ export const exportEmployeesToExcel = (employeesData) => {
     { wch: 25 }, // Name
     { wch: 25 }, // Placement
     { wch: 25 }, // Department
-    { wch: 20 }  // Mobile#
+    { wch: 20 }, // Mobile#
+    { wch: 15 }  // Blood Group
   ];
   worksheet['!cols'] = columnWidths;
 
