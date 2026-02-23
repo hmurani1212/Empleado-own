@@ -121,28 +121,20 @@ function Dashboard() {
     }
   };
 
-  // Custom click handler for dashboard count data
-  const handleDashboardCountClick = async (ele) => {
+  // Open drawer immediately on card click; fetch data in background for responsive UX
+  const handleDashboardCountClick = (ele) => {
     if (ele.id === 4) {
       handleEmpLimit();
-    } else if (ele.op_code === "today_present") {
-      // Handle today's attendance click - use new API
-      // Use selectedDate if available, otherwise use current date
-      const dateToUse = selectedDate || new Date().toISOString().split("T")[0];
-      await getTodayAttendanceData(dateToUse);
-      getdashboardCountData(ele);
+      return;
+    }
+    const dateToUse = selectedDate || new Date().toISOString().split("T")[0];
+    getdashboardCountData(ele);
+    if (ele.op_code === "today_present") {
+      getTodayAttendanceData(dateToUse);
     } else if (ele.op_code === "today_late_comers") {
-      // Handle today's late comers - use selected date or current date
-      const dateToUse = selectedDate || new Date().toISOString().split("T")[0];
-      await getLateComersData("today", dateToUse);
-      getdashboardCountData(ele);
+      getLateComersData("today", dateToUse);
     } else if (ele.op_code === "weekly_late_comers") {
-      // Handle last 7 days late comers - use selected date or current date
-      const dateToUse = selectedDate || new Date().toISOString().split("T")[0];
-      await getLateComersData("last7days", dateToUse);
-      getdashboardCountData(ele);
-    } else {
-      getdashboardCountData(ele);
+      getLateComersData("last7days", dateToUse);
     }
   };
 
