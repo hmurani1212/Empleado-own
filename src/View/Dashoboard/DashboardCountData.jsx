@@ -225,7 +225,7 @@ const DashboardCountData = (props) => {
           <div className="w-full">
             {/* Summary Section for Late Comers */}
             {isLateComers && (
-              <div className="mb-4 p-4 bg-gradient-to-br from-white to-slate-50/90 rounded-2xl border border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
+              <div className="mb-4 p-4  from-white  rounded-2xl ">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CiClock2 className="text-[#3da5f4] text-[20px]" />
@@ -260,7 +260,7 @@ const DashboardCountData = (props) => {
               ).length;
               
               return (
-                <div className="mb-4 p-4 bg-gradient-to-br from-white to-slate-50/90 rounded-2xl border border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
+                <div className="mb-4 p-4 bg-gradient-to-br from-white to-slate-50/90 rounded-2xl border-b shadow-[0_1px_2px_rgba(0,0,0,0.03),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#3da5f4]"></span>
