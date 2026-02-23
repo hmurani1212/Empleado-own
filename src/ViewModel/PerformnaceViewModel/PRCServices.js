@@ -293,28 +293,56 @@ const usePRCServices = () => {
                 }))
             }
             
-            const data = await gettingDepartmentsServices(select.value)
+            // If "All Branches" is selected (value is 0), fetch all departments
+            const branchValue = select.value === 0 || select.value === '0' ? 0 : select.value;
+            const data = await gettingDepartmentsServices(branchValue);
+            
             setPRCAddValue((prevState) => ({
                 ...prevState,
                 [field]: select,
                 departments: data,
                 employees: [],
-                department_id: null
+                department_id: branchValue === 0 ? { value: 0, label: 'All Departments' } : null,
+                emp_id: null,
+                selectedEmp: [] // Clear selected employees when branch changes
             }))
 
-        } if (field === 'department_id') {
-            const data = await getEmployeesByDeptId(select.value);
-            // console.log("employeeDataemployeeData", employeeData)
-            // const data = await gettingEmployesServices(select.value)
-            //    console.log('data', data)
+        } else if (field === 'department_id') {
+            // If "All Departments" is selected (value is 0), get all employees
+            const deptValue = select.value === 0 || select.value === '0' ? 0 : select.value;
+            
+            let data = [];
+            if (deptValue === 0) {
+                // For "All Departments", we need to get all employees
+                // This will be filtered by the branch if a specific branch is selected
+                // For now, we'll use Get_All_Employee from the store
+                // The filtering will be done in the component
+                data = [];
+            } else {
+                data = await getEmployeesByDeptId(deptValue);
+            }
+            
             setPRCAddValue((prevState) => ({
                 ...prevState,
                 [field]: select,
-                employees: data
+                employees: data,
+                emp_id: deptValue === 0 ? { value: 0, label: 'All Employees' } : null,
+                selectedEmp: [] // Clear selected employees when department changes
             }))
-        }
-
-        if (field === 'emp_id') {
+        } else if (field === 'emp_id') {
+            // Handle "All Employees" option
+            if (select && (select.value === 0 || select.value === '0')) {
+                // If "All Employees" is selected, we need to handle it differently
+                // For now, we'll just set it and let the submit handler process it
+                setPRCAddValue((prevState) => ({
+                    ...prevState,
+                    [field]: select,
+                    selectedEmp: [] // Clear selected employees when "All Employees" is selected
+                }))
+                showToast('All Employees selected', 'success');
+                return;
+            }
+            
             // Check if employee is already selected
             const isAlreadySelected = PRCAddValue.selectedEmp.some(emp => emp.value === select.value);
             
@@ -329,10 +357,7 @@ const usePRCServices = () => {
                 emp_id: null // Clear the employee selection after adding
             }))
             showToast('Employee Added', 'success')
-        }
-
-        else {
-
+        } else {
             setPRCAddValue((prevState) => ({
                 ...prevState,
                 [field]: select
@@ -388,7 +413,7 @@ const usePRCServices = () => {
 
 
     const validatePRCForm = () => {
-        const { name, start_date, end_date, branch_id, department_id, selectedEmp, review_day, isMultipleEmployeeMode, goal_rate, competancy_rate, modulesType } = PRCAddValue
+        const { name, start_date, end_date, branch_id, department_id, selectedEmp, emp_id, review_day, isMultipleEmployeeMode, goal_rate, competancy_rate, modulesType } = PRCAddValue
         const nameValidation = validateInput('Name', name)
         if (!nameValidation.isValid) {
             return { isValid: false, message: nameValidation.message }
@@ -408,9 +433,13 @@ const usePRCServices = () => {
             return { isValid: false, message: "Select Department" }
         }
         
-        // Unified validation - require at least one employee for both create and update
-        if (!selectedEmp || selectedEmp.length === 0) {
-            return { isValid: false, message: "Select at least one Employee" }
+        // Check if "All Employees" is selected (value 0) or if specific employees are selected
+        const isAllEmployeesSelected = emp_id && (emp_id.value === 0 || emp_id.value === '0');
+        const hasSelectedEmployees = selectedEmp && selectedEmp.length > 0;
+        
+        // Unified validation - require either "All Employees" or at least one specific employee
+        if (!isAllEmployeesSelected && !hasSelectedEmployees) {
+            return { isValid: false, message: "Select at least one Employee or select All Employees" }
         }
 
         if (review_day === '') {
@@ -468,9 +497,16 @@ const usePRCServices = () => {
             return
         }
 
-        const { name, start_date, end_date, goal_rate, competancy_rate, branch_id, department_id, selectedEmp, review_day, isMultipleEmployeeMode } = PRCAddValue;
+        const { name, start_date, end_date, goal_rate, competancy_rate, branch_id, department_id, selectedEmp, emp_id, review_day, isMultipleEmployeeMode } = PRCAddValue;
         console.log("PRCAddValue", PRCAddValue)
 
+        // Handle "All" options - convert 0 to appropriate values for API
+        const branchValue = branch_id.value === 0 || branch_id.value === '0' ? 0 : parseInt(branch_id.value);
+        const deptValue = department_id.value === 0 || department_id.value === '0' ? 0 : parseInt(department_id.value);
+        
+        // Check if "All Employees" is selected
+        const isAllEmployeesSelected = emp_id && (emp_id.value === 0 || emp_id.value === '0');
+        
         // Prepare API data - always use array format for employee and assigned_to
         const apiData = {
             name: name,
@@ -478,10 +514,10 @@ const usePRCServices = () => {
             end_date: end_date,
             goal_rate: parseInt(goal_rate) || 0,
             competency_rate: parseInt(competancy_rate) || 0,
-            branch: parseInt(branch_id.value),
-            department: parseInt(department_id.value),
-            employee: selectedEmp.map(emp => emp.value.toString()), // Convert to string
-            assigned_to: selectedEmp.map(emp => emp.label), // Always array
+            branch: branchValue,
+            department: deptValue,
+            employee: isAllEmployeesSelected ? [0] : selectedEmp.map(emp => emp.value.toString()), // Convert to string or [0] for all
+            assigned_to: isAllEmployeesSelected ? ['All Employees'] : selectedEmp.map(emp => emp.label), // Always array
             review_day: review_day
         };
 
