@@ -190,7 +190,6 @@ export const empActionList = [
   { id: 7, title: 'Deactivate', icon: <FaUserAltSlash />, color: '#f44336' }
 ]
 
-<<<<<<< HEAD
 /** Get mobile/phone from employee: prefer contacts (Contact Number / Mobile), then top-level mobile/emp_phone */
 const getEmployeeMobile = (employee) => {
   if (employee?.mobile != null && String(employee.mobile).trim() !== '') return String(employee.mobile).trim();
@@ -262,40 +261,19 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
   /** When statusFilter is 'active', hide Exit column; show for 'all' and 'inactive'. */
   const showExitColumn = options.statusFilter !== 'active';
 
-export const exportEmployeesToExcel = (employeesData) => {
-  // Helper function to extract mobile number from contacts array
   const getMobileNumber = (employee) => {
-    if (!employee?.contacts || !Array.isArray(employee.contacts)) {
-      return '';
-    }
-    
-    // Find mobile contact - prioritize contact_type "mobile", then check for mobile_network
-    // Exclude email contacts
-    const mobileContact = employee.contacts.find(contact => {
-      const contactType = contact?.contact_type?.toLowerCase() || '';
-      const isEmail = contactType === 'email';
-      
-      // Skip email contacts
-      if (isEmail) return false;
-      
-      // Check if it's explicitly marked as mobile
-      if (contactType === 'mobile' || contactType.includes('mobile')) {
-        return true;
-      }
-      
-      // Check if mobile_network exists (indicates it's a mobile number)
-      if (contact?.mobile_network && contact.mobile_network !== '0' && contact.mobile_network !== '') {
-        return true;
-      }
-      
-      // Check if contact starts with + (phone number format)
-      if (contact?.contact && typeof contact.contact === 'string' && contact.contact.startsWith('+')) {
-        return true;
-      }
-      
+    if (!employee?.contacts || !Array.isArray(employee.contacts)) return '';
+    const contactType = (c) => (c?.contact_type?.toLowerCase() || '');
+    const isEmail = (c) => contactType(c) === 'email';
+    const isMobile = (c) => {
+      if (isEmail(c)) return false;
+      const t = contactType(c);
+      if (t === 'mobile' || t.includes('mobile')) return true;
+      if (c?.mobile_network && c.mobile_network !== '0' && c.mobile_network !== '') return true;
+      if (typeof c?.contact === 'string' && c.contact.startsWith('+')) return true;
       return false;
-    });
-    
+    };
+    const mobileContact = employee.contacts.find(isMobile);
     return mobileContact?.contact || '';
   };
 
@@ -318,9 +296,7 @@ export const exportEmployeesToExcel = (employeesData) => {
     'Email',
     'Blood Group',
     'HR Policy',
-    'Emergency Contact',
-    'Mobile#',
-    'Blood Group'
+    'Emergency Contact'
   ];
   const EMAIL_COLUMN_INDEX = columns.indexOf('Email') + 1;
 
@@ -371,7 +347,7 @@ export const exportEmployeesToExcel = (employeesData) => {
     { wch: 20 }, // Mobile#
     { wch: 15 }  // Blood Group
   ];
-  worksheet['!cols'] = columnWidths;
+  sheet['!cols'] = columnWidths;
 
   employees.forEach((employee, index) => {
     const row = [
