@@ -242,9 +242,11 @@ const usePublicHolidayServices = ()=>{
     },[publicHolidayValue.branchId, publicHolidayValue.policyId])
 
     const gettingPublicHoliday = async()=>{
+        const branchVal = publicHolidayValue.branchId?.value;
+        const policyVal = publicHolidayValue.policyId?.value;
         const apiData = {
-           branch: publicHolidayValue.branchId?.value === 'all' ? 0 : publicHolidayValue.branchId?.value,
-           policy_id: publicHolidayValue.policyId?.value === 'all' ? 0 : (publicHolidayValue.policyId?.value || 0),
+           branch: (branchVal === 'all' || branchVal === 0) ? 0 : (branchVal ?? 0),
+           policy_id: (policyVal === 'all' || policyVal === 0) ? 0 : (policyVal ?? 0),
         }
 
         try {
@@ -399,8 +401,8 @@ const usePublicHolidayServices = ()=>{
         const {branchId, selectedPolicy} = publicHolidayValue
         const apiData = {
             description:description,
-            branch: branchId.value === 'all' ? 0 : branchId.value,
-            selected_policy_ids: selectedPolicy.length > 0 ? selectedPolicy.map((ele)=> ele.value === 'all' ? 0 : ele.value) : [0],
+            branch: (branchId.value === 'all' || branchId.value === 0) ? 0 : branchId.value,
+            selected_policy_ids: selectedPolicy.length > 0 ? selectedPolicy.map((ele)=> (ele.value === 'all' || ele.value === 0) ? 0 : ele.value) : [0],
             start_date: start_date,
             end_date: end_date
         }

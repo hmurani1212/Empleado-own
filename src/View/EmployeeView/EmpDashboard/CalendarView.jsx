@@ -101,8 +101,8 @@ const CalendarView = (props) => {
             const backgroundColor = getBackgroundColor(attLabel);
 
             const attributes = [
-              { key: 'manual_adjusted', colorClass: '!bg-[#FF9800]' },
-              { key: 'missed_logout', colorClass: '!bg-[#000]' },        // Black for missed logout
+              { key: 'manual_changed', colorClass: '!bg-[#FF9800]' },
+              { key: 'signout_missed', colorClass: '!bg-[#000]' },        // Black for missed logout
               { key: 'late', colorClass: '!bg-[#FF0000]' },              // Red for late
               { key: 'early_leave', colorClass: '!bg-[#FFA500]' },
             ];
@@ -113,10 +113,6 @@ const CalendarView = (props) => {
             const activeAttributes = attributes.filter(attr =>
               getExtraAttribute(day, calendarData.month.value - 1, calendarData.year.value, attr.key)
             );
-
-
-
-
 
             return day ? (
               <motion.div

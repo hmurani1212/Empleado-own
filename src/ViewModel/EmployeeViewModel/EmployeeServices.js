@@ -892,23 +892,36 @@ const useEmployees = () => {
 
     const gettingSubBranches = async (id) => {
         //// console.log('gettingSubBranches called with id:', id);
-        const data = { parent_id: 0, branch_id: id, getAll: true }
         try {
+            if (id === 0 || id === '0') {
+                const response = await departmentsApi.get_all_Department(0)
+                const resData = response?.data
+                if (response?.status === 200 && resData?.STATUS === 'SUCCESSFUL') {
+                    const deptList = resData.DB_DATA?.departments || resData.DB_DATA || []
+                    const raw = Array.isArray(deptList) ? deptList : []
+                    const departments = raw.map((d) => ({ id: d.id ?? d.dept_id, name: d.name ?? d.dept_name }))
+                    setDept_subDept({ departments })
+                    setDesignations([])
+                } else {
+                    setDept_subDept({ departments: [] })
+                    setDesignations([])
+                }
+                return
+            }
+            const data = { parent_id: 0, branch_id: id, getAll: true }
             const response = await employeesApi.gettingSubDepts(data)
             const resData = response.data
             console.log('Departments API response:', resData);
             if (resData.STATUS === "SUCCESSFUL") {
                 setDept_subDept(resData.DB_DATA)
-                // Clear designations when departments change
                 setDesignations([])
-                // console.log('Departments set:', resData.DB_DATA);
             } else {
-                setDept_subDept([])
+                setDept_subDept({ departments: [] })
                 setDesignations([])
             }
         } catch (err) {
             console.error("Error fetching departments:", err)
-            setDept_subDept([])
+            setDept_subDept({ departments: [] })
             setDesignations([])
         }
     }

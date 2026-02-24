@@ -114,10 +114,6 @@ const IndividualAttendanceReport = () => {
         })
     : [];
 
-  useEffect(() => {
-    console.log("filteredEmployees", filteredEmployees);
-  }, [filteredEmployees]);
-
   // Handle input change for search
   const handleEmployeeInputChange = (e) => {
     const value = e.target.value;
@@ -474,9 +470,9 @@ const IndividualAttendanceReport = () => {
                         <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500 sticky top-0">
                           {filteredEmployees.length} result{filteredEmployees.length !== 1 ? "s" : ""}
                         </div>
-                        {filteredEmployees.map((emp) => (
+                        {filteredEmployees.map((emp, index) => (
                           <div
-                            key={emp.id}
+                            key={`emp-${emp.id}-${String(emp.emp_id ?? emp.bio_id ?? "")}-${index}`}
                             className="px-4 py-2.5 hover:bg-brand-50 hover:text-brand-700 cursor-pointer border-b border-gray-50 last:border-b-0 transition-colors"
                             onClick={() => handleEmployeeSelect(emp)}
                           >
@@ -582,45 +578,48 @@ const IndividualAttendanceReport = () => {
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Attendance Details</h3>
                 <AttendanceSummary attendanceData={attendanceData} />
             </div>
-
-            {/* Color Legend */}
-            <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Legend</h3>
-                <div className="grid grid-cols-2 gap-3">
-                    {attendanceColorData.map((ele) => (
-                      <div key={ele.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                        <span
-                          className="h-4 w-4 rounded-full shadow-sm ring-2 ring-gray-100"
-                          style={{ backgroundColor: ele.color }}
-                        ></span>
-                        <span className="text-sm text-gray-600 font-medium">
-                          {ele.title}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-            </div>
           </div>
       </div>
 
+        {/* Graph and Legend as separate sections (same layout as Calendar + Attendance Details) */}
         <div className="grid grid-cols-12 gap-6">
-          {/* Monthly Working Hours Graph */}
-          <div className="col-span-12 bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-               <div className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800">Working Hours Analysis</h3>
-                        <p className="text-sm text-gray-500">Monthly breakdown of working hours vs expected hours</p>
-                    </div>
-                    <span className="px-3 py-1 bg-brand-50 text-brand-600 rounded-full text-xs font-semibold border border-brand-100">
-                        {searchingEmpValue?.month?.label} {searchingEmpValue?.year?.label}
+          {/* Working Hours Graph - separate section */}
+          <div className="lg:col-span-8 md:col-span-8 col-span-12 bg-white rounded-2xl shadow-card border border-gray-100 p-6 min-h-[400px]">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">Working Hours Analysis</h3>
+                <p className="text-sm text-gray-500">Monthly breakdown of working hours vs expected hours</p>
+              </div>
+              <span className="px-3 py-1.5 bg-brand-50 text-brand-600 rounded-full text-xs font-semibold border border-brand-100">
+                {searchingEmpValue?.month?.label} {searchingEmpValue?.year?.label}
+              </span>
+            </div>
+            <div className="h-[350px] w-full">
+              <MonthlyWorkingHoursChart
+                attendanceData={attendanceData}
+                monthLabel={searchingEmpValue?.month?.label}
+              />
+            </div>
+          </div>
+
+          {/* Color Legend - separate section (same pattern as Attendance Details) */}
+          <div className="lg:col-span-4 md:col-span-4 col-span-12">
+            <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Legend</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {attendanceColorData.map((ele) => (
+                  <div key={ele.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                    <span
+                      className="h-4 w-4 rounded-full shadow-sm ring-2 ring-gray-100 flex-shrink-0"
+                      style={{ backgroundColor: ele.color }}
+                    />
+                    <span className="text-sm text-gray-600 font-medium">
+                      {ele.title}
                     </span>
-               </div>
-               <div className="h-[350px] w-full">
-                  <MonthlyWorkingHoursChart
-                    attendanceData={attendanceData}
-                    monthLabel={searchingEmpValue?.month?.label}
-                  />
-               </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 

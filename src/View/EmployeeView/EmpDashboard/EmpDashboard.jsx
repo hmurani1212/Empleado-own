@@ -471,7 +471,7 @@ const EmpDashboard = () => {
 
   return (
     <div className={`flex flex-col gap-4 p-2`}>
-      <div className={`flex flex-wrap lg:flex-nowrap rounded-[10px] bg-white drop-shadow-md min-h-0`}>
+      <div className={`relative z-10 flex flex-wrap lg:flex-nowrap rounded-[10px] bg-white drop-shadow-md min-h-0`}>
         <div
           className='relative flex items-center justify-center h-[210px] w-[170px] shrink-0 self-stretch overflow-hidden rounded-tl-lg rounded-bl-lg transition-all duration-300'
           onMouseEnter={() => setShowCamera(true)}
@@ -567,7 +567,7 @@ const EmpDashboard = () => {
           </div>
         </div>
       </div>
-      <div className='grid lg:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-3'>
+      <div className='relative z-0 grid lg:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-3'>
         <div className='flex items-center gap-4 bg-bgBlue rounded-[15px] px-4 py-4 drop-shadow-md'>
           <div>
             <span className='bg-white h-9 w-9 rounded-full text-[25px] text-[#3DA5F4] flex items-center justify-center'>

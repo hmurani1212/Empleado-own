@@ -4,7 +4,7 @@ import { FaFileAlt, FaCalendarCheck } from "react-icons/fa";
 import ApplicationLeave from '../Application/ApplicationLeave';
 import RequestLeave from '../Application/RequestLeave';
 
-const ApplicationInfo = ({ data, isLoading, onClose }) => {
+const ApplicationInfo = ({ data, isLoading, onClose, applicationType }) => {
   const [activePage, setActivePage] = useState('application'); // 'application' or 'requestedLeave'
 
   const handleClick = (page) => {
@@ -100,7 +100,7 @@ const ApplicationInfo = ({ data, isLoading, onClose }) => {
             >
               {activePage === 'application' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-1 min-h-full">
-                  <ApplicationLeave applicationData={data} onClose={onClose} />
+                  <ApplicationLeave applicationData={data} onClose={onClose} applicationType={applicationType} />
                 </div>
               )}
               {activePage === 'requestedLeave' && (

@@ -33,7 +33,7 @@ const AddNotice = () => {
     <div className="bg-white rounded-2xl">
       <form onSubmit={addNewNotice} className="flex flex-col gap-6 p-4">
 
-        {/* Branch */}
+        {/* Branch and Department */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-gray-700">
@@ -43,7 +43,7 @@ const AddNotice = () => {
               placeHolderTitle="Select Branch"
               value={addNoticeValue.branch_id}
               options={noticesBranches?.map((branch) => ({
-                value: branch.id,
+                value: branch.id === '0' ? 0 : branch.id,
                 label: branch.branch_name,
               }))}
               onChangeHandler={(option) =>
@@ -53,21 +53,39 @@ const AddNotice = () => {
             />
           </div>
 
-          {/* Send to specific employee */}
-          <div className="flex items-center">
-            <Checkbox
-              color="blue"
-              label="Send to specific employee only"
-              checked={showEmployeeName}
-              onChange={handleCheckboxChange}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-gray-700">
+              Target Department
+            </label>
+            <CustomSelect
+              placeHolderTitle={addNoticeValue.branch_id ? "Select Department" : "Select branch first"}
+              value={addNoticeValue.deptt_id}
+              options={(filterDepartmentsNotices || []).map((dept) => ({
+                value: dept.id === '0' ? 0 : dept.id,
+                label: dept.name,
+              }))}
+              onChangeHandler={(option) =>
+                handleAddNoticeBranch('deptt_id', option)
+              }
+              customStyles={false}
+              disabled={!addNoticeValue.branch_id}
             />
           </div>
         </div>
 
-        {/* Employee + Department (Conditional) */}
+        {/* Send to specific employee */}
+        <div className="flex items-center">
+          <Checkbox
+            color="blue"
+            label="Send to specific employee only"
+            checked={showEmployeeName}
+            onChange={handleCheckboxChange}
+          />
+        </div>
+
+        {/* Employee (when Send to specific employee only) */}
         {showEmployeeName && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-            
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-gray-700">
                 Employee
@@ -80,24 +98,6 @@ const AddNotice = () => {
                 onHandleSelectSearch={handleNoticesSearchEmp}
                 onChangeHandler={(option) =>
                   handleAddNoticeBranch('emp_id', option)
-                }
-                customStyles={false}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-gray-700">
-                Department
-              </label>
-              <CustomSelect
-                placeHolderTitle="Select Department"
-                value={addNoticeValue.deptt_id}
-                options={filterDepartmentsNotices?.map((dept) => ({
-                  value: dept.id,
-                  label: dept.name,
-                }))}
-                onChangeHandler={(option) =>
-                  handleAddNoticeBranch('deptt_id', option)
                 }
                 customStyles={false}
               />

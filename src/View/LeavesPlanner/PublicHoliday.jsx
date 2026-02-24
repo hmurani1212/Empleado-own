@@ -56,7 +56,7 @@ const PublicHoliday = () => {
                 placeHolderTitle="Branch"
                 value={publicHolidayValue.branchId}
                 options={[
-                  { value: "all", label: "All Branches" },
+                  { value: 0, label: "All Branches" },
                   ...(publicHolidayValue?.branchesList?.map((branch) => ({
                     value: branch.id,
                     label: branch.branch_name,
@@ -76,7 +76,7 @@ const PublicHoliday = () => {
                 placeHolderTitle="Policy"
                 value={publicHolidayValue.policyId}
                 options={[
-                  { value: "all", label: "All Policies" },
+                  { value: 0, label: "All Policies" },
                   ...(publicHolidayValue.policyList?.map((policy) => ({
                     value: policy.id,
                     label: policy.policy_name + " (" + policy.id + ")",

@@ -134,7 +134,7 @@ const Notesbook = () => {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-50/50 to-transparent rounded-bl-full -mr-10 -mt-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
                 </div>
 
-                <div className="flex items-start justify-between relative z-10">
+                <div className="flex items-start justify-between relative">
                    <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-sm group-hover:scale-105 transition-transform duration-300">
                          <FaBook className="text-lg" />
@@ -155,7 +155,7 @@ const Notesbook = () => {
                     ref={(el) => (triggerRefs.current[index] = el)}
                     onMouseEnter={() => toggleMenuValue(index, true)}
                     onMouseLeave={() => toggleMenuValue(index, false)}
-                    className="relative"
+                    className="relative z-50"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors">
@@ -169,8 +169,8 @@ const Notesbook = () => {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         className={`
-                          absolute z-[50] w-48 rounded-xl border border-gray-100 bg-white shadow-xl right-0
-                          ${getDropdownPosition(index) === "top" ? "bottom-full mb-2" : "top-full mt-2"}
+                          absolute z-20 w-48 rounded-xl border border-gray-100 shadow-xl right-0 bg-white
+                          ${getDropdownPosition(index) === "top" ? "bottom-full mb-0" : "top-full mt-0"}
                         `}
                       >
                         <ul className="flex flex-col p-1.5">

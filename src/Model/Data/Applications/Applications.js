@@ -5,15 +5,13 @@ const applicationApi = {
         // Only include parameters that have actual values (not defaults)
         const params = {};
         
-        // Handle branch_id - include if value is 0 (All Branches) or any other value
+        // Handle branch_id - same payload shape as specific branch: branch_id=0 for All Branches, branch_id=<id> otherwise
         if (data.branch !== undefined && data.branch !== null) {
-            // Convert to number if it's "0" string, otherwise use as is
-            params.branch_id = data.branch === "0" ? 0 : data.branch;
+            params.branch_id = data.branch === "0" || data.branch === 0 ? 0 : Number(data.branch);
         }
-        // Handle dep_id - include if value is 0 (All Departments) or any other value
-        if (data.deptt !== undefined && data.deptt !== null) {
-            // Convert to number if it's "0" string, otherwise use as is
-            params.dep_id = data.deptt === "0" ? 0 : data.deptt;
+        // Handle dep_id - only include when a specific department is selected (omit for All Departments)
+        if (data.deptt !== undefined && data.deptt !== null && data.deptt !== "0" && data.deptt !== 0) {
+            params.dep_id = data.deptt;
         }
         if (data.status && data.status !== "") {
             params.status = data.status;
@@ -35,6 +33,12 @@ const applicationApi = {
         }
         if (data.page !== undefined) {
             params.page = data.page;
+        }
+        if (data.from_date && String(data.from_date).trim() !== '') {
+            params.from_date = String(data.from_date).trim();
+        }
+        if (data.to_date && String(data.to_date).trim() !== '') {
+            params.to_date = String(data.to_date).trim();
         }
         
         return Inboxinstancemodeule.request({

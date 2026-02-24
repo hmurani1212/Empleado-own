@@ -43,13 +43,14 @@ const normalizePayslipConfig = (config) => {
   }
 }
 const normalizeAttendanceSummary = (summary) => {
-  if (!summary || typeof summary !== 'object') return { total_adjusted_late_min: 0, total_late_minutes_used: 0, calculated_absentee_deduction: 0, calculated_late_deduction: 0, att_deductions_from_payslip: 0, calculation_method: '0', formula: 0, daily_req_hrs: 0, total_days: 0, present_days: 0, absent_days: 0, leaves: 0 }
+  if (!summary || typeof summary !== 'object') return { total_adjusted_late_min: 0, total_late_minutes_used: 0, calculated_absentee_deduction: 0, calculated_late_deduction: 0, att_deductions_from_payslip: 0, early_leave_downtime: 0, calculation_method: '0', formula: 0, daily_req_hrs: 0, total_days: 0, present_days: 0, absent_days: 0, leaves: 0 }
   return {
     total_adjusted_late_min: formatNumber(summary.total_adjusted_late_min),
     total_late_minutes_used: formatNumber(summary.total_late_minutes_used),
     calculated_absentee_deduction: formatNumber(summary.calculated_absentee_deduction),
     calculated_late_deduction: formatNumber(summary.calculated_late_deduction),
     att_deductions_from_payslip: formatNumber(summary.att_deductions_from_payslip),
+    early_leave_downtime: formatNumber(summary.early_leave_downtime),
     calculation_method: summary.calculation_method != null ? String(summary.calculation_method) : '0',
     formula: formatNumber(summary.formula),
     daily_req_hrs: formatNumber(summary.daily_req_hrs),
@@ -131,12 +132,19 @@ const IndividualPayslipPreview = () => {
     const year = salaryMonth.length >= 4 ? '20' + salaryMonth.slice(2) : new Date().getFullYear()
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     const monthName = monthNames[parseInt(month) - 1] || 'Oct'
-    // Use total_days from payslip_config (API value) if available, otherwise calculate from total_working
-    const totalDays = payslip.payslip_config?.total_days !== undefined && payslip.payslip_config?.total_days !== null
-      ? formatNumber(payslip.payslip_config.total_days)
-      : Math.round(totalWorkingHours / 8)
-    const presentDays = Math.round(totalPresentHours / 8)
-    const absentDays = totalDays - presentDays
+    const summary = payslip.attendance_summary
+    // Prefer attendance_summary from API for days (authoritative); else payslip_config; else derived
+    const totalDays = summary?.total_days !== undefined && summary?.total_days !== null
+      ? formatNumber(summary.total_days)
+      : (payslip.payslip_config?.total_days !== undefined && payslip.payslip_config?.total_days !== null
+          ? formatNumber(payslip.payslip_config.total_days)
+          : Math.round(totalWorkingHours / 8))
+    const presentDays = summary?.present_days !== undefined && summary?.present_days !== null
+      ? formatNumber(summary.present_days)
+      : Math.round(totalPresentHours / 8)
+    const absentDays = summary?.absent_days !== undefined && summary?.absent_days !== null
+      ? formatNumber(summary.absent_days)
+      : Math.max(0, totalDays - presentDays)
 
     
     return {
@@ -181,8 +189,8 @@ const IndividualPayslipPreview = () => {
       absent_days: absentDays,
       earned_hours: totalPresentHours,
       expected_hours: totalWorkingHours,
-      leave_days: formatNumber(payslip.leaves_encashable),
-      leaves_encashable: formatNumber(payslip.leaves_encashable),
+      leave_days: summary?.leaves !== undefined && summary?.leaves !== null ? formatNumber(summary.leaves) : formatNumber(payslip.leaves_encashable),
+      leaves_encashable: summary?.leaves !== undefined && summary?.leaves !== null ? formatNumber(summary.leaves) : formatNumber(payslip.leaves_encashable),
       
       // Salary fields
       basic_salary: formatNumber(payslip.rate),
@@ -694,6 +702,9 @@ const IndividualPayslipPreview = () => {
   const calculatedLateDeduction = payslipData.attendance_summary?.calculated_late_deduction 
     ? parseFloat(payslipData.attendance_summary.calculated_late_deduction) 
     : 0
+  const downtimeDeduction = payslipData.attendance_summary?.early_leave_downtime != null
+    ? parseFloat(payslipData.attendance_summary.early_leave_downtime)
+    : 0
   
   // Attendance Deduction should be the sum of calculated_absentee_deduction and calculated_late_deduction
   // If attendance_summary values exist, use their sum; otherwise fallback to att_deductions
@@ -702,11 +713,11 @@ const IndividualPayslipPreview = () => {
     ? attendanceDeductionFromSummary 
     : Number(payslipData.absentees_deduction || payslipData.att_deductions || 0)
   
-  // Calculate total deductions: Income Tax + EOBI + Social Security + Provident Fund + Attendance Deduction (sum of calculated fields) + Other Deductions + Deductions from incentive array
+  // Calculate total deductions: Income Tax + EOBI + Social Security + Provident Fund + Attendance Deduction + Downtime + Other Deductions + Deductions from incentive array
   // Use ForCalc versions to handle null values (convert to 0 for calculations)
   // Note: Social Security is commented out
   // Note: attendanceDeduction already includes calculatedAbsenteeDeduction + calculatedLateDeduction, so don't add them separately
-  const totalDeductions = attendanceDeduction + deductionsFromIncentiveArray + eobiForCalc + socialSecurityForCalc + pfEmployeeForCalc + incomeTaxForCalc
+  const totalDeductions = attendanceDeduction + deductionsFromIncentiveArray + eobiForCalc + socialSecurityForCalc + pfEmployeeForCalc + incomeTaxForCalc + downtimeDeduction
   
   // Calculate net pay: Total Pay - Total Deductions (for future use if needed)
   // const calculatedNetPay = Math.max(0, totalPay - totalDeductions)
@@ -879,6 +890,12 @@ const IndividualPayslipPreview = () => {
                         <td className="text-right">PKR {calculatedLateDeduction.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}/-</td>
                       </tr>
                     )}
+                    {(downtimeDeduction > 0 || (downtimeDeduction === 0 && totalDeductions > 0)) && (
+                      <tr className="tpl-row">
+                        <td>Downtime <span style={{ fontSize: '0.85em' }}>(Early Leave)</span></td>
+                        <td className="text-right">PKR {downtimeDeduction.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}/-</td>
+                      </tr>
+                    )}
                     {attendanceDeduction > 0 && (
                   <tr className="tpl-row text-semibold" style={{ borderBottom: 'none', borderTop: '2px solid #111827' }}>
                         <td style={{ borderBottom: 'none', borderTop: '2px solid #111827' }}>Attendance Deduction</td>
@@ -940,16 +957,16 @@ const IndividualPayslipPreview = () => {
                  <span className="text-xs text-gray-600">{payslipData.attendance_summary?.total_adjusted_late_min || 0}</span>
                </div>
                
-               {/* Second Row */}
+               {/* Second Row - use attendance_summary-backed totalDays, presentDays, absentDays, leave_days */}
                <div className="flex justify-between items-center w-full text-left">
                  <span className="text-xs text-gray-600 font-bold">Total days</span>
-                 <span className="text-xs text-gray-600">{Math.round((payslipData.total_working || 0) / 3600 / 8)}</span>
+                 <span className="text-xs text-gray-600">{totalDays}</span>
                  <span className="text-xs text-gray-600 font-bold">Present days</span>
-                 <span className="text-xs text-gray-600">{Math.round((payslipData.total_present || 0) / 3600 / 8)}</span>
+                 <span className="text-xs text-gray-600">{presentDays}</span>
                  <span className="text-xs text-gray-600 font-bold">Absent days</span>
-                 <span className="text-xs text-gray-600">{Math.round(((payslipData.total_working || 0) - (payslipData.total_present || 0)) / 3600 / 8)}</span>
+                 <span className="text-xs text-gray-600">{absentDays}</span>
                  <span className="text-xs text-gray-600 font-bold">Leaves</span>
-                 <span className="text-xs text-gray-600">{payslipData.leaves_encashable || 0}</span>
+                 <span className="text-xs text-gray-600">{payslipData.leave_days ?? payslipData.leaves_encashable ?? 0}</span>
                </div>
             </div>
           </div>
@@ -1061,6 +1078,14 @@ const IndividualPayslipPreview = () => {
                        </td>
                      </tr>
                    )}
+                   <tr>
+                     <td className="border-b border-gray-300 p-2">
+                       <div className="flex justify-between items-center gap-4">
+                         <span className="text-xs text-gray-600">Downtime <span className="text-[10px]">(Early Leave)</span></span>
+                         <span className="text-xs text-blue-600 text-center">PKR {(downtimeDeduction || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                         </div>
+                     </td>
+                   </tr>
                    {attendanceDeduction > 0 && (
                      <tr>
                        <td className="p-2" style={{ borderBottom: 'none', borderTop: '2px solid #d1d5db' }}>

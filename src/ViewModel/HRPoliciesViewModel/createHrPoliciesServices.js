@@ -667,7 +667,10 @@ const useCreatePolicies = () => {
       // === WORKING HOURS SETTINGS ===
       starting_time: newhrPolicesValues.startTime || '',
       closing_time: newhrPolicesValues.endTime || '',
-      working_days: newhrPolicesValues.schedule?.filter(day => day.isChecked).map(day => day.day.slice(0, 3).toLowerCase()) || [],
+      working_days: newhrPolicesValues.schedule?.filter(day => day.isChecked).map(day => {
+        const d = day.day.slice(0, 3).toLowerCase();
+        return d.charAt(0).toUpperCase() + d.slice(1);
+      }) || [],
       day_start_time: newhrPolicesValues.schedule?.filter(day => day.isChecked).map(day => day.startTime) || [],
       day_close_time: newhrPolicesValues.schedule?.filter(day => day.isChecked).map(day => day.endTime) || [],
 

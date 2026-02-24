@@ -420,25 +420,9 @@ const Inbox = () => {
       setCurrentStoryStatus(storyStatus);
     }
 
-    // Remove blue background by updating read status to 1 in local state
-    if (hasUnreadMessages(story)) {
-      const updatedInboxData = filteredInboxData.map(item => {
-        if (item.story_id === storyId) {
-          // Update the users array to set read_status to 1
-          const updatedUsers = item.users?.map(user => ({
-            ...user,
-            read_status: 1
-          })) || [];
-
-          return {
-            ...item,
-            users: updatedUsers
-          };
-        }
-        return item;
-      });
-
-      setFilteredInboxData(updatedInboxData);
+    // Mark as read when viewing: update store (and persist) so list and filters stay in sync
+    if (storyId && hasUnreadMessages(story)) {
+      markInboxStoriesAsRead([storyId]);
     }
   };
 
@@ -817,6 +801,7 @@ const Inbox = () => {
             data={application_data}
             isLoading={isLoadingApplicationDetails}
             onClose={handleCloseApplicationInfo}
+            applicationType={story_status}
           />
         </motion.div>
       ) : (

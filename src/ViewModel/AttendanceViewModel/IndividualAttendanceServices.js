@@ -32,6 +32,8 @@ const useIndividualAttendanceServices = ()=>{
     const setRawAttendanceLogParams = useStore((state)=> state.setRawAttendanceLogParams)
     const transformLastPolicyToViewPolicy = useStore((state)=> state.transformLastPolicyToViewPolicy)
     const setViewPolicy = useStore((state)=> state.setViewPolicy)
+    const individualAttendanceMonthYear = useStore((state)=> state.individualAttendanceMonthYear)
+    const setIndividualAttendanceMonthYear = useStore((state)=> state.setIndividualAttendanceMonthYear)
     
     // Employee store functions
     const empSuggestionListAtt = useStore((state)=> state.empSuggestionListAtt)
@@ -148,16 +150,35 @@ const useIndividualAttendanceServices = ()=>{
     const currentYearIndex = new Date().getFullYear();
     const updateMonth = months[currentMonthIndex]
 
-    const [searchingEmpValue, setSearchingEmpValue] = useState({
+    const getInitialMonthYear = () => {
+        const stored = useStore.getState().individualAttendanceMonthYear;
+        if (stored?.month && stored?.year) {
+            return { month: stored.month, year: stored.year };
+        }
+        return {
+            month: { value: updateMonth.id, label: updateMonth.title },
+            year: { value: currentYearIndex, label: currentYearIndex }
+        };
+    };
+
+    const [searchingEmpValue, setSearchingEmpValue] = useState(() => ({
         empList :[],
         empId:null,
-        month:{value:updateMonth.id, label:updateMonth.title},
-        year:{value:currentYearIndex, label:currentYearIndex},
+        month: getInitialMonthYear().month,
+        year: getInitialMonthYear().year,
         fromEmp:false,
         org_id: null
-    })
+    }))
 
-    const [attendanceData, setAttendanceData] = useState({
+    const getInitialDaysArray = () => {
+        const stored = useStore.getState().individualAttendanceMonthYear;
+        if (stored?.month?.value != null && stored?.year?.value != null) {
+            return generateDays(stored.year.value, stored.month.value - 1);
+        }
+        return generateDays(date.getFullYear(), date.getMonth());
+    };
+
+    const [attendanceData, setAttendanceData] = useState(() => ({
         attendanceAttr:{
             total: 0,
             expected_working_days: 0,
@@ -173,19 +194,18 @@ const useIndividualAttendanceServices = ()=>{
                 overtimeHours: 0,
                 lateComings: 0,
                 absentees: 0,
-                holidays: 0
+                holidays: 0,
+                availedLeaves: 0
             }
         },
-        currentDate:getCurrentMonthObject(new Date()),
+        currentDate: getInitialMonthYear().month,
         nextMonth:'',
         prevMonth:'',
         nextYear:'',
         prevYear:'',
-        daysArray:generateDays(date.getFullYear(), date.getMonth()),
+        daysArray: getInitialDaysArray(),
         chartData:[] // Initialize as empty array for chart component
-
-
-    })
+    }))
     
     const [isLoadingAttendance, setIsLoadingAttendance] = useState(false) // Keep for potential future use
 
@@ -305,6 +325,13 @@ const useIndividualAttendanceServices = ()=>{
                 currentDate: select,
                 daysArray:updatedDays
             }))
+        }
+
+        if (field === 'month') {
+            setIndividualAttendanceMonthYear({ month: select, year: currentYear });
+        }
+        if (field === 'year') {
+            setIndividualAttendanceMonthYear({ month: currentMonth, year: select });
         }
         
         // Only store if we have all three values
@@ -464,7 +491,7 @@ const useIndividualAttendanceServices = ()=>{
                             absentees: db.absent_days ?? 0,
                             holidays: db.holidays ?? 0,
                             allowedLeaves: db.allowed_leaves ?? 0,
-                            leaveAvailed: db.leave_availed ?? 0
+                            leaveAvailed: db.leaves ?? 0
                         }
                     };
 
@@ -519,16 +546,16 @@ const useIndividualAttendanceServices = ()=>{
         // Get the updated month object (assuming `getAllMonths()` is the function that returns month info)
         const updatedMonth = months.find((m) => m.id === newMonth + 1); // +1 to make it 1-based (1 for January)
 
+        const newMonthYear = { month: { value: newMonth + 1, label: updatedMonth.title }, year: { value: newYear, label: newYear } };
         setSearchingEmpValue((prevState) => ({
             ...prevState,
-            month: { value: newMonth + 1, label: updatedMonth.title }, // Update month (1-based index)
-            year: { value: newYear, label: newYear }, // Update year if necessary
+            ...newMonthYear,
         }));
         setAttendanceData((prevState)=>({
             ...prevState,
             daysArray:generateDays(newYear, newMonth)
-        }))
-
+        }));
+        setIndividualAttendanceMonthYear(newMonthYear);
     };
     const handlePreviousMonth = () => {
         const currentMonth = searchingEmpValue.month.value - 1; // Month index (0-11)
@@ -542,15 +569,16 @@ const useIndividualAttendanceServices = ()=>{
 
         // Get the updated month object (assuming `getAllMonths()` is the function that returns month info)
         const updatedMonth = months.find((m) => m.id === newMonth + 1); // +1 to make it 1-based (1 for January)
+        const newMonthYear = { month: { value: newMonth + 1, label: updatedMonth.title }, year: { value: newYear, label: newYear } };
         setSearchingEmpValue((prevState) => ({
             ...prevState,
-            month: { value: newMonth + 1, label: updatedMonth.title }, // Update month (1-based index)
-            year: { value: newYear, label: newYear }, // Update year if necessary
+            ...newMonthYear,
         }));
         setAttendanceData((prevState)=>({
             ...prevState,
             daysArray:generateDays(newYear, newMonth)
-        }))
+        }));
+        setIndividualAttendanceMonthYear(newMonthYear);
     };
 
 

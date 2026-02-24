@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import useHRPolicies from '../../ViewModel/HRPoliciesViewModel/HRPoliciesServices'
 import { formatTimestamp } from '../Branches/utils'
 import formatTime from '../../services/__hrPoliciesServices'
@@ -62,7 +62,7 @@ const ViewPolicy = () => {
                     <div className="flex flex-col border-b border-gray-50 pb-2">
                         <span className="text-xs text-gray-500 font-poppins mb-1">Overtime Status</span>
                         <span className="text-sm font-medium text-gray-900 font-poppins">
-                            {viewPolicy.overtime_pay === '0' ? 'Unpaid' : 'Paid'}
+                            {viewPolicy.overtime_pay === 'Unpaid' || viewPolicy.overtime_pay === 'unpaid' ? 'Unpaid' : 'Paid'}
                         </span>
                     </div>
 

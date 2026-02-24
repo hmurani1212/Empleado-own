@@ -6,7 +6,9 @@ import { FaTimes, FaUser, FaUserCheck, FaCalendar, FaFileAlt, FaUserEdit, FaFile
 import { formatTimestamp } from "../Branches/utils";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
 
-function ApplicationLeave({ applicationData, onClose }) {
+function ApplicationLeave({ applicationData, onClose, applicationType }) {
+  const typeStr = applicationType ? String(applicationType).toUpperCase().trim() : '';
+  const isLeaveApplication = typeStr === 'LEAVE_REQUEST' || Number(applicationData?.form_id) === 7;
   const { orgLogo, getOrgLogo } = useEmployees();
   const data = [
     "Approval Index",
@@ -16,9 +18,17 @@ function ApplicationLeave({ applicationData, onClose }) {
     "Last Update Date",
   ];
 
+  const emptyDisplay = (v) => (v != null && String(v).trim() !== "" ? String(v).trim() : "--");
+  /** Normalize line endings and collapse multiple newlines to one — used only for Application Detail to remove blank lines (\r\n\r\n etc.) */
+  const collapseNewlinesApplicationDetail = (s) => {
+    if (s == null) return "";
+    const normalized = String(s).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    return normalized.replace(/\n{2,}/g, "\n").trim();
+  };
+
   // Format timestamp to readable date
   const formatDate = (timestamp) => {
-    if (!timestamp) return "N/A";
+    if (!timestamp) return "--";
     const date = new Date(timestamp * 1000);
     return date.toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -28,7 +38,7 @@ function ApplicationLeave({ applicationData, onClose }) {
   };
 
   function formatUnixToDate(unixTimestamp) {
-    if (!unixTimestamp) return "N/A";
+    if (!unixTimestamp) return "--";
     // check if timestamp is in seconds, convert to ms
     if (unixTimestamp.toString().length === 10) {
       unixTimestamp = unixTimestamp * 1000;
@@ -44,9 +54,17 @@ function ApplicationLeave({ applicationData, onClose }) {
   }
 
   const converToSnakeCase = (str) => {
-    if (!str) return "N/A";
+    if (!str) return "--";
     const snakeCase = str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     return snakeCase;
+  };
+
+  const getLeaveTypeDisplay = (app) => {
+    if (Array.isArray(app?.leave_types) && app.leave_types.length > 0) {
+      const titles = app.leave_types.map((lt) => lt?.title || lt?.leave_type).filter(Boolean);
+      return titles.length ? titles.join(", ") : emptyDisplay(app?.form_data?.leave_type ?? app?.leave_type);
+    }
+    return emptyDisplay(app?.form_data?.leave_type ?? app?.leave_type);
   };
 
   useEffect(() => {
@@ -188,6 +206,15 @@ function ApplicationLeave({ applicationData, onClose }) {
             grid-template-columns: 1fr 1fr;
             gap: 20px;
           }
+          .date-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 24px;
+          }
+          .date-flex .date-item {
+            flex: 1;
+            min-width: 100px;
+          }
           .date-item label {
             display: block;
             font-size: 11px;
@@ -279,9 +306,8 @@ function ApplicationLeave({ applicationData, onClose }) {
   };
 
 
-  const defaultNoteContent = `During in my absence I can be contacted (If very Urgent).
-
-Telephone#: 03439902848`;
+  const empPhone = applicationData?.emp_phone ?? applicationData?.form_data?.emp_phone ?? applicationData?.employee_details?.emp_phone;
+  const defaultNoteContent = (empPhone != null && String(empPhone).trim() !== '') ? `During in my absence I can be contacted (If very Urgent).\n\nTelephone#: ${String(empPhone).trim()}` : `During in my absence I can be contacted (If very Urgent).\n\nTelephone#: 03439902848`;
 
   return (
     <>
@@ -310,27 +336,27 @@ Telephone#: 03439902848`;
               <div className="emp-grid">
                 <div className="emp-item">
                   <label>Employee Name</label>
-                  <span>{applicationData?.name || "N/A"}</span>
+                  <span>{emptyDisplay(applicationData?.name || applicationData?.emp_name)}</span>
                 </div>
                 <div className="emp-item">
                   <label>Employee ID</label>
-                  <span>{applicationData?.form_data?.emp_id || applicationData?.emp_id || "N/A"}</span>
+                  <span>{emptyDisplay(applicationData?.form_data?.emp_id ?? applicationData?.emp_id)}</span>
                 </div>
                 <div className="emp-item">
                   <label>Employee Oneid</label>
-                  <span>{applicationData?.one_id || "N/A"}</span>
+                  <span>{emptyDisplay(applicationData?.one_id)}</span>
                 </div>
                 <div className="emp-item">
                   <label>Branch</label>
-                  <span>{applicationData?.employee_details?.branch_name?.branch_name || "N/A"}</span>
+                  <span>{emptyDisplay(applicationData?.employee_details?.branch_name?.branch_name ?? applicationData?.branch_name)}</span>
                 </div>
                 <div className="emp-item">
                   <label>Department</label>
-                  <span>{applicationData?.employee_details?.department?.name || "N/A"}</span>
+                  <span>{emptyDisplay(applicationData?.employee_details?.department?.name ?? applicationData?.department_name)}</span>
                 </div>
                 <div className="emp-item">
                   <label>Designation</label>
-                  <span>{applicationData?.employee_details?.designation_name || "N/A"}</span>
+                  <span>{emptyDisplay(applicationData?.employee_details?.designation_name ?? applicationData?.designation_name)}</span>
                 </div>
               </div>
             </div>
@@ -339,41 +365,31 @@ Telephone#: 03439902848`;
           <section className="print-section">
             <h2 className="print-section-title">Subject</h2>
             <div className="print-card">
-              <div className="print-card-body">{applicationData?.form_data?.subject || applicationData?.subject || "N/A"}</div>
+              <div className="print-card-body">{emptyDisplay(applicationData?.form_data?.subject ?? applicationData?.subject)}</div>
             </div>
           </section>
 
           <section className="print-section">
             <h2 className="print-section-title">Application Detail</h2>
             <div className="print-card">
-              <div className="print-card-body">{applicationData?.Application_detail || applicationData?.application_detail || applicationData?.form_data?.application_detail || "N/A"}</div>
+              <div className="print-card-body">{emptyDisplay(collapseNewlinesApplicationDetail(applicationData?.Application_detail ?? applicationData?.application_detail ?? applicationData?.form_data?.application_detail ?? applicationData?.app_body ?? applicationData?.form_data?.app_body))}</div>
             </div>
           </section>
 
           <section className="print-section">
             <h2 className="print-section-title">Leave Period</h2>
-            <div className="date-grid">
+            <div className="date-flex">
               <div className="date-item">
-                <label>Leave From</label>
-                <span className="date-value">{applicationData?.form_data?.leave_app_start_date || "N/A"}</span>
+                <label>From</label>
+                <span className="date-value">{emptyDisplay(applicationData?.form_data?.leave_app_start_date ?? applicationData?.leave_app_start_date)}</span>
               </div>
               <div className="date-item">
-                <label>Leave Upto</label>
-                <span className="date-value">{applicationData?.form_data?.leave_app_end_date || "N/A"}</span>
-              </div>
-            </div>
-          </section>
-
-          <section className="print-section">
-            <h2 className="print-section-title">Leave Group &amp; Leave Type</h2>
-            <div className="date-grid">
-              <div className="date-item">
-                <label>Leave Group</label>
-                <span className="date-value">{applicationData?.form_data?.leave_group || applicationData?.leave_group || "N/A"}</span>
+                <label>Upto</label>
+                <span className="date-value">{emptyDisplay(applicationData?.form_data?.leave_app_end_date ?? applicationData?.leave_app_end_date)}</span>
               </div>
               <div className="date-item">
                 <label>Leave Type</label>
-                <span className="date-value">{applicationData?.form_data?.leave_type || applicationData?.leave_type || "N/A"}</span>
+                <span className="date-value">{getLeaveTypeDisplay(applicationData)}</span>
               </div>
             </div>
           </section>
@@ -392,7 +408,7 @@ Telephone#: 03439902848`;
             </div>
             <div className="signature-block">
               <div className="signature-line"></div>
-              <span>Office Authority</span>
+              <span>Approval Authority</span>
             </div>
           </div>
         </div>
@@ -402,7 +418,9 @@ Telephone#: 03439902848`;
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
           <h2 className="text-[#3DA5F4] font-semibold text-lg">Application Info</h2>
           <div className="flex items-center gap-2">
-            <button className="bg-bgBlue text-white px-4 text-xs py-2 font-medium rounded-md hover:drop-shadow-md" onClick={() => handlePrint()}>Print</button>
+            {isLeaveApplication && (
+              <button className="bg-bgBlue text-white px-4 text-xs py-2 font-medium rounded-md hover:drop-shadow-md" onClick={() => handlePrint()}>Print</button>
+            )}
             <button
               onClick={onClose}
               className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
@@ -426,7 +444,7 @@ Telephone#: 03439902848`;
                 </div>
                 <div className="flex flex-col items-start justify-start gap-1">
                   <span className="text-gray-600 font-normal text-sm">From:</span>
-                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{applicationData?.name || "N/A"}</span>
+                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{emptyDisplay(applicationData?.name || applicationData?.emp_name)}</span>
                 </div>
               </div>
 
@@ -451,7 +469,7 @@ Telephone#: 03439902848`;
                 </div>
                 <div className="flex flex-col items-start justify-start gap-1">
                   <span className="text-gray-600 font-normal text-sm">Emp ID:</span>
-                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{applicationData.form_data?.emp_id || applicationData?.emp_id || "N/A"}</span>
+                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{emptyDisplay(applicationData?.form_data?.emp_id ?? applicationData?.emp_id)}</span>
                 </div>
                 <div className="flex-1">
 
@@ -468,7 +486,7 @@ Telephone#: 03439902848`;
                 </div>
                 <div className="flex flex-col items-start justify-start gap-1">
                   <span className="text-gray-600 font-normal text-sm">Dated:</span>
-                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{formatUnixToDate(applicationData?.entry_time) || "N/A"}</span>
+                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{formatUnixToDate(applicationData?.entry_time) || "--"}</span>
                 </div>
                 <div className="flex-1">
 
@@ -482,7 +500,7 @@ Telephone#: 03439902848`;
                 </div>
                 <div className="flex flex-col items-start justify-start gap-1">
                   <span className="text-gray-600 font-normal text-sm">Subject:</span>
-                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{applicationData?.form_data?.subject || applicationData?.subject || "N/A"}</span>
+                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{emptyDisplay(applicationData?.form_data?.subject ?? applicationData?.subject)}</span>
                 </div>
                 <div className="flex-1">
 
@@ -545,7 +563,7 @@ Telephone#: 03439902848`;
                 </div>
                 <div className="flex flex-col items-start justify-start gap-1">
                   <span className="text-gray-600 font-normal text-sm">Emp OneID:</span>
-                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{applicationData?.one_id || applicationData?.form_data?.one_id || "N/A"}</span>
+                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{emptyDisplay(applicationData?.one_id ?? applicationData?.form_data?.one_id)}</span>
                 </div>
                 <div className="flex-1">
 
@@ -559,7 +577,7 @@ Telephone#: 03439902848`;
                 </div>
                 <div className="flex flex-col items-start justify-start gap-1">
                   <span className="text-gray-600 font-normal text-sm">Application Detail:</span>
-                  <span className="text-gray-800 font-Urbanist font-semibold text-sm leading-relaxed">{applicationData?.Application_detail || applicationData?.application_detail || applicationData?.form_data?.application_detail || "N/A"}</span>
+                  <span className="text-gray-800 font-Urbanist font-semibold text-sm leading-relaxed whitespace-pre-wrap">{emptyDisplay(collapseNewlinesApplicationDetail(applicationData?.Application_detail ?? applicationData?.application_detail ?? applicationData?.form_data?.application_detail ?? applicationData?.app_body ?? applicationData?.form_data?.app_body))}</span>
                 </div>
                 <div className="flex-1">
 
@@ -614,7 +632,7 @@ Telephone#: 03439902848`;
                         className="font-normal"
                       >
                         {converToSnakeCase(applicationData.approvel_flow) ||
-                          "N/A"}
+                          "--"}
                       </Typography>
                     </td>
 
@@ -624,7 +642,7 @@ Telephone#: 03439902848`;
                         color="blue-gray"
                         className="font-normal"
                       >
-                        {converToSnakeCase(applicationData.approvel_by) || "N/A"}
+                        {converToSnakeCase(applicationData.approvel_by) || "--"}
                       </Typography>
                     </td>
 
@@ -638,7 +656,7 @@ Telephone#: 03439902848`;
                           }`}
                       >
                         {converToSnakeCase(applicationData.type_base_info) ||
-                          "N/A"}
+                          "--"}
                       </span>
                     </td>
 

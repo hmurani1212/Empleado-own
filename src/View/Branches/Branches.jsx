@@ -17,14 +17,12 @@ const Branches = () => {
   const data = ['Branch ID', 'Branch Name', 'Branch Admin', 'Currency', 'Phone', 'Email', 'Creation Time', 'Actions']
 
   useEffect(() => {
-    // if(!mountBranch){
-    const data = {
-      status: 1,
+    // Use persisted filter (1 = active, 0 = inactive) so status is kept when returning to this page
+    gettingAllBranchesNew({
+      status: currentFilterStatus,
       page: 1,
       limit: 10
-    }
-    gettingAllBranchesNew(data)
-    // }
+    });
   }, []);
 
 
