@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
 import { Typography, Badge, Progress, Button } from "@material-tailwind/react";
 import usePerformanceServices from "../../ViewModel/PerformnaceViewModel/performanceServices";
@@ -12,19 +12,6 @@ import ProgressPostingModal from "./ProgressPostingModal";
 import GoalCommentsDrawer from "./GoalCommentsDrawer";
 import EmployeeSubFeed from "./EmployeeSubFeed";
 import History from "./History";
-import EmployeeGoals from "./EmployeeGoals";
-
-// Create a context for EmployeeGoals when rendered outside of outlet
-export const EmployeeGoalsContext = createContext(null);
-
-// Wrapper component that provides context to EmployeeGoals
-const EmployeeGoalsWithContext = ({ context }) => {
-  return (
-    <EmployeeGoalsContext.Provider value={context}>
-      <EmployeeGoals />
-    </EmployeeGoalsContext.Provider>
-  );
-};
 
 const Performance = () => {
   const { performanceTitles, handleNavLinkClick } = usePerformanceServices();
@@ -63,7 +50,6 @@ const Performance = () => {
     gettingGoalsByEmployeeId: state.gettingGoalsByEmployeeId,
     gettingCompetencyByEmployeeId: state.gettingCompetencyByEmployeeId,
     gettingFeedbackByEmployeeId: state.gettingFeedbackByEmployeeId,
-    subGoalsLoading: state.subGoalsLoading,
   }));
 
   const handleProfileView = (employeeId, viewType = "goals") => {
@@ -111,7 +97,6 @@ const Performance = () => {
       setCurrentView(tabName);
       // Fetch data for the new tab
       if (tabName === "goals") {
-        // Always fetch goals when switching to Goals tab, regardless of how we got here
         storeData.gettingGoalsByEmployeeId(selectedEmployeeId);
       } else if (tabName === "competency") {
         storeData.gettingCompetencyByEmployeeId(selectedEmployeeId);
@@ -128,10 +113,6 @@ const Performance = () => {
       setProfileData(storeData.setProfileData);
     }
   }, [storeData.employeeGoalsData, storeData.setProfileData]);
-
-  // Check if we should show EmployeeGoals (when goals tab is selected and profile is shown)
-  // Show it even if data is loading or empty - EmployeeGoals will handle empty state
-  const shouldShowEmployeeGoals = showProfile && currentView === "goals";
 
   // Update competency data when store data changes
   useEffect(() => {
@@ -333,28 +314,7 @@ const Performance = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {shouldShowEmployeeGoals ? (
-            // Show EmployeeGoals component when Goals tab is clicked
-            // Provide context through context provider since we're not using nested routes
-            <EmployeeGoalsWithContext
-              context={{
-                handleProfileView,
-                handleTabChange,
-                currentView,
-                showProfile,
-                selectedEmployeeId,
-                goalsData,
-                competencyData,
-                feedbackData,
-                profileData,
-                handleOpenRatingModal,
-                handleOpenProgressModal,
-                handleOpenCommentsDrawer,
-                setShowReviewCycle,
-                handleCloseProfile,
-              }}
-            />
-          ) : showProfile && currentView === "feedback" ? (
+          {showProfile && currentView === "feedback" ? (
             <EmployeeSubFeed
               handleCloseProfile={handleCloseProfile}
               feedbackData={feedbackData}

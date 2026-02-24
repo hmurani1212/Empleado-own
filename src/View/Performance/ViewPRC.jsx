@@ -109,11 +109,7 @@ const ViewPRC = (props) => {
                 </div>
                 <div className='flex flex-col gap-2'>
                     <span className='text-nowrap text-customBlack-100 text-[14px]'>Assigned To</span>
-                    <span className='text-customBlack-100 text-[12px]'>
-                        {data.employees && Array.isArray(data.employees) && data.employees.length > 0
-                            ? data.employees.map(emp => emp.employee_name || emp.name || `Employee ${emp.employee_id}`).join(', ')
-                            : 'Not Assigned'}
-                    </span>
+                    <span className='text-customBlack-100 text-[12px]'>{data.employee_name || 'Not Assigned'}</span>
                 </div>
             </div>
             <div className='flex gap-3 border border-blue-500 rounded-md p-3'>

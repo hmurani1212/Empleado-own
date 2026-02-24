@@ -45,7 +45,6 @@ const Goals = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { clearEmployeeGoals } = useStore();
 
   const handleProfileClick = async (employeeId) => {
     try {
@@ -59,23 +58,6 @@ const Goals = () => {
   useEffect(() => {
     gettingPRCSelect();
   }, [gettingPRCSelect]);
-
-  // Clear employee goals data when navigating to main Goals table from other main views (like History)
-  // This ensures the main table shows instead of sub-goals when coming from History or other main views
-  // Only clear if we're on the main goals route (not sub-goals) and employeeGoalsData exists
-  // This component only renders in main view, not in profile view (profile view renders EmployeeGoals from Performance.jsx)
-  useEffect(() => {
-    if (
-      location.pathname === "/performance/goals" &&
-      !location.pathname.includes("sub-goals") &&
-      employeeGoalsData &&
-      employeeGoalsData.length > 0
-    ) {
-      // Clear employee goals data to show main table instead of sub-goals
-      clearEmployeeGoals();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
 
   return (
     <>

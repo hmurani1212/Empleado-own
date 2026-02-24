@@ -199,7 +199,7 @@ const PRC = () => {
                           // color="blue-gray"
                           className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                         >
-                          {ele.assign_to}
+                          {ele.employee_name}
                         </Typography>
                       </td>
                       <td className={classes}>
