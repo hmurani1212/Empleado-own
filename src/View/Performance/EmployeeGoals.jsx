@@ -12,7 +12,11 @@ import {
   FaClipboardList
 } from "react-icons/fa";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { useContext } from "react";
 import useStore from "../../Store/store";
+
+// Import the context from Performance.jsx (for when rendered outside outlet)
+import { EmployeeGoalsContext } from "./Performance";
 import useGoalServices from "../../ViewModel/PerformnaceViewModel/goalServices";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import AddEditGoal from "./AddEditGoal";
@@ -37,16 +41,34 @@ const EmployeeGoals = () => {
     refreshEmployeeGoals,
     currentEmployeeId,
     subGoalsLoading,
+    setProfileData: profileDataFromStore,
   } = useStore();
+  // Try to get context from either outlet context or direct context provider
+  const outletContext = useOutletContext();
+  const directContext = EmployeeGoalsContext ? useContext(EmployeeGoalsContext) : null;
+  const context = outletContext || directContext || {};
+  
   const {
     handleOpenRatingModal,
     handleOpenProgressModal,
     handleOpenCommentsDrawer,
     setShowReviewCycle,
-    currentView,
+    currentView: contextCurrentView,
     handleTabChange,
     handleCloseProfile,
-  } = useOutletContext() || {};
+  } = context;
+
+  // Use context currentView or default to "goals" since this component is only rendered for goals
+  const currentView = contextCurrentView || "goals";
+
+  // Debug: Log current view and data
+  useEffect(() => {
+    console.log('EmployeeGoals - currentView:', currentView);
+    console.log('EmployeeGoals - employeeGoalsData:', employeeGoalsData);
+    console.log('EmployeeGoals - employeeGoalsData length:', employeeGoalsData?.length);
+    console.log('EmployeeGoals - profileDataFromStore:', profileDataFromStore);
+    console.log('EmployeeGoals - subGoalsLoading:', subGoalsLoading);
+  }, [currentView, employeeGoalsData, profileDataFromStore, subGoalsLoading]);
   const {
     handleAddGoal,
     gettingPRCSelect,
@@ -83,15 +105,17 @@ const EmployeeGoals = () => {
   }, [gettingPRCSelect, goalsValue.performance.length]);
 
   useEffect(() => {
-    // Extract employee profile data from the first goal if available
-    if (
+    // Extract employee profile data from store (setProfileData) or from first goal
+    if (profileDataFromStore) {
+      setEmployeeProfile(profileDataFromStore);
+    } else if (
       employeeGoalsData &&
       employeeGoalsData.length > 0 &&
       employeeGoalsData[0].emp_DATA
     ) {
       setEmployeeProfile(employeeGoalsData[0].emp_DATA);
     }
-  }, [employeeGoalsData]);
+  }, [employeeGoalsData, profileDataFromStore]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -109,6 +133,9 @@ const EmployeeGoals = () => {
 
   const handleBackToGoals = () => {
     clearEmployeeGoals();
+    // Navigate to main Goals table
+    navigate("/performance/goals");
+    // Also call handleCloseProfile if available (for profile view context)
     if (handleCloseProfile) {
       handleCloseProfile();
     }
@@ -232,59 +259,12 @@ const EmployeeGoals = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Employee Profile Header */}
-      {employeeProfile && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          {/* Review Cycle Section */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
-            <div className="flex items-center gap-4">
-               <div className="w-64">
-                 <CustomSelect
-                    placeHolderTitle="Select Review Cycle"
-                    value={goalsValue.performance_id}
-                    options={goalsValue.performance?.map((ele) => ({
-                      value: ele._id,
-                      label: ele.name,
-                    }))}
-                    onChangeHandler={handleSelectGoals}
-                    customStyles={false}
-                  />
-               </div>
-            </div>
-            
-            <div className="flex items-center gap-6 text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
-                <div className="flex items-center gap-2">
-                  <FaCalendarAlt className="text-blue-500" />
-                  <span className="font-medium">Start: 2023-01-02</span>
-                </div>
-                <FaArrowRight className="text-gray-300" size={12} />
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Deadline: 2023-06-01</span>
-                </div>
-            </div>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="flex gap-1 border-b border-gray-100 pb-1">
-            {["goals", "competency", "feedback", "history"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabChange && handleTabChange(tab)}
-                className={`px-6 py-2.5 text-sm font-medium rounded-t-xl transition-all relative ${
-                  currentView === tab
-                    ? "text-blue-600 bg-blue-50/50 border-b-2 border-blue-600"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                } capitalize`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Employee Profile Header - Removed duplicate tabs, filters, and date range */}
 
       {/* Content based on current view */}
-      {currentView === "goals" && (
+      {/* Always show goals table when this component is rendered (it's only rendered for goals view) */}
+      {/* Since this component is only rendered for goals view, always show the goals table */}
+      {(currentView === "goals" || !currentView) && (
         <>
           {/* Back Navigation and Add Goal Button */}
           <div className="flex items-center justify-between">
@@ -293,7 +273,7 @@ const EmployeeGoals = () => {
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
               onClick={handleBackToGoals}
             >
-              <FaArrowRight className="text-sm rotate-180" /> Back to List
+              <FaArrowRight className="text-sm rotate-180" /> Back to list
             </Button>
 
             <Button
