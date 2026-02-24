@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import useStore from '../../Store/store'
 import { showToast } from '../../Components/Toaster/Toaster'
 import attendanceApi from '../../Model/Data/Attendance/Attendance'
@@ -276,7 +276,7 @@ const SingleDayDetails = (props) => {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Attendance Summary – shown when timings exist */}
+      {/* Attendance Summary ΓÇô shown when timings exist */}
       <AnimatePresence mode="wait">
         {hasTimings ? (
           <motion.div
@@ -304,7 +304,7 @@ const SingleDayDetails = (props) => {
                       <span className="text-sm text-slate-600">In{timePairs.length > 1 ? ` ${idx + 1}` : ''}:</span>
                       <span className="text-sm font-semibold text-slate-900">{formatTimeDisplay(pair.in)}</span>
                     </div>
-                    <span className="text-slate-300">→</span>
+                    <span className="text-slate-300">ΓåÆ</span>
                     <div className="flex items-center gap-2">
                       <LogOut className="w-4 h-4 text-amber-500 shrink-0" aria-hidden />
                       <span className="text-sm text-slate-600">Out{timePairs.length > 1 ? ` ${idx + 1}` : ''}:</span>

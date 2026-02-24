@@ -147,10 +147,10 @@ const EmployeeSubFeed = ({
       <div className="flex items-center mb-4">
         <Button
           variant="text"
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors p-2 cursor-pointer"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
           onClick={handleBackToMain}
         >
-          <FaArrowLeft className="text-sm" />
+          <FaArrowLeft className="text-sm" /> Back to list
         </Button>
       </div>
 
