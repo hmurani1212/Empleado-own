@@ -190,6 +190,7 @@ export const empActionList = [
   { id: 7, title: 'Deactivate', icon: <FaUserAltSlash />, color: '#f44336' }
 ]
 
+<<<<<<< HEAD
 /** Get mobile/phone from employee: prefer contacts (Contact Number / Mobile), then top-level mobile/emp_phone */
 const getEmployeeMobile = (employee) => {
   if (employee?.mobile != null && String(employee.mobile).trim() !== '') return String(employee.mobile).trim();
@@ -261,6 +262,44 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
   /** When statusFilter is 'active', hide Exit column; show for 'all' and 'inactive'. */
   const showExitColumn = options.statusFilter !== 'active';
 
+export const exportEmployeesToExcel = (employeesData) => {
+  // Helper function to extract mobile number from contacts array
+  const getMobileNumber = (employee) => {
+    if (!employee?.contacts || !Array.isArray(employee.contacts)) {
+      return '';
+    }
+    
+    // Find mobile contact - prioritize contact_type "mobile", then check for mobile_network
+    // Exclude email contacts
+    const mobileContact = employee.contacts.find(contact => {
+      const contactType = contact?.contact_type?.toLowerCase() || '';
+      const isEmail = contactType === 'email';
+      
+      // Skip email contacts
+      if (isEmail) return false;
+      
+      // Check if it's explicitly marked as mobile
+      if (contactType === 'mobile' || contactType.includes('mobile')) {
+        return true;
+      }
+      
+      // Check if mobile_network exists (indicates it's a mobile number)
+      if (contact?.mobile_network && contact.mobile_network !== '0' && contact.mobile_network !== '') {
+        return true;
+      }
+      
+      // Check if contact starts with + (phone number format)
+      if (contact?.contact && typeof contact.contact === 'string' && contact.contact.startsWith('+')) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    return mobileContact?.contact || '';
+  };
+
+  // Define the columns for the table
   const columns = [
     'S.No',
     'Employee ID',
@@ -280,12 +319,25 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
     'Blood Group',
     'HR Policy',
     'Emergency Contact',
+    'Mobile#',
+    'Blood Group'
   ];
   const EMAIL_COLUMN_INDEX = columns.indexOf('Email') + 1;
 
   const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('Employees Data', { views: [{ state: 'frozen', ySplit: 2 }] });
+  // Transform the data into the format required for Excel
+  const rows = employeesData?.employees?.map(employee => [
+    employee?.id || '',
+    employee?.bio_id || '',
+    employee?.emp_id || '',
+    employee?.name || '',
+    employee?.branch?.branch_name || '',
+    employee?.department?.name || '',
+    getMobileNumber(employee),
+    employee?.blood_group || ''
+  ]);
 
   const thinBorder = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
@@ -308,6 +360,18 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
     cell.border = { ...thinBorder, bottom: { style: 'medium' } };
   });
   sheet.getRow(2).height = 24;
+  // Set column widths
+  const columnWidths = [
+    { wch: 15 }, // Employee ID
+    { wch: 15 }, // Bio ID
+    { wch: 15 }, // ID
+    { wch: 25 }, // Name
+    { wch: 25 }, // Placement
+    { wch: 25 }, // Department
+    { wch: 20 }, // Mobile#
+    { wch: 15 }  // Blood Group
+  ];
+  worksheet['!cols'] = columnWidths;
 
   employees.forEach((employee, index) => {
     const row = [

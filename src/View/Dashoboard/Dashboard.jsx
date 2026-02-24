@@ -121,28 +121,20 @@ function Dashboard() {
     }
   };
 
-  // Custom click handler for dashboard count data
-  const handleDashboardCountClick = async (ele) => {
+  // Open drawer immediately on card click; fetch data in background for responsive UX
+  const handleDashboardCountClick = (ele) => {
     if (ele.id === 4) {
       handleEmpLimit();
-    } else if (ele.op_code === "today_present") {
-      // Handle today's attendance click - use new API
-      // Use selectedDate if available, otherwise use current date
-      const dateToUse = selectedDate || new Date().toISOString().split("T")[0];
-      await getTodayAttendanceData(dateToUse);
-      getdashboardCountData(ele);
+      return;
+    }
+    const dateToUse = selectedDate || new Date().toISOString().split("T")[0];
+    getdashboardCountData(ele);
+    if (ele.op_code === "today_present") {
+      getTodayAttendanceData(dateToUse);
     } else if (ele.op_code === "today_late_comers") {
-      // Handle today's late comers - use selected date or current date
-      const dateToUse = selectedDate || new Date().toISOString().split("T")[0];
-      await getLateComersData("today", dateToUse);
-      getdashboardCountData(ele);
+      getLateComersData("today", dateToUse);
     } else if (ele.op_code === "weekly_late_comers") {
-      // Handle last 7 days late comers - use selected date or current date
-      const dateToUse = selectedDate || new Date().toISOString().split("T")[0];
-      await getLateComersData("last7days", dateToUse);
-      getdashboardCountData(ele);
-    } else {
-      getdashboardCountData(ele);
+      getLateComersData("last7days", dateToUse);
     }
   };
 
@@ -447,7 +439,7 @@ function Dashboard() {
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                           {pendingCheckListHeaders.map((head, i) => (
-                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                            <th key={i} className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap ${(head === 'ACTION' || head === 'Action' || head === 'View Profile') ? 'text-center align-middle' : ''}`}>
                               {head}
                             </th>
                           ))}
@@ -549,7 +541,7 @@ function Dashboard() {
                       <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                           {meet_greetHeaders.map((head, i) => (
-                            <th key={i} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                            <th key={i} className={`px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap ${(head === 'ACTION' || head === 'Action' || head === 'View Profile') ? 'text-center align-middle' : ''}`}>
                               {head}
                             </th>
                           ))}

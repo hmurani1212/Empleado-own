@@ -2,510 +2,504 @@ import React, { useState, useEffect } from 'react'
 import useStore from '../../Store/store'
 import { showToast } from '../../Components/Toaster/Toaster'
 import attendanceApi from '../../Model/Data/Attendance/Attendance'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Clock,
+  Calendar,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Timer,
+  LogIn,
+  LogOut,
+} from 'lucide-react'
 
 const SingleDayDetails = (props) => {
-    const { singleDayService, addMoreInput, updateSingleDayData, onDataRefreshed, searchingEmpValue, attendanceData } = props
-    const data = singleDayService?.data
+  const { singleDayService, addMoreInput, updateSingleDayData, onDataRefreshed, searchingEmpValue, attendanceData } = props
+  const data = singleDayService?.data
 
-    // Get the attendance functions from the store
-    const dailyAttAdjust = useStore((state) => state.dailyAttAdjust)
-    const setManualAttendance = useStore((state) => state.setManualAttendance)
+  const dailyAttAdjust = useStore((state) => state.dailyAttAdjust)
+  const setManualAttendance = useStore((state) => state.setManualAttendance)
 
-    // State for editable times - now supports infinite entries
-    const [timePairs, setTimePairs] = useState([{ in: '', out: '' }])
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [dataUpdateKey, setDataUpdateKey] = useState(0) // Force re-render when data updates
-    const [userSubmitted, setUserSubmitted] = useState(false) // Track if user just submitted
+  const [timePairs, setTimePairs] = useState([{ in: '', out: '' }])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [dataUpdateKey, setDataUpdateKey] = useState(0)
+  const [userSubmitted, setUserSubmitted] = useState(false)
 
-    // Check if timings array is empty or null
-    const hasTimings = data?.timings && data.timings.length > 0;
+  const hasTimings = data?.timings && data.timings.length > 0
 
-    // Function to convert Unix timestamp to time-only format (HH:MM)
-    const convertTimestampToTime = (timestamp) => {
-        if (!timestamp) return '';
-        const date = new Date(timestamp * 1000);
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
+  const convertTimestampToTime = (timestamp) => {
+    if (!timestamp) return ''
+    const date = new Date(timestamp * 1000)
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${hours}:${minutes}`
+  }
+
+  const convertTimeToHHMM = (timeString) => {
+    if (!timeString) return ''
+    return timeString
+  }
+
+  const secondsToHoursMinutesVerbose = (seconds) => {
+    const total = Number(seconds) || 0
+    const hours = Math.floor(total / 3600)
+    const minutes = Math.floor((total % 3600) / 60)
+    return `${hours} Hours, ${minutes} Minutes`
+  }
+
+  useEffect(() => {
+    if (userSubmitted) return
+
+    const currentDateString = data?.date_string
+    let freshData = data
+
+    if (currentDateString && attendanceData?.attendanceAttr?.attendance) {
+      const freshDayData = attendanceData.attendanceAttr.attendance.find(day =>
+        day.date_string === currentDateString
+      )
+      if (freshDayData) freshData = freshDayData
     }
 
+    const timings = freshData?.timings || []
+    const pairs = []
+    for (let i = 0; i < timings.length; i += 2) {
+      const inTime = timings[i] ? convertTimestampToTime(timings[i]) : ''
+      const outTime = timings[i + 1] ? convertTimestampToTime(timings[i + 1]) : ''
+      pairs.push({ in: inTime, out: outTime })
+    }
+    if (pairs.length === 0) pairs.push({ in: '', out: '' })
+    setTimePairs(pairs)
+  }, [data, dataUpdateKey, attendanceData, userSubmitted])
 
-    // Function to convert time to HH:MM format for API
-    const convertTimeToHHMM = (timeString) => {
-        if (!timeString) return '';
-        return timeString; // Already in HH:MM format
-    };
+  const refreshIndividualAttendanceData = async () => {
+    try {
+      let empId = searchingEmpValue?.empId?.value || searchingEmpValue?.empId || searchingEmpValue?.emp_id || data?.emp_id || data?.id || 9119528
+      if (typeof empId === 'object' && empId !== null) {
+        empId = empId.value || empId.id || empId.emp_id
+      }
+      const year = searchingEmpValue?.year?.value || searchingEmpValue?.year || new Date().getFullYear()
+      const month = searchingEmpValue?.month?.value || searchingEmpValue?.month || new Date().getMonth() + 1
 
-    // Helper: seconds -> "X Hours, Y Minutes"
-    const secondsToHoursMinutesVerbose = (seconds) => {
-        const total = Number(seconds) || 0;
-        const hours = Math.floor(total / 3600);
-        const minutes = Math.floor((total % 3600) / 60);
-        return `${hours} Hours, ${minutes} Minutes`;
-    };
+      const apiData = { empId, emp_id: empId, month, year, filter: 'specific_month' }
+      const [individualRes, graphRes] = await Promise.all([
+        attendanceApi.getIndividualDetail(apiData),
+        attendanceApi.getAttendanceGraph(apiData),
+      ])
+      if (individualRes?.data && onDataRefreshed) {
+        onDataRefreshed(individualRes, graphRes)
+        return true
+      }
+    } catch (e) { /* ignore */ }
+    return false
+  }
 
+  const handleMarkAction = async (action) => {
+    setIsSubmitting(true)
+    setUserSubmitted(true)
 
-    // Initialize state when data changes - ALWAYS get fresh data from main attendance data
-    useEffect(() => {
-        // Don't update modal times if user just submitted - keep their selected times
-        if (userSubmitted) {
-            return;
+    try {
+      let empId = searchingEmpValue?.empId?.value || searchingEmpValue?.empId || searchingEmpValue?.emp_id || data?.emp_id || data?.id
+      if (typeof empId === 'object' && empId !== null) empId = empId.value || empId.id || empId.emp_id
+      if (!empId || empId === '' || (typeof empId === 'object' && Object.keys(empId).length === 0)) {
+        showToast('Please select an employee first', 'error')
+        setIsSubmitting(false)
+        setUserSubmitted(false)
+        return
+      }
+
+      const dateString = data?.date_string
+      const [day, month, year] = dateString.split('-')
+      const formattedDate = `${year}-${month}-${day}`
+
+      let result
+      if (action === 'absent') {
+        const payload = {
+          emp_id: parseInt(empId),
+          date: formattedDate,
+          reason: 'unauthorized_absence',
+          admin_notes: 'Marked absent by admin',
+          penalty_applicable: true,
+          notify_employee: true,
         }
-        
-        // Get the current day's data from the main attendance data (always fresh)
-        const currentDateString = data?.date_string;
-        let freshData = data;
-        
-        if (currentDateString && attendanceData?.attendanceAttr?.attendance) {
-            const freshDayData = attendanceData.attendanceAttr.attendance.find(day => 
-                day.date_string === currentDateString
-            );
-            if (freshDayData) {
-                freshData = freshDayData;
-            }
+        const response = await attendanceApi.MarkAbsent(payload)
+        result = {
+          success: response.status === 200,
+          error: response.data?.ERROR_DESCRIPTION || 'Failed to mark absent',
         }
-        
-        const timings = freshData?.timings || [];
-        
-        // Create pairs of In/Out from timings array
-        // timings[0] = in_1, timings[1] = out_1, timings[2] = in_2, timings[3] = out_2, etc.
-        const pairs = [];
-        for (let i = 0; i < timings.length; i += 2) {
-            const inTime = timings[i] ? convertTimestampToTime(timings[i]) : '';
-            const outTime = timings[i + 1] ? convertTimestampToTime(timings[i + 1]) : '';
-            pairs.push({ in: inTime, out: outTime });
+      } else {
+        const payload = {
+          emp_id: empId,
+          date: formattedDate,
+          att_status: action === 'present' ? 'present' : 'holiday',
+          reason: action === 'holiday' ? 'National holiday' : undefined,
         }
-        
-        // If no timings, start with one empty pair
-        if (pairs.length === 0) {
-            pairs.push({ in: '', out: '' });
+        result = await setManualAttendance(payload)
+      }
+
+      if (result.success) {
+        showToast('Attendance marked successfully', 'success')
+        if (updateSingleDayData) {
+          const updatedData = {
+            ...data,
+            att_label: action === 'present' ? 'P' : action === 'holiday' ? 'H' : 'A',
+            timings: [],
+          }
+          updateSingleDayData(updatedData)
+          setDataUpdateKey((prev) => prev + 1)
         }
-
-        setTimePairs(pairs);
-    }, [data, dataUpdateKey, attendanceData, userSubmitted]);
-
-    // Function to refresh individual attendance data
-    const refreshIndividualAttendanceData = async () => {
-        try {
-            ////console.log('Refreshing individual attendance data...');
-
-            // Get employee and month/year from searchingEmpValue
-            let empId = searchingEmpValue?.empId?.value || searchingEmpValue?.empId || searchingEmpValue?.emp_id || data?.emp_id || data?.id || 9119528;
-            
-            // If empId is still an object, try to extract the value
-            if (typeof empId === 'object' && empId !== null) {
-                empId = empId.value || empId.id || empId.emp_id;
-            }
-            
-            const year = searchingEmpValue?.year?.value || searchingEmpValue?.year || new Date().getFullYear();
-            const month = searchingEmpValue?.month?.value || searchingEmpValue?.month || new Date().getMonth() + 1;
-
-            // Prepare API data - unify payload for both calls
-            const apiData = {
-                empId: empId,
-                emp_id: empId,
-                month: month,
-                year: year,
-                filter: 'specific_month'
-            };
-
-            // Call both APIs in parallel
-            const [individualRes, graphRes] = await Promise.all([
-                attendanceApi.getIndividualDetail(apiData),
-                attendanceApi.getAttendanceGraph(apiData)
-            ]);
-
-            if (individualRes && individualRes.data) {
-                if (onDataRefreshed) {
-                    // Pass both responses so parent can update calendar and chart together
-                    onDataRefreshed(individualRes, graphRes);
-                }
-                return true;
-            }
-            return false;
-        } catch (error) {
-            return false;
+        setTimeout(() => refreshIndividualAttendanceData(), 300)
+        setTimeout(() => {
+          setUserSubmitted(false)
+          addMoreInput()
+        }, 1000)
+      } else {
+        if (result.error?.includes('person bio ID is not registered')) {
+          showToast('person bio ID is not registered Please update employee information.', 'error')
+        } else {
+          showToast(result.error || `Failed to mark as ${action}`, 'error')
         }
-    };
+      }
+    } catch (error) {
+      showToast(error?.response?.data?.ERROR_DESCRIPTION || 'An error occurred', 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
-    // Handle Mark Present/Holiday actions
-    const handleMarkAction = async (action) => {
-        setIsSubmitting(true);
-        setUserSubmitted(true);
+  const handleSubmit = async () => {
+    let empId = searchingEmpValue?.empId?.value || searchingEmpValue?.empId || searchingEmpValue?.emp_id || data?.emp_id || data?.id
+    if (typeof empId === 'object' && empId !== null) empId = empId.value || empId.id || empId.emp_id
+    if (!empId || empId === '' || (typeof empId === 'object' && Object.keys(empId).length === 0)) {
+      showToast('Please select an employee first', 'error')
+      return
+    }
 
-        try {
-            // Get employee ID and validate it
-            let empId = searchingEmpValue?.empId?.value || searchingEmpValue?.empId || searchingEmpValue?.emp_id || data?.emp_id || data?.id;
-            
-            // If empId is still an object, try to extract the value
-            if (typeof empId === 'object' && empId !== null) {
-                empId = empId.value || empId.id || empId.emp_id;
-            }
-            
-            // Check if employee is selected
-            if (!empId || empId === '' || (typeof empId === 'object' && Object.keys(empId).length === 0)) {
-                showToast('Please select an employee first', 'error');
-                setIsSubmitting(false);
-                setUserSubmitted(false);
-                return;
-            }
-            
-            const dateString = data?.date_string; // Format: "01-08-2025"
-            
-            // Convert date format from "01-08-2025" to "2025-08-01"
-            const [day, month, year] = dateString.split('-');
-            const formattedDate = `${year}-${month}-${day}`;
+    setIsSubmitting(true)
+    setUserSubmitted(true)
 
-            let result;
-
-            if (action === 'absent') {
-                // Use MarkAbsent API for absent action
-                const payload = {
-                    emp_id: parseInt(empId),
-                    date: formattedDate,
-                    reason: "unauthorized_absence",
-                    admin_notes: "Marked absent by admin",
-                    penalty_applicable: true,
-                    notify_employee: true
-                };
-
-                // console.log('Sending MarkAbsent payload:', payload);
-                
-                const response = await attendanceApi.MarkAbsent(payload);
-                result = {
-                    success: response.status === 200,
-                    error: response.data?.ERROR_DESCRIPTION || 'Failed to mark absent'
-                };
-            } else {
-                // Use existing setManualAttendance for present/holiday
-                const payload = {
-                    emp_id: empId,
-                    date: formattedDate,
-                    att_status: action === 'present' ? 'present' : 'holiday',
-                    reason: action === 'holiday' ? 'National holiday' : undefined
-                };
-
-                // console.log('Sending payload:', payload);
-                result = await setManualAttendance(payload);
-            }
-
-            if (result.success) {
-                showToast('Attendance marked successfully', 'success');
-
-                // Update the singleDayService data
-                if (updateSingleDayData) {
-                    const updatedData = {
-                        ...data,
-                        att_label: action === 'present' ? 'P' : action === 'holiday' ? 'H' : 'A',
-                        timings: [] // Empty for marked attendance
-                    };
-                    updateSingleDayData(updatedData);
-                    setDataUpdateKey(prev => prev + 1);
-                }
-
-                // Refresh attendance data
-                setTimeout(async () => {
-                    await refreshIndividualAttendanceData();
-                }, 300);
-
-                // Close modal after a short delay
-                setTimeout(() => {
-                    setUserSubmitted(false);
-                    addMoreInput();
-                }, 1000);
-
-            } else {
-                // Handle specific error cases
-                if (result.error && result.error.includes('person bio ID is not registered')) {
-                    showToast('person bio ID is not registered Please update employee information.', 'error');
-                } else {
-                    showToast(result.error || `Failed to mark as ${action}`, 'error');
-                }
-            }
-        } catch (error) {
-            showToast(error.response.data.ERROR_DESCRIPTION, 'error');
-            // showToast(`An error occurred while marking as ${action}`, 'error');
-        } finally {
-            setIsSubmitting(false);
+    try {
+      const payload = { id: data?.id || 12345 }
+      timePairs.forEach((pair, index) => {
+        const inTimeFormatted = convertTimeToHHMM(pair.in)
+        const outTimeFormatted = convertTimeToHHMM(pair.out)
+        const inTime = inTimeFormatted?.trim() ? inTimeFormatted : 0
+        const outTime = outTimeFormatted?.trim() ? outTimeFormatted : 0
+        if (index === 0) {
+          payload.in_time = inTime
+          payload.out_time = outTime
+        } else {
+          payload[`in_time${index + 1}`] = inTime
+          payload[`out_time${index + 1}`] = outTime
         }
-    };
+      })
+      const maxPairsToClear = 4
+      for (let i = timePairs.length; i < maxPairsToClear; i++) {
+        const suffix = i + 1
+        payload[`in_time${suffix}`] = 0
+        payload[`out_time${suffix}`] = 0
+      }
 
-    // Handle form submission
-    const handleSubmit = async () => {
+      const result = await dailyAttAdjust(payload)
 
-        // Check if employee is selected
-        let empId = searchingEmpValue?.empId?.value || searchingEmpValue?.empId || searchingEmpValue?.emp_id || data?.emp_id || data?.id;
-        
-        // If empId is still an object, try to extract the value
-        if (typeof empId === 'object' && empId !== null) {
-            empId = empId.value || empId.id || empId.emp_id;
+      if (result.success) {
+        showToast('Attendance updated successfully!', 'success')
+        if (result.data?.DB_DATA) {
+          const { in_1, out_1 } = result.data.DB_DATA
+          if (updateSingleDayData) {
+            updateSingleDayData({ ...data, timings: [in_1, out_1] })
+            setDataUpdateKey((prev) => prev + 1)
+          }
+          setTimeout(() => refreshIndividualAttendanceData(), 2000)
         }
-        
-        // Check if employee is selected
-        if (!empId || empId === '' || (typeof empId === 'object' && Object.keys(empId).length === 0)) {
-            showToast('Please select an employee first', 'error');
-            return;
-        }
+        setTimeout(() => {
+          setUserSubmitted(false)
+          addMoreInput()
+        }, 1000)
+      } else {
+        showToast(result.error || 'Failed to adjust attendance', 'error')
+      }
+    } catch (error) {
+      showToast('An error occurred while adjusting attendance', 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
-        setIsSubmitting(true);
-        setUserSubmitted(true); // Mark that user has submitted
+  const handleTimeChange = (index, field, value) => {
+    const newPairs = [...timePairs]
+    newPairs[index][field] = value
+    setTimePairs(newPairs)
+  }
 
-        try {
-            // Build payload dynamically from all time pairs
-            const payload = {
-                id: data?.id || 12345, // Use the ID from the data or fallback
-            };
+  const handleAddTimePair = () => setTimePairs([...timePairs, { in: '', out: '' }])
 
-            // Add time pairs that exist - in_time, out_time, in_time2, out_time2, etc.
-            timePairs.forEach((pair, index) => {
-                const inTimeFormatted = convertTimeToHHMM(pair.in);
-                const outTimeFormatted = convertTimeToHHMM(pair.out);
-                const inTime = inTimeFormatted && inTimeFormatted.trim() !== '' ? inTimeFormatted : 0;
-                const outTime = outTimeFormatted && outTimeFormatted.trim() !== '' ? outTimeFormatted : 0;
+  const handleRemoveTimePair = (index) => {
+    if (timePairs.length > 1) setTimePairs(timePairs.filter((_, i) => i !== index))
+  }
 
-                if (index === 0) {
-                    payload.in_time = inTime;
-                    payload.out_time = outTime;
-                } else {
-                    payload[`in_time${index + 1}`] = inTime;
-                    payload[`out_time${index + 1}`] = outTime;
-                }
-            });
+  const formatTimeDisplay = (time24) => {
+    if (!time24) return '--:-- --'
+    const [hours, minutes] = time24.split(':')
+    const hour = parseInt(hours)
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const hour12 = hour % 12 || 12
+    return `${String(hour12).padStart(2, '0')}:${minutes} ${ampm}`
+  }
 
-            // Explicitly send 0 for removed time pairs so backend clears them
-            const maxPairsToClear = 4;
-            for (let i = timePairs.length; i < maxPairsToClear; i++) {
-                const suffix = i + 1;
-                payload[`in_time${suffix}`] = 0;
-                payload[`out_time${suffix}`] = 0;
-            }
+  const getStatusLabel = () => {
+    if (data?.att_label === 'MAL') return 'Monthly Allowed Leave'
+    if (data?.att_label === 'H' && data?.extra) return data.extra
+    if (data?.att_label === 'H' && data?.extra === null) return 'Weekly Holiday'
+    if (data?.att_label === 'A') return 'Absent'
+    if (data?.att_label === 'CL') return 'Casual Leave'
+    if (data?.att_label === 'AL') return 'Annual Leave'
+    if (data?.att_label === 'L') return data?.extra || 'Leave'
+    if (data?.extra === 'Manually marked holiday') return 'Manually Marked Holiday'
+    return data?.extra || ''
+  }
 
-            // Call the API
-            const result = await dailyAttAdjust(payload);
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05, delayChildren: 0.05 },
+    },
+  }
 
-            if (result.success) {
-                // Show success message first
-                showToast('Attendance updated successfully!', 'success');
+  const itemVariants = {
+    hidden: { opacity: 0, y: 8 },
+    visible: { opacity: 1, y: 0 },
+  }
 
-                // Update the singleDayService data with new timings from API response
-                if (result.data && result.data.DB_DATA) {
-                    const { in_1, out_1 } = result.data.DB_DATA;
-
-                    // Update the singleDayService data so it persists when modal reopens
-                    if (updateSingleDayData) {
-                        const updatedData = {
-                            ...data,
-                            timings: [in_1, out_1]
-                        };
-                        updateSingleDayData(updatedData);
-                        
-                        // Force the useEffect to trigger by updating the key
-                        setDataUpdateKey(prev => prev + 1);
-                    }
-
-                    // Call refreshIndividualAttendanceData() with a delay to ensure server has processed the update
-                    setTimeout(async () => {
-                        await refreshIndividualAttendanceData();
-                    }, 2000);
-                }
-
-                // Close modal after a short delay
-                setTimeout(() => {
-                    setUserSubmitted(false); // Reset the flag when modal closes
-                    addMoreInput(); // Close the modal
-                }, 1000);
-
-            } else {
-                showToast(result.error || 'Failed to adjust attendance', 'error');
-            }
-        } catch (error) {
-            showToast('An error occurred while adjusting attendance', 'error');
-        } finally {
-            setIsSubmitting(false);
-            // Don't reset userSubmitted here - let it reset when modal closes
-        }
-    };
-
-
-    // Handle time input change
-    const handleTimeChange = (index, field, value) => {
-        const newPairs = [...timePairs];
-        newPairs[index][field] = value;
-        setTimePairs(newPairs);
-    };
-
-    // Add a new time pair
-    const handleAddTimePair = () => {
-        setTimePairs([...timePairs, { in: '', out: '' }]);
-    };
-
-    // Remove a time pair
-    const handleRemoveTimePair = (index) => {
-        if (timePairs.length > 1) {
-            const newPairs = timePairs.filter((_, i) => i !== index);
-            setTimePairs(newPairs);
-        }
-    };
-    
-    // Format time for display
-    const formatTimeDisplay = (time24) => {
-        if (!time24) return '--:-- --';
-        const [hours, minutes] = time24.split(':');
-        const hour = parseInt(hours);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const hour12 = hour % 12 || 12;
-        return `${String(hour12).padStart(2, '0')}:${minutes} ${ampm}`;
-    };
-
-    return (
-        <div className='flex flex-col h-full'>
-            {/* Attendance Summary Info - Only show when there are timings */}
-            {hasTimings && (
-                <div className='flex flex-col items-center justify-center px-2 py-3 bg-gray-50 text-xs text-gray-700 border-b rounded-md'>
-                    <div className='flex items-center justify-center gap-x-4'>
-                        {timePairs.map((pair, idx) => (
-                            <div key={idx} className='flex flex-nowrap items-center gap-x-3 whitespace-nowrap'>
-                                <span>
-                                    <strong>In{timePairs.length > 1 ? ` ${idx + 1}` : ''}:</strong> {formatTimeDisplay(pair.in)}
-                                </span>
-                                <span>
-                                    <strong>Out{timePairs.length > 1 ? ` ${idx + 1}` : ''}:</strong> {formatTimeDisplay(pair.out)}
-                                </span>
-                            </div>
-                        ))}
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      {/* Attendance Summary – shown when timings exist */}
+      <AnimatePresence mode="wait">
+        {hasTimings ? (
+          <motion.div
+            key="summary"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="shrink-0"
+          >
+            <div className="relative rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)] p-6 mb-6 overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/60 before:via-transparent before:to-transparent before:pointer-events-none before:rounded-2xl">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4 font-poppins">Today&apos;s Summary</p>
+              {/* Time Pairs Row */}
+              <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
+                {timePairs.map((pair, idx) => (
+                  <motion.div
+                    key={idx}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gradient-to-br from-white to-slate-50/90 border border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <LogIn className="w-4 h-4 text-blue-500 shrink-0" aria-hidden />
+                      <span className="text-sm text-slate-600">In{timePairs.length > 1 ? ` ${idx + 1}` : ''}:</span>
+                      <span className="text-sm font-semibold text-slate-900">{formatTimeDisplay(pair.in)}</span>
                     </div>
-                    <div className='mt-2 flex items-center justify-center gap-x-4'>
-                        <span><strong>Expected Hours:</strong> {secondsToHoursMinutesVerbose(data?.expected)}</span>
-                        <span><strong>Earned&nbsp;Hours:</strong> {secondsToHoursMinutesVerbose(data?.earned)}</span>
-                        <span><strong>Overtime:</strong> {secondsToHoursMinutesVerbose(data?.overtime)}</span>
+                    <span className="text-slate-300">→</span>
+                    <div className="flex items-center gap-2">
+                      <LogOut className="w-4 h-4 text-amber-500 shrink-0" aria-hidden />
+                      <span className="text-sm text-slate-600">Out{timePairs.length > 1 ? ` ${idx + 1}` : ''}:</span>
+                      <span className="text-sm font-semibold text-slate-900">{formatTimeDisplay(pair.out)}</span>
                     </div>
+                  </motion.div>
+                ))}
+              </div>
+              {/* Hours Stats Row */}
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 border border-emerald-200/60 shadow-[0_1px_3px_rgba(5,150,105,0.08),inset_0_1px_0_0_rgba(255,255,255,0.7)]">
+                  <Timer className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden />
+                  <span className="text-xs font-medium text-emerald-700">Expected</span>
+                  <span className="text-sm font-semibold text-emerald-900">{secondsToHoursMinutesVerbose(data?.expected)}</span>
                 </div>
-            )}
-
-            {!hasTimings ? (
-                // Show action buttons when no timings
-                <div className='flex flex-col justify-center items-center gap-6 pb-6'>
-                    <span className='border-b-2 border-white text-white px-4 text-center font-medium '>
-                        {data?.att_label === "MAL" ? "Monthly Allowed Leave" 
-                        : data?.att_label === "H" && data?.extra ? data.extra
-                        : data?.att_label === "H" && data?.extra === null ? "Weekly Holiday" 
-                        : data?.att_label === "A" ? "Absent" 
-                        : data?.att_label === "CL" ? "Casual Leave" 
-                        : data?.att_label === "AL" ? "Annual Leave" 
-                        : data?.att_label === "L" ? data?.extra 
-                        : data?.extra === "Manually marked holiday" ? "Manually Marked holiday" 
-                        : data?.extra ? data.extra 
-                        : ""}
-                    </span>
-                    <div className='flex justify-center gap-4'>
-                        <button
-                            onClick={() => handleMarkAction('present')}
-                            disabled={isSubmitting}
-                            className='px-6 py-2.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 min-w-[120px] shadow-sm'
-                        >
-                            {isSubmitting ? 'Processing...' : 'Mark Present'}
-                        </button>
-                        <button
-                            onClick={() => handleMarkAction('holiday')}
-                            disabled={isSubmitting}
-                            className='px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 min-w-[120px] shadow-sm'
-                        >
-                            {isSubmitting ? 'Processing...' : 'Mark as Holiday'}
-                        </button>
-                    </div>
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/60 border border-blue-200/60 shadow-[0_1px_3px_rgba(59,130,246,0.08),inset_0_1px_0_0_rgba(255,255,255,0.7)]">
+                  <Clock className="w-4 h-4 text-blue-600 shrink-0" aria-hidden />
+                  <span className="text-xs font-medium text-blue-700">Earned</span>
+                  <span className="text-sm font-semibold text-blue-900">{secondsToHoursMinutesVerbose(data?.earned)}</span>
                 </div>
-            ) : (
-                // Show time input fields based on number of pairs
-                <div className='flex flex-col flex-1 overflow-hidden'>
-                    <div className='flex-1 overflow-y-auto px-6 py-4'>
-                        {/* Render input fields based on number of time pairs */}
-                        {timePairs.map((pair, index) => (
-                            <div key={index} className='mb-4 border border-gray-200 rounded-lg p-4 bg-white'>
-                                <div className='flex items-center justify-between mb-3'>
-                                    <h4 className='text-sm font-semibold text-gray-700'>Time Pair {index + 1}</h4>
-                                    {timePairs.length > 1 && (
-                                        <button
-                                            type='button'
-                                            onClick={() => handleRemoveTimePair(index)}
-                                            className='text-red-600 hover:text-red-700 text-sm font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors'
-                                        >
-                                            Remove
-                                        </button>
-                                    )}
-                                </div>
-                                
-                                {/* In X */}
-                                <div className='flex items-center gap-2 mb-3'>
-                                    <label className='text-sm font-medium w-16 text-gray-700'>
-                                        In {index + 1}
-                                    </label>
-                                    <input
-                                        className='flex-1 text-sm text-gray-700 rounded-md py-2.5 px-3 border border-gray-300 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white'
-                                        type='time'
-                                        value={pair.in}
-                                        onChange={(e) => handleTimeChange(index, 'in', e.target.value)}
-                                        placeholder='--:--'
-                                    />
-                                </div>
-
-                                {/* Out X */}
-                                <div className='flex items-center gap-2'>
-                                    <label className='text-sm font-medium w-16 text-gray-700'>
-                                        Out {index + 1}
-                                    </label>
-                                    <input
-                                        className='flex-1 text-sm text-gray-700 rounded-md py-2.5 px-3 border border-gray-300 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white'
-                                        type='time'
-                                        value={pair.out}
-                                        onChange={(e) => handleTimeChange(index, 'out', e.target.value)}
-                                        placeholder='--:--'
-                                    />
-                                </div>
-                            </div>
-                        ))}
-
-                        {/* Add New Time Pair Button */}
-                        <div className='flex justify-center mb-4'>
-                            <button
-                                type='button'
-                                onClick={handleAddTimePair}
-                                className='px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors duration-200 shadow-sm flex items-center gap-2'
-                            >
-                                <span>+</span>
-                                <span>Add Time Pair</span>
-                            </button>
-                        </div>
-
-                    </div>
-
-                    {/* Action Buttons - Fixed at bottom */}
-                    <div className='flex justify-center gap-3 px-6 py-4 bg-gray-50 border-t mt-auto rounded-md'>
-                        <button
-                            onClick={handleSubmit}
-                            disabled={isSubmitting}
-                            className='px-10 py-3 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm'
-                        >
-                            {isSubmitting ? 'Saving...' : 'Adjust Timings'}
-                        </button>
-                        <button
-                            onClick={() => handleMarkAction('absent')}
-                            disabled={isSubmitting}
-                            className='px-10 py-3 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm'
-                        >
-                            {isSubmitting ? 'Processing...' : 'Mark Absent'}
-                        </button>
-                        <button
-                            onClick={() => handleMarkAction('holiday')}
-                            disabled={isSubmitting}
-                            className='px-10 py-3 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm'
-                        >
-                            {isSubmitting ? 'Processing...' : 'Mark Holiday'}
-                        </button>
-                    </div>
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-br from-violet-50 to-violet-100/60 border border-violet-200/60 shadow-[0_1px_3px_rgba(139,92,246,0.08),inset_0_1px_0_0_rgba(255,255,255,0.7)]">
+                  <Timer className="w-4 h-4 text-violet-600 shrink-0" aria-hidden />
+                  <span className="text-xs font-medium text-violet-700">Overtime</span>
+                  <span className="text-sm font-semibold text-violet-900">{secondsToHoursMinutesVerbose(data?.overtime)}</span>
                 </div>
-            )}
-        </div>
-    )
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait">
+        {!hasTimings ? (
+          <motion.div
+            key="no-timings"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="flex flex-col items-center justify-center gap-8 py-12"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center border border-slate-200/80 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
+                <Calendar className="w-10 h-10 text-slate-500" aria-hidden />
+              </div>
+              <p className="text-base font-semibold text-slate-800 font-poppins text-center">{getStatusLabel()}</p>
+              <p className="text-sm text-slate-500">Mark attendance for this day</p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4">
+              <motion.button
+                type="button"
+                onClick={() => handleMarkAction('present')}
+                disabled={isSubmitting}
+                whileHover={{ scale: 1.03, boxShadow: '0 20px 25px -5px rgba(5, 150, 105, 0.2)' }}
+                whileTap={{ scale: 0.98 }}
+                style={{ background: 'linear-gradient(180deg, #10b981 0%, #059669 50%, #047857 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(5, 150, 105, 0.35), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <CheckCircle2 className="w-4 h-4" aria-hidden />}
+                <span style={{ color: '#ffffff' }}>{isSubmitting ? 'Processing...' : 'Mark Present'}</span>
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => handleMarkAction('holiday')}
+                disabled={isSubmitting}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{ background: 'linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(245, 158, 11, 0.35), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Calendar className="w-4 h-4" aria-hidden />}
+                <span style={{ color: '#ffffff' }}>{isSubmitting ? 'Processing...' : 'Mark as Holiday'}</span>
+              </motion.button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="with-timings"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col flex-1 min-h-0"
+          >
+            <div className="flex-1 overflow-y-auto customScroll pr-1 -mr-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4 font-poppins">Time Entries</p>
+              {timePairs.map((pair, index) => (
+                <motion.div
+                  key={index}
+                  variants={itemVariants}
+                  className="mb-4 rounded-2xl bg-white border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.03),inset_0_1px_0_0_rgba(255,255,255,0.9)] overflow-hidden"
+                >
+                  <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-slate-50 to-slate-100/80 border-b border-slate-200/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8)]">
+                    <span className="text-sm font-semibold text-slate-700 font-poppins">Time Pair {index + 1}</span>
+                    {timePairs.length > 1 && (
+                      <motion.button
+                        type="button"
+                        onClick={() => handleRemoveTimePair(index)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-200"
+                        aria-label={`Remove time pair ${index + 1}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" aria-hidden />
+                        Remove
+                      </motion.button>
+                    )}
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm font-medium text-slate-600 w-16 shrink-0">In {index + 1}</label>
+                      <input
+                        type="time"
+                        value={pair.in}
+                        onChange={(e) => handleTimeChange(index, 'in', e.target.value)}
+                        className="flex-1 min-w-0 text-sm text-slate-800 rounded-xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 px-4 py-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
+                        aria-label={`In time ${index + 1}`}
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm font-medium text-slate-600 w-16 shrink-0">Out {index + 1}</label>
+                      <input
+                        type="time"
+                        value={pair.out}
+                        onChange={(e) => handleTimeChange(index, 'out', e.target.value)}
+                        className="flex-1 min-w-0 text-sm text-slate-800 rounded-xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 px-4 py-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
+                        aria-label={`Out time ${index + 1}`}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+
+              <motion.div variants={itemVariants} className="flex justify-center py-3">
+                <motion.button
+                  type="button"
+                  onClick={handleAddTimePair}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-dashed border-slate-200/80 text-slate-500 text-sm font-medium bg-gradient-to-b from-slate-50/50 to-white hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50/70 hover:shadow-[0_2px_8px_-2px_rgba(16,185,129,0.2)] focus:outline-none focus:ring-2 focus:ring-emerald-200 transition-all"
+                >
+                  <Plus className="w-4 h-4" aria-hidden />
+                  Add Time Pair
+                </motion.button>
+              </motion.div>
+            </div>
+
+            {/* Action Buttons Footer */}
+            <div className="shrink-0 pt-6 mt-4 border-t border-slate-200/80 bg-gradient-to-b from-white via-slate-50/50 to-white rounded-2xl px-4 py-5 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
+              <motion.div
+                variants={itemVariants}
+                className="flex flex-wrap justify-center gap-3"
+              >
+                <motion.button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(37, 99, 235, 0.4), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                >
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : null}
+                  {isSubmitting ? 'Saving...' : 'Adjust Timings'}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => handleMarkAction('absent')}
+                  disabled={isSubmitting}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(220, 38, 38, 0.4), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                >
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <XCircle className="w-4 h-4" aria-hidden />}
+                  {isSubmitting ? 'Processing...' : 'Mark Absent'}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  onClick={() => handleMarkAction('holiday')}
+                  disabled={isSubmitting}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ background: 'linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(245, 158, 11, 0.35), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
+                  className="inline-flex items-center gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                >
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Calendar className="w-4 h-4" aria-hidden />}
+                  {isSubmitting ? 'Processing...' : 'Mark Holiday'}
+                </motion.button>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 }
 
 export default SingleDayDetails

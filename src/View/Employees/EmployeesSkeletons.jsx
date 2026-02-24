@@ -1,4 +1,5 @@
 import React from "react";
+import { Card, CardBody } from '@material-tailwind/react';
 
 /**
  * Skeleton rows for Employees list table - mirrors EmployeesList.jsx layout (8 columns).
@@ -40,33 +41,54 @@ export const EmployeesListTableSkeleton = () => {
 };
 
 /**
- * Skeleton for Employees grid view - mirrors GridEmployee.jsx card layout (grid-cols-4).
+ * Skeleton loading component for Employees Grid
+ * Displays skeleton cards matching the employee card layout
  */
 export const EmployeesGridSkeleton = () => {
+  // Render 8 skeleton cards (2 rows of 4 to match grid-cols-4 layout)
+  const skeletonCount = 8;
+
   return (
-    <div className="grid grid-cols-4 gap-3">
-      {[...Array(8)].map((_, i) => (
-        <div
-          key={i}
-          className="border border-gray-200 bg-[#F8F9FF] rounded-lg overflow-hidden animate-pulse"
+    <>
+      {Array.from({ length: skeletonCount }).map((_, index) => (
+        <Card 
+          key={index} 
+          className="border border-[#3DA5F4] bg-[#F8F9FF] shadow-none animate-pulse"
         >
-          <div className="p-3">
-            <div className="flex justify-end mb-2">
-              <div className="w-6 h-6 rounded bg-gray-100" />
+          <CardBody className='p-1'>
+            {/* Menu icon skeleton */}
+            <div className='flex justify-end relative'>
+              <div className='w-5 h-5 bg-gray-300 rounded'></div>
             </div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-[50px] h-[50px] rounded-full bg-gray-100" />
-              <div className="h-3 bg-gray-100 rounded w-20" />
-              <div className="h-4 bg-gray-100 rounded w-16" />
-              <div className="h-3 bg-gray-100 rounded w-24" />
-              <div className="flex flex-col items-center gap-1">
-                <div className="h-3 bg-gray-100 rounded w-28" />
-                <div className="h-3 bg-gray-100 rounded w-20" />
+            
+            {/* Content skeleton */}
+            <div className='flex justify-center mt-2'>
+              <div className='flex flex-col items-center gap-[3px] w-full'>
+                {/* Avatar skeleton */}
+                <div className='w-[50px] h-[50px] bg-gray-300 rounded-full'></div>
+                
+                {/* Empleado ID skeleton */}
+                <div className='flex items-center gap-2 mt-1'>
+                  <div className='h-3 w-16 bg-gray-300 rounded'></div>
+                  <div className='h-3 w-8 bg-gray-300 rounded'></div>
+                </div>
+                
+                {/* Name skeleton */}
+                <div className='h-4 w-24 bg-gray-300 rounded mt-1'></div>
+                
+                {/* Department skeleton */}
+                <div className='h-3 w-20 bg-gray-300 rounded mt-1'></div>
+                
+                {/* Email and phone skeleton */}
+                <div className='flex flex-col items-center gap-[1px] mt-1'>
+                  <div className='h-3 w-32 bg-gray-300 rounded'></div>
+                  <div className='h-3 w-24 bg-gray-300 rounded'></div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       ))}
-    </div>
+    </>
   );
 };

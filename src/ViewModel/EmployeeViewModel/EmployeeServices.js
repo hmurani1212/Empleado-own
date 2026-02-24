@@ -92,6 +92,9 @@ const useEmployees = () => {
 
     // Profile Update Invite function
     const sendProfileUpdateInvite = useStore((state) => state.sendProfileUpdateInvite);
+    
+    // Update Profile Image function
+    const updateEmployeeProfileImage = useStore((state) => state.updateEmployeeProfileImage);
 
     // Logo functions
     const orgLogo = useStore((state) => state.orgLogo);
@@ -326,8 +329,6 @@ const useEmployees = () => {
         one_id: '',
         org_id: '',
         mobile_no: '',
-
-
     })
     const [loading, setLoading] = useState(false)
     const [isAddingEmployee, setIsAddingEmployee] = useState(false)
@@ -828,7 +829,7 @@ const useEmployees = () => {
                 showToast(errorMessage, 'error');
                 console.log('Error details:', err);
             }
-        }finally{
+        } finally {
             setLoading(false)
         }
     }
@@ -865,11 +866,12 @@ const useEmployees = () => {
             gettingSubBranches(selectedOption.value);
             // gettingPolicies(selectedOption.value);
             fetchHrPolicyDropdown(selectedOption.value);
-            get_all_department_fn(selectedOption.value);
+            // get_all_department_fn(selectedOption.value);
             gettingSalayTemplate(selectedOption.value);
             gettingDesignation(selectedOption.value, true) // true = branch_id for designation API
             fetchingAllEmployess(selectedOption.value);
         } else if (field === 'department') {
+            console.log('Department selected:', selectedOption);
             setNewEmpValues((prevState) => ({
                 ...prevState,
                 [field]: selectedOption,
@@ -911,17 +913,30 @@ const useEmployees = () => {
             const data = { parent_id: 0, branch_id: id, getAll: true }
             const response = await employeesApi.gettingSubDepts(data)
             const resData = response.data
-            console.log('Departments API response:', resData);
+            console.log('Departments API response:', resData.DB_DATA?.departments);
             if (resData.STATUS === "SUCCESSFUL") {
                 setDept_subDept(resData.DB_DATA)
                 setDesignations([])
             } else {
                 setDept_subDept({ departments: [] })
+                const departments = resData.DB_DATA?.departments || [];
+                setDept_subDept(departments);
+                // Update store's get_all_department directly with departments array
+                // This makes departments available in the component via get_all_department
+                useStore.setState({ get_all_department: departments });
+                // Clear designations when departments change
+                setDesignations([])
+                console.log('Departments set in store:', departments);
+            } else {
+                setDept_subDept([])
+                useStore.setState({ get_all_department: [] });
                 setDesignations([])
             }
         } catch (err) {
             console.error("Error fetching departments:", err)
             setDept_subDept({ departments: [] })
+            setDept_subDept([])
+            useStore.setState({ get_all_department: [] });
             setDesignations([])
         }
     }
@@ -1058,11 +1073,22 @@ const useEmployees = () => {
     }
 
     const flattenOptions = (data) => {
-        // console.log('flattenOptions called with data:', data?.departments);
+        // console.log('flattenOptions called with data:', data);
 
         let flattenedOptions = [];
 
-        const send_data = data?.departments
+        // Handle both array and object with departments property
+        let send_data;
+        if (Array.isArray(data)) {
+            // If data is already an array, use it directly
+            send_data = data;
+        } else if (data?.departments && Array.isArray(data.departments)) {
+            // If data is an object with departments property
+            send_data = data.departments;
+        } else {
+            // Fallback: try to use data as is if it's an array
+            send_data = Array.isArray(data) ? data : [];
+        }
 
         // Handle the actual API response structure
         if (send_data && Array.isArray(send_data)) {
@@ -1219,7 +1245,7 @@ const useEmployees = () => {
             // Use newFilters as the primary source, fallback to current state
             // If pageNumber is provided, use it; otherwise use page from newFilters or default to 1
             const targetPage = pageNumber !== null ? pageNumber : (newFilters.page || 1);
-            
+
             const currentFilters = {
                 text: filterValues.searchEmployee,
                 page: targetPage,
@@ -1709,6 +1735,8 @@ const useEmployees = () => {
         sendReportingEmail,
         // Profile Update Invite function
         sendProfileUpdateInvite,
+        // Update Profile Image function
+        updateEmployeeProfileImage,
         // Logo functions
         orgLogo,
         isLoadingLogo,

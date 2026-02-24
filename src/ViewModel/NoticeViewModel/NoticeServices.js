@@ -216,7 +216,7 @@ const useNotice = () => {
         }));
     };
 
-    const [openViewDialog, setOpenViewDialog] = useState("")
+    const [openViewDialog, setOpenViewDialog] = useState(false)
     const handleView = () => {
         setOpenViewDialog(!openViewDialog);
     };
@@ -630,7 +630,7 @@ const useNotice = () => {
     noticeTitles, noticesBranches, noticesDepartment, getAllDepartmentsNotices, getBranchesOnly, getDepartmentsByBranch, noticesFilterBranches, handleChangeDept, addNoticeValue, handleAddNoticeBranch,
     filterDepartmentsNotices, employeeOptions, handleDeptChange, setAddNoticeValue, handleNewNotice, handleCheckboxChange, showEmployeeName, handleChangeEmpName, addNewNotice, allNoticesList,
     getAllNoticesList, noticeMount, noticesMenuItems, toggleMenuNotices, openMenu, openDialog, handleDelete, handleMenuItemsNotices, deleteNotices, viewNoticeData, getViewNotice, openViewDialog, setOpenViewDialog,
-    handleView, handleNoticesSearchEmp, loading, showNoticeDrawer, closeNoticeDrawer, loading,
+    handleView, handleNoticesSearchEmp, loading, showNoticeDrawer, closeNoticeDrawer,
     handleEditNotice,
     handleEditNoticeToggle,
     filterNoticeValue,

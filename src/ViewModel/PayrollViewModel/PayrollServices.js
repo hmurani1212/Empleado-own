@@ -613,7 +613,7 @@ const usePayroll = () => {
 
   return {payrollNavTitles, openMenuEmpSalary, payrollActionMenu, gettingSalaryTemp, allSalaryTemp, listViewPayroll, handleListTogglePayroll, handleGridTogglePayroll, openMenuPayroll, toggleMenuPayroll, gettingManageEmpSalary, allEmpSalary, toggleMenuEmpSalary, empSalaryActionMenu, empSalaryTemplate, empSalaryLoaded, mountEmpSalary, handleMountEmp, manageEmpSalarySearch, handleEmpSalaryChange, empSalarySearch, handleSalaryTempSearch, salaryTemplateSearch, handleMenuPayroll,handleIncrementTypeChange,
     handleIncrement, incNewValues,handleChangeIncValues, openDialogDelTemp, salaryTempDialog, handleDelete, editValues, dataEditSingle, dataEditBranch, handleChangeBranchEdit, handleChangeEditValues, handleEdit, singleTemp, getDataGrossNet, getDashboardData, grossNetValues, mountPayrollOverview, annualGrossSalary, annual_gross_salary_labels, annual_gross_salary_data, getGrossSalary, getAnnualGrossSalary, gross_label, gross_value, getNetSalary, net_salary_label, net_salary_value,
-    payrollChartValues, handleChangeYear, branches_payroll, copyBranchesData, getAllBranchesPayroll, handleBranchFilterPayroll, branchFilter, handleCreateSalaryTemplate, handleCreateTemplateDrawer, handleIncrementDrawer, loading, salaryTemplateSearch
+    payrollChartValues, handleChangeYear, branches_payroll, copyBranchesData, getAllBranchesPayroll, handleBranchFilterPayroll, branchFilter, handleCreateSalaryTemplate, handleCreateTemplateDrawer, handleIncrementDrawer, loading
   }
 }
 

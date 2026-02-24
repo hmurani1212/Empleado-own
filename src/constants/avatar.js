@@ -1,10 +1,5 @@
-/**
- * Single default user/avatar image used across the app for:
- * - Employee dashboard profile section
- * - Header profile picture
- * - Notifications / Inbox user icons
- */
-import defaultUserAvatar from '../assets/images/user-profile-icon.png.jpeg';
+// Default user avatar image URL
+// This is used as a fallback when user profile image is not available
+const defaultUserAvatar = 'https://emp-beta.veevotech.com/images/icons/empm.jpg';
 
-export { defaultUserAvatar };
 export default defaultUserAvatar;

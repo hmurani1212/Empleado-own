@@ -68,7 +68,6 @@ const useGoalServices = ()=>{
         start_date:'',
         end_date:'',
         description:'',
-        employee_id:'',
         priority:null,
         selectedEmp:[],
         loading:false,
@@ -229,7 +228,6 @@ const useGoalServices = ()=>{
             start_date:'',
             end_date:'',
             description:'',
-            employee_id:'',
             priority:null,
             selectedEmp:[]
         }))

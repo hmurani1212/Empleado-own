@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Progress, Button } from "@material-tailwind/react";
-import { BiSearch } from "react-icons/bi";
 import {
   FaThumbsUp,
   FaThumbsDown,
@@ -486,24 +485,6 @@ const History = ({
             </select>
           </div>
 
-          {/* Search Employee Input */}
-          <div className="relative w-64">
-            <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">
-              Search Employee
-            </label>
-            <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-1/2 mt-3 right-3 -translate-y-2/4">
-              <span>
-                <BiSearch />
-              </span>
-            </div>
-            <input
-              className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-              placeholder="Search Employee"
-              name="name"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-          </div>
         </div>
       </div>
 
@@ -566,35 +547,31 @@ const History = ({
                       </Typography>
                     </td>
                     <td className={classes}>
-                      <div className="w-full flex items-center justify-center">
+                      <div className="w-full flex flex-col items-center justify-center gap-2">
+                        <Typography
+                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap"
+                        >
+                          {item.goal_progress || 0}%
+                        </Typography>
                         <Progress
                           value={item.goal_progress || 0}
                           color="blue"
-                          className="h-2"
+                          className="h-2 w-full"
                         />
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize mt-1"
-                        >
-                          {item.goal_progress || 0}% progress
-                        </Typography>
                       </div>
                     </td>
                     <td className={classes}>
-                      <div className="w-full flex items-center justify-center">
+                      <div className="w-full flex flex-col items-center justify-center gap-2">
+                        <Typography
+                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap"
+                        >
+                          {competencyProgress}%
+                        </Typography>
                         <Progress
                           value={competencyProgress}
                           color="blue"
-                          className="h-2"
+                          className="h-2 w-full"
                         />
-                        <Typography
-                          // variant="small"
-                          // color="blue-gray"
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize mt-1"
-                        >
-                          {competencyProgress}% progress
-                        </Typography>
                       </div>
                     </td>
                   </tr>

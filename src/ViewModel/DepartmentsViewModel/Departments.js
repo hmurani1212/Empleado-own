@@ -68,11 +68,13 @@ const departmentsViewModel = (set, get) => ({
 
     getAllDepartments: async () => {
         try {
-            const response = await departmentsApi.gettingAllDepartments();
+            // Use employeesApi.gettingAllBranches() which calls /api/v1/branches/get_branch_employee
+            // This ensures we're using the correct API endpoint (not get_branches)
+            const response = await employeesApi.gettingAllBranches();
             const data = response.data
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
                 const departments = data.DB_DATA
-                const branches = data.DB_DATA.branches
+                const branches = data.DB_DATA?.branches || []
                 // const ownObjectBranches = {id: '1', branch_name: 'All Branches'}
                 // const ownObjectDepartments = {id: '1', name: 'All Departments'}
                 // const  updatedBranches= [ownObjectBranches, ...branches];
@@ -87,6 +89,28 @@ const departmentsViewModel = (set, get) => ({
             console.log(err);
         }
 
+    },
+
+    // Function to get branch employee list (branches) - calls get_branch_employee API
+    getBranchEmployeeList: async () => {
+        try {
+            // Use employeesApi.gettingAllBranches() which calls /api/v1/branches/get_branch_employee
+            const response = await employeesApi.gettingAllBranches();
+            const data = response.data;
+            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+                const branches = data.DB_DATA?.branches || [];
+                set({ allBranches: branches });
+                return branches;
+            } else {
+                console.error('Failed to fetch branches:', data.ERROR_DESCRIPTION || 'Unknown error');
+                set({ allBranches: [] });
+                return [];
+            }
+        } catch (err) {
+            console.error('Error fetching branch employee list:', err);
+            set({ allBranches: [] });
+            return [];
+        }
     },
 
 

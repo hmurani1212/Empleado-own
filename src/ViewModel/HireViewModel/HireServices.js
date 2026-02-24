@@ -1920,8 +1920,8 @@ const useHire = () => {
     handleDeactivate, deactiveValues, acceptDialog, setAcceptDialog, handleAcceptApp, acceptValues, acceptFormErrors, handleChangeActive, starredIndexes, handleActivateVac, loading, deleteDialog, setDeleteDialog, handleDeactivateVac, handleFilterChangeTalent, handleAcceptDialog, gettingVacancyRounds, vacRounds, get_record,
     acceptanceConfirmationDialog, handleAcceptanceConfirmationDialog, acceptedApplicantData, handleSendAcceptanceLetter, handleCloseAcceptanceConfirmation,
     shortlistTemplateDialog, handleShortlistTemplateDialog, shortlistedApplicantData, handleSendShortlistTemplate, handleCloseShortlistTemplate,
-    handleFilterChangeTalent, loadMoreTalentPool, pagination: talentPoolPagination, Re_Interviewfn, Re_Interview_data,
-    get_rejected_app_data, get_rejected_app, gettingViewPending, get_record, dataForScore, HireEmployeeDrawerContent,
+    loadMoreTalentPool, pagination: talentPoolPagination, Re_Interviewfn, Re_Interview_data,
+    get_rejected_app_data, get_rejected_app, gettingViewPending, dataForScore, HireEmployeeDrawerContent,
     openDrawer, closeDrawer, settingDrawerTitle, settingDrawerSize, settingComponent, fetchingAllBranches, openHireEmployeeDrawer,
     City_data, gettingCitiesByCountry,
   }

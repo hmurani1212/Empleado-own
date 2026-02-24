@@ -125,7 +125,8 @@ const ViewPRC = (props) => {
                 </div>
             </div>
         </div>
-        <div className='grid grid-cols-2 gap-4'>
+        {/* Total Submissions - Commented out for now */}
+        {/* <div className='grid grid-cols-2 gap-4'>
             <div className='flex gap-3 border border-blue-500 rounded-md p-3'>
 
                 <div className='mt-1'>
@@ -139,7 +140,7 @@ const ViewPRC = (props) => {
                     <span className='text-customBlack-100 text-[12px]'>{data.count || 0}</span>
                 </div>
             </div>
-        </div>
+        </div> */}
     </div>
   )
 }

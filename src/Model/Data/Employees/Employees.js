@@ -1,4 +1,7 @@
 import axiosInstance, { axiosInstancecoremodule, payRollinstancemodule, traininginstancemodeule } from "../../base"
+import axios from "axios"
+import { CORE_BASE_URL } from "../../BaseUri"
+import { getLocalStorage } from "../../../Authentication/localStorageServices"
 
 const employeesApi = {
     getBranches: function () {
@@ -530,16 +533,6 @@ const employeesApi = {
             url: '/processors/get_data.php',
             data: {
                 operation: 'emp_license_form',
-                ...data
-            }
-        })
-    },
-    addLicenseType: function (data) {
-        return axiosInstance.request({
-            method: 'POST',
-            url: '/processors/set_data.php',
-            data: {
-                operation: 'set_license_type',
                 ...data
             }
         })
@@ -1140,7 +1133,14 @@ const employeesApi = {
     getDigitalSignature: function () {
         return axiosInstancecoremodule.request({
             method: 'GET',
-            url: '/api/v1/employees/signature/get_digital_signature'
+            url: '/api/v1/employees/signature/get_digital_signature',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            },
+            params: {
+                _t: Date.now() // Cache busting parameter
+            }
         })
     },
 
@@ -1253,6 +1253,26 @@ const employeesApi = {
         return axiosInstancecoremodule.request({
             method: 'POST',
             url: `/api/v1/employee_v3/email/send_profile_rec/${employeeId}`
+        })
+    },
+
+    // Update employee profile image
+    updateEmployeeProfileImage: function (formData) {
+        const jwt = getLocalStorage();
+        
+        // Create a new axios instance for file uploads with multipart/form-data
+        const axiosFileInstance = axios.create({
+            baseURL: CORE_BASE_URL,
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${jwt}`
+            }
+        });
+        
+        return axiosFileInstance.request({
+            method: 'POST',
+            url: `/api/v1/employee_v3/update_img_profile`,
+            data: formData
         })
     },
 

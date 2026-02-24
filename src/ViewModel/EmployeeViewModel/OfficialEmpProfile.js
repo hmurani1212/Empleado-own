@@ -42,7 +42,6 @@ const useEmpProfileInfo = ()=>{
         training_fields:[],
         training:null,
         trainingField:'',
-        eobi_number:'',
         social_sec_number:'',
         providentFundEligibilty:{}
 

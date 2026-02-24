@@ -36,6 +36,7 @@ import starredNotesService from "../services/StarredNotesService";
 import notificationsViewModel from "../ViewModel/NotificationsViewModel/Notifications";
 import remindersViewModel from "../ViewModel/RemindersViewModel/Reminders";
 import expenseViewModel from "../ViewModel/ExpenseViewModel/Expense";
+import reportsViewModel from "../ViewModel/ReportsViewModel/Reports";
 
 const useStore = create(
   devtools((set, get) => ({
@@ -79,7 +80,8 @@ const useStore = create(
     ...starredNotesService(set, get),
     ...notificationsViewModel(set, get),
     ...remindersViewModel(set, get),
-    ...expenseViewModel(set, get)
+    ...expenseViewModel(set, get),
+    ...reportsViewModel(set, get)
   }))
 );
 

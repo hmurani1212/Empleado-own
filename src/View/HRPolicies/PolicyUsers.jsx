@@ -1,6 +1,7 @@
 import React from 'react'
 import useHRPolicies from '../../ViewModel/HRPoliciesViewModel/HRPoliciesServices'
 import { Avatar, Typography } from '@material-tailwind/react'
+import { buildEmployeeImageUrl } from '../../utils/imageUrlUtils'
 
 const PolicyUsers = (props) => {
   const {allPolicyUsers} = useHRPolicies()
@@ -19,7 +20,7 @@ const PolicyUsers = (props) => {
             {allPolicyUsers?.map((user,index) => (
               <div className='flex items-center gap-4 py-4 hover:bg-gray-50/50 rounded-lg px-2 transition-colors' key={index}>
                 <Avatar 
-                  src={`https://emp-beta.veevotech.com/${user.dp}`} 
+                  src={buildEmployeeImageUrl(user)} 
                   alt={user.name}
                   size="md"
                   className="border border-gray-100 shadow-sm"
