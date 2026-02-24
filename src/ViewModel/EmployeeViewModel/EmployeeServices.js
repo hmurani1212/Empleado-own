@@ -927,11 +927,12 @@ const useEmployees = () => {
                 // Clear designations when departments change
                 setDesignations([])
                 console.log('Departments set in store:', departments);
-            } else {
-                setDept_subDept([])
-                useStore.setState({ get_all_department: [] });
-                setDesignations([])
-            }
+            } 
+            // else {
+            //     setDept_subDept([])
+            //     useStore.setState({ get_all_department: [] });
+            //     setDesignations([])
+            // }
         } catch (err) {
             console.error("Error fetching departments:", err)
             setDept_subDept({ departments: [] })
