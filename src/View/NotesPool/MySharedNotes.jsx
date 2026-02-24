@@ -136,7 +136,7 @@ const MySharedNotes = (props) => {
                 {/* Decorative top bar */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 to-cyan-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                <div className="flex justify-between items-start w-full relative z-10">
+                <div className="flex justify-between items-start w-full relative">
                    {/* Icon Placeholder */}
                    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors duration-300">
                       <MdEditDocument className="text-xl" />
@@ -162,7 +162,7 @@ const MySharedNotes = (props) => {
                         ref={(el) => (triggerRefs.current[i] = el)}
                         onMouseEnter={() => toggleMenuValue(i, true)}
                         onMouseLeave={() => toggleMenuValue(i, false)}
-                        className="relative"
+                        className="relative z-50"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="p-1.5 rounded-full text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors">
@@ -176,8 +176,8 @@ const MySharedNotes = (props) => {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                             className={`
-                                absolute z-50 w-48 rounded-xl border border-gray-100 bg-white shadow-xl right-0
-                                ${getDropdownPosition(i) === "top" ? "bottom-full mb-2" : "top-full mt-2"}
+                                absolute z-20 w-48 rounded-xl border border-gray-100 bg-white shadow-xl right-0
+                                ${getDropdownPosition(i) === "top" ? "bottom-full mb-0" : "top-full mt-0"}
                             `}
                           >
                             <ul className="flex w-full flex-col p-1.5">

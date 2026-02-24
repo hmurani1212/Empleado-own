@@ -158,6 +158,11 @@ const employeesApi = {
             queryParams.push(`limit=${filters.limit}`);
         }
 
+        // Handle pages=all for export (get all employees with current filters)
+        if (filters.pages === 'all') {
+            queryParams.push('pages=all');
+        }
+
         // Handle text search parameter
         if (filters.text) {
             queryParams.push(`text=${encodeURIComponent(filters.text)}`);

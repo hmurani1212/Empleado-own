@@ -3,7 +3,6 @@ import { FaMoneyCheckAlt, FaUser, FaUserAltSlash, FaCalendarAlt } from "react-ic
 import { FaUserCheck } from "react-icons/fa6";
 import { BsFillSendFill } from 'react-icons/bs'
 import { RiCashFill } from 'react-icons/ri'
-import * as XLSX from 'xlsx';
 
 export const contractData = [
   { id: 1, name: 'Permanent' },
@@ -191,6 +190,78 @@ export const empActionList = [
   { id: 7, title: 'Deactivate', icon: <FaUserAltSlash />, color: '#f44336' }
 ]
 
+<<<<<<< HEAD
+/** Get mobile/phone from employee: prefer contacts (Contact Number / Mobile), then top-level mobile/emp_phone */
+const getEmployeeMobile = (employee) => {
+  if (employee?.mobile != null && String(employee.mobile).trim() !== '') return String(employee.mobile).trim();
+  if (employee?.emp_phone != null && String(employee.emp_phone).trim() !== '') return String(employee.emp_phone).trim();
+  const contacts = Array.isArray(employee?.contacts) ? employee.contacts : [];
+  const mobileType = (c) => (c?.contact_type && /contact number|mobile|phone/i.test(String(c.contact_type)));
+  const preferred = contacts.find(mobileType);
+  if (preferred?.contact != null && String(preferred.contact).trim() !== '') return String(preferred.contact).trim();
+  const first = contacts[0];
+  return (first?.contact != null && String(first.contact).trim() !== '') ? String(first.contact).trim() : '';
+};
+
+/** Get all emergency contacts (phones and emails) as comma-separated string, e.g. "0349..., abc@gmail.com, emrg@gmail.com". */
+const getEmergencyContacts = (employee) => {
+  const contacts = Array.isArray(employee?.contacts) ? employee.contacts : [];
+  const isEmergency = (c) => (c?.contact_title && String(c.contact_title).toLowerCase().includes('emergency'));
+  const isPhoneOrEmail = (c) => (c?.contact_type && (/contact number|mobile|phone|email/i.test(String(c.contact_type))));
+  const values = contacts
+    .filter((c) => isEmergency(c) && isPhoneOrEmail(c) && c?.contact?.trim?.())
+    .map((c) => String(c.contact).trim());
+  return values.length ? values.join(', ') : '';
+};
+
+/** Get net salary for Excel: prefer full_salary_data.summary.net_salary (from profile API), then current_salary, then basic_salary/salary. */
+const getNetSalary = (employee) => {
+  const net = employee?.Salary_Settings?.full_salary_data?.summary?.net_salary ??
+    employee?.full_salary_data?.summary?.net_salary ??
+    employee?.net_salary;
+  if (net != null && net !== '') return Number(net);
+  const cur = employee?.Salary_Settings?.full_salary_data?.salary?.current_salary ??
+    employee?.full_salary_data?.salary?.current_salary ??
+    employee?.current_salary;
+  if (cur != null && cur !== '') return Number(cur);
+  const basic = employee?.salary ?? employee?.basic_salary;
+  return (basic != null && basic !== '') ? Number(basic) : '';
+};
+
+/** Get gross salary for Excel from full_salary_data.summary.gross_salary or fallbacks. */
+const getGrossSalary = (employee) => {
+  const gross = employee?.Salary_Settings?.full_salary_data?.summary?.gross_salary ??
+    employee?.full_salary_data?.summary?.gross_salary ??
+    employee?.gross_salary;
+  if (gross != null && gross !== '') return Number(gross);
+  return '';
+};
+
+/** Format date for Excel: unix timestamp or date string -> DD/MM/YYYY */
+const formatDateForExcel = (value) => {
+  if (value == null || value === '') return '';
+  const str = String(value).trim();
+  const num = parseInt(str, 10);
+  const date = !Number.isNaN(num) && num > 0 ? new Date(num > 1e10 ? num : num * 1000) : new Date(str);
+  if (Number.isNaN(date.getTime())) return str;
+  const d = date.getDate();
+  const m = date.getMonth() + 1;
+  const y = date.getFullYear();
+  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+};
+
+/** Exit date for Excel: when status is 0 (inactive) use job_exit_date; when job_exit_date is 0 leave empty; else format as DD/MM/YYYY. */
+const getExitDateForExcel = (employee) => {
+  const jobExitDate = employee?.job_exit_date ?? employee?.Official_Info?.job_exit_date;
+  if (jobExitDate == null || jobExitDate === '' || Number(jobExitDate) === 0) return '';
+  return formatDateForExcel(jobExitDate);
+};
+
+export const exportEmployeesToExcel = async (employeesData, options = {}) => {
+  const employees = employeesData?.employees ?? [];
+  /** When statusFilter is 'active', hide Exit column; show for 'all' and 'inactive'. */
+  const showExitColumn = options.statusFilter !== 'active';
+
 export const exportEmployeesToExcel = (employeesData) => {
   // Helper function to extract mobile number from contacts array
   const getMobileNumber = (employee) => {
@@ -230,16 +301,32 @@ export const exportEmployeesToExcel = (employeesData) => {
 
   // Define the columns for the table
   const columns = [
+    'S.No',
     'Employee ID',
-    'Bio ID',
-    'ID',
+    'BIO ID',
     'Name',
-    'Placement',
+    'Father Name',
+    'Branch',
     'Department',
+    'Date of Birth',
+    'Join Date',
+    ...(showExitColumn ? ['Exit Date'] : []),
+    'Designation',
+    'Salary',
+    'NIC/Passport',
+    'Contact',
+    'Email',
+    'Blood Group',
+    'HR Policy',
+    'Emergency Contact',
     'Mobile#',
     'Blood Group'
   ];
+  const EMAIL_COLUMN_INDEX = columns.indexOf('Email') + 1;
 
+  const ExcelJS = (await import('exceljs')).default;
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Employees Data', { views: [{ state: 'frozen', ySplit: 2 }] });
   // Transform the data into the format required for Excel
   const rows = employeesData?.employees?.map(employee => [
     employee?.id || '',
@@ -252,13 +339,27 @@ export const exportEmployeesToExcel = (employeesData) => {
     employee?.blood_group || ''
   ]);
 
-  // Create worksheet data with headers
-  const worksheetData = [columns, ...(rows || [])];
+  const thinBorder = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
-  // Create a new workbook and worksheet
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+  const lastCol = String.fromCharCode(64 + columns.length);
+  sheet.mergeCells(`A1:${lastCol}1`);
+  const titleCell = sheet.getCell('A1');
+  titleCell.value = 'Employees Data';
+  titleCell.font = { name: 'Calibri', size: 18, bold: true, color: { argb: 'FF1E3A5F' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EEF5' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  titleCell.border = { ...thinBorder, bottom: { style: 'medium' } };
+  sheet.getRow(1).height = 32;
 
+  columns.forEach((col, i) => {
+    const cell = sheet.getCell(2, i + 1);
+    cell.value = col;
+    cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = { ...thinBorder, bottom: { style: 'medium' } };
+  });
+  sheet.getRow(2).height = 24;
   // Set column widths
   const columnWidths = [
     { wch: 15 }, // Employee ID
@@ -272,21 +373,62 @@ export const exportEmployeesToExcel = (employeesData) => {
   ];
   worksheet['!cols'] = columnWidths;
 
-  // Style the header row
-  const headerRange = XLSX.utils.decode_range(worksheet['!ref']);
-  for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-    if (!worksheet[cellAddress]) continue;
-    worksheet[cellAddress].s = {
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "3DA5F4" } },
-      alignment: { horizontal: "center" }
-    };
+  employees.forEach((employee, index) => {
+    const row = [
+      index + 1,
+      employee?.id ?? '',
+      employee?.bio_id ?? '',
+      employee?.name ?? '',
+      employee?.f_name ?? employee?.fname ?? '',
+      employee?.branch?.branch_name ?? '',
+      employee?.department?.name ?? '',
+      formatDateForExcel(employee?.dob),
+      formatDateForExcel(employee?.join_date),
+      ...(showExitColumn ? [getExitDateForExcel(employee)] : []),
+      employee?.designation_name ?? employee?.designation ?? '',
+      getGrossSalary(employee),
+      employee?.passport_no ?? employee?.ntn_no ?? '',
+      getEmployeeMobile(employee),
+      employee?.email ?? employee?.work_email ?? '',
+      employee?.blood_group != null && String(employee.blood_group).trim() !== '' ? String(employee.blood_group).trim() : '',
+      employee?.policy_id ?? employee?.hr_policy_id ?? employee?.work_policy?.value ?? employee?.work_policy ?? '',
+      getEmergencyContacts(employee),
+    ];
+    sheet.addRow(row);
+  });
+
+  const dataRowCount = sheet.rowCount;
+  const zebraLight = 'FFF8FAFC';
+  const zebraDark = 'FFEFF4F8';
+  if (dataRowCount > 2) {
+    for (let r = 3; r <= dataRowCount; r++) {
+      const isEvenRow = (r - 3) % 2 === 0;
+      const rowFill = isEvenRow ? zebraLight : zebraDark;
+      for (let c = 1; c <= columns.length; c++) {
+        const cell = sheet.getCell(r, c);
+        cell.border = thinBorder;
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowFill } };
+        cell.font = { name: 'Calibri', size: 11, color: { argb: 'FF334155' } };
+        const isEmailCol = c === EMAIL_COLUMN_INDEX;
+        cell.alignment = { vertical: 'middle', wrapText: !isEmailCol, horizontal: isEmailCol ? 'left' : 'left' };
+      }
+      sheet.getRow(r).height = 20;
+    }
   }
 
-  // Add the worksheet to the workbook
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees List');
+  const colWidths = showExitColumn
+    ? [8, 12, 8, 30, 30, 22, 22, 12, 12, 12, 30, 12, 22, 16, 50, 12, 14, 28]
+    : [8, 12, 8, 30, 30, 22, 22, 12, 12, 30, 12, 22, 16, 50, 12, 14, 28];
+  columns.forEach((_, i) => {
+    sheet.getColumn(i + 1).width = colWidths[i] || 14;
+  });
 
-  // Save the Excel file
-  XLSX.writeFile(workbook, 'employees-list.xlsx');
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Employees-Data.xlsx';
+  a.click();
+  URL.revokeObjectURL(url);
 }; 

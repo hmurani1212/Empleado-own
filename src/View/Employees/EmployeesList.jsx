@@ -1,5 +1,6 @@
 import { Button, MenuItem, Typography } from "@material-tailwind/react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useLayoutEffect, useMemo } from "react";
+import ReactDOM from "react-dom";
 import { FaChevronDown } from "react-icons/fa6";
 import { FaUserCheck } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,6 +48,61 @@ const EmployeesList = (props) => {
     handleSalaryIncrement,
   } = useEmployeeActionService();
 
+  const sortedEmployees = useMemo(
+    () =>
+      [...(empListData?.employees ?? [])].sort((a, b) =>
+        (a?.name || "").localeCompare(b?.name || "", undefined, { sensitivity: "base" })
+      ),
+    [empListData?.employees]
+  );
+
+  const [portalState, setPortalState] = useState({
+    openIndex: -1,
+    top: 0,
+    left: 0,
+    bottom: undefined,
+    openAbove: false,
+  });
+
+  const scrollContainerRef = React.useRef(null);
+
+  const updatePortalPosition = React.useCallback(() => {
+    const openIndex = sortedEmployees.findIndex((_, i) => openMenuValue[i]);
+    if (openIndex < 0) {
+      setPortalState((s) => (s.openIndex < 0 ? s : { ...s, openIndex: -1 }));
+      return;
+    }
+    const triggerEl = triggerRefs.current?.[openIndex];
+    if (!triggerEl) return;
+    const rect = triggerEl.getBoundingClientRect();
+    const openAbove = openIndex >= sortedEmployees.length - 3;
+    const dropdownWidth = 192;
+    const left = Math.max(4, Math.min(rect.right - dropdownWidth, window.innerWidth - dropdownWidth - 4));
+    setPortalState({
+      openIndex,
+      left,
+      top: openAbove ? undefined : rect.bottom + 4,
+      bottom: openAbove ? window.innerHeight - rect.top + 4 : undefined,
+      openAbove,
+    });
+  }, [openMenuValue, sortedEmployees.length]);
+
+  useLayoutEffect(() => {
+    updatePortalPosition();
+  }, [openMenuValue, updatePortalPosition]);
+
+  useEffect(() => {
+    if (portalState.openIndex < 0) return;
+    const scrollEl = scrollContainerRef.current;
+    const onScroll = () => updatePortalPosition();
+    scrollEl?.addEventListener("scroll", onScroll, true);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      scrollEl?.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [portalState.openIndex, updatePortalPosition]);
+
   // Filter action list based on current status
   const getFilteredActionList = () => {
     if (currentStatus === "Inactive Employees") {
@@ -64,9 +120,14 @@ const EmployeesList = (props) => {
     return empActionList;
   };
 
+  const isAnyActionMenuOpen = Object.values(openMenuValue || {}).some(Boolean);
+
   // this is our react js code
   return (
-    <div className="relative w-full min-h-[calc(100vh-200px)] overflow-auto customScroll">
+    <div
+      ref={scrollContainerRef}
+      className="relative w-full min-h-[calc(100vh-200px)] overflow-auto customScroll"
+    >
       <table className="min-w-full table-fixed text-center border-collapse">
         <colgroup>
           <col span="8" />
@@ -80,7 +141,7 @@ const EmployeesList = (props) => {
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-100">
+        <tbody className={`bg-white divide-y divide-gray-100 ${isAnyActionMenuOpen ? "relative z-[25]" : ""}`}>
           {isLoading &&
             [...Array(6)].map((_, rowIndex) => (
               <tr key={rowIndex} className="animate-pulse border-b border-gray-100">
@@ -111,16 +172,14 @@ const EmployeesList = (props) => {
               </tr>
             ))}
           {!isLoading && empListData?.employees?.length > 0 && (
-            [...(empListData?.employees ?? [])]
-              .sort((a, b) => (a?.name || "").localeCompare(b?.name || "", undefined, { sensitivity: "base" }))
-              .map((ele, i) => {
+            sortedEmployees.map((ele, i) => {
               return (
-                <motion.tr 
-                  key={i} 
+                <motion.tr
+                  key={i}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="hover:bg-brand-50/30 transition-colors duration-200 group"
+                  className={`hover:bg-brand-50/30 transition-colors duration-200 group ${openMenuValue[i] ? "relative z-[40] isolate" : ""}`}
                 >
                   <td className="px-4 py-4">
                     <Typography className="text-sm font-normal text-gray-600 font-poppins">
@@ -160,7 +219,7 @@ const EmployeesList = (props) => {
                     </Typography>
                   </td>
 
-                  <td className="px-4 py-4 relative">
+                  <td className={`px-4 py-4 relative ${openMenuValue[i] ? "z-[30]" : ""}`}>
                     <div
                       ref={(el) => (triggerRefs.current[i] = el)}
                       onMouseEnter={() => toggleMenuValue(i, true)}
@@ -177,42 +236,7 @@ const EmployeesList = (props) => {
                           }`}
                         />
                       </Button>
-                      <AnimatePresence>
-                      {openMenuValue[i] && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          transition={{ duration: 0.15 }}
-                          className={`absolute z-50 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden right-0 ${
-                            i >= empListData.employees.length - 3 ? "bottom-full mb-2 origin-bottom-right" : "top-full mt-2 origin-top-right"
-                          }`}
-                        >
-                            <ul className="flex w-full flex-col py-1">
-                              {getFilteredActionList().map((menuItem) => (
-                                <li
-                                  className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors text-gray-700 hover:text-brand-600"
-                                  key={menuItem.id}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEmpActionList(ele, menuItem);
-                                  }}
-                                >
-                                  <Typography
-                                    variant="small"
-                                    className="text-xs font-medium font-poppins"
-                                  >
-                                    {menuItem.title}
-                                  </Typography>
-                                  <span style={{ color: menuItem.color }} className="text-sm opacity-80">
-                                    {menuItem.icon}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                        </motion.div>
-                      )}
-                      </AnimatePresence>
+                      {/* Dropdown is rendered via portal below to avoid clipping by overflow container */}
                     </div>
                   </td>
                 </motion.tr>
@@ -313,6 +337,44 @@ const EmployeesList = (props) => {
           </button>
         </div>
       )}
+
+      {portalState.openIndex >= 0 &&
+        ReactDOM.createPortal(
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className="fixed w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[9999]"
+            style={{
+              left: portalState.left,
+              top: portalState.top,
+              bottom: portalState.bottom,
+            }}
+            onMouseEnter={() => toggleMenuValue(portalState.openIndex, true)}
+            onMouseLeave={() => toggleMenuValue(portalState.openIndex, false)}
+          >
+            <ul className="flex w-full flex-col py-1">
+              {getFilteredActionList().map((menuItem) => (
+                <li
+                  className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors text-gray-700 hover:text-brand-600"
+                  key={menuItem.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEmpActionList(sortedEmployees[portalState.openIndex], menuItem);
+                  }}
+                >
+                  <Typography variant="small" className="text-xs font-medium font-poppins">
+                    {menuItem.title}
+                  </Typography>
+                  <span style={{ color: menuItem.color }} className="text-sm opacity-80">
+                    {menuItem.icon}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>,
+          document.body
+        )}
 
       {salaryDetailsValue?.show && (
         <PortalDrawer

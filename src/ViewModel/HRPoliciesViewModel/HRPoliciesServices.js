@@ -163,7 +163,7 @@ const useHRPolicies = () => {
     ]
 
     const viewPolicyData = [
-        { id: 1, title: 'Force Time out', icon: <FaBan />, data: `${parseInt(viewPolicy.force_timeout || 0) * 60} minutes after closing time` },
+        { id: 1, title: 'Force Time out', icon: <FaBan />, data: `${parseInt(viewPolicy.force_timeout || 0)} minutes after closing time` },
         { id: 2, title: 'Leniency Time', icon: <FaClock />, data: `${viewPolicy.leniency_time} min` },
         { id: 3, title: 'Early Arrival Policy', icon: <FaMapMarkerAlt />, data: viewPolicy.early_arrival === '1' ? 'Shifting Time' : 'Count Actual Time' },
         { id: 4, title: 'Max Early Arrival Time', icon: <FaClock />, data: `${viewPolicy.early_arrival_max_time} min` },

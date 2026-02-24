@@ -120,6 +120,8 @@ const Calendar = (props) => {
                   } else if (attr.position === 'top-center') {
                     topStyle = { top: '-5px', left: '50%', transform: 'translateX(-50%)' };
                   } else if (attr.position === 'top-right') {
+                    topStyle = { top: '-5px', right: '-5px' };
+                  } else if (attr.position === 'top-right-late') {
                     topStyle = { top: '5px', right: '-5px' };
                   }
                   

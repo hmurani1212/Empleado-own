@@ -79,6 +79,8 @@ const ListNotices = () => {
     "Created Date",
     "Actions",
   ];
+
+  // Fetch notices list on mount (page 1)
   // Fetch notices list on mount (page 1). Use cache when returning (forceReload: false).
   // API is skipped in store when cache exists; refetch only after add/edit/delete (forceReload: true).
   useEffect(() => {
@@ -224,6 +226,7 @@ const ListNotices = () => {
                   Array.from({ length: 8 }).map((_, idx) => (
                     <SkeletonRow key={idx} />
                   ))
+                ) : (allNoticesList && allNoticesList.length > 0) ? (
                 ) : allNoticesList && allNoticesList.length > 0 ? (
                  
                   allNoticesList
@@ -231,7 +234,7 @@ const ListNotices = () => {
                     .sort((a, b) => b.timestamp - a.timestamp)
                     .map((ele, index) => {
                       const currentMonth = new Date(
-                        ele.timestamp * 1000
+                        ele?.timestamp ? ele.timestamp * 1000 : 0
                       ).toLocaleString("en-US", { month: "short" });
 
                       const previousMonth =

@@ -29,6 +29,8 @@ const attendanceViewModel = (set, get) => ({
     lastHRPolicy: {},
     rawAttendanceLogParams: { empId: null, month: null, year: null },
     trackPolicyParams: { empId: null, month: null, year: null },
+    /** Persisted month/year for individual attendance report (survives navigation; resets on full page refresh) */
+    individualAttendanceMonthYear: null,
 
 
 
@@ -59,6 +61,10 @@ const attendanceViewModel = (set, get) => ({
 
     setTrackPolicyParams: (params) => {
         set({ trackPolicyParams: params || { empId: null, month: null, year: null } })
+    },
+
+    setIndividualAttendanceMonthYear: (monthYear) => {
+        set({ individualAttendanceMonthYear: monthYear || null })
     },
 
     transformLastPolicyToViewPolicy: (lastPolicy) => {
@@ -228,7 +234,9 @@ const attendanceViewModel = (set, get) => ({
             const data = response.data
 
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                set({ empListAtt: data.DB_DATA })
+                // Support both DB_DATA as array and DB_DATA.employees; include all employees (e.g. same name)
+                const list = Array.isArray(data.DB_DATA) ? data.DB_DATA : (data.DB_DATA?.employees || []);
+                set({ empListAtt: list })
             }
         } catch (err) {
             console.log(err)

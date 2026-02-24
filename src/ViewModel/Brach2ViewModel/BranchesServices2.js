@@ -47,7 +47,8 @@ const useBranches2 = () => {
         status: '',
     })
 
-    const [currentFilterStatus, setCurrentFilterStatus] = useState(1) // Track current filter status
+    const branchFilterStatus = useStore((state) => state.branchFilterStatus ?? 1)
+    const setBranchFilterStatus = useStore((state) => state.setBranchFilterStatus)
 
 
 
@@ -71,22 +72,22 @@ const useBranches2 = () => {
     })
 
     const statusBranch = (val) => {
-        setCurrentFilterStatus(parseInt(val)) // Update current filter status
-        const data = {
-            status: val,
+        const statusNum = parseInt(val, 10)
+        setBranchFilterStatus(statusNum)
+        gettingAllBranchesNew({
+            status: statusNum,
             page: 1,
             limit: 10
-        }
-        gettingAllBranchesNew(data)
+        })
     }
 
-    // Function to go to next page
+    // Function to go to next page (always send current filter: 1 active, 0 inactive)
     const goToNextPage = () => {
         const currentPage = branchesAllnew?.pagination?.page || 1;
         const totalPages = branchesAllnew?.pagination?.pages || 1;
         if (currentPage < totalPages) {
             gettingAllBranchesNew({
-                status: currentFilterStatus,
+                status: branchFilterStatus,
                 page: currentPage + 1,
                 limit: 10,
             });
@@ -98,7 +99,7 @@ const useBranches2 = () => {
         const currentPage = branchesAllnew?.pagination?.page || 1;
         if (currentPage > 1) {
             gettingAllBranchesNew({
-                status: currentFilterStatus,
+                status: branchFilterStatus,
                 page: currentPage - 1,
                 limit: 10,
             });
@@ -107,11 +108,11 @@ const useBranches2 = () => {
 
     // Function to go to a specific page
     const goToPage = (pageNumber) => {
-        const targetPage = parseInt(pageNumber);
+        const targetPage = parseInt(pageNumber, 10);
         const totalPages = branchesAllnew?.pagination?.pages || 1;
         if (targetPage >= 1 && targetPage <= totalPages) {
             gettingAllBranchesNew({
-                status: currentFilterStatus,
+                status: branchFilterStatus,
                 page: targetPage,
                 limit: 10,
             });
@@ -439,33 +440,45 @@ const useBranches2 = () => {
 
     }
 
-    const handleEditBranch = async (e) => {
-        // console.log('branchID', branchStatusValue.id)
-        e.preventDefault();
+    const handleEditBranch = async (eOrEditData) => {
+        // Support both: (1) form submit event from inline form, (2) edit payload from EditBranchForm drawer
+        const isEvent = eOrEditData?.preventDefault && typeof eOrEditData.preventDefault === 'function';
+        if (isEvent) {
+            eOrEditData.preventDefault();
+        }
 
-        const editData = {
-            id: branchStatusValue.id,
-            branch_name: newBranchValues.branch_name,
-            branch_address: newBranchValues.branch_address,
-            phone_no: newBranchValues.phone_no,
-            email_address: newBranchValues.email_address,
-            country_id: newBranchValues.country_code,
-            currency: newBranchValues.currency,
-            time_zone: newBranchValues.time_zone
+        const editData = isEvent
+            ? {
+                id: branchStatusValue.id,
+                branch_name: newBranchValues.branch_name,
+                branch_address: newBranchValues.branch_address,
+                phone_no: newBranchValues.phone_no,
+                email_address: newBranchValues.email_address,
+                country_id: newBranchValues.country_code,
+                currency: newBranchValues.currency,
+                time_zone: newBranchValues.time_zone
+            }
+            : (eOrEditData && typeof eOrEditData === 'object' && eOrEditData.id != null
+                ? eOrEditData
+                : null);
+
+        if (!editData || editData.id == null) {
+            showToast('Invalid branch data', 'error');
+            return;
         }
 
         try {
             await validateEditData(editData);
-            const response = await branch2Api.editBranch(editData);
+            const response = await mainBranchApi.editBranch(editData);
             const respEditData = await response.data;
 
             console.log("this is test", respEditData);
 
             if (response.status === 200 && respEditData.STATUS === 'SUCCESSFUL') {
-                updateBranch(respEditData.DB_DATA)
-                // showToast(`${respEditData.DESCRIPTION}`, 'success');
+                updateBranch(respEditData.DB_DATA);
                 showToast('Branch data successfully updated', 'success');
-                setShowDrawer(false)
+                setShowDrawer(false);
+                closeDrawer(); // close store drawer when Edit Branch was opened via settingComponent
             } else {
                 showToast(`${respEditData.ERROR_DESCRIPTION}`, 'error');
 
@@ -515,7 +528,7 @@ const useBranches2 = () => {
         console.log('id', id)
 
         try {
-            const response = await branch2Api.getBranchTimeZone(data);
+            const response = await mainBranchApi.getBranchTimeZone(data);
 
             const respTimeZoneData = await response.data;
             console.log('time zone', respTimeZoneData)
@@ -886,7 +899,7 @@ const useBranches2 = () => {
                 
                 // Refresh the branch data by calling the main branch API
                 const refreshData = {
-                    status: currentFilterStatus,
+                    status: branchFilterStatus,
                     page: 1,
                     limit: 10
                 };
@@ -921,7 +934,7 @@ const useBranches2 = () => {
                 
                 // Refresh the branch data by calling the main branch API
                 const refreshData = {
-                    status: currentFilterStatus,
+                    status: branchFilterStatus,
                     page: 1,
                     limit: 10
                 };
@@ -950,7 +963,7 @@ const useBranches2 = () => {
         handleDeleteBranchAdmin, closeDrawer, markBranchAdmin, settingBranchAdminData, settingComponent, openDrawer, settingDrawerSize, settingDrawerTitle,
         confirmAdminDeleteHandler, deleteAdminConfirm, triggerRefs, getDropdownPosition, deleteBranch, getBranchEmployees, showToast,
         getAdministrativePermissions, assignAdministrativePermission, removeAdministrativePermission, setEmpIdBranchAdmin, setRoleGrant,
-        currentFilterStatus, goToNextPage, goToPreviousPage, goToPage,
+        currentFilterStatus: branchFilterStatus, goToNextPage, goToPreviousPage, goToPage,
         branchesListLoading,
 
     }

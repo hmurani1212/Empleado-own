@@ -229,6 +229,57 @@ const AttendanceSummary = ({ attendanceData }) => {
               {Number(attendanceAttr?.ot_percentage) || 0}%
             </span>
           </div>
+
+          {/* Additional details when attendance is showing (same as hours-based view) */}
+          {(summary || (data && data.length > 0)) && (
+            <>
+              <div className="border border-dashed border-gray-200 w-full my-3" />
+              <div className="flex items-center justify-between select-text">
+                <span className="text-customGray-100">Late Minutes</span>
+                <span className="font-medium">
+                  {summary_late_minut?.late_minutes || 0}m
+                </span>
+              </div>
+              {summary && (
+                <>
+                  <div className="border border-dashed border-gray-200 w-full my-3" />
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-semibold text-xs uppercase tracking-wide mb-2 block"
+                  >
+                    Additional Details
+                  </Typography>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-gray-50/80">
+                      <span className="font-semibold text-[14px] text-[#474747] font-Urbanist">
+                        {summary.present_days ?? attendanceAttr?.earned_working_days ?? 0}
+                      </span>
+                      <span className="text-[#474747] font-light text-[12px] font-Urbanist">Present Days</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-gray-50/80">
+                      <span className="font-semibold text-[14px] text-red-500 font-Urbanist">
+                        {summary.absentees ?? 0}
+                      </span>
+                      <span className="text-[#474747] font-light text-[12px] font-Urbanist">Absentees</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-gray-50/80">
+                      <span className="font-semibold text-[14px] text-[#474747] font-Urbanist">
+                        {summary.holidays ?? 0}
+                      </span>
+                      <span className="text-[#474747] font-light text-[12px] font-Urbanist">Holidays</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-gray-50/80">
+                      <span className="font-semibold text-[14px] text-[#474747] font-Urbanist">
+                        {summary.leaveAvailed ?? 0}
+                      </span>
+                      <span className="text-[#474747] font-light text-[12px] font-Urbanist">Leaves Availed</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
+          )}
         </div>
       )}
     </>

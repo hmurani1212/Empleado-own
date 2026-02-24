@@ -84,8 +84,9 @@ const leavesPlannerApi = {
             method: 'GET',
             url: `/api/v1/hr-api/get_hr_policy`,
             params: {
-                branch_id: data.branch_id,
-                status: '1' // Active policies only
+                branch_id: data.branch_id === 'all' ? 0 : (data.branch_id ?? 0),
+                status: '1',
+                removePagination: true
             }
         })
     },
@@ -164,10 +165,11 @@ const leavesPlannerApi = {
     },
     getPublicHoliday: function (data) {
        /// console.log("getPublicHoliday", data);
-        const policyId = data.policy_id || data.policy || 0;
+        const policyId = data.policy_id ?? data.policy ?? 0;
+        const branchId = data.branch ?? 0;
         return LeavePlannerinstancemodule.request({
             method: 'GET',
-            url: `/api/v1/holidays/calendar/${data.branch}/${policyId}`,
+            url: `/api/v1/holidays/calendar/${branchId}/${policyId}`,
             data
         });
     },

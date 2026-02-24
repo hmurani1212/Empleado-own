@@ -27,7 +27,7 @@ const InfoItem = ({ label, value, Icon }) => (
       <Icon className="text-bgBlue text-[18px]" />
     </div>
     <div className="flex flex-col leading-tight">
-      <span className="text-[12px] text-[#474747] font-Urbanist">
+      <span className="text-[12px] text-[#474747] font-Urbanist font-semibold">
         {label}
       </span>
       <span className="text-[12px] font-medium text-[#474747] font-Urbanist">

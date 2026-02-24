@@ -50,6 +50,19 @@ function Header() {
   const profileMenuRef = useRef(null);
 
   const { getHeaderDatafn, getHeaderData, logout } = useEmployees();
+
+  // Inbox: use real unread count from inbox store (not getHeaderData.unread_logs)
+  const InboxData = useStore((state) => state.InboxData);
+  const getEmployeesAll = useStore((state) => state.getEmployeesAll);
+  const inboxUnreadCount = React.useMemo(() => {
+    const list = InboxData || [];
+    return list.filter((story) => {
+      if (story.users && Array.isArray(story.users) && story.users.length > 0) {
+        return story.users.some((u) => Number(u.read_status) === 0);
+      }
+      return Number(story.read_status) !== 1;
+    }).length;
+  }, [InboxData]);
   
   // Notifications state and actions
   const { 
@@ -155,6 +168,7 @@ function Header() {
   };
 
   const hasFetchedHeaderDataRef = useRef(false);
+  const hasFetchedInboxRef = useRef(false);
 
   useEffect(() => {
     window.addEventListener(
@@ -166,6 +180,11 @@ function Header() {
     if (!hasFetchedHeaderDataRef.current) {
       getHeaderDatafn();
       hasFetchedHeaderDataRef.current = true;
+    }
+    // Fetch inbox list once so header badge shows correct unread count
+    if (!hasFetchedInboxRef.current && typeof getEmployeesAll === 'function') {
+      getEmployeesAll();
+      hasFetchedInboxRef.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array ensures it only runs once
@@ -307,12 +326,12 @@ function Header() {
         <div className="flex items-center gap-3 md:gap-5">
 
           <div className="flex items-center gap-2">
-            {/* Messages */}
+            {/* Messages / Inbox - show unread count from inbox store (matches list) */}
             <Badge
-              content={getHeaderData.unread_logs > 0 ? getHeaderData.unread_logs : null}
+              content={inboxUnreadCount}
               overlap="circular"
               placement="top-end"
-              className="min-w-[18px] min-h-[18px] text-[10px] bg-red-500 border-2 border-white"
+              className="min-w-[18px] min-h-[18px] rounded-full flex items-center justify-center text-[10px] bg-red-500 border-2 border-white [&>span]:!rounded-full [&>span]:!flex [&>span]:!items-center [&>span]:!justify-center [&>span]:!min-w-[18px] [&>span]:!min-h-[18px] [&>span]:!aspect-square"
             >
               <IconButton variant="text" color="blue-gray" className="rounded-full hover:bg-gray-100" onClick={handleInbox}>
                  {userRole === "Admin" ? (
@@ -328,7 +347,7 @@ function Header() {
               content={getHeaderData.total_notifications > 0 ? getHeaderData.total_notifications : null}
               overlap="circular"
               placement="top-end"
-              className="min-w-[18px] min-h-[18px] text-[10px] bg-red-500 border-2 border-white"
+              className="min-w-[18px] min-h-[18px] rounded-full flex items-center justify-center text-[10px] bg-red-500 border-2 border-white [&>span]:!rounded-full [&>span]:!flex [&>span]:!items-center [&>span]:!justify-center [&>span]:!min-w-[18px] [&>span]:!min-h-[18px] [&>span]:!aspect-square"
             >
               <IconButton variant="text" color="blue-gray" className="rounded-full hover:bg-gray-100" onClick={toggleNotificationPanel}>
                  {userRole === "Admin" ? (

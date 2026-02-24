@@ -6,9 +6,6 @@ import { FaExchangeAlt, FaMapMarkerAlt } from 'react-icons/fa';
 const ViewPolicy = () => {
     const { empDashboardData } = useEmpDashboard();
     const viewPolicy = empDashboardData?.view_policy;
-    useEffect(() => {
-        console.log('viewPolicy', viewPolicy);
-    });
 
     function formatDate(timestamp) {
         if (!timestamp) return "--";
@@ -41,7 +38,7 @@ const ViewPolicy = () => {
       
 
       const viewPolicyData = [
-        { id: 1, title: 'Force Time out', icon: <FaBan />, data: `${parseInt(viewPolicy.force_timeout || 0) * 60} minutes after closing time` },
+        { id: 1, title: 'Force Time out', icon: <FaBan />, data: `${parseInt(viewPolicy.force_timeout || 0)} minutes after closing time` },
         { id: 2, title: 'Leniency Time', icon: <FaClock />, data: `${viewPolicy.leniency_time} min` },
         { id: 3, title: 'Early Arrival Policy', icon: <FaMapMarkerAlt />, data: viewPolicy.early_arrival === '1' || viewPolicy.early_arrival === 'ONE' ? 'Shifting Time' : 'Count Actual Time' },
         { id: 4, title: 'Max Early Arrival Time', icon: <FaClock />, data: `${viewPolicy.early_arrival_max_time} min` },
@@ -162,7 +159,7 @@ const ViewPolicy = () => {
                     <div className="bg-[#f3f6fb] py-2 flex items-center justify-between rounded-[7px] px-4">
                         <span className='font-medium'>Overtime</span>
                         <span>
-                            {viewPolicy.overtime_pay === '0' ? 'Unpaid' : 'Paid'}  
+                            {viewPolicy.overtime_pay === 'NO' || viewPolicy.overtime_pay === 'no' ? 'Unpaid' : 'Paid'}  
                         </span>
                     </div>
 

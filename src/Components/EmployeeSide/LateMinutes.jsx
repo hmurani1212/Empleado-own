@@ -119,7 +119,7 @@ const LateMinutes = () => {
               colSpan={tableHeader.length}
               className="p-8 text-center text-gray-500"
             >
-              No duties assigned
+              No late minutes history found
             </td>
           </tr>
         )}

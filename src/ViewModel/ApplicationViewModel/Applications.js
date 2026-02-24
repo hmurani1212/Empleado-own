@@ -39,20 +39,13 @@ const applicationsViewModel = (set, get) => ({
         // Only pass filters that have actual values
         const data = {};
 
-        // Handle branch filter - include if value is 0 (All Branches) or any other value
+        // Handle branch filter - send branch_id (0 for All Branches, specific id otherwise)
         if (filters.branch !== undefined && filters.branch !== null) {
-            // Convert to number if it's "0" string, otherwise use as is
-            data.branch = filters.branch === "0" ? 0 : filters.branch;
-
-            // When branch_id=0 (All Branches), automatically pass dep_id=0 (All Departments)
-            if (data.branch === 0 && (filters.deptt === undefined || filters.deptt === null)) {
-                data.deptt = 0;
-            }
+            data.branch = filters.branch === "0" || filters.branch === 0 ? 0 : filters.branch;
         }
-        // Handle department filter - include if value is 0 (All Departments) or any other value
-        if (filters.deptt !== undefined && filters.deptt !== null) {
-            // Convert to number if it's "0" string, otherwise use as is
-            data.deptt = filters.deptt === "0" ? 0 : filters.deptt;
+        // Handle department filter - only include when a specific department is selected (omit dep_id for All Departments)
+        if (filters.deptt !== undefined && filters.deptt !== null && filters.deptt !== "0" && filters.deptt !== 0) {
+            data.deptt = filters.deptt;
         }
         if (filters.status && filters.status !== "") {
             data.status = filters.status;
@@ -74,6 +67,12 @@ const applicationsViewModel = (set, get) => ({
         }
         if (filters.page !== undefined) {
             data.page = filters.page;
+        }
+        if (filters.from_date && String(filters.from_date).trim() !== '') {
+            data.from_date = String(filters.from_date).trim();
+        }
+        if (filters.to_date && String(filters.to_date).trim() !== '') {
+            data.to_date = String(filters.to_date).trim();
         }
 
 

@@ -14,6 +14,9 @@ const branchesViewModel2 = (set, get) => ({
     branchesListLoading: true,
     copyBranchesData: [],
     mountBranch: false,
+    /** Persisted filter: 1 = active, 0 = inactive. Used for initial load and pagination. */
+    branchFilterStatus: 1,
+    setBranchFilterStatus: (status) => set({ branchFilterStatus: status }),
     branchEdit: [],
     timeZoneBranches: [],
     empSuggestions: [],

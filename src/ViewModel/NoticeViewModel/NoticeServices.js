@@ -89,9 +89,8 @@ const useNotice = () => {
             }));
             setEmployeeOptions([]);
             setEmployeeOptionsFull([]);
-            if (showEmployeeName) {
-                fetchEmployeesByDepartment(value || '0');
-            }
+            // Fetch employees when department is selected (for "Send to specific employee" dropdown)
+            fetchEmployeesByDepartment(value ?? 0);
         }
     }
 
@@ -140,26 +139,18 @@ const useNotice = () => {
         }
     };
 
-    // Function to validate if department has employees
-    const validateDepartmentHasEmployees = async (deptId) => {
+    // Use cached list when available (from department select) to avoid calling employees API on submit
+    const validateDepartmentHasEmployees = async (deptId, cachedEmployeeList) => {
+        if (deptId === '0' || deptId === 0) return true;
+        if (cachedEmployeeList && cachedEmployeeList.length > 0) return true;
         try {
-            // Skip validation for "All Departments" (id === '0')
-            if (deptId === '0' || deptId === 0) {
-                return true;
-            }
-
             const response = await departmentsApi.getDeptEmployees(deptId);
             const data = response.data;
-            
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
                 const departmentEmployees = data.DB_DATA.employees || [];
-                const hasEmployees = departmentEmployees.length > 0;
-                
-                return hasEmployees;
-            } else {
-                return false;
+                return departmentEmployees.length > 0;
             }
-            
+            return false;
         } catch (error) {
             return false;
         }
@@ -304,27 +295,18 @@ const useNotice = () => {
             data.send_email_notice = "email"
         }
 
-        // Handle branch selection
+        // Handle branch selection (0 = All Branches, otherwise specific branch_id)
         const branchVal = addNoticeValue.branch_id?.value !== undefined ? addNoticeValue.branch_id.value : addNoticeValue.branch_id;
-        if(branchVal) {
-            if(String(branchVal) === '0') {
-                // For "All Branches", send 0
-                data.branch_id = 0;
-            } else {
-                data.branch_id = branchVal;
-            }
+        const branchSelected = addNoticeValue.branch_id !== undefined && addNoticeValue.branch_id !== null && addNoticeValue.branch_id !== '';
+        if (branchSelected) {
+            data.branch_id = (branchVal === 0 || String(branchVal) === '0') ? 0 : branchVal;
         }
 
-        // Handle department selection
+        // Handle department selection (0 = All Departments, otherwise specific dept_id)
         const deptVal = addNoticeValue.deptt_id?.value !== undefined ? addNoticeValue.deptt_id.value : addNoticeValue.deptt_id;
-        if(deptVal) {
-            if(String(deptVal) === '0') {
-                // For "All Departments", send 0
-                data.deptt_id = 0;
-            } else {
-                // For specific department
-                data.deptt_id = deptVal;
-            }
+        const deptSelected = addNoticeValue.deptt_id !== undefined && addNoticeValue.deptt_id !== null && addNoticeValue.deptt_id !== '';
+        if (deptSelected) {
+            data.deptt_id = (deptVal === 0 || String(deptVal) === '0') ? 0 : deptVal;
         }
 
         // Add employee_id if provided
@@ -343,23 +325,22 @@ const useNotice = () => {
             return;
         }
 
-        // Validate branch selection
-        if (!branchVal || branchVal === '') {
+        // Validate branch selection (0 is valid = All Branches)
+        if (!branchSelected) {
             showToast('Please select the branch', 'error');
             return;
         }
 
-        // Validate department selection
-        if (!deptVal || deptVal === '') {
+        // Validate department selection (0 is valid = All Departments)
+        if (!deptSelected) {
             showToast('Please select the department', 'error');
             return;
         }
 
-        // Validate if department has employees (only for specific departments, not "All Departments")
-        // Skip this validation if user is targeting a specific employee
+        // Validate if department has employees (use cached list from department select to avoid API call on submit)
         if (deptVal !== '0' && deptVal !== 0 && 
             (!addNoticeValue.emp_id || !addNoticeValue.emp_id.value)) {
-            const hasEmployees = await validateDepartmentHasEmployees(deptVal);
+            const hasEmployees = await validateDepartmentHasEmployees(deptVal, employeeOptionsFull);
             if (!hasEmployees) {
                 showToast('Notice are not created for this department', 'error');
                 return;
@@ -374,32 +355,43 @@ const useNotice = () => {
             
             if((response.status === 201 || response.status === 200) && respData.STATUS === 'SUCCESSFUL'){
                 showToast('Notice added Successfully!', 'success');
-                // Refresh list so List Notices shows the new notice when user navigates there
-                await getAllNoticesList({ page: 1, limit: 10 }, true, false);
-                // Add new notice to list without calling list API - use API response or build from form data
-                const createdNotice = respData.DB_DATA;
-                const noticeId = createdNotice?.notice_ids?.[0] ?? createdNotice?.id ?? createdNotice?.notice_id ?? respData.id;
-                const branchNameFromForm = addNoticeValue.branch_id === '0' || addNoticeValue.branch_id === 0
-                    ? 'All Branches'
-                    : (noticesBranches?.find((b) => String(b.id) === String(addNoticeValue.branch_id))?.branch_name || '');
-                const noticeForList = {
-                    id: noticeId,
-                    title: createdNotice?.title || addNoticeValue.title,
-                    timestamp: createdNotice?.timestamp || Math.floor(Date.now() / 1000),
-                    branch_name: createdNotice?.branch_name || branchNameFromForm,
-                    description: createdNotice?.description || addNoticeValue.notice,
-                };
-                addNewNoticeState(noticeForList);
-                navigate('/notices/list_notices')
-                setAddNoticeValue({
-                    branch_id: '',
-                    deptt_id:'',
-                    emp_id : '',
-                    send_sms_notice : false, 
-                    send_email_notice : false, 
-                    title : '',
-                    notice: ''
-                });
+                try {
+                    await getAllNoticesList({ page: 1, limit: 10 }, true, false);
+                    const createdNotice = respData.DB_DATA;
+                    const noticeId = createdNotice?.notice_ids?.[0] ?? createdNotice?.id ?? createdNotice?.notice_id ?? respData.id;
+                    const branchNameFromForm = addNoticeValue.branch_id === '0' || addNoticeValue.branch_id === 0
+                        ? 'All Branches'
+                        : (noticesBranches?.find((b) => String(b.id) === String(addNoticeValue.branch_id))?.branch_name || '');
+                    const noticeForList = {
+                        id: noticeId,
+                        title: createdNotice?.title || addNoticeValue.title,
+                        timestamp: createdNotice?.timestamp || Math.floor(Date.now() / 1000),
+                        branch_name: createdNotice?.branch_name || branchNameFromForm,
+                        description: createdNotice?.description || addNoticeValue.notice,
+                    };
+                    addNewNoticeState(noticeForList);
+                    navigate('/notices/list_notices');
+                    setAddNoticeValue({
+                        branch_id: '',
+                        deptt_id:'',
+                        emp_id : '',
+                        send_sms_notice : false,
+                        send_email_notice : false,
+                        title : '',
+                        notice: ''
+                    });
+                } catch (postSuccessError) {
+                    setAddNoticeValue({
+                        branch_id: '',
+                        deptt_id:'',
+                        emp_id : '',
+                        send_sms_notice : false,
+                        send_email_notice : false,
+                        title : '',
+                        notice: ''
+                    });
+                    navigate('/notices/list_notices');
+                }
             } else {
                 // Handle specific error cases with user-friendly messages
                 if (respData.ERROR_CODE === 'VTAPP-015' && respData.ERROR_DESCRIPTION?.includes('no active employees')) {

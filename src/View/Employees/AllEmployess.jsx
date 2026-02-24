@@ -12,6 +12,7 @@ import { motion } from 'framer-motion'
 import useDropdownService from '../../services/__dropDownHoverService'
 import { exportEmployeesToExcel } from '../../services/EmpServices'
 import { showToast } from '../../Components/Toaster/Toaster'
+import employeesApi from '../../Model/Data/Employees/Employees'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 
 // Custom Branch Select Component with Animations
@@ -118,6 +119,7 @@ const AllEmployess = () => {
     const [noResults, setNoResults] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState('Active Employees'); // Default to Active Employees title
+    const [selectedAlphabetLetter, setSelectedAlphabetLetter] = useState('');
 
     useEffect(() => {
         // Call API only when the component is mounted (initial load or page refresh)
@@ -149,24 +151,23 @@ const AllEmployess = () => {
         try {
             setIsExporting(true);
 
-            // Fetch all employees without pagination for export
-            const response = await fetch('http://172.18.0.44:6199/api/v1/employees?pages=all', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            const status = selectedStatus === 'Active Employees' ? '1' : selectedStatus === 'Inactive Employees' ? '0' : selectedStatus === 'All Employees' ? '3' : '1';
+            const branchId = filterValues?.branchName && empBranches?.length ? empBranches.find((b) => b.branch_name === filterValues.branchName)?.id : undefined;
+            const text = (filterValues?.searchEmployee && String(filterValues.searchEmployee).trim()) || selectedAlphabetLetter || undefined;
 
-            const data = await response.json();
-            // console.log(data)
+            const filters = { pages: 'all', status };
+            if (branchId) filters.branch_id = branchId;
+            if (text) filters.text = text;
 
-            if (data.STATUS === "SUCCESSFUL" && data.DB_DATA?.employees?.length > 0) {
-                // Export all employees to Excel
-                exportEmployeesToExcel(data.DB_DATA);
+            const response = await employeesApi.getEmployeesWithFilters(filters);
+            const data = response?.data;
+
+            if (data?.STATUS === 'SUCCESSFUL' && data?.DB_DATA?.employees?.length > 0) {
+                const statusFilter = selectedStatus === 'Active Employees' ? 'active' : selectedStatus === 'Inactive Employees' ? 'inactive' : 'all';
+                await exportEmployeesToExcel(data.DB_DATA, { statusFilter });
                 showToast('Employees exported successfully', 'success');
             } else {
-                showToast('No employees found to export', 'error');
+                showToast(data?.DB_DATA?.employees?.length === 0 ? 'No employees match current filters to export' : 'No employees found to export', 'error');
             }
         } catch (error) {
             console.error('Export error:', error);
@@ -178,23 +179,19 @@ const AllEmployess = () => {
 
     // New function to handle alphabet filtering
     const handleAlphabetFilter = (letter, index) => {
-        // Update the alphabet index for UI state
         handelAlphabetSearch(letter, index);
-
-        if (index === 0) { // If "All" is selected (assuming first item is "All")
-            // When "All" is selected, reload with current status filter
+        if (index === 0) {
+            setSelectedAlphabetLetter('');
             const currentStatus = selectedStatus === 'Active Employees' ? '1' : 
                                 selectedStatus === 'Inactive Employees' ? '0' : 
                                 selectedStatus === 'All Employees' ? '3' : '1';
             getEmployeesWithFilters({ status: currentStatus, page: 1 });
             return;
         }
-
-        // For specific letters, make API call with both letter and current status
+        setSelectedAlphabetLetter(letter);
         const currentStatus = selectedStatus === 'Active Employees' ? '1' : 
                             selectedStatus === 'Inactive Employees' ? '0' : 
                             selectedStatus === 'All Employees' ? '3' : '1';
-        
         getEmployeesWithFilters({ text: letter, status: currentStatus, page: 1 });
     };
 

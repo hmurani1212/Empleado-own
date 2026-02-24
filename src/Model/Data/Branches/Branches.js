@@ -34,14 +34,12 @@ const branchesApi = {
     },
 
     editBranch: function (editData) {
-        // console.log(editData)
+        // Backend does not allow time_zone on update_branch; send only allowed fields
+        const { time_zone: _timeZone, ...payload } = editData || {};
         return axiosInstancecoremodule.request({
             method: 'PUT',
             url: `/api/v1/branches/update_branch`,
-            data: {
-                // operation:'upd_branch',
-                ...editData
-            }
+            data: payload
         })
     },
 
@@ -53,16 +51,23 @@ const branchesApi = {
         })
     },
 
+    /** Get timezones by country via settings API (replaces PHP get_country_timezone). */
     getBranchTimeZone: function (timeZoneData) {
+        const countryCode = timeZoneData?.country_code ?? timeZoneData?.id;
         return axiosInstance.request({
-            method: 'POST',
-            url: `processors/get_data.php`,
-            data: {
-                operation: 'get_country_timezone',
-                ...timeZoneData
-            }
-
-        })
+            method: 'GET',
+            url: 'http://172.18.0.34:7511/sub_modules/settings/get_timezones',
+            params: { country_code: countryCode }
+        }).then((response) => {
+            const raw = response?.data;
+            const list = Array.isArray(raw) ? raw : (raw?.TIME_ZONE ?? raw?.DB_DATA ?? raw?.data ?? []);
+            const timeZones = list.map((z) =>
+                typeof z === 'string'
+                    ? { zone_name: z }
+                    : { ...z, zone_name: z.zone_name ?? z.name ?? z }
+            );
+            return { ...response, data: { STATUS: 'SUCCESSFUL', TIME_ZONE: timeZones } };
+        });
     },
     getPremisis: function (bracnhData) {
         //console.log(bracnhData)
