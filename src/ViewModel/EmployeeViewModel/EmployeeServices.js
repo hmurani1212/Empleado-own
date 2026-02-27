@@ -903,9 +903,11 @@ const useEmployees = () => {
                     const raw = Array.isArray(deptList) ? deptList : []
                     const departments = raw.map((d) => ({ id: d.id ?? d.dept_id, name: d.name ?? d.dept_name }))
                     setDept_subDept({ departments })
+                    useStore.setState({ get_all_department: departments })
                     setDesignations([])
                 } else {
                     setDept_subDept({ departments: [] })
+                    useStore.setState({ get_all_department: [] })
                     setDesignations([])
                 }
                 return
@@ -915,16 +917,14 @@ const useEmployees = () => {
             const resData = response.data
             console.log('Departments API response:', resData.DB_DATA?.departments);
             if (resData.STATUS === "SUCCESSFUL") {
+                const rawDepts = resData.DB_DATA?.departments ?? (Array.isArray(resData.DB_DATA) ? resData.DB_DATA : [])
+                const departments = Array.isArray(rawDepts) ? rawDepts.map((d) => ({ id: d.id ?? d.dept_id, name: d.name ?? d.dept_name ?? '' })) : []
                 setDept_subDept(resData.DB_DATA)
+                useStore.setState({ get_all_department: departments })
                 setDesignations([])
             } else {
                 setDept_subDept({ departments: [] })
-                const departments = resData.DB_DATA?.departments || [];
-                setDept_subDept(departments);
-                // Update store's get_all_department directly with departments array
-                // This makes departments available in the component via get_all_department
-                useStore.setState({ get_all_department: departments });
-                // Clear designations when departments change
+                useStore.setState({ get_all_department: [] })
                 setDesignations([])
                 console.log('Departments set in store:', departments);
             } 
@@ -1252,6 +1252,11 @@ const useEmployees = () => {
                 page: targetPage,
                 ...newFilters // This will override any existing filters
             };
+
+            // Default limit 20 for list (sorting handled by backend)
+            if (currentFilters.pages !== 'all') {
+                if (currentFilters.limit == null) currentFilters.limit = 20;
+            }
 
             // Remove empty filters
             Object.keys(currentFilters).forEach(key =>

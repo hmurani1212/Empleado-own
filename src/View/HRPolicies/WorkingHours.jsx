@@ -6,6 +6,7 @@ import {
   timeOutPlicy,
 } from "../../services/__hrPoliciesServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
+import { FaInfoCircle } from "react-icons/fa";
 
 // CSS to hide --:-- placeholder in time inputs
 const timeInputStyle = `
@@ -30,6 +31,7 @@ const WorkingHours = (props) => {
     handleSelectChange,
     rangeValues,
     handleRangeChange,
+    openContentDrawer,
   } = props;
 
   // Custom handler for Late Comers Penalty to skip 0.5
@@ -58,7 +60,12 @@ const WorkingHours = (props) => {
       <style>{timeInputStyle}</style>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">Shift Start Time</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">Shift Start Time</label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("SHIFTSTARTTIME_HRPOLICY_EMP")} />
+            )}
+          </div>
           <input
             type="time"
             name="startTime"
@@ -68,7 +75,12 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">Late Coming Leniency Time</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">Late Coming Leniency Time</label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("LATECOMINGLEINIENCYTIME_HRPOLICY_EMP")} />
+            )}
+          </div>
           <input
             type="number"
             placeholder="e.g. 15"
@@ -80,7 +92,12 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">Early Arrival Policy</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">Early Arrival Policy</label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("EARLYARRIVAL_HRPOLICY_EMP")} />
+            )}
+          </div>
           <CustomSelect
             placeHolderTitle="Select Arrival Policy"
             value={newhrPolicesValues?.arivalPolicy}
@@ -98,7 +115,12 @@ const WorkingHours = (props) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">Shift Closing Time</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">Shift Closing Time</label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("SHIFTCLOSING_HRPOLICY_EMP")} />
+            )}
+          </div>
           <input
             type="time"
             name="endTime"
@@ -108,7 +130,12 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">Force Timeout</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">Force Timeout</label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("FORCETIMEOUT_HRPOLICY_EMP")} />
+            )}
+          </div>
           <CustomSelect
             placeHolderTitle="Force Timeout"
             value={newhrPolicesValues?.forceTimeOut}
@@ -123,7 +150,12 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">Timeout Policy</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">Timeout Policy</label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("TIMEOUT_HRPOLICY_EMP")} />
+            )}
+          </div>
           <CustomSelect
             placeHolderTitle="Timeout Policy"
             value={newhrPolicesValues?.timeOutPolicy}
@@ -141,7 +173,12 @@ const WorkingHours = (props) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">Late Minute Monthly Bucket</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">Late Minute Monthly Bucket</label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("LATEMINUTE_HRPOLICY_EMP")} />
+            )}
+          </div>
           <input
             type="number"
             placeholder="e.g. 60"
@@ -154,7 +191,12 @@ const WorkingHours = (props) => {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">Late Comers Penalty</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">Late Comers Penalty</label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("LATECOMERSPENALTY_HRPOLICY_EMP")} />
+            )}
+          </div>
           <input
             type="number"
             placeholder="e.g. 1"
@@ -170,13 +212,23 @@ const WorkingHours = (props) => {
       </div>
 
       <div className="mt-4">
-        <label className="text-sm font-semibold text-gray-900 font-poppins mb-4 block uppercase tracking-wider">Weekly Schedule</label>
+        <div className="flex items-center gap-1.5 mb-4">
+          <label className="text-sm font-semibold text-gray-900 font-poppins block uppercase tracking-wider">Weekly Schedule</label>
+          {openContentDrawer && (
+            <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("WEEKDAYS_HRPOLICY_EMP")} />
+          )}
+        </div>
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <table className="w-full table-auto">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider font-poppins">
-                  Day
+                  <span className="flex items-center gap-1.5">
+                    Day
+                    {openContentDrawer && (
+                      <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("PERDAYPERCENTAGE_HRPOLICY_EMP")} />
+                    )}
+                  </span>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider font-poppins">
                   Start Time

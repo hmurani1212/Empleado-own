@@ -659,8 +659,8 @@ const IndividualPayslipPreview = () => {
     ? `${leavesBalanceUsed}/${leavesBalanceTotal}`
     : null
 
-  // Dynamic monetary fields with safe fallbacks - use basic_pay from API when present (including 0); only fallback to rate when basic_pay is null/undefined
-  const basicPay = payslipData.basic_pay != null ? Number(payslipData.basic_pay) : Number(payslipData.rate || 0)
+  // Basic Pay and Total Earned: use salary_amount from API (DB_DATA.salary_amount)
+  const basicPay = Number(payslipData.salary_amount ?? payslipData.basic_pay ?? payslipData.rate ?? 0)
   const incrementedAmount = Number(payslipData.incentive || 0)
   const empSalary = Number(payslipData.emp_salary || payslipData.salary_amount || 0)
   const totalPay = Number(payslipData.total_pay || (empSalary + incrementedAmount))

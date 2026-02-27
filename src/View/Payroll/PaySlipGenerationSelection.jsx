@@ -3,6 +3,17 @@ import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import { customGenerationType, overtimeCustomData, salaryCalculationFormula, salraySubChecboxData } from '../../services/__payrollServices'
 import { Button, Checkbox, Radio, Typography, Input } from '@material-tailwind/react'
 import { FaPlus, FaXmark } from 'react-icons/fa6'
+import { FaInfoCircle } from 'react-icons/fa'
+
+const CONTENT_LABEL_BY_CHECKBOX_ID = {
+    1: 'PAYROLL_MONTHLY_LEAVE_ENCASH',
+    2: 'PAYROLL_MONTHLY_REWARD',
+    3: 'GENERATEPAY2_PAYROLL_EMP',
+    4: 'GENERATEPAY3_PAYROLL_EMP',
+    5: 'GENERATEPAY4_PAYROLL_EMP',
+    6: 'GENERATEPAY5_PAYROLL_EMP',
+    7: 'GENERATEPAY6_PAYROLL_EMP'
+}
 
 const PaySlipGenerationSelection = (props) => {
     const { 
@@ -13,7 +24,8 @@ const PaySlipGenerationSelection = (props) => {
         handleOvertimeChange,
         handleBonusTypeChange,
         handleBonusFieldChange,
-        generateBulkPayroll
+        generateBulkPayroll,
+        openContentDrawer
     } = props
 
     // Bonus type options
@@ -124,7 +136,7 @@ const PaySlipGenerationSelection = (props) => {
             </div>
         )}
         
-        <div>
+        <div className='flex items-center gap-2'>
             <Checkbox 
                 color='blue'
                 name='dontConsiderAttendance'
@@ -136,9 +148,17 @@ const PaySlipGenerationSelection = (props) => {
                     </Typography>
                 }
             />
+            {openContentDrawer && (
+                <FaInfoCircle
+                    className='text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0'
+                    onClick={() => openContentDrawer('GENERATEPAY1_PAYROLL_EMP')}
+                />
+            )}
         </div>
         <div>
-            <span className='text-[12px] text-[#474747] font-medium font-Urbanist'>Salary Calculation Formula</span>
+            <div className='flex items-center gap-2 mb-1'>
+                <span className='text-[12px] text-[#474747] font-medium font-Urbanist'>Salary Calculation Formula</span>
+            </div>
             <div className='flex flex-col gap-2'>
                 {salaryCalculationFormula.map((ele)=>(
                     <Radio key={ele.id}
@@ -193,7 +213,7 @@ const PaySlipGenerationSelection = (props) => {
                 const isDisabled = ele.id === 4 && managePaySlipGeneration.dontDoDeductionsAttendance;
                 
                 return (
-                    <div key={ele.id}>
+                    <div key={ele.id} className='flex items-center gap-2'>
                         <Checkbox 
                             color='blue'
                             name={fieldName}
@@ -206,6 +226,12 @@ const PaySlipGenerationSelection = (props) => {
                                 </Typography>
                             }
                         />
+                        {openContentDrawer && CONTENT_LABEL_BY_CHECKBOX_ID[ele.id] && (
+                            <FaInfoCircle
+                                className='text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0'
+                                onClick={() => openContentDrawer(CONTENT_LABEL_BY_CHECKBOX_ID[ele.id])}
+                            />
+                        )}
                         {/* Show bonus type selection when Monthly Reward is checked */}
                         {ele.id === 2 && managePaySlipGeneration.monthlyReward && (
                             <div className='ml-8 mt-2 space-y-3'>
@@ -291,8 +317,14 @@ const PaySlipGenerationSelection = (props) => {
         </div>
 
         <div className='space-y-2'>
-            <div className='text-[12px] text-[#474747] font-medium font-Urbanist'>
-                <span>Overtime Setting(s) Specify dates and overtime accordingly </span>
+            <div className='flex items-center gap-2 text-[12px] text-[#474747] font-medium font-Urbanist'>
+                <span>Overtime Setting(s) Specify dates and overtime accordingly</span>
+                {openContentDrawer && (
+                    <FaInfoCircle
+                        className='text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0'
+                        onClick={() => openContentDrawer('GENERATEPAY7_PAYROLL_EMP')}
+                    />
+                )}
             </div>
             {managePaySlipGeneration.overTime.map((item, index) => (
                 <div key={index} className='flex lg:flex-row md:flex-row flex-col lg:items-center md:items-center items-start gap-2'>

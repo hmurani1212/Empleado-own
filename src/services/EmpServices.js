@@ -3,6 +3,7 @@ import { FaMoneyCheckAlt, FaUser, FaUserAltSlash, FaCalendarAlt } from "react-ic
 import { FaUserCheck } from "react-icons/fa6";
 import { BsFillSendFill } from 'react-icons/bs'
 import { RiCashFill } from 'react-icons/ri'
+import ExcelJS from 'exceljs';
 
 export const contractData = [
   { id: 1, name: 'Permanent' },
@@ -300,9 +301,12 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
   ];
   const EMAIL_COLUMN_INDEX = columns.indexOf('Email') + 1;
 
-  const ExcelJS = (await import('exceljs')).default;
+  const organizationName = options.organizationName || 'Organization';
+  const reportTitle = `Employee Master Record List – ${organizationName}`;
+
+  // const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('Employees Data', { views: [{ state: 'frozen', ySplit: 2 }] });
+  const sheet = workbook.addWorksheet('Employee Master Record', { views: [{ state: 'frozen', ySplit: 2 }] });
   // Transform the data into the format required for Excel
   const rows = employeesData?.employees?.map(employee => [
     employee?.id || '',
@@ -320,7 +324,7 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
   const lastCol = String.fromCharCode(64 + columns.length);
   sheet.mergeCells(`A1:${lastCol}1`);
   const titleCell = sheet.getCell('A1');
-  titleCell.value = 'Employees Data';
+  titleCell.value = reportTitle;
   titleCell.font = { name: 'Calibri', size: 18, bold: true, color: { argb: 'FF1E3A5F' } };
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EEF5' } };
   titleCell.alignment = { horizontal: 'center', vertical: 'middle' };

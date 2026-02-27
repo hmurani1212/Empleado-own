@@ -309,8 +309,8 @@ const payrollApi = {
     empSalaryDetaisl : function(data){
         return payRollinstancemodule.request({
             method: 'GET',
-            url:`manage_payslip/history/${data.emp_id}`,
-            params : {}
+            url: `/manage_payslip/employees/${data.emp_id}/comprehensive-salary`,
+            params: {}
         })
     },
 
@@ -413,7 +413,8 @@ const payrollApi = {
                 p_fund_eligibility: data.p_fund_eligibility,
                 min_duration: data.min_duration,
                 employer_contribution: data.employer_contribution,
-                emp_contribution: data.emp_contribution
+                emp_contribution: data.emp_contribution,
+                pf_calculation_type: data.pf_calculation_type || 'basic_pay'
             }
         })
     },

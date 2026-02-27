@@ -273,7 +273,11 @@ const usePayroll = () => {
         value: temp.branch_id,
         label: temp.branch_name
       },
-      deptt_id: temp.deptt_id || 0, // Include deptt_id
+      department: (temp.deptt_id != null && temp.deptt_id !== '') ? {
+        value: temp.deptt_id,
+        label: temp.dept_name || `Department ${temp.deptt_id}`
+      } : null,
+      deptt_id: temp.deptt_id || 0,
       policy_branch_add: temp.branch_id,
       tmp_id: temp.id
     }
@@ -326,6 +330,7 @@ const usePayroll = () => {
     name : '',
     amount: '',
     branch : null,
+    department: null,
     deptt_id: 0,
     policy_branch_add : '',
     tmp_id : '',
@@ -346,12 +351,12 @@ const usePayroll = () => {
           label: singleTemp.branch_name
         } : null);
 
-        // Use the new REST API structure
+        // Use the new REST API structure (branch_id 0 = All Branches)
         const editData = {
           template_name: currentName,
           salary: parseFloat(currentAmount.replace(/,/g, '')), // Remove commas before parsing
-          branch_id: currentBranch.value,
-          deptt_id: singleTemp.deptt_id || 0 // Keep existing deptt_id or default to 0
+          branch_id: currentBranch.value === 0 || currentBranch.value === '0' ? 0 : currentBranch.value,
+          deptt_id: editValues.department?.value ?? editValues.deptt_id ?? 0
         }
         
         console.log('Updating template with data:', editData)
@@ -387,7 +392,8 @@ const usePayroll = () => {
 
     setEditValues((prevState) => ({
       ...prevState,
-      [field]: selectedOption
+      [field]: selectedOption,
+      ...(field === 'branch' ? { department: null, deptt_id: 0 } : {})
     }))
   }
 
@@ -503,7 +509,7 @@ const usePayroll = () => {
       template_name: formData.name,
       salary: parseFloat(formData.amount.replace(/,/g, '')), // Remove commas before parsing
       branch_id: formData.branch.value,
-      deptt_id: 0 // Default to 0 for now, can be updated later
+      deptt_id: formData.department?.value ?? 0
     }
 
     try {

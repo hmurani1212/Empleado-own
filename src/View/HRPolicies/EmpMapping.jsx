@@ -2,6 +2,7 @@ import React from "react";
 import { Checkbox, Input, Typography } from "@material-tailwind/react";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { FaXmark } from "react-icons/fa6";
+import { FaInfoCircle } from "react-icons/fa";
 
 const EmpMapping = (props) => {
   const {
@@ -14,15 +15,21 @@ const EmpMapping = (props) => {
     handleCheckbox,
     handleRemoveSubDept,
     empBranches,
+    openContentDrawer,
   } = props;
   
   return (
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">
-            Policy Name
-          </label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">
+              Policy Name
+            </label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("NAME_HRPOLICY_EMP")} />
+            )}
+          </div>
           <input
             name="name"
             className='w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-gray-400'
@@ -33,9 +40,14 @@ const EmpMapping = (props) => {
         </div>
         
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">
-            Select Branch
-          </label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">
+              Select Branch
+            </label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("BRANCHSELECTION_HRPOLICY_EMP")} />
+            )}
+          </div>
           <CustomSelect
             placeHolderTitle="Branch"
             value={newhrPolicesValues?.branch}
@@ -54,9 +66,14 @@ const EmpMapping = (props) => {
         </div>
         
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">
-            Select Department
-          </label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">
+              Select Department
+            </label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("DEPARTMENTSELECTION_HRPOLICY_EMP")} />
+            )}
+          </div>
           <CustomSelect
             placeHolderTitle="Select Department"
             value={newhrPolicesValues?.department}

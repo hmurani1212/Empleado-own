@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import useHRPolicies from "../../ViewModel/HRPoliciesViewModel/HRPoliciesServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import { FaInfoCircle } from "react-icons/fa";
 
 const OneToOne = (props) => {
   const {
@@ -11,6 +12,7 @@ const OneToOne = (props) => {
     handleChange,
     handleCheckbox,
     handleOneToOnePolicy,
+    openContentDrawer,
   } = props;
   const { gettingPolicyForSwap, allPoliciesForSwap } = useHRPolicies();
 
@@ -24,9 +26,14 @@ const OneToOne = (props) => {
       {/* Policy Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700 font-poppins">
-            Choose Current Policy
-          </label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-sm font-medium text-gray-700 font-poppins">
+              Choose Current Policy
+            </label>
+            {openContentDrawer && (
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("CHOOSE_CURRENT_HR_POLICY_TO_BE_SWAPPED")} />
+            )}
+          </div>
           <CustomSelect
             placeHolderTitle="Select HR Policy"
             value={swapPolicyValue?.currentPolicy}
@@ -62,9 +69,14 @@ const OneToOne = (props) => {
       {/* Swap Scheduling */}
       <div className="border-t border-gray-100 pt-6">
         <div className="flex flex-col gap-4">
-            <label className="text-sm font-semibold text-gray-900 font-poppins">
+            <div className="flex items-center gap-1.5">
+              <label className="text-sm font-semibold text-gray-900 font-poppins">
                 Swap Scheduling <span className="text-gray-400 font-normal">(Optional)</span>
-            </label>
+              </label>
+              {openContentDrawer && (
+                <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("SWAPSCHEDULING_HRPOLICIES_EMP")} />
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                     <label className="text-xs font-medium text-gray-600 font-poppins">Effective From</label>
@@ -93,7 +105,12 @@ const OneToOne = (props) => {
       {/* Rollback Section */}
       <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100">
         <div className="flex flex-col gap-1 mb-4">
-            <label className="text-sm font-semibold text-blue-600 font-poppins">Rollback Configuration</label>
+            <div className="flex items-center gap-1.5">
+              <label className="text-sm font-semibold text-blue-600 font-poppins">Rollback Configuration</label>
+              {openContentDrawer && (
+                <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("ROLLBACK_HRPOLICIES_EMP")} />
+              )}
+            </div>
             <span className="text-xs text-gray-500 font-poppins">
             Specify a rollback date/time to automatically revert the policy swap after a period.
             </span>
@@ -134,7 +151,12 @@ const OneToOne = (props) => {
             checked={swapPolicyValue.checkBox === 1}
             onChange={handleCheckbox}
             label={
-                <Typography className="text-sm font-medium text-gray-700 font-poppins">Make Swap Policy Recursive</Typography>
+                <span className="flex items-center gap-1.5">
+                  <Typography className="text-sm font-medium text-gray-700 font-poppins">Make Swap Policy Recursive</Typography>
+                  {openContentDrawer && (
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openContentDrawer("MAKE_SWAP_POLICY_RECURSIVE"); }} />
+                  )}
+                </span>
             }
             />
         </div>
