@@ -122,7 +122,7 @@ const performanceViewModel = (set, get) => ({
         }
     },
 
-    gettingGoals: async (id, searchText = null) => {
+    gettingGoals: async (name, searchText = null) => {
         set({ goalsLoading: true })
         try {
             let response;
@@ -130,8 +130,8 @@ const performanceViewModel = (set, get) => ({
                 // Use search API if search text is provided
                 response = await performanceApi.searchGoals(searchText)
             } else {
-                // Use regular get goals API
-                response = await performanceApi.getGoals(id)
+                // Use regular get goals API - pass name instead of id
+                response = await performanceApi.getGoals(name)
             }
             // console.log('response gettingGoals', response)
             const responseData = response.data

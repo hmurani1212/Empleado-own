@@ -281,7 +281,7 @@ const SubGoals = () => {
                                         color="blue-gray"
                                         className="font-normal"
                                     >
-                                        {ele.score}
+                                        {ele.score && Number(ele.score) > 0 ? `${ele.score}/10` : '0/10'}
                                     </Typography>
                                 </td>
                                 <td className={classes}>

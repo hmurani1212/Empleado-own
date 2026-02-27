@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { includeModuleData } from "../../services/__performanceServices";
 import { Checkbox, Typography } from "@material-tailwind/react";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
@@ -24,22 +24,51 @@ const AddEditPRC = (props) => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   
+  // Use ref to track if data has been fetched to prevent duplicate calls
+  const hasFetchedDataRef = useRef(false);
+  const previousShowStateRef = useRef(false);
+  const lastFetchedBranchIdRef = useRef(null);
+  
+  // Only fetch data when modal opens (PRCAddValue.show changes from false to true)
   useEffect(() => {
-    fetchingAllBranches();
-    Get_All_Employeefn();
-  }, [fetchingAllBranches, Get_All_Employeefn]);
+    // Check if modal just opened (was closed, now open)
+    const modalJustOpened = PRCAddValue.show && !previousShowStateRef.current;
+    
+    if (modalJustOpened && !hasFetchedDataRef.current) {
+      // Fetch data only when modal opens for the first time
+      fetchingAllBranches();
+      Get_All_Employeefn();
+      hasFetchedDataRef.current = true;
+    }
+    
+    // Update previous show state
+    previousShowStateRef.current = PRCAddValue.show;
+    
+    // Reset fetch flag when modal closes
+    if (!PRCAddValue.show) {
+      hasFetchedDataRef.current = false;
+      lastFetchedBranchIdRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [PRCAddValue.show]);
   
   // Sync local state with PRCAddValue when it changes
   useEffect(() => {
     if (PRCAddValue.branch_id) {
       setSelectedBranch(PRCAddValue.branch_id);
-      // Load departments when branch is set
+      // Load departments when branch is set - only if branch_id actually changed
       if (PRCAddValue.branch_id.value !== undefined) {
         const branchValue = PRCAddValue.branch_id.value === 0 || PRCAddValue.branch_id.value === '0' ? 0 : PRCAddValue.branch_id.value;
-        gettingSubBranches(branchValue);
+        
+        // Only fetch if this is a different branch than the last one we fetched
+        if (lastFetchedBranchIdRef.current !== branchValue) {
+          lastFetchedBranchIdRef.current = branchValue;
+          gettingSubBranches(branchValue);
+        }
       }
     } else {
       setSelectedBranch(null);
+      lastFetchedBranchIdRef.current = null;
     }
     
     if (PRCAddValue.department_id) {
@@ -52,7 +81,8 @@ const AddEditPRC = (props) => {
     if (!PRCAddValue.branch_id || !PRCAddValue.department_id) {
       setSelectedEmployee(null);
     }
-  }, [PRCAddValue.branch_id, PRCAddValue.department_id, gettingSubBranches]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [PRCAddValue.branch_id, PRCAddValue.department_id]);
 
   return (
     <div className="space-y-2">
@@ -161,11 +191,14 @@ const AddEditPRC = (props) => {
             
             // Load departments for the selected branch
             const branchValue = selectedOption?.value === 0 || selectedOption?.value === '0' ? 0 : selectedOption?.value;
-            if (branchValue !== undefined && branchValue !== null) {
+            
+            // Update ref before calling API to prevent duplicate calls from useEffect
+            if (branchValue !== undefined && branchValue !== null && lastFetchedBranchIdRef.current !== branchValue) {
+              lastFetchedBranchIdRef.current = branchValue;
               await gettingSubBranches(branchValue);
             }
             
-            // Call handleSelectAddPRC which will handle the state update and department loading
+            // Call handleSelectAddPRC which will handle the state update
             await handleSelectAddPRC(selectedOption, "branch_id");
             
             // If "All Branches" is selected, auto-select "All Departments"
@@ -427,7 +460,14 @@ const AddEditPRC = (props) => {
           value={PRCAddValue.review_day}
           name="review_day"
           onChange={handleChangeRPC}
+          min={PRCAddValue.end_date || ''}
+          title={PRCAddValue.end_date ? `Closing date must be on or after the end date (${PRCAddValue.end_date})` : 'Please select an end date first'}
         />
+        {PRCAddValue.end_date && PRCAddValue.review_day && PRCAddValue.review_day < PRCAddValue.end_date && (
+          <small className="text-red-500 text-[10px] block mt-1">
+            Closing date cannot be before the end date. Please select a date on or after {PRCAddValue.end_date}.
+          </small>
+        )}
       </div>
 
       {PRCAddValue.selectedEmp && PRCAddValue.selectedEmp.length > 0 && (

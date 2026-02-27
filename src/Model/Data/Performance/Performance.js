@@ -59,8 +59,8 @@ const performanceApi = {
             url: `/performance_management/get_performance`,
         })
     },
-    getGoals: function (id) {
-        const params = id ? { id: id } : {};
+    getGoals: function (name) {
+        const params = name ? { name: name } : {};
         return performanceAxiosInstance.request({
             method: 'GET',
             url: `/performance_management/get_goals`,

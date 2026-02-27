@@ -131,26 +131,48 @@ const useCometencyServices = ()=>{
             }))
         }
         if(field === 'branchId'){
-            // Fetch departments for the selected branch (same as Create Performance Review Cycle)
-            const data = await gettingDepartmentsServices(select.value)
-            setAddCompetencyValue((prevState)=>({
-                ...prevState,
-                [field]: select,
-                departmentsList: data,
-                empList: [], // Reset employee list
-                empId: null, // Reset employee selection
-                selectedEmp: [], // Reset selected employees
-                departmentId: null // Reset department selection
-            }))
+            // Handle "All Branches" (value 0) - don't fetch departments, just set the value
+            if (select.value === 0 || select.value === '0') {
+                setAddCompetencyValue((prevState)=>({
+                    ...prevState,
+                    [field]: select,
+                    departmentsList: [{ value: 0, label: 'All Departments' }], // Add "All Departments" option
+                    empList: [], // Reset employee list
+                    empId: null, // Reset employee selection
+                    selectedEmp: [], // Reset selected employees
+                    departmentId: null // Reset department selection
+                }))
+            } else {
+                // Fetch departments for the selected branch (same as Create Performance Review Cycle)
+                const data = await gettingDepartmentsServices(select.value)
+                setAddCompetencyValue((prevState)=>({
+                    ...prevState,
+                    [field]: select,
+                    departmentsList: [{ value: 0, label: 'All Departments' }, ...(data || [])], // Add "All Departments" option
+                    empList: [], // Reset employee list
+                    empId: null, // Reset employee selection
+                    selectedEmp: [], // Reset selected employees
+                    departmentId: null // Reset department selection
+                }))
+            }
         }
         if(field === 'departmentId'){
-            // When department is selected, fetch employees for that department (same as Create Performance Review Cycle)
-            const data = await getEmployeesByDeptId(select.value);
-            setAddCompetencyValue((prevState)=>({
-                ...prevState,
-                [field]: select,
-                empList: data
-            }))
+            // Handle "All Departments" (value 0) - don't fetch employees, just set the value
+            if (select.value === 0 || select.value === '0') {
+                setAddCompetencyValue((prevState)=>({
+                    ...prevState,
+                    [field]: select,
+                    empList: [] // Reset employee list when "All Departments" is selected
+                }))
+            } else {
+                // When department is selected, fetch employees for that department (same as Create Performance Review Cycle)
+                const data = await getEmployeesByDeptId(select.value);
+                setAddCompetencyValue((prevState)=>({
+                    ...prevState,
+                    [field]: select,
+                    empList: data || []
+                }))
+            }
         }
         if(field === 'empId'){
             const filterData = addCompetencyValue.selectedEmp?.find((ele) => ele.value == select.value);

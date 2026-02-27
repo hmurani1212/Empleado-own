@@ -1,4 +1,4 @@
-import { Typography, Badge, Progress, Button, Menu, MenuHandler, MenuList, MenuItem } from "@material-tailwind/react";
+import { Typography, Progress, Button, Menu, MenuHandler, MenuList, MenuItem } from "@material-tailwind/react";
 import React, { useEffect, useState } from "react";
 import {
   FaEye,
@@ -25,6 +25,7 @@ import performanceApi from "../../Model/Data/Performance/Performance";
 import { showToast } from "../../Components/Toaster/Toaster";
 import { motion, AnimatePresence } from "framer-motion";
 import { SubGoalsSkeleton } from "./PerformanceSkeletons";
+import GoalDescriptionModal from "./GoalDescriptionModal";
 
 const EmployeeGoals = () => {
   const location = useLocation();
@@ -68,6 +69,31 @@ const EmployeeGoals = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState(null);
   const [employeeProfile, setEmployeeProfile] = useState(null);
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  const [selectedGoalForDescription, setSelectedGoalForDescription] = useState(null);
+  
+  // Description truncation length
+  const DESCRIPTION_MAX_LENGTH = 50;
+
+  const handleOpenDescriptionModal = (goal) => {
+    setSelectedGoalForDescription(goal);
+    setShowDescriptionModal(true);
+  };
+
+  const handleCloseDescriptionModal = () => {
+    setShowDescriptionModal(false);
+    setSelectedGoalForDescription(null);
+  };
+
+  const truncateDescription = (text) => {
+    if (!text) return '';
+    if (text.length <= DESCRIPTION_MAX_LENGTH) return text;
+    return text.substring(0, DESCRIPTION_MAX_LENGTH);
+  };
+
+  const isDescriptionLong = (text) => {
+    return text && text.length > DESCRIPTION_MAX_LENGTH;
+  };
 
   const toggleMenu = (index, isOpen) => {
     setOpenMenu((prevOpenMenu) => ({
@@ -161,7 +187,27 @@ const EmployeeGoals = () => {
   };
 
   const handleRatingClick = (goal) => {
-    handleOpenProgressModal(goal);
+    // Validate that goal is completed before allowing progress posting/rating
+    if (!goal) {
+      showToast('Goal not found', 'error');
+      return;
+    }
+
+    // Check if goal status is "Not Started" (0) or "In Progress" (1)
+    if (goal.status === '0' || goal.status === '1' || goal.status === 0 || goal.status === 1) {
+      showToast('Goal is not completed yet, you can not rate it', 'error');
+      return;
+    }
+
+    // Only allow if status is "Completed" (2)
+    if (goal.status !== '2' && goal.status !== 2) {
+      showToast('Goal is not completed yet, you can not rate it', 'error');
+      return;
+    }
+
+    if (handleOpenProgressModal) {
+      handleOpenProgressModal(goal);
+    }
   };
 
   const handleEyeIconClick = () => {
@@ -199,19 +245,28 @@ const EmployeeGoals = () => {
 
   const renderStars = (rating, goal) => {
     const stars = [];
+    // Check if goal is completed - only allow clicking if completed
+    const isCompleted = goal?.status === '2' || goal?.status === 2;
+    
     for (let i = 1; i <= 5; i++) {
       stars.push(
         <span
           key={i}
-          className={`cursor-pointer transition-colors text-lg ${
+          className={`transition-colors text-lg ${
             i <= rating ? "text-yellow-400" : "text-gray-300"
-          } hover:text-yellow-400`}
-          onClick={() =>
-            handleOpenProgressModal
-              ? handleOpenProgressModal(goal)
-              : handleRatingClick(goal)
-          }
-          title="Click to update progress"
+          } ${isCompleted ? "cursor-pointer hover:text-yellow-400" : "cursor-not-allowed opacity-50"}`}
+          onClick={() => {
+            if (!isCompleted) {
+              showToast('Goal is not completed yet, you can not rate it', 'error');
+              return;
+            }
+            if (handleOpenProgressModal) {
+              handleOpenProgressModal(goal);
+            } else {
+              handleRatingClick(goal);
+            }
+          }}
+          title={isCompleted ? "Click to update progress" : "Goal must be completed to rate"}
         >
           ★
         </span>
@@ -337,9 +392,26 @@ const EmployeeGoals = () => {
                         </Typography>
                       </td>
                       <td className="p-4">
-                        <Typography className="text-sm text-gray-600 font-poppins max-w-xs truncate mx-auto">
-                          {goal.descriptions}
-                        </Typography>
+                        <div className="text-sm text-gray-600 font-poppins max-w-xs mx-auto">
+                          {isDescriptionLong(goal.descriptions) ? (
+                            <div className="flex flex-col gap-1">
+                              <Typography className="text-sm text-gray-600 font-poppins">
+                                {truncateDescription(goal.descriptions)}...
+                              </Typography>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDescriptionModal(goal)}
+                                className="text-blue-600 hover:text-blue-800 text-xs font-medium text-left underline"
+                              >
+                                read more
+                              </button>
+                            </div>
+                          ) : (
+                            <Typography className="text-sm text-gray-600 font-poppins">
+                              {goal.descriptions || '—'}
+                            </Typography>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4">
                         <div className="flex flex-col items-center gap-1 w-32 mx-auto">
@@ -359,9 +431,14 @@ const EmployeeGoals = () => {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center justify-center gap-2">
-                          <Badge color={getStatusColor(goal.status)} className="px-2 py-1 rounded-md shadow-none">
+                          <span className={`px-2 py-1 rounded-md text-xs font-medium ${
+                            goal.status === '0' || goal.status === 0 ? 'bg-gray-50 text-gray-600' :
+                            goal.status === '1' || goal.status === 1 ? 'bg-blue-50 text-blue-600' :
+                            goal.status === '2' || goal.status === 2 ? 'bg-green-50 text-green-600' :
+                            'bg-gray-50 text-gray-600'
+                          }`}>
                             {getStatusText(goal.status)}
-                          </Badge>
+                          </span>
                         </div>
                       </td>
                       <td className="p-4 relative">
@@ -475,6 +552,14 @@ const EmployeeGoals = () => {
         title="Delete Goal"
         message="Are you sure you want to delete this goal? This action cannot be undone."
       />
+
+      {showDescriptionModal && (
+        <GoalDescriptionModal
+          open={showDescriptionModal}
+          onClose={handleCloseDescriptionModal}
+          goal={selectedGoalForDescription}
+        />
+      )}
     </div>
   );
 };

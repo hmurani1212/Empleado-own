@@ -80,7 +80,7 @@ const RatingModal = ({ open, onClose, goal, onRatingUpdate, lastWeekComments = [
       }
     } catch (error) {
       console.error("Error updating progress:", error);
-      showToast("Failed to update progress. Please try again.", "error");
+       showToast(error.response?.data?.ERROR_DESCRIPTION || "Failed to update progress and rating", "error");
     } finally {
       setIsSubmitting(false);
     }

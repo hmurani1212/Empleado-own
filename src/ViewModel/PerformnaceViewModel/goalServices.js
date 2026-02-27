@@ -84,8 +84,8 @@ const useGoalServices = ()=>{
                 [field]:select
             }))
             // If "All" is selected (value is null), pass null to get all goals
-            // Otherwise, pass the selected performance review ID
-            gettingGoals(select.value)
+            // Otherwise, pass the selected performance review name (label) instead of ID
+            gettingGoals(select.value ? select.label : null)
         }
         if(field === 'pID'){
             setAddGoalValue((prevState)=>({
@@ -307,6 +307,20 @@ const useGoalServices = ()=>{
         }
         const {goal_name, description, start_date, end_date, priority,selectedEmp, pID, goal_id} = addGoalValue
         
+        // Get review cycle name (label) instead of ID (value)
+        const reviewCycleName = pID?.label || pID?.name || (typeof pID === 'object' && pID !== null ? null : pID);
+        
+        // If pID is an object but doesn't have label, try to get it from the value
+        let finalReviewCycleName = reviewCycleName;
+        if (!finalReviewCycleName && pID && typeof pID === 'object') {
+            // If we only have the value (ID), we can't convert it to name here
+            // This should not happen if the form is working correctly
+            console.warn('Review cycle name not found in pID object:', pID);
+            finalReviewCycleName = pID.value; // Fallback to value, but log warning
+        }
+        
+        console.log('Review cycle info:', { pID, reviewCycleName: finalReviewCycleName });
+        
         const apiData = {
             title:goal_name,
             description:description,
@@ -315,13 +329,13 @@ const useGoalServices = ()=>{
             priority:priority?.label,
             assigned_to:selectedEmp.map((ele)=> ele.label),
             employee:selectedEmp.map((ele)=> ele.value.toString()),
-            review_cycle:pID.value
+            review_cycle:finalReviewCycleName // Send name instead of ID
         }
 
         const updateApiData = {
             Goal_id: goal_id,
             name: goal_name,
-            review_cycle: getValue(pID),
+            review_cycle: finalReviewCycleName, // Send name instead of ID
             startDate: start_date,
             endDate: end_date,
             descriptions: description,
@@ -357,7 +371,7 @@ const useGoalServices = ()=>{
 
                 const response = await performanceApi.createGoal(apiData)
                 const responseData = response.data
-                console.log('Goal creation response:', responseData);
+                console.log('Goal creation response222222222:', responseData);
                 
                 if( responseData.STATUS === "SUCCESSFUL"){
                     
@@ -569,10 +583,14 @@ const useGoalServices = ()=>{
     const handleUpdateGoal = async (goalData) => {
         console.log('Updating goal with data:', goalData)
         
+        // Get review cycle name (label) instead of ID (value)
+        const reviewCycleName = goalData.pID?.label || goalData.pID?.name || goalData.pID?.value;
+        console.log('Update - Review cycle name:', reviewCycleName);
+        
         const updateApiData = {
             Goal_id: goalData.goal_id,
             name: goalData.goal_name,
-            review_cycle: goalData.pID.value,
+            review_cycle: reviewCycleName, // Send name instead of ID
             startDate: goalData.start_date,
             endDate: goalData.end_date,
             descriptions: goalData.description,
@@ -618,6 +636,14 @@ const useGoalServices = ()=>{
             if (responseData.STATUS === "SUCCESSFUL") {
                 const goalData = responseData.DB_DATA
                 
+                // Use rating from the original goal object if available, otherwise use API response
+                // This ensures we get the correct rating from the list data
+                const rating = goal?.rating !== undefined && goal?.rating !== null 
+                    ? goal.rating 
+                    : (goalData.rating !== undefined && goalData.rating !== null ? goalData.rating : 0)
+                
+                console.log('Rating from goal object:', goal?.rating, 'Rating from API:', goalData.rating, 'Final rating:', rating)
+                
                 // Set the add goal modal to view mode with fetched data
                 setAddGoalValue((prevState) => ({
                     ...prevState,
@@ -625,19 +651,25 @@ const useGoalServices = ()=>{
                     update: false, // Set to false for view mode
                     view: true, // Add view mode flag
                     goal_id: goalData._id,
-                    goal_name: goalData.name,
-                    description: goalData.descriptions,
-                    start_date: formatTimestampToDate(goalData.startDate),
-                    end_date: formatTimestampToDate(goalData.endDate),
-                    priority: { value: goalData.priority, label: goalData.priority },
-                    selectedEmp: [{ value: goalData.employee_id, label: goalData.employee_name }],
-                    pID: { value: goalData.review_cycle._id, label: goalData.review_cycle.name },
+                    goal_name: goalData.name || '',
+                    description: goalData.descriptions || '',
+                    start_date: goalData.startDate ? formatTimestampToDate(goalData.startDate) : '',
+                    end_date: goalData.endDate ? formatTimestampToDate(goalData.endDate) : '',
+                    priority: goalData.priority 
+                        ? { value: goalData.priority, label: goalData.priority }
+                        : null,
+                    selectedEmp: goalData.employee_id && goalData.employee_name
+                        ? [{ value: goalData.employee_id, label: goalData.employee_name }]
+                        : [],
+                    pID: goalData.review_cycle 
+                        ? { value: goalData.review_cycle._id, label: goalData.review_cycle.name }
+                        : null,
                     // Additional data for view mode
-                    progress: goalData.progress,
-                    score: goalData.score,
-                    status: goalData.status,
+                    progress: goalData.progress || 0,
+                    score: goalData.score || 0,
+                    status: goalData.status || '0',
                     comment: goalData.comment || '',
-                    rating: goalData.rating || 0,
+                    rating: rating, // Use the correctly resolved rating
                     createdAt: goalData.createdAt
                 }))
             }

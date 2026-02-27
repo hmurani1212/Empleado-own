@@ -12,6 +12,21 @@ import ProgressPostingModal from "./ProgressPostingModal";
 import GoalCommentsDrawer from "./GoalCommentsDrawer";
 import EmployeeSubFeed from "./EmployeeSubFeed";
 import History from "./History";
+import { createContext } from "react";
+import EmployeeGoals from "./EmployeeGoals";
+import { showToast } from "../../Components/Toaster/Toaster";
+
+// Create a context for EmployeeGoals when rendered outside of outlet
+export const EmployeeGoalsContext = createContext(null);
+
+// Wrapper component that provides context to EmployeeGoals
+const EmployeeGoalsWithContext = ({ context }) => {
+  return (
+    <EmployeeGoalsContext.Provider value={context}>
+      <EmployeeGoals />
+    </EmployeeGoalsContext.Provider>
+  );
+};
 
 const Performance = () => {
   const { performanceTitles, handleNavLinkClick } = usePerformanceServices();
@@ -158,6 +173,24 @@ const Performance = () => {
   };
 
   const handleOpenProgressModal = (goal) => {
+    // Validate that goal is completed before allowing progress posting/rating
+    if (!goal) {
+      showToast('Goal not found', 'error');
+      return;
+    }
+
+    // Check if goal status is "Not Started" (0) or "In Progress" (1)
+    if (goal.status === '0' || goal.status === '1' || goal.status === 0 || goal.status === 1) {
+      showToast('Goal is not completed yet, you can not rate it', 'error');
+      return;
+    }
+
+    // Only allow if status is "Completed" (2)
+    if (goal.status !== '2' && goal.status !== 2) {
+      showToast('Goal is not completed yet, you can not rate it', 'error');
+      return;
+    }
+
     setSelectedGoalForProgress(goal);
     setShowProgressModal(true);
   };
