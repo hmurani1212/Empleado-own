@@ -5,6 +5,8 @@ import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import useStore from "../../Store/store";
 import { showToast } from "../../Components/Toaster/Toaster";
 import payrollApi from "../../Model/Data/Payroll/Payroll";
+import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
+import { getContentByLabel } from "../../services/getContentService";
 
 const SettingPayroll = () => {
   const [activeSection, setActiveSection] = useState("tax_exemptions");
@@ -37,6 +39,12 @@ const SettingPayroll = () => {
   // Modal state for tax slab form
   const [isTaxSlabModalOpen, setIsTaxSlabModalOpen] = useState(false);
   const [isTaxExemptionModalOpen, setIsTaxExemptionModalOpen] = useState(false);
+
+  // Content drawer (info icon) – right-side panel with ENGLISH/URDU
+  const [contentDrawerOpen, setContentDrawerOpen] = useState(false);
+  const [contentData, setContentData] = useState(null);
+  const [contentLang, setContentLang] = useState("ENGLISH");
+  const [contentLoading, setContentLoading] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -84,6 +92,27 @@ const SettingPayroll = () => {
   const getIncomeTaxSlabs = useStore((state) => state.getIncomeTaxSlabs);
   const deleteTaxExemption = useStore((state) => state.deleteTaxExemption);
   const deleteIncomeTaxSlab = useStore((state) => state.deleteIncomeTaxSlab);
+
+  const openContentDrawer = async (contentLabel) => {
+    setContentDrawerOpen(true);
+    setContentLang("ENGLISH");
+    setContentLoading(true);
+    setContentData(null);
+    try {
+      const res = await getContentByLabel(contentLabel);
+      if (res?.STATUS === "SUCCESSFUL" && res?.DATA?.[0]?.contents?.length) {
+        setContentData(res.DATA[0]);
+      } else {
+        showToast("Content not found", "error");
+        setContentDrawerOpen(false);
+      }
+    } catch (err) {
+      showToast(err?.response?.data?.ERROR_DESCRIPTION || "Failed to load content", "error");
+      setContentDrawerOpen(false);
+    } finally {
+      setContentLoading(false);
+    }
+  };
 
   // Fetch branches and data on component mount
   useEffect(() => {
@@ -306,6 +335,7 @@ const SettingPayroll = () => {
           employer_contribution: formData.employerContributionPF || 0,
           p_fund_eligibility: formData.fundEligibility || "all",
           min_duration: formData.minDuration || 1,
+          pf_calculation_type: formData.calculateOn === "basic" ? "basic_pay" : "gross_pay",
         });
 
         if (result.success) {
@@ -836,7 +866,10 @@ const SettingPayroll = () => {
                 <label className="text-[#698592] text-[12px] font-semibold">
                   % of employee salary
                 </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
+                <FaInfoCircle
+                  className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4]"
+                  onClick={() => openContentDrawer("SOCIALSECURITY2_PAYROLL_EMP")}
+                />
               </div>
               <div className="w-full max-w-md">
                 <Input
@@ -860,7 +893,10 @@ const SettingPayroll = () => {
                 <label className="text-[#698592] text-[12px] font-semibold">
                   Limit above %age to below max salary
                 </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
+                <FaInfoCircle
+                  className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4]"
+                  onClick={() => openContentDrawer("SOCIALSECURITY3_PAYROLL_EMP")}
+                />
               </div>
               <div className="w-full max-w-md">
                 <Input
@@ -953,7 +989,10 @@ const SettingPayroll = () => {
                 <label className="text-[#698592] text-[12px] font-semibold">
                   % of employee salary
                 </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
+                <FaInfoCircle
+                  className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4]"
+                  onClick={() => openContentDrawer("MEDICALA2_PAYROLL_EMP")}
+                />
               </div>
               <div className="w-full max-w-md">
                 <Input
@@ -977,7 +1016,10 @@ const SettingPayroll = () => {
                 <label className="text-[#698592] text-[12px] font-semibold">
                   Limit above %age to below max salary
                 </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
+                <FaInfoCircle
+                  className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4]"
+                  onClick={() => openContentDrawer("MEDICALA3_PAYROLL_EMP")}
+                />
               </div>
               <div className="w-full max-w-md">
                 <Input
@@ -1066,12 +1108,9 @@ const SettingPayroll = () => {
 
             {/* Salary */}
             <div>
-              <div className="flex items-center gap-2">
-                <label className="text-[#698592] text-[12px] font-semibold">
-                  Salary
-                </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
-              </div>
+              <label className="text-[#698592] text-[12px] font-semibold block">
+                Salary
+              </label>
               <div className="w-full max-w-md">
                 <Input
                   label="Enter salary"
@@ -1091,7 +1130,10 @@ const SettingPayroll = () => {
                 <label className="text-[#698592] text-[12px] font-semibold">
                   Employee Contribution
                 </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
+                <FaInfoCircle
+                  className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4]"
+                  onClick={() => openContentDrawer("EOBI3_PAYROLL_EMP")}
+                />
               </div>
               <div className="w-full max-w-md">
                 <Input
@@ -1112,7 +1154,10 @@ const SettingPayroll = () => {
                 <label className="text-[#698592] text-[12px] font-semibold">
                   Employer Contribution
                 </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
+                <FaInfoCircle
+                  className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4]"
+                  onClick={() => openContentDrawer("EOBI4_PAYROLL_EMP")}
+                />
               </div>
               <div className="w-full max-w-md">
                 <Input
@@ -1197,7 +1242,10 @@ const SettingPayroll = () => {
                 <label className="text-[#698592] text-[12px] font-semibold">
                   Eligibility Min Employment Duration (months)
                 </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
+                <FaInfoCircle
+                  className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4]"
+                  onClick={() => openContentDrawer("PROVIDENT2_PAYROLL_EMP")}
+                />
               </div>
               <div className="w-full max-w-md">
                 <Input
@@ -1221,7 +1269,10 @@ const SettingPayroll = () => {
                 <label className="text-[#698592] text-[12px] font-semibold">
                   Employee Contribution (%age)
                 </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
+                <FaInfoCircle
+                  className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4]"
+                  onClick={() => openContentDrawer("PROVIDENT3_PAYROLL_EMP")}
+                />
               </div>
               <div className="w-full max-w-md">
                 <Input
@@ -1246,7 +1297,10 @@ const SettingPayroll = () => {
                 <label className="text-[#698592] text-[12px] font-semibold">
                   Employer Contribution (%age)
                 </label>
-                <FaInfoCircle className="text-gray-400 text-sm cursor-help" />
+                <FaInfoCircle
+                  className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4]"
+                  onClick={() => openContentDrawer("PROVIDENT4_PAYROLL_EMP")}
+                />
               </div>
               <div className="w-full max-w-md">
                 <Input
@@ -1698,6 +1752,62 @@ const SettingPayroll = () => {
           </form>
         </div>
       )}
+
+      {/* Content info drawer (right side) – ENGLISH / URDU */}
+      <PortalDrawer
+        open={contentDrawerOpen}
+        closeDrawer={() => setContentDrawerOpen(false)}
+        direction="right"
+        widthSize="45vw"
+        title={
+          contentData?.contents?.find((c) => c.lang === contentLang)?.main_heading ?? "% of employee salary"
+        }
+        compo={
+          <div className="flex flex-col gap-4">
+            {contentLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : contentData?.contents?.length ? (
+              <>
+                <div
+                  className="text-gray-800 text-sm font-Urbanist leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      contentData.contents.find((c) => c.lang === contentLang)?.content ??
+                      contentData.contents.find((c) => c.lang === "ENGLISH")?.content ??
+                      "",
+                  }}
+                />
+                <div className="flex gap-2 mt-4 border-t border-gray-200 pt-4">
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === "ENGLISH"
+                        ? "bg-[#3DA5F4] text-white"
+                        : "bg-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => setContentLang("ENGLISH")}
+                  >
+                    ENGLISH
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === "URDU"
+                        ? "bg-[#3DA5F4] text-white"
+                        : "bg-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => setContentLang("URDU")}
+                  >
+                    URDU
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        }
+      />
     </div>
   );
 };

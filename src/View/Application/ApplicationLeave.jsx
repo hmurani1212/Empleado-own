@@ -374,7 +374,6 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
             <h2 className="print-section-title">Application Detail</h2>
             <div className="print-card">
               <div className="print-card-body">{emptyDisplay(collapseNewlinesApplicationDetail(applicationData?.Application_detail ?? applicationData?.application_detail ?? applicationData?.form_data?.application_detail ?? applicationData?.app_body ?? applicationData?.form_data?.app_body))}</div>
-              <div className="print-card-body">{applicationData?.app_body || applicationData?.form_data?.app_body || applicationData?.Application_detail || applicationData?.application_detail || ""}</div>
             </div>
           </section>
 
@@ -447,7 +446,7 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
                 <div className="flex flex-col items-start justify-start gap-1">
                   <span className="text-gray-600 font-normal text-sm">From:</span>
                   <span className="text-gray-800 font-Urbanist font-semibold text-sm">{emptyDisplay(applicationData?.name || applicationData?.emp_name)}</span>
-                  <span className="text-gray-800 font-Urbanist font-semibold text-sm">{applicationData?.emp_name || ""}</span>
+                  {/* <span className="text-gray-800 font-Urbanist font-semibold text-sm">{applicationData?.emp_name || ""}</span> */}
                 </div>
               </div>
 
@@ -581,7 +580,6 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
                 <div className="flex flex-col items-start justify-start gap-1">
                   <span className="text-gray-600 font-normal text-sm">Application Detail:</span>
                   <span className="text-gray-800 font-Urbanist font-semibold text-sm leading-relaxed whitespace-pre-wrap">{emptyDisplay(collapseNewlinesApplicationDetail(applicationData?.Application_detail ?? applicationData?.application_detail ?? applicationData?.form_data?.application_detail ?? applicationData?.app_body ?? applicationData?.form_data?.app_body))}</span>
-                  <span className="text-gray-800 font-Urbanist font-semibold text-sm leading-relaxed">{applicationData?.app_body || applicationData?.form_data?.app_body || applicationData?.Application_detail || applicationData?.application_detail || ""}</span>
                 </div>
                 <div className="flex-1">
 

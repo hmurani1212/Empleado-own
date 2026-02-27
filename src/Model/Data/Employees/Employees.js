@@ -80,11 +80,14 @@ const employeesApi = {
         })
     },
     getDesignations: function (data) {
-        // Support both branch_id and dept_id
-        const params = data.branch_id ? `branch_id=${data.branch_id}` : `dept_id=${data.d_id}`;
+        const params = new URLSearchParams();
+        if (data.branch_id != null && data.branch_id !== '') params.set('branch_id', data.branch_id);
+        if (data.d_id != null && data.d_id !== '') params.set('dept_id', data.d_id);
+        params.set('removePagination', 'true');
+        const query = params.toString();
         return axiosInstancecoremodule.request({
             method: 'GET',
-            url: `/api/v1/designations?${params}`,
+            url: `/api/v1/designations${query ? `?${query}` : ''}`,
         })
     },
     getPolicies: function (data) {
@@ -156,6 +159,16 @@ const employeesApi = {
         // Handle limit parameter
         if (filters.limit) {
             queryParams.push(`limit=${filters.limit}`);
+        }
+
+        // Handle sort_by (e.g. name for A–Z)
+        if (filters.sort_by) {
+            queryParams.push(`sort_by=${encodeURIComponent(filters.sort_by)}`);
+        }
+
+        // Handle order (asc / desc)
+        if (filters.order) {
+            queryParams.push(`order=${encodeURIComponent(filters.order)}`);
         }
 
         // Handle pages=all for export (get all employees with current filters)

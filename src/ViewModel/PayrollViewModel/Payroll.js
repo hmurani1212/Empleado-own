@@ -1216,7 +1216,8 @@ const payrollViewModel = (set, get) => ({
                 emp_contribution: settingsData.provident_fund_percentage || '0',
                 employer_contribution: parseFloat(settingsData.employer_contribution) || 0,
                 p_fund_eligibility: settingsData.p_fund_eligibility || 'all',
-                min_duration: parseFloat(settingsData.min_duration) || 1
+                min_duration: parseFloat(settingsData.min_duration) || 1,
+                pf_calculation_type: settingsData.pf_calculation_type || 'basic_pay'
             })
             const data = response.data
             

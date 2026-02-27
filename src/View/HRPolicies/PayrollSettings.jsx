@@ -6,16 +6,22 @@ import {
   shortDays,
 } from "../../services/__hrPoliciesServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
+import { FaInfoCircle } from "react-icons/fa";
 
 const PayrollSettings = (props) => {
-  const { handleSelectChange, newhrPolicesValues, handleChange } = props;
+  const { handleSelectChange, newhrPolicesValues, handleChange, openContentDrawer } = props;
   
   return (
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
       <div className="w-full">
-        <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
-          Payslip Generation Type
-        </label>
+        <div className="flex items-center gap-1.5 mb-2">
+          <label className="text-sm font-medium text-gray-700 font-poppins block">
+            Payslip Generation Type
+          </label>
+          {openContentDrawer && (
+            <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("PAYSLIPTYPESELECTION_HRPOLICY_EMP")} />
+          )}
+        </div>
         <CustomSelect
           placeHolderTitle="Select Payslip Generation Type"
           value={newhrPolicesValues?.generationType}
@@ -31,9 +37,14 @@ const PayrollSettings = (props) => {
       </div>
 
       <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100">
-        <label className="text-sm font-medium text-gray-700 font-poppins mb-4 block text-center">
+        <div className="flex items-center justify-center gap-1.5 mb-4">
+          <label className="text-sm font-medium text-gray-700 font-poppins block text-center">
             Payroll Cycle
-        </label>
+          </label>
+          {openContentDrawer && (
+            <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("PAYPERIOD_HRPOLICY_EMP")} />
+          )}
+        </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
             <span className="text-xs font-medium text-gray-500 font-poppins">From</span>
             <div className="w-24">
@@ -84,9 +95,14 @@ const PayrollSettings = (props) => {
       </div>
 
       <div className="w-full">
-        <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
-          Off Days Allowed Per Month
-        </label>
+        <div className="flex items-center gap-1.5 mb-2">
+          <label className="text-sm font-medium text-gray-700 font-poppins block">
+            Off Days Allowed Per Month
+          </label>
+          {openContentDrawer && (
+            <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("OFFDAYSPERMONTH_HRPOLICY_EMP")} />
+          )}
+        </div>
         <input
           placeholder="e.g. 2"
           name="offDayAllowedMonth"

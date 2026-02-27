@@ -10,10 +10,11 @@ import {
 } from "@material-tailwind/react";
 import React, { useMemo, useState, useEffect } from "react";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaInfoCircle } from "react-icons/fa";
 import { FaBuildingUser } from "react-icons/fa6";
 import { MdOutlineFindReplace } from "react-icons/md";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
+import employeesApi from "../../Model/Data/Employees/Employees";
 import { DayPicker } from "react-day-picker";
 import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import { GrHide } from "react-icons/gr";
@@ -23,8 +24,10 @@ import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import Calendar from "react-calendar";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import usePayroll from "../../ViewModel/PayrollViewModel/PayrollServices";
+import useDashboard from "../../ViewModel/DashboardViewModel/DashboardServices";
 import { showToast } from "../../Components/Toaster/Toaster";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import { getContentByLabel } from "../../services/getContentService";
 
 export const UserVerifyComp = (props) => {
   const { findingEmp } = props;
@@ -134,7 +137,58 @@ const AddNewEmployee = () => {
     isCreatingSalaryTemplate
   } = useEmployees();
 
+  const { adminDashboardData, getAdminDashboardData } = useDashboard();
+  const activeEmployees = adminDashboardData?.TOTAL_EMPLOYEES ?? 0;
+  const employeeLimit = adminDashboardData?.ALLOWED_EMPLOYEES ?? 0;
+  const [lastEnrolledEmployeeId, setLastEnrolledEmployeeId] = useState('N/A');
 
+  // Content drawer (info icon) – right-side panel with ENGLISH/URDU
+  const [contentDrawerOpen, setContentDrawerOpen] = useState(false);
+  const [contentData, setContentData] = useState(null);
+  const [contentLang, setContentLang] = useState("ENGLISH");
+  const [contentLoading, setContentLoading] = useState(false);
+
+  const openContentDrawer = async (contentLabel) => {
+    setContentDrawerOpen(true);
+    setContentLang("ENGLISH");
+    setContentLoading(true);
+    setContentData(null);
+    try {
+      const res = await getContentByLabel(contentLabel);
+      if (res?.STATUS === "SUCCESSFUL" && res?.DATA?.[0]?.contents?.length) {
+        setContentData(res.DATA[0]);
+      } else {
+        showToast("Content not available", "error");
+        setContentDrawerOpen(false);
+      }
+    } catch (err) {
+      showToast("Failed to load content", "error");
+      setContentDrawerOpen(false);
+    } finally {
+      setContentLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getAdminDashboardData();
+  }, [getAdminDashboardData]);
+
+  useEffect(() => {
+    const fetchLastEnrolledId = async () => {
+      try {
+        const response = await employeesApi.getEmployeesWithFilters({ page: 1, status: 1, limit: 20 });
+        const data = response?.data;
+        if (data?.STATUS === 'SUCCESSFUL' && Array.isArray(data?.DB_DATA?.employees) && data.DB_DATA.employees.length > 0) {
+          const ids = data.DB_DATA.employees.map((emp) => emp.id ?? emp.emp_id ?? 0).filter(Boolean);
+          const maxId = ids.length ? String(Math.max(...ids)) : 'N/A';
+          setLastEnrolledEmployeeId(maxId);
+        }
+      } catch {
+        setLastEnrolledEmployeeId('N/A');
+      }
+    };
+    fetchLastEnrolledId();
+  }, []);
 
   // console.log('what is the data here', get_all_department)
 
@@ -402,14 +456,23 @@ const AddNewEmployee = () => {
           </Stepper>
         </div>
         <div className="w-full flex flex-col items-center justify-center">
-          <div className="mt-10 lg:w-2/5 md:w-1/2 w-full">
+          <p className="w-full mb-1 mt-10 text-center text-[#474747] text-[12px] font-Urbanist font-semibold px-2 whitespace-nowrap overflow-x-auto">
+            You have {activeEmployees} active employee{activeEmployees !== 1 ? 's' : ''}. The available limit is {employeeLimit}. The last enrolled employee ID is {lastEnrolledEmployeeId}.
+          </p>
+          <div className="mt-2 lg:w-2/5 md:w-1/2 w-full">
             <div className="pb-4">
               <span className="text-[#474747] text-[16px] font-Urbanist font-medium">Employee Account Credentials</span>
             </div>
             {activeStep === 0 ? (
               <div className="flex flex-col items-center gap-4 w-full">
                 <div className="w-full flex flex-col gap">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Mobile No</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Mobile No</label>
+                    <FaInfoCircle
+                      className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0"
+                      onClick={() => openContentDrawer("MOBILENO_EMPLOYEES_EMP")}
+                    />
+                  </div>
                   <input
                     // color="white"
                     // label="Mobile No"
@@ -421,7 +484,13 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col gap">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Email (Optional)</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Email (Optional)</label>
+                    <FaInfoCircle
+                      className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0"
+                      onClick={() => openContentDrawer("PERSONALEMAIL_EMPLOYEES_EMP")}
+                    />
+                  </div>
                   <input
                     // label="Email (Optional)"
                     type="email"
@@ -436,7 +505,10 @@ const AddNewEmployee = () => {
             ) : activeStep === 1 ? (
               <div className="flex flex-col items-center gap-4">
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Full Name</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Full Name</label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("FULLNAME_EMPLOYEES_EMP")} />
+                  </div>
                   <input
                     // label="Full Name"
                     value={newEmpValues.full_name}
@@ -447,7 +519,10 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Father Name</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Father Name</label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("FATHERNAME_EMPLOYEES_EMP")} />
+                  </div>
                   <input
                     // label="Father Name"
                     name="father_name"
@@ -458,7 +533,10 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Select Country</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Select Country</label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("COUNTRY_EMPLOYEES_EMP")} />
+                  </div>
                   <CustomSelect
                     placeHolderTitle="Country"
                     className="text-[0.90vw]"
@@ -521,7 +599,10 @@ const AddNewEmployee = () => {
                 {(!newEmpValues.country_code ||
                   newEmpValues.country_code.value === "162") && (
                     <div className="w-full flex flex-col">
-                      <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Select Network</label>
+                      <div className="flex items-center gap-2">
+                        <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Select Network</label>
+                        <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("MOBILENETWORK_EMPLOYEES_EMP")} />
+                      </div>
                       <CustomSelect
                         className="text-[0.90vw]"
                         placeHolderTitle="Mobile Network"
@@ -566,7 +647,10 @@ const AddNewEmployee = () => {
                   )}
 
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Date of Birth</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Date of Birth</label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("DOB_EMPLOYEES_EMP")} />
+                  </div>
                   <input
                     className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                     type="date"
@@ -577,7 +661,10 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">CNIC/Passport Number</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">CNIC/Passport Number</label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("PASSPORTCNIC_EMPLOYEES_EMP")} />
+                  </div>
                   <input
                     className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                     // label="CNIC/Passport Number"
@@ -589,7 +676,10 @@ const AddNewEmployee = () => {
                 </div>
 
                 <div className="w-full flex flex-col relative">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">OneID Empleado password</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">OneID Empleado password</label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("ONEIDPASSWORD_EMPLOYEES_EMP")} />
+                  </div>
                   <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-2/4 right-3 -translate-y-2/4">
                     <span className="cursor-pointer" onClick={passwordToggle}>
                       {newEmpValues.showPassword ? <GrHide  className="relative top-3"/> : <BiShow className="relative top-3" />}
@@ -631,9 +721,12 @@ const AddNewEmployee = () => {
             ) : (
               <div className="flex flex-col items-center gap-4">
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
-                    Select Branch
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
+                      Select Branch
+                    </label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("BRANCH_EMPLOYEES_EMP")} />
+                  </div>
                   <CustomSelect
                     placeHolderTitle="Branch"
                     value={newEmpValues?.branch}
@@ -675,9 +768,12 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
-                    Select Department
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
+                      Select Department
+                    </label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("DEPARTMENT_EMPLOYEES_EMP")} />
+                  </div>
                   <CustomSelect
                     placeHolderTitle="Department"
                     value={newEmpValues?.department}
@@ -692,9 +788,12 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
-                    Select Designation
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
+                      Select Designation
+                    </label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("DESIGNATION_EMPLOYEES_EMP")} />
+                  </div>
                   <CustomSelect
                     placeHolderTitle="Designation"
                     value={newEmpValues?.designation}
@@ -736,9 +835,12 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
-                    Select Reporting Manager (Optional)
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
+                      Select Reporting Manager (Optional)
+                    </label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("REPORTING_MANAGER_EMPLOYEES_EMP")} />
+                  </div>
                   <CustomSelect
                     placeHolderTitle="Reporting Manager (Optional)"
                     value={newEmpValues?.reporting_manager}
@@ -784,9 +886,12 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
-                    Select Work Policy
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
+                      Select Work Policy
+                    </label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("WORKPOLICY_EMPLOYEES_EMP")} />
+                  </div>
                   <CustomSelect
                     placeHolderTitle="Work Policy"
                     value={newEmpValues?.work_policy}
@@ -828,9 +933,12 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
-                    Select Employement Status
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
+                      Select Employement Status
+                    </label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("EMPLOYMENTSTATUS_EMPLOYEES_EMP")} />
+                  </div>
                   <CustomSelect
                     placeHolderTitle="Employement Status"
                     value={newEmpValues?.empStatus}
@@ -873,9 +981,12 @@ const AddNewEmployee = () => {
                 </div>
                 <div className="flex items-center space-x-2 w-full">
                   <div className="flex-1 flex-col">
-                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
-                      Select Salary Template
-                    </label>
+                    <div className="flex items-center gap-2">
+                      <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">
+                        Select Salary Template
+                      </label>
+                      <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("SALARYTEMPLATE_EMPLOYEES_EMP")} />
+                    </div>
                     <CustomSelect
                       placeHolderTitle="Salary Template"
                       value={newEmpValues?.salary_template}
@@ -900,7 +1011,10 @@ const AddNewEmployee = () => {
                   </div>
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Employee ID</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Employee ID</label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("EMPLOYEEID_EMPLOYEES_EMP")} />
+                  </div>
                   <input
                     // label="Employee ID"
                     value={newEmpValues.empID}
@@ -911,7 +1025,10 @@ const AddNewEmployee = () => {
                   />
                 </div>
                 <div className="w-full flex flex-col">
-                  <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Joining Date</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[#474747] text-[12px] font-Urbanist font-medium px-2">Joining Date</label>
+                    <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("JOININGDATE_EMPLOYEES_EMP")} />
+                  </div>
                   {/* <Popover placement="bottom">
                   <PopoverHandler> */}
                   <input
@@ -972,6 +1089,58 @@ const AddNewEmployee = () => {
         title="Employee Registration"
         switchBtn={findingEmp.userFind}
         compo={<UserVerifyComp findingEmp={findingEmp} />}
+      />
+
+      {/* Content info drawer (right side) – ENGLISH / URDU */}
+      <PortalDrawer
+        open={contentDrawerOpen}
+        closeDrawer={() => setContentDrawerOpen(false)}
+        direction="right"
+        widthSize="45vw"
+        title={
+          contentData?.contents?.find((c) => c.lang === contentLang)?.main_heading ?? ""
+        }
+        compo={
+          <div className="flex flex-col gap-4">
+            {contentLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : contentData?.contents?.length ? (
+              <>
+                <div
+                  className="text-gray-800 text-sm font-Urbanist leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      contentData.contents.find((c) => c.lang === contentLang)?.content ??
+                      contentData.contents.find((c) => c.lang === "ENGLISH")?.content ??
+                      "",
+                  }}
+                />
+                <div className="flex gap-2 mt-4 border-t border-gray-200 pt-4">
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === "ENGLISH" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => setContentLang("ENGLISH")}
+                  >
+                    ENGLISH
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === "URDU" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => setContentLang("URDU")}
+                  >
+                    URDU
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        }
       />
 
       {/* Salary Template Drawer */}

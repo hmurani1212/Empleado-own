@@ -182,7 +182,7 @@ const DashboardCountData = (props) => {
     <div className='flex flex-col gap-4 w-full min-h-0 flex-1'>
       
       <div className='flex items-center justify-between gap-3 flex-wrap shrink-0 pb-3 border-b border-slate-100'>
-        <div className='flex-1 min-w-[160px] max-w-[280px]'>
+        <div className='flex-1 min-w-[160px] max-w-[280px] mt-4'>
           <Input 
             className='' 
             label={isLateComers ? "Search Late Comers" : "Search Employee"} 
@@ -326,18 +326,35 @@ const DashboardCountData = (props) => {
                         <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
                           {statusConfig.label}
                         </span>
-                        <div className="text-[11px] text-slate-600">
-                          <span className="font-medium text-blue-600">{ele.in_time}</span>
-                          <span className="text-slate-400 mx-1">→</span>
-                          <span className="font-medium">{ele.out_time || '--'}</span>
-                        </div>
+                        {(() => {
+                          const pairs = [
+                            { in: ele.in_time, out: ele.out_time },
+                            { in: ele.in_time_2, out: ele.out_time_2 },
+                            { in: ele.in_time_3, out: ele.out_time_3 },
+                          ]
+                            .filter(
+                              (p) => (p.in != null && String(p.in).trim() !== '') || (p.out != null && String(p.out).trim() !== '')
+                            )
+                            .slice(0, 3);
+                          return (
+                            <div className="text-[11px] text-slate-600 flex flex-col items-end gap-0.5">
+                              {pairs.map((p, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                  <span className="font-medium text-blue-600">{p.in ?? '--'}</span>
+                                  <span className="text-slate-400">→</span>
+                                  <span className="font-medium">{p.out ?? '--'}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <table className="w-full text-sm border-collapse table-fixed rounded-xl overflow-hidden" style={{ tableLayout: 'fixed' }}>
+              <table className="w-full text-sm border-collapse rounded-xl overflow-hidden" style={{ tableLayout: 'auto', minWidth: '100%' }}>
           <thead className="sticky top-0 z-20">
             <tr className="bg-gradient-to-b from-slate-50 to-slate-100/80 border-b border-slate-100 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.08),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
               {(
@@ -395,10 +412,10 @@ const DashboardCountData = (props) => {
                   return orderedHeaders.map((head) => {
                     const icon = getFieldIcon(head);
                     return (
-                      <th key={head} className="border-b border-r border-slate-100/80 bg-transparent px-3 py-3 text-left">
+                      <th key={head} className="border-b border-r border-slate-100/80 bg-transparent px-3 py-3 text-center align-middle">
                         <div className="flex items-center justify-center gap-2">
                           {icon}
-                          <Typography variant="small" color="blue-gray" className="font-semibold text-[13px] leading-none text-[#474747] capitalize truncate">
+                          <Typography variant="small" color="blue-gray" className="font-semibold text-[13px] text-[#474747] capitalize break-words whitespace-normal">
                             {head?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </Typography>
                         </div>
@@ -491,7 +508,7 @@ const DashboardCountData = (props) => {
                         const displayValue = typeof formattedValue === 'object' ? formattedValue.text : formattedValue;
                         
                         return (
-                          <td key={key} className={`${classes} px-3 py-2.5`}>
+                          <td key={key} className={`${classes} px-3 py-2.5 align-middle text-center`}>
                             {isLateMinutes && lateMinutesStyle ? (
                               <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[12px] font-medium ${lateMinutesStyle.bg} ${lateMinutesStyle.color} whitespace-nowrap`}>
                                 <CiClock2 className="mr-1" />
@@ -500,7 +517,7 @@ const DashboardCountData = (props) => {
                             ) : (
                               <Typography 
                                 variant="small" 
-                                className={`font-normal truncate ${
+                                className={`font-normal break-words whitespace-normal text-center ${
                                   key.toLowerCase().includes('name') ? 'text-[#474747]' : 
                                   key.toLowerCase().includes('date') || key.toLowerCase().includes('time') ? 'text-[#3da5f4]' : 
                                   'text-gray-700'

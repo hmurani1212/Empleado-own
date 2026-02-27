@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import useCreatePolicies from '../../ViewModel/HRPoliciesViewModel/createHrPoliciesServices';
 import { Step, Stepper, Typography } from '@material-tailwind/react';
 import EmpMapping from './EmpMapping';
@@ -10,6 +10,11 @@ import { useLocation } from 'react-router';
 import { earlyArivalData, forceTimeOutHrs, generationTypeData, MonthSelection, overTimeCounter, timeOutPlicy, weekendoverTimeRate, weekdays } from '../../services/__hrPoliciesServices';
 import CustomButton from '../../Components/CustomButton/CustomButton';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getContentByLabel } from '../../services/getContentService';
+import { showToast } from '../../Components/Toaster/Toaster';
+import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer';
+import { FaInfoCircle } from 'react-icons/fa';
+import { Button } from '@material-tailwind/react';
 
 const CreateNew = () => {
   const {
@@ -38,6 +43,32 @@ const CreateNew = () => {
   } = useHRPolicies()
 
   const location = useLocation()
+
+  const [contentDrawerOpen, setContentDrawerOpen] = useState(false);
+  const [contentData, setContentData] = useState(null);
+  const [contentLang, setContentLang] = useState("ENGLISH");
+  const [contentLoading, setContentLoading] = useState(false);
+
+  const openContentDrawer = async (contentLabel) => {
+    setContentDrawerOpen(true);
+    setContentLang("ENGLISH");
+    setContentLoading(true);
+    setContentData(null);
+    try {
+      const res = await getContentByLabel(contentLabel);
+      if (res?.STATUS === "SUCCESSFUL" && res?.DATA?.[0]?.contents?.length) {
+        setContentData(res.DATA[0]);
+      } else {
+        showToast("Content not available", "error");
+        setContentDrawerOpen(false);
+      }
+    } catch (err) {
+      showToast("Failed to load content", "error");
+      setContentDrawerOpen(false);
+    } finally {
+      setContentLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (location.state && location.state.formData) {
@@ -209,11 +240,13 @@ const CreateNew = () => {
                 handleCheckbox = {handleCheckbox}
                 handleRemoveSubDept = {handleRemoveSubDept}
                 empBranches = {empBranches}
+                openContentDrawer={openContentDrawer}
               />}
               {stepsValue.activeStep === 1 && <PayrollSettings 
                 handleSelectChange = { handleSelectChange }
                 newhrPolicesValues= {newhrPolicesValues}
                 handleChange= {handleChange}
+                openContentDrawer={openContentDrawer}
               />}
               {stepsValue.activeStep === 2 && <WorkingHours 
                 newhrPolicesValues = { newhrPolicesValues }
@@ -223,12 +256,14 @@ const CreateNew = () => {
                 handleSelectChange = {handleSelectChange}
                 handleRangeChange= {handleRangeChange}
                 rangeValues= { rangeValues }
+                openContentDrawer={openContentDrawer}
               />}
               {stepsValue.activeStep === 3 && <OverTimeLeave 
                 handleChange= {handleChange}
                 handleSelectChange = { handleSelectChange }
                 newhrPolicesValues= {newhrPolicesValues}
                 leavesGroupOptionList= {leavesGroupOptionList}
+                openContentDrawer={openContentDrawer}
               />}
             </motion.div>
           </AnimatePresence>
@@ -254,6 +289,57 @@ const CreateNew = () => {
           </div>
         </div>
       </div>
+
+      <PortalDrawer
+        open={contentDrawerOpen}
+        closeDrawer={() => setContentDrawerOpen(false)}
+        direction="right"
+        widthSize="45vw"
+        title={
+          contentData?.contents?.find((c) => c.lang === contentLang)?.main_heading ?? ""
+        }
+        compo={
+          <div className="flex flex-col gap-4">
+            {contentLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : contentData?.contents?.length ? (
+              <>
+                <div
+                  className="text-gray-800 text-sm font-Urbanist leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      contentData.contents.find((c) => c.lang === contentLang)?.content ??
+                      contentData.contents.find((c) => c.lang === "ENGLISH")?.content ??
+                      "",
+                  }}
+                />
+                <div className="flex gap-2 mt-4 border-t border-gray-200 pt-4">
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === "ENGLISH" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => setContentLang("ENGLISH")}
+                  >
+                    ENGLISH
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === "URDU" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => setContentLang("URDU")}
+                  >
+                    URDU
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        }
+      />
     </div>
   );
 };

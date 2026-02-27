@@ -707,19 +707,19 @@ const useEmployeeActionService = () => {
                 const cancelledId = salaryDetailsValue.id
                 showToast("Incremenet Cancel Successfully", 'success')
                 setSalaryDetailsValue((prevState) => {
-                    // SalaryDetails UI reads data.increments and shows "Cancelled" when ele.status === "0"
-                    const increments = prevState.data?.increments ?? []
+                    const dataIncrements = prevState.data?.increments
+                    const list = Array.isArray(dataIncrements) ? dataIncrements : (dataIncrements?.increment_details ?? [])
+                    const updatedList = list.map((ele) => {
+                        const isCancelledRow = String(ele.id) === String(cancelledId)
+                        if (!isCancelledRow) return ele
+                        return { ...ele, ...newData, status: "0" }
+                    })
+                    const nextIncrements = Array.isArray(dataIncrements)
+                        ? updatedList
+                        : { ...dataIncrements, increment_details: updatedList }
                     return {
                         ...prevState,
-                        data: {
-                            ...prevState.data,
-                            increments: increments.map((ele) => {
-                                const isCancelledRow = String(ele.id) === String(cancelledId)
-                                if (!isCancelledRow) return ele
-                                // Merge API response and force status "0" so UI updates immediately
-                                return { ...ele, ...newData, status: "0" }
-                            }),
-                        },
+                        data: { ...prevState.data, increments: nextIncrements },
                         id: '',
                         showDialog: false,
                         reason: '',

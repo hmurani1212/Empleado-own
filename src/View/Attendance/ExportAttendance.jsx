@@ -1,4 +1,4 @@
-import { Checkbox, Input, Option, Radio, Select } from '@material-tailwind/react'
+import { Checkbox, Input, Option, Radio, Select, Button } from '@material-tailwind/react'
 import React, { useEffect, useState } from 'react'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import useAttendance from '../../ViewModel/AttendanceViewModel/AttendanceServices'
@@ -8,6 +8,10 @@ import useStore from '../../Store/store'
 import { showToast } from '../../Components/Toaster/Toaster'
 import { useNavigate } from 'react-router'
 import useSocket from '../../Components/useSocket/useSocket'
+import { getContentByLabel } from '../../services/getContentService'
+import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer'
+import { FaInfoCircle } from 'react-icons/fa'
+
 const ExportAttendance = () => {
   const { individualExport, handleCheckboxChangeAtt, handleSelectChangeAttendance, excelLayoutOptions, loading } = useAttendance();
   const scheduleReport = useStore((state) => state.scheduleReport)
@@ -27,6 +31,32 @@ const ExportAttendance = () => {
   const [employeeSuggestions, setEmployeeSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [searchDebounceTimer, setSearchDebounceTimer] = useState(null)
+
+  const [contentDrawerOpen, setContentDrawerOpen] = useState(false)
+  const [contentData, setContentData] = useState(null)
+  const [contentLang, setContentLang] = useState('ENGLISH')
+  const [contentLoading, setContentLoading] = useState(false)
+
+  const openContentDrawer = async (contentLabel) => {
+    setContentDrawerOpen(true)
+    setContentLang('ENGLISH')
+    setContentLoading(true)
+    setContentData(null)
+    try {
+      const res = await getContentByLabel(contentLabel)
+      if (res?.STATUS === 'SUCCESSFUL' && res?.DATA?.[0]?.contents?.length) {
+        setContentData(res.DATA[0])
+      } else {
+        showToast('Content not available', 'error')
+        setContentDrawerOpen(false)
+      }
+    } catch (err) {
+      showToast('Failed to load content', 'error')
+      setContentDrawerOpen(false)
+    } finally {
+      setContentLoading(false)
+    }
+  }
 
   // Form state for export
   const [formData, setFormData] = useState({
@@ -384,28 +414,34 @@ const ExportAttendance = () => {
           {/* Report Type and Employee Type Row */}
           <div className='flex gap-6'>
             <div className='flex-1'>
-              <Select 
-                label='Report Type' 
-                color='blue'
-                value={formData.reportType}
-                onChange={(value) => handleInputChange('reportType', value)}
-              >
-                <Option value="" disabled>Select Report Type</Option>
-                <Option value="Datewise">Datewise</Option>
-                <Option value="Monthly">Monthly</Option>
-              </Select>
+              <label className='text-[#698592] text-[12px] mb-1 block'>Select Report Type</label>
+              <CustomSelect
+                placeHolderTitle='Select Report Type'
+                value={formData.reportType ? { value: formData.reportType, label: formData.reportType } : null}
+                options={[
+                  { value: 'Datewise', label: 'Datewise' },
+                  { value: 'Monthly', label: 'Monthly' }
+                ]}
+                onChangeHandler={(selectedOption) => handleInputChange('reportType', selectedOption?.value ?? '')}
+                customStyles={false}
+              />
             </div>
             <div className='flex-1'>
-              <Select 
-                label='Employee Type' 
-                color='blue'
-                value={formData.employeeType}
-                onChange={(value) => handleInputChange('employeeType', value)}
-              >
-                <Option value="Active">Active</Option>
-                <Option value="In-Active">In-Active</Option>
-                <Option value="Both Active & In-Active">Both Active & In-Active</Option>
-              </Select>
+              <div className='flex items-center gap-1.5 mb-1'>
+                <label className='text-[#698592] text-[12px]'>Select Employee Type</label>
+                <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('EXPORT_ATTENDENCE')} />
+              </div>
+              <CustomSelect
+                placeHolderTitle='Select Employee Type'
+                value={formData.employeeType ? { value: formData.employeeType, label: formData.employeeType } : null}
+                options={[
+                  { value: 'Active', label: 'Active' },
+                  { value: 'In-Active', label: 'In-Active' },
+                  { value: 'Both Active & In-Active', label: 'Both Active & In-Active' }
+                ]}
+                onChangeHandler={(selectedOption) => handleInputChange('employeeType', selectedOption?.value ?? 'Active')}
+                customStyles={false}
+              />
             </div>
           </div>
 
@@ -524,7 +560,7 @@ const ExportAttendance = () => {
 
         <div className='flex flex-col space-y-4'>
           <div className='text-[14px]'>
-            <div>
+            <div className='flex items-center gap-1.5'>
               <Radio 
                 name='exportType' 
                 label='Export full attendance' 
@@ -533,6 +569,7 @@ const ExportAttendance = () => {
                 checked={formData.exportType === 'Export full attendance'}
                 onChange={() => handleInputChange('exportType', 'Export full attendance')}
               />
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openContentDrawer('ATTENDENCE_REPORT_TYPE'); }} />
             </div>
 
             <div>
@@ -583,7 +620,7 @@ const ExportAttendance = () => {
           <hr />
 
           <div className='text-[14px]'>
-            <div>
+            <div className='flex items-center gap-1.5'>
               <Checkbox 
                 label='Export Compliance Report' 
                 color='blue' 
@@ -591,6 +628,7 @@ const ExportAttendance = () => {
                 checked={formData.complianceReport}
                 onChange={(e) => handleInputChange('complianceReport', e.target.checked)}
               />
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openContentDrawer('COMPLIANCE_AND_INDIVIDUAL_REPORT'); }} />
             </div>
 
             <div>
@@ -672,11 +710,16 @@ const ExportAttendance = () => {
           </div>
 
           <div className='w-96 pl-[10px]'>
+            <div className='flex items-center gap-1.5 mb-2'>
+              <label className='text-[#698592] text-[12px]'>Export layout</label>
+              <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('REPORT_EXCEL_LAYOUT')} />
+            </div>
             <Select 
               label='Excel Layout *' 
               color='blue'
               value={formData.excelLayout}
               onChange={(value) => handleInputChange('excelLayout', value)}
+              labelProps={{ className: 'hidden' }}
             >
               <Option value="list">List View (Multi Sheet)</Option>
               <Option value="calender">Calendrical View</Option>
@@ -706,6 +749,56 @@ const ExportAttendance = () => {
 
       </form>
 
+      <PortalDrawer
+        open={contentDrawerOpen}
+        closeDrawer={() => setContentDrawerOpen(false)}
+        direction="right"
+        widthSize="45vw"
+        title={
+          contentData?.contents?.find((c) => c.lang === contentLang)?.main_heading ?? ''
+        }
+        compo={
+          <div className="flex flex-col gap-4">
+            {contentLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : contentData?.contents?.length ? (
+              <>
+                <div
+                  className="text-gray-800 text-sm font-Urbanist leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      contentData.contents.find((c) => c.lang === contentLang)?.content ??
+                      contentData.contents.find((c) => c.lang === 'ENGLISH')?.content ??
+                      '',
+                  }}
+                />
+                <div className="flex gap-2 mt-4 border-t border-gray-200 pt-4">
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === 'ENGLISH' ? 'bg-[#3DA5F4] text-white' : 'bg-gray-200 text-gray-700'
+                    }`}
+                    onClick={() => setContentLang('ENGLISH')}
+                  >
+                    ENGLISH
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === 'URDU' ? 'bg-[#3DA5F4] text-white' : 'bg-gray-200 text-gray-700'
+                    }`}
+                    onClick={() => setContentLang('URDU')}
+                  >
+                    URDU
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        }
+      />
     </>
   )
 }

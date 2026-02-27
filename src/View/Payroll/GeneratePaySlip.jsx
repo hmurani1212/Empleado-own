@@ -1,11 +1,14 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import useManagePaySlip from "../../ViewModel/PayrollViewModel/ManagePaySlipServces";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { customSelectData } from "../../services/__payrollServices";
 import { BiSearch } from "react-icons/bi";
-import { Checkbox, Typography } from "@material-tailwind/react";
+import { Button, Checkbox, Typography } from "@material-tailwind/react";
 import PaySlipGenerationSelection from "./PaySlipGenerationSelection";
 import useManagePaySlipGeneration from "../../ViewModel/PayrollViewModel/ManagePaySlipGeneration";
+import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
+import { getContentByLabel } from "../../services/getContentService";
+import { showToast } from "../../Components/Toaster/Toaster";
 
 const empListTableHeader = ["All", "Name", "Designation", "Employee ID", "Salary"];
 
@@ -62,7 +65,34 @@ const GeneratePaySlip = () => {
 
   // Search state
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
-  const [typeFilter, setTypeFilter] = useState(initialTypeFilter); // For All/Selected/Unselected filter
+  const [typeFilter, setTypeFilter] = useState(initialTypeFilter);
+
+  // Content drawer (info icon) – right-side panel with ENGLISH/URDU
+  const [contentDrawerOpen, setContentDrawerOpen] = useState(false);
+  const [contentData, setContentData] = useState(null);
+  const [contentLang, setContentLang] = useState("ENGLISH");
+  const [contentLoading, setContentLoading] = useState(false);
+
+  const openContentDrawer = useCallback(async (contentLabel) => {
+    setContentDrawerOpen(true);
+    setContentLang("ENGLISH");
+    setContentLoading(true);
+    setContentData(null);
+    try {
+      const res = await getContentByLabel(contentLabel);
+      if (res?.STATUS === "SUCCESSFUL" && res?.DATA?.[0]?.contents?.length) {
+        setContentData(res.DATA[0]);
+      } else {
+        showToast("Content not available", "error");
+        setContentDrawerOpen(false);
+      }
+    } catch (err) {
+      showToast("Failed to load content", "error");
+      setContentDrawerOpen(false);
+    } finally {
+      setContentLoading(false);
+    }
+  }, []); // For All/Selected/Unselected filter
 
   const {
     addMoreOverTime,
@@ -410,8 +440,61 @@ const GeneratePaySlip = () => {
           handleBonusTypeChange={handleBonusTypeChange}
           handleBonusFieldChange={handleBonusFieldChange}
           generateBulkPayroll={generateBulkPayroll}
+          openContentDrawer={openContentDrawer}
         />
       )}
+
+      {/* Content info drawer (right side) – ENGLISH / URDU */}
+      <PortalDrawer
+        open={contentDrawerOpen}
+        closeDrawer={() => setContentDrawerOpen(false)}
+        direction="right"
+        widthSize="45vw"
+        title={
+          contentData?.contents?.find((c) => c.lang === contentLang)?.main_heading ?? ""
+        }
+        compo={
+          <div className="flex flex-col gap-4">
+            {contentLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : contentData?.contents?.length ? (
+              <>
+                <div
+                  className="text-gray-800 text-sm font-Urbanist leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      contentData.contents.find((c) => c.lang === contentLang)?.content ??
+                      contentData.contents.find((c) => c.lang === "ENGLISH")?.content ??
+                      "",
+                  }}
+                />
+                <div className="flex gap-2 mt-4 border-t border-gray-200 pt-4">
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === "ENGLISH" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => setContentLang("ENGLISH")}
+                  >
+                    ENGLISH
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${
+                      contentLang === "URDU" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"
+                    }`}
+                    onClick={() => setContentLang("URDU")}
+                  >
+                    URDU
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        }
+      />
     </div>
   );
 };

@@ -460,9 +460,9 @@ function Header() {
         open={showLiveBiometricDevices}
         closeDrawer={() => setShowLiveBiometricDevices(false)}
         title="Live Biometric Devices"
-        widthSize={600}
+        widthSize={700}
         compo={
-          <div className="p-6">
+          <div className="py-6 px-2">
             <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
               <table className="w-full text-sm text-left text-gray-500">
                 <thead className="bg-gray-50 text-xs uppercase text-gray-700">

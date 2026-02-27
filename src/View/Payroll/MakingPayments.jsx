@@ -520,8 +520,8 @@ const MakingPayments = () => {
               const presentDays = Math.round(totalPresentHours / 8);
               const absentDays = totalDays - presentDays;
 
-              // Calculate salary data - use wf_employee.basic_pay when present (including 0), else rate
-              const basicSalary = payslip.wf_employee?.basic_pay != null ? parseFloat(payslip.wf_employee.basic_pay) : parseFloat(payslip.rate || 0);
+              // Basic Pay and Total Pay: use salary_amount from API (DB_DATA.salary_amount)
+              const basicSalary = parseFloat(payslip.salary_amount ?? payslip.wf_employee?.basic_pay ?? payslip.rate ?? 0);
               const incentive = parseFloat(payslip.incentive || 0);
               const totalPay = parseFloat(payslip.salary_amount || 0);
               const netPayable = parseFloat(payslip.paid_amount || 0);

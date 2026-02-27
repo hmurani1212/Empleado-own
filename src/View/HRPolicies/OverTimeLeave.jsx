@@ -5,6 +5,7 @@ import {
   weekendoverTimeRate,
 } from "../../services/__hrPoliciesServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
+import { FaInfoCircle } from "react-icons/fa";
 
 const OverTimeLeave = (props) => {
   const {
@@ -12,14 +13,20 @@ const OverTimeLeave = (props) => {
     newhrPolicesValues,
     leavesGroupOptionList,
     handleChange,
+    openContentDrawer,
   } = props;
-
+  
   return (
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
       <div className="w-full">
-        <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
-          Daily Overtime Counter
-        </label>
+        <div className="flex items-center gap-1.5 mb-2">
+          <label className="text-sm font-medium text-gray-700 font-poppins block">
+            Daily Overtime Counter
+          </label>
+          {openContentDrawer && (
+            <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("DAILYOVERTIME_HRPOLICY_EMP")} />
+          )}
+        </div>
         <CustomSelect
           placeHolderTitle="Select Daily Overtime Counter"
           value={newhrPolicesValues?.overTimeCounter}
@@ -101,9 +108,14 @@ const OverTimeLeave = (props) => {
 
       <div className="border-t border-gray-100 pt-6">
         <div className="w-full mb-6">
-            <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
-            Holiday/Weekend Overtime
-            </label>
+            <div className="flex items-center gap-1.5 mb-2">
+              <label className="text-sm font-medium text-gray-700 font-poppins block">
+                Holiday/Weekend Overtime
+              </label>
+              {openContentDrawer && (
+                <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("HOLIDAYOVERTIME_HRPOLICY_EMP")} />
+              )}
+            </div>
             <CustomSelect
             placeHolderTitle="Select Holiday/Weekend Overtime"
             value={newhrPolicesValues?.weekendoverTime}
@@ -172,9 +184,14 @@ const OverTimeLeave = (props) => {
 
       <div className="border-t border-gray-100 pt-6">
         <div className="w-full">
-            <label className="text-sm font-medium text-gray-700 font-poppins mb-2 block">
-            Leave Management Group
-            </label>
+            <div className="flex items-center gap-1.5 mb-2">
+              <label className="text-sm font-medium text-gray-700 font-poppins block">
+                Leave Management Group
+              </label>
+              {openContentDrawer && (
+                <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("LEAVEMANAGMENT_HRPOLICY_EMP")} />
+              )}
+            </div>
             <CustomSelect
             placeHolderTitle="Leave Management Group"
             value={newhrPolicesValues?.leaveManagementGroup}

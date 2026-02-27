@@ -12,6 +12,7 @@ import { motion } from 'framer-motion'
 import useDropdownService from '../../services/__dropDownHoverService'
 import { exportEmployeesToExcel } from '../../services/EmpServices'
 import { showToast } from '../../Components/Toaster/Toaster'
+import { getUserData, getOrganizationData } from '../../Authentication/jwt_decode'
 import employeesApi from '../../Model/Data/Employees/Employees'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 
@@ -164,7 +165,8 @@ const AllEmployess = () => {
 
             if (data?.STATUS === 'SUCCESSFUL' && data?.DB_DATA?.employees?.length > 0) {
                 const statusFilter = selectedStatus === 'Active Employees' ? 'active' : selectedStatus === 'Inactive Employees' ? 'inactive' : 'all';
-                await exportEmployeesToExcel(data.DB_DATA, { statusFilter });
+                const organizationName = getOrganizationData()?.orgName || getUserData()?.org_name || 'Organization';
+                await exportEmployeesToExcel(data.DB_DATA, { statusFilter, organizationName });
                 showToast('Employees exported successfully', 'success');
             } else {
                 showToast(data?.DB_DATA?.employees?.length === 0 ? 'No employees match current filters to export' : 'No employees found to export', 'error');
