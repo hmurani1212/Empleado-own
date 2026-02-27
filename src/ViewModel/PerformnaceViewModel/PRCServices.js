@@ -272,6 +272,28 @@ const usePRCServices = () => {
                 }
             }
             
+            // Validate closing date (review_day) must be on or after end date
+            if (name === "review_day" && PRCAddValue.end_date) {
+                if (value && value < PRCAddValue.end_date) {
+                    showToast("Closing date cannot be before the end date. Please select a date on or after the end date.", 'error');
+                    return; // Don't update the value if it's invalid
+                }
+            }
+            
+            // If end date is changed and closing date exists, validate closing date
+            if (name === "end_date" && PRCAddValue.review_day) {
+                if (value && PRCAddValue.review_day < value) {
+                    // If closing date is now before the new end date, clear it
+                    setPRCAddValue((prevState) => ({
+                        ...prevState,
+                        [name]: value,
+                        review_day: '', // Clear closing date if it's now invalid
+                    }));
+                    showToast("End date has been updated. Please select a new closing date on or after the end date.", 'warning');
+                    return;
+                }
+            }
+            
             // For other input types, update the corresponding field
             setPRCAddValue((prevState) => ({
                 ...prevState,
@@ -444,6 +466,11 @@ const usePRCServices = () => {
 
         if (review_day === '') {
             return { isValid: false, message: "Select Closing Date" }
+        }
+
+        // Validate closing date must be on or after end date
+        if (end_date && review_day && review_day < end_date) {
+            return { isValid: false, message: "Closing date cannot be before the end date. Please select a date on or after the end date." }
         }
 
         // Validate Goal and Competency percentages if modules are selected

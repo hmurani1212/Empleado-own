@@ -1,6 +1,9 @@
 import React from 'react'
-import { Button, Typography, Badge, Progress } from '@material-tailwind/react'
+import { Button } from '@material-tailwind/react'
 import { formatTimestampToDate } from '../../services/__dateTimeServices'
+import { BiCalendar } from 'react-icons/bi'
+import { FaSignature, FaUser, FaFlag, FaClipboardCheck, FaBullseye, FaChartLine, FaStar, FaComment } from 'react-icons/fa6'
+import { LiaTasksSolid } from 'react-icons/lia'
 
 const ViewGoal = ({ goalData, onClose, onEdit, onUpdate }) => {
     const getStatusText = (status) => {
@@ -12,206 +15,255 @@ const ViewGoal = ({ goalData, onClose, onEdit, onUpdate }) => {
         }
     }
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case "0": return "gray"
-            case "1": return "blue"
-            case "2": return "green"
-            default: return "gray"
-        }
-    }
 
-    const getPriorityColor = (priority) => {
-        switch (priority?.toLowerCase()) {
-            case "high": return "red"
-            case "medium": return "yellow"
-            case "low": return "green"
-            default: return "gray"
+    // Helper function to format dates consistently
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A'
+        // If it's already in YYYY-MM-DD format, return as is
+        if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            return dateString
         }
-    }
-
-    const getProgressColor = (progress) => {
-        if (progress >= 80) return "green"
-        if (progress >= 50) return "yellow"
-        if (progress >= 20) return "blue"
-        return "gray"
+        // Otherwise try to format it
+        try {
+            return formatTimestampToDate(dateString)
+        } catch {
+            return dateString
+        }
     }
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <Typography variant="h5" color="blue-gray">
-                    Goal Details
-                </Typography>
+        <div className="p-2 space-y-2">
+            {/* Header with action buttons */}
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">View Goal</h3>
                 <div className="flex gap-2">
                     {onUpdate && (
                         <Button
-                            variant="filled"
+                            variant="outlined"
                             color="blue"
                             onClick={onUpdate}
-                            className="flex items-center gap-2"
+                            className="text-xs px-4 py-2"
                         >
-                            Update Goal
+                            UPDATE GOAL
                         </Button>
                     )}
                     <Button
                         variant="outlined"
                         color="blue"
                         onClick={onEdit}
-                        className="flex items-center gap-2"
+                        className="text-xs px-4 py-2"
                     >
-                        Edit Goal
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        color="gray"
-                        onClick={onClose}
-                    >
-                        Close
+                        EDIT GOAL
                     </Button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Basic Information */}
-                <div className="space-y-4">
+            {/* Goal Information in Box Layout */}
+            <div className='grid grid-cols-2 gap-4'>
+                {/* Goal Name */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
                     <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Goal Name
-                        </Typography>
-                        <Typography variant="paragraph" color="blue-gray">
-                            {goalData.goal_name}
-                        </Typography>
+                        <span className='text-primary-100'>
+                            <FaSignature />
+                        </span>
                     </div>
-
-                    <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Description
-                        </Typography>
-                        <Typography variant="paragraph" color="blue-gray">
-                            {goalData.description}
-                        </Typography>
-                    </div>
-
-                    <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Priority
-                        </Typography>
-                        <Badge color={getPriorityColor(goalData.priority?.label)}>
-                            {goalData.priority?.label}
-                        </Badge>
-                    </div>
-
-                    <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Status
-                        </Typography>
-                        <Badge color={getStatusColor(goalData.status)}>
-                            {getStatusText(goalData.status)}
-                        </Badge>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Goal Name:</span>
+                        <span className='text-customBlack-100 text-[12px]'>{goalData.goal_name || 'N/A'}</span>
                     </div>
                 </div>
 
-                {/* Dates and Progress */}
-                <div className="space-y-4">
+                {/* Description */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
                     <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Start Date
-                        </Typography>
-                        <Typography variant="paragraph" color="blue-gray">
-                            {goalData.start_date}
-                        </Typography>
+                        <span className='text-primary-100'>
+                            <FaClipboardCheck />
+                        </span>
                     </div>
-
-                    <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            End Date
-                        </Typography>
-                        <Typography variant="paragraph" color="blue-gray">
-                            {goalData.end_date}
-                        </Typography>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Description:</span>
+                        <span className='text-customBlack-100 text-[12px]'>{goalData.description || 'N/A'}</span>
                     </div>
+                </div>
+            </div>
 
+            <div className='grid grid-cols-2 gap-4'>
+                {/* Priority */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
                     <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Progress
-                        </Typography>
-                        <div className="flex items-center gap-2">
-                            <Progress 
-                                value={goalData.progress || 0} 
-                                color={getProgressColor(goalData.progress || 0)}
-                                className="w-24"
-                            />
-                            <Typography variant="small" color="blue-gray">
-                                {goalData.progress || 0}%
-                            </Typography>
+                        <span className='text-primary-100'>
+                            <FaFlag />
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Priority:</span>
+                        <span className='text-customBlack-100 text-[12px]'>
+                            {goalData.priority?.label || goalData.priority?.value || goalData.priority || 'N/A'}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Status */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
+                    <div>
+                        <span className='text-primary-100'>
+                            <FaBullseye />
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Status:</span>
+                        <span className='text-customBlack-100 text-[12px]'>{getStatusText(goalData.status)}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className='grid grid-cols-2 gap-4'>
+                {/* Assigned Employee */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
+                    <div>
+                        <span className='text-primary-100'>
+                            <FaUser />
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Assigned Employee:</span>
+                        <span className='text-customBlack-100 text-[12px]'>
+                            {goalData.selectedEmp?.[0]?.label 
+                                ? `${goalData.selectedEmp[0].label} (${goalData.selectedEmp[0].value})`
+                                : 'N/A'}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Created At */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
+                    <div>
+                        <span className='text-primary-100'>
+                            <BiCalendar />
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Created At:</span>
+                        <span className='text-customBlack-100 text-[12px]'>
+                            {goalData.createdAt ? formatDate(goalData.createdAt) : 'N/A'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div className='grid grid-cols-2 gap-4'>
+                {/* Start Date */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
+                    <div>
+                        <span className='text-primary-100'>
+                            <BiCalendar />
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Start Date:</span>
+                        <span className='text-customBlack-100 text-[12px]'>{formatDate(goalData.start_date)}</span>
+                    </div>
+                </div>
+
+                {/* End Date */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
+                    <div>
+                        <span className='text-primary-100'>
+                            <BiCalendar />
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>End Date:</span>
+                        <span className='text-customBlack-100 text-[12px]'>{formatDate(goalData.end_date)}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className='grid grid-cols-2 gap-4'>
+                {/* Progress */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
+                    <div>
+                        <span className='text-primary-100'>
+                            <FaChartLine />
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Progress:</span>
+                        <div className='flex items-center gap-2 flex-1'>
+                            <div className='flex-1 bg-gray-200 rounded-full h-2 overflow-hidden'>
+                                <div 
+                                    className={`h-full ${
+                                        (goalData.progress || 0) >= 80 ? 'bg-green-500' :
+                                        (goalData.progress || 0) >= 50 ? 'bg-yellow-500' :
+                                        (goalData.progress || 0) >= 20 ? 'bg-blue-500' : 'bg-gray-400'
+                                    }`}
+                                    style={{ width: `${goalData.progress || 0}%` }}
+                                ></div>
+                            </div>
+                            <span className='text-customBlack-100 text-[12px] whitespace-nowrap'>{goalData.progress || 0}%</span>
                         </div>
                     </div>
+                </div>
 
+                {/* Rating */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
                     <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Score
-                        </Typography>
-                        <Typography variant="paragraph" color="blue-gray">
-                            {goalData.score || 0}
-                        </Typography>
+                        <span className='text-primary-100'>
+                            <FaStar />
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Rating:</span>
+                        <div className='flex items-center gap-1'>
+                            {(() => {
+                                const rating = goalData.rating !== undefined && goalData.rating !== null 
+                                    ? Number(goalData.rating) 
+                                    : 0;
+                                return [1, 2, 3, 4, 5].map((star) => (
+                                    <span
+                                        key={star}
+                                        className={`text-sm ${
+                                            star <= rating ? 'text-yellow-400' : 'text-gray-300'
+                                        }`}
+                                    >
+                                        ★
+                                    </span>
+                                ));
+                            })()}
+                            <span className='text-customBlack-100 text-[12px] ml-1'>
+                                ({goalData.rating !== undefined && goalData.rating !== null ? Number(goalData.rating) : 0}/5)
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Employee and Review Cycle */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                        Assigned Employee
-                    </Typography>
-                    <Typography variant="paragraph" color="blue-gray">
-                        {goalData.selectedEmp?.[0]?.label} ({goalData.selectedEmp?.[0]?.value})
-                    </Typography>
+            <div className='grid grid-cols-2 gap-4'>
+                {/* Review Cycle */}
+                <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
+                    <div>
+                        <span className='text-primary-100'>
+                            <LiaTasksSolid />
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-2 flex-1'>
+                        <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Review Cycle:</span>
+                        <span className='text-customBlack-100 text-[12px]'>{goalData.pID?.label || 'N/A'}</span>
+                    </div>
                 </div>
 
-                <div>
-                    <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                        Review Cycle
-                    </Typography>
-                    <Typography variant="paragraph" color="blue-gray">
-                        {goalData.pID?.label}
-                    </Typography>
-                </div>
-            </div>
-
-            {/* Additional Information */}
-            <div className="space-y-4">
+                {/* Additional fields can go here if needed */}
                 {goalData.comment && (
-                    <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Comment
-                        </Typography>
-                        <Typography variant="paragraph" color="blue-gray">
-                            {goalData.comment}
-                        </Typography>
-                    </div>
-                )}
-
-                {goalData.rating && (
-                    <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Rating
-                        </Typography>
-                        <Typography variant="paragraph" color="blue-gray">
-                            {goalData.rating}
-                        </Typography>
-                    </div>
-                )}
-
-                {goalData.createdAt && (
-                    <div>
-                        <Typography variant="small" color="blue-gray" className="font-medium mb-1">
-                            Created At
-                        </Typography>
-                        <Typography variant="paragraph" color="blue-gray">
-                            {formatTimestampToDate(goalData.createdAt)}
-                        </Typography>
+                    <div className='flex gap-3 border border-blue-500 rounded-md p-3 items-center'>
+                        <div>
+                            <span className='text-primary-100'>
+                                <FaComment />
+                            </span>
+                        </div>
+                        <div className='flex items-center gap-2 flex-1'>
+                            <span className='text-nowrap text-customBlack-100 text-[14px] font-medium'>Comment:</span>
+                            <span className='text-customBlack-100 text-[12px]'>{goalData.comment}</span>
+                        </div>
                     </div>
                 )}
             </div>

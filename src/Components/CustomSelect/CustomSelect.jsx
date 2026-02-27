@@ -83,6 +83,9 @@ const CustomSelect = (props) => {
     thinScrollbar=false,
     optionFontSize=12,
     filterOption,
+    menuPortalTarget,
+    customStyles: propCustomStyles,
+    ...restProps // Capture any other props to pass through
   } = props
   // const { customStyles } = useEmployees()
 
@@ -139,12 +142,12 @@ const CustomSelect = (props) => {
     }),
     menu: (base) => ({
       ...base,
-      zIndex: 9999999, // Ensures the dropdown menu appears above other elements
+      zIndex: 9999, // Ensures the dropdown menu appears above other elements
       width: '100%'
     }),
     menuList: (base) => ({
       ...base,
-      zIndex: 9999999, // Ensures the option list appears above other elements
+      zIndex: 9999, // Ensures the option list appears above other elements
       height:'200px',
       fontSize: `${optionFontSize}px`,
       width: '100%',
@@ -152,13 +155,73 @@ const CustomSelect = (props) => {
       margin: '0px',
       boxSizing: 'border-box',
     }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
   };
 
-  // Add customStyle if cStyle is true
-  const styles = cStyle ? {
-    ...baseStyles,
-    ...customStyles // Assuming customStyle is an object
-  } : baseStyles;
+  // Merge styles: baseStyles -> customStyles (if cStyle) -> propCustomStyles (from props)
+  // Since these are functions, we need to handle them carefully
+  let styles = baseStyles;
+  
+  if (cStyle && propCustomStyles) {
+    // If both cStyle and propCustomStyles are provided, use propCustomStyles (from parent) as it takes precedence
+    styles = {
+      ...baseStyles,
+      ...propCustomStyles,
+      // Ensure menu and menuPortal always have high z-index
+      menu: (base) => {
+        const baseResult = baseStyles.menu(base);
+        const customResult = propCustomStyles.menu ? propCustomStyles.menu(base) : {};
+        return {
+          ...baseResult,
+          ...customResult,
+          zIndex: customResult.zIndex || 9999,
+        };
+      },
+      menuPortal: (base) => {
+        const baseResult = baseStyles.menuPortal(base);
+        const customResult = propCustomStyles.menuPortal ? propCustomStyles.menuPortal(base) : {};
+        return {
+          ...baseResult,
+          ...customResult,
+          zIndex: customResult.zIndex || 9999,
+        };
+      },
+    };
+  } else if (propCustomStyles) {
+    // Only propCustomStyles provided
+    styles = {
+      ...baseStyles,
+      ...propCustomStyles,
+      menu: (base) => {
+        const baseResult = baseStyles.menu(base);
+        const customResult = propCustomStyles.menu ? propCustomStyles.menu(base) : {};
+        return {
+          ...baseResult,
+          ...customResult,
+          zIndex: customResult.zIndex || 9999,
+        };
+      },
+      menuPortal: (base) => {
+        const baseResult = baseStyles.menuPortal(base);
+        const customResult = propCustomStyles.menuPortal ? propCustomStyles.menuPortal(base) : {};
+        return {
+          ...baseResult,
+          ...customResult,
+          zIndex: customResult.zIndex || 9999,
+        };
+      },
+    };
+  } else if (cStyle) {
+    // Only cStyle provided, use default customStyles
+    styles = {
+      ...baseStyles,
+      ...customStyles,
+    };
+  }
+  
   return (
     <div>
       <Select
@@ -177,7 +240,9 @@ const CustomSelect = (props) => {
         isSearchable={isSearchable}
         isMulti={isMulti}
         filterOption={filterOption}
+        menuPortalTarget={menuPortalTarget}
         noOptionsMessage={() => "No data found"}
+        {...restProps} // Pass through any other props
       />
     </div>
   )

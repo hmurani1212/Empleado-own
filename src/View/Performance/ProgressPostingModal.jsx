@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Button } from '@material-tailwind/react';
-import { FaChevronDown, FaChevronUp, FaChartLine, FaStar } from 'react-icons/fa';
+import { FaStar } from 'react-icons/fa';
 import performanceApi from '../../Model/Data/Performance/Performance';
 import { showToast } from '../../Components/Toaster/Toaster';
 import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer';
@@ -9,78 +9,15 @@ const ProgressPostingModal = ({ open, onClose, goal, onProgressUpdate }) => {
     const [comment, setComment] = useState('');
     const [progress, setProgress] = useState(goal?.progress || 0);
     const [rating, setRating] = useState(goal?.rating || 0);
-    const [expandedUpdates, setExpandedUpdates] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [previousUpdates, setPreviousUpdates] = useState([]);
-    const [loadingHistory, setLoadingHistory] = useState(false);
 
     useEffect(() => {
         if (open && goal) {
             setProgress(goal.progress || 0);
             setRating(goal.rating || 0);
             setComment('');
-            loadProgressHistory();
         }
     }, [open, goal]);
-
-    const loadProgressHistory = async () => {
-        if (!goal?._id) return;
-        
-        setLoadingHistory(true);
-        try {
-            const response = await performanceApi.getGoalProgressHistory(goal._id);
-            if (response.status === 200 && response.data.STATUS === "SUCCESSFUL") {
-                setPreviousUpdates(response.data.DB_DATA || []);
-            } else {
-                // Fallback to mock data if API is not ready
-                setPreviousUpdates([
-                    {
-                        id: 1,
-                        date: '14-Jun-2034',
-                        comment: 'lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua',
-                        progress: 50
-                    },
-                    {
-                        id: 2,
-                        date: '10-Jun-2034',
-                        comment: 'Making good progress on the implementation phase',
-                        progress: 30
-                    },
-                    {
-                        id: 3,
-                        date: '05-Jun-2034',
-                        comment: 'Initial setup completed successfully',
-                        progress: 15
-                    }
-                ]);
-            }
-        } catch (error) {
-            console.error('Error loading progress history:', error);
-            // Fallback to mock data
-            setPreviousUpdates([
-                {
-                    id: 1,
-                    date: '14-Jun-2034',
-                    comment: 'lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua',
-                    progress: 50
-                },
-                {
-                    id: 2,
-                    date: '10-Jun-2034',
-                    comment: 'Making good progress on the implementation phase',
-                    progress: 30
-                },
-                {
-                    id: 3,
-                    date: '05-Jun-2034',
-                    comment: 'Initial setup completed successfully',
-                    progress: 15
-                }
-            ]);
-        } finally {
-            setLoadingHistory(false);
-        }
-    };
 
     const handleSubmit = async () => {
         if (!comment.trim()) {
@@ -122,7 +59,7 @@ const ProgressPostingModal = ({ open, onClose, goal, onProgressUpdate }) => {
             }
         } catch (error) {
             console.error('Error updating progress:', error);
-            showToast('Failed to update progress. Please try again.', 'error');
+            showToast(error.response?.data?.ERROR_DESCRIPTION || 'Failed to update progress', 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -130,13 +67,6 @@ const ProgressPostingModal = ({ open, onClose, goal, onProgressUpdate }) => {
 
     const handleRatingSelect = (value) => {
         setRating(value);
-    };
-
-    const toggleUpdate = (updateId) => {
-        setExpandedUpdates(prev => ({
-            ...prev,
-            [updateId]: !prev[updateId]
-        }));
     };
 
     const handleProgressChange = (e) => {
@@ -220,62 +150,6 @@ const ProgressPostingModal = ({ open, onClose, goal, onProgressUpdate }) => {
                     >
                         {isSubmitting ? 'Submitting...' : 'Submit'}
                     </Button>
-
-                    {/* Previous Updates */}
-                    <div className="space-y-3">
-                        <Typography variant="h6" color="blue-gray" className="font-semibold">
-                            Previous Updates
-                        </Typography>
-                        {loadingHistory ? (
-                            <div className="text-center py-4">
-                                <Typography variant="small" color="gray" className="font-normal">
-                                    Loading history...
-                                </Typography>
-                            </div>
-                        ) : previousUpdates.length === 0 ? (
-                            <div className="text-center py-4">
-                                <Typography variant="small" color="gray" className="font-normal">
-                                    No previous updates found
-                                </Typography>
-                            </div>
-                        ) : (
-                            previousUpdates.map((update) => (
-                            <div key={update.id} className="border border-gray-200 rounded-lg">
-                                <button
-                                    onClick={() => toggleUpdate(update.id)}
-                                    className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50"
-                                >
-                                    <Typography variant="small" color="blue-gray" className="font-medium">
-                                        Last Modified {update.date}
-                                    </Typography>
-                                    {expandedUpdates[update.id] ? (
-                                        <FaChevronUp className="text-gray-500" />
-                                    ) : (
-                                        <FaChevronDown className="text-gray-500" />
-                                    )}
-                                </button>
-                                
-                                {expandedUpdates[update.id] && (
-                                    <div className="px-3 pb-3 space-y-3">
-                                        <div className="flex items-start gap-2">
-                                            <span className="text-blue-500 mt-1 flex-shrink-0">💬</span>
-                                            <Typography variant="small" color="gray" className="font-normal">
-                                                {update.comment}
-                                            </Typography>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <FaChartLine className="text-green-500" />
-                                            <Typography variant="small" color="gray" className="font-normal">
-                                                {update.progress}%
-                                            </Typography>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))
-                        )}
-                    </div>
-                    
                 </div>
     );
 

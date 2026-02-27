@@ -15,6 +15,9 @@ const AddGoalForm = ({ onSubmit, onCancel, reviewCycles, selectedCycle, editData
     review_cycle: selectedCycle?.value || ''
   });
   
+  // Store the selected review cycle option to access both value and label
+  const [selectedReviewCycleOption, setSelectedReviewCycleOption] = useState(selectedCycle || null);
+  
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,6 +47,9 @@ const AddGoalForm = ({ onSubmit, onCancel, reviewCycles, selectedCycle, editData
         description: editData.descriptions || editData.description || '',
         review_cycle: editData.review_cycle || selectedCycle?.value || ''
       });
+    } else if (!isEdit && selectedCycle) {
+      // Set the selected review cycle option when not in edit mode
+      setSelectedReviewCycleOption(selectedCycle);
     }
   }, [isEdit, editData, selectedCycle]);
 
@@ -142,14 +148,78 @@ const AddGoalForm = ({ onSubmit, onCancel, reviewCycles, selectedCycle, editData
         }
       } else {
         // Create new goal
+        // Get the review cycle name (label) - MUST be name, not ID
+        console.log('=== GOAL CREATION DEBUG ===');
+        console.log('Selected review cycle option:', selectedReviewCycleOption);
+        console.log('Form data review_cycle (ID):', formData.review_cycle);
+        console.log('Available review cycles:', reviewCycles);
+        console.log('Selected cycle prop:', selectedCycle);
+        
+        let reviewCycleName = null;
+        
+        // Priority 1: Get from stored selected option
+        if (selectedReviewCycleOption?.label) {
+          reviewCycleName = selectedReviewCycleOption.label;
+          console.log('Using name from selectedReviewCycleOption:', reviewCycleName);
+        } 
+        // Priority 2: Get from selectedCycle prop if it matches
+        else if (selectedCycle?.value === formData.review_cycle && selectedCycle?.label) {
+          reviewCycleName = selectedCycle.label;
+          console.log('Using name from selectedCycle prop:', reviewCycleName);
+        }
+        // Priority 3: Find it in reviewCycles array by matching the ID
+        else if (formData.review_cycle && reviewCycles && Array.isArray(reviewCycles)) {
+          const foundCycle = reviewCycles.find(cycle => {
+            // Match by value (ID)
+            return cycle.value === formData.review_cycle || 
+                   cycle.value?.toString() === formData.review_cycle?.toString();
+          });
+          
+          if (foundCycle?.label) {
+            reviewCycleName = foundCycle.label;
+            console.log('Found name in reviewCycles array:', reviewCycleName);
+          } else {
+            console.warn('Cycle not found in reviewCycles. Searched for:', formData.review_cycle);
+            console.warn('Available cycle values:', reviewCycles.map(c => ({ value: c.value, label: c.label })));
+          }
+        }
+        
+        // Final validation - ensure we have a name, not an ID
+        if (!reviewCycleName || reviewCycleName.length > 24 || (!reviewCycleName.includes(' ') && /^[a-f0-9]{24}$/i.test(reviewCycleName))) {
+          console.error('ERROR: reviewCycleName looks like an ID:', reviewCycleName);
+          console.error('This should not happen. Available cycles:', reviewCycles);
+          // Try one more time to find it
+          if (formData.review_cycle && reviewCycles) {
+            const lastAttempt = reviewCycles.find(c => c.value === formData.review_cycle || c.value?.toString() === formData.review_cycle?.toString());
+            if (lastAttempt?.label) {
+              reviewCycleName = lastAttempt.label;
+              console.log('Last attempt successful, using:', reviewCycleName);
+            }
+          }
+        }
+        
+        // If we still don't have a valid name, throw an error
+        if (!reviewCycleName || reviewCycleName.length > 24) {
+          const errorMsg = `Cannot create goal: Review cycle name not found for ID: ${formData.review_cycle}`;
+          console.error(errorMsg);
+          toast.error('Error: Could not find review cycle name. Please select a review cycle again.');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        console.log('✅ Final review cycle NAME to send:', reviewCycleName);
+        console.log('=== END DEBUG ===');
+        
         const payload = {
           name: formData.goalName,
-          review_cycle: formData.review_cycle,
+          review_cycle: reviewCycleName, // MUST be name, not ID
           startDate: formData.startDate,
           endDate: formData.dueDate,
           descriptions: formData.description,
           priority: formData.priority
         };
+        
+        console.log('📤 Goal payload being sent to API:', JSON.stringify(payload, null, 2));
         
         const response = await Emp_Performence.createGoal(payload);
         
@@ -164,6 +234,8 @@ const AddGoalForm = ({ onSubmit, onCancel, reviewCycles, selectedCycle, editData
             description: '',
             review_cycle: selectedCycle?.value || ''
           });
+          // Reset selected review cycle option
+          setSelectedReviewCycleOption(selectedCycle || null);
           // Clear any existing errors
           setErrors({});
           onSubmit(payload); // Call parent callback
@@ -190,7 +262,23 @@ const AddGoalForm = ({ onSubmit, onCancel, reviewCycles, selectedCycle, editData
             </Typography>
             <CustomSelect
               value={reviewCycles?.find(option => option.value === formData.review_cycle) || null}
-              onChangeHandler={(value) => handleInputChange('review_cycle', value)}
+              onChangeHandler={(value) => {
+                console.log('CustomSelect onChange value:', value);
+                
+                // CustomSelect returns the full option object {label, value}
+                const selectedOption = value && typeof value === 'object' && value.label && value.value 
+                  ? value 
+                  : reviewCycles?.find(option => option.value === (value?.value || value)) || null;
+                
+                console.log('Selected option object:', selectedOption);
+                
+                // Store the full option object to access the label later
+                setSelectedReviewCycleOption(selectedOption);
+                
+                // Then update formData with the value (ID) for validation
+                const cycleValue = selectedOption?.value || (value && typeof value === 'object' ? value.value : value);
+                handleInputChange('review_cycle', cycleValue);
+              }}
               options={reviewCycles || []}
               placeHolderTitle="Select review cycle"
               error={errors.review_cycle}

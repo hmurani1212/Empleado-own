@@ -8,6 +8,7 @@ import noRecordFound from '../../../assets/employee_side_images/no record found.
 const SkeletonRow = () => (
   <tr className="animate-pulse border-b border-gray-100">
     <td className="py-4 px-4"><div className="h-4 w-32 bg-gray-200 rounded"></div></td>
+    <td className="py-4 px-4"><div className="h-4 w-40 bg-gray-200 rounded"></div></td>
     <td className="py-4 px-4"><div className="h-2 w-full bg-gray-200 rounded-full"></div></td>
     <td className="py-4 px-4"><div className="h-4 w-24 bg-gray-200 rounded"></div></td>
     <td className="py-4 px-4"><div className="h-6 w-16 bg-gray-200 rounded-full"></div></td>
@@ -20,6 +21,7 @@ import CustomSelect from "../../../Components/CustomSelect/CustomSelect"
 import CustomDrawer from "../../../Components/CustomDrawer/CustomDrawer"
 import AddGoalForm from "./AddGoalForm"
 import ConfirmationDialog from "../../../Components/ConfirmationDialog/ConfirmationDialog"
+import GoalDescriptionModal from "../../Performance/GoalDescriptionModal"
 
 const EmpPerformance = () => {
   const [activeTab, setActiveTab] = useState("goals");
@@ -53,6 +55,31 @@ const EmpPerformance = () => {
   const [editItem, setEditItem] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [actionGoalLoadingId, setActionGoalLoadingId] = useState(null);
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  const [selectedGoalForDescription, setSelectedGoalForDescription] = useState(null);
+  
+  // Description truncation length
+  const DESCRIPTION_MAX_LENGTH = 50;
+
+  const handleOpenDescriptionModal = (goal) => {
+    setSelectedGoalForDescription(goal);
+    setShowDescriptionModal(true);
+  };
+
+  const handleCloseDescriptionModal = () => {
+    setShowDescriptionModal(false);
+    setSelectedGoalForDescription(null);
+  };
+
+  const truncateDescription = (text) => {
+    if (!text) return '';
+    if (text.length <= DESCRIPTION_MAX_LENGTH) return text;
+    return text.substring(0, DESCRIPTION_MAX_LENGTH);
+  };
+
+  const isDescriptionLong = (text) => {
+    return text && text.length > DESCRIPTION_MAX_LENGTH;
+  };
 
   const get_Performence_data = async (params = {}, isLoadMore = false) => {
     try {
@@ -139,19 +166,43 @@ const EmpPerformance = () => {
   }, [perfData?.Goal]);
 
   const { startText, endText } = useMemo(() => {
+    // First, try to get dates from goals
     const dates = goalsForCycle
       .map((g) => ({
         start: g?.start_period || (g?.startDate ? new Date(g.startDate * 1000).toISOString() : null),
         end: g?.end_period || (g?.endDate ? new Date(g.endDate * 1000).toISOString() : null),
       }))
       .filter((d) => d.start || d.end);
-    if (!dates.length) return { startText: "N/A", endText: "N/A" };
-    const starts = dates.map((d) => d.start).filter(Boolean).map((s) => new Date(s).getTime());
-    const ends = dates.map((d) => d.end).filter(Boolean).map((e) => new Date(e).getTime());
-    const minStart = starts.length ? new Date(Math.min(...starts)) : null;
-    const maxEnd = ends.length ? new Date(Math.max(...ends)) : null;
-    return { startText: minStart ? minStart.toLocaleDateString() : "N/A", endText: maxEnd ? maxEnd.toLocaleDateString() : "N/A" };
-  }, [goalsForCycle]);
+    
+    // If we have dates from goals, use them
+    if (dates.length > 0) {
+      const starts = dates.map((d) => d.start).filter(Boolean).map((s) => new Date(s).getTime());
+      const ends = dates.map((d) => d.end).filter(Boolean).map((e) => new Date(e).getTime());
+      const minStart = starts.length ? new Date(Math.min(...starts)) : null;
+      const maxEnd = ends.length ? new Date(Math.max(...ends)) : null;
+      return { startText: minStart ? minStart.toLocaleDateString() : "N/A", endText: maxEnd ? maxEnd.toLocaleDateString() : "N/A" };
+    }
+    
+    // If no goals found, check if a specific performance review cycle is selected
+    if (selectedCycle?.value && perfData?.Performence) {
+      const selectedCycleData = perfData.Performence.find(
+        (cycle) => cycle._id === selectedCycle.value || cycle.name === selectedCycle.value
+      );
+      
+      if (selectedCycleData) {
+        const startDate = selectedCycleData.startDate 
+          ? new Date(selectedCycleData.startDate * 1000).toLocaleDateString() 
+          : "N/A";
+        const endDate = selectedCycleData.endDate 
+          ? new Date(selectedCycleData.endDate * 1000).toLocaleDateString() 
+          : "N/A";
+        return { startText: startDate, endText: endDate };
+      }
+    }
+    
+    // Default fallback
+    return { startText: "N/A", endText: "N/A" };
+  }, [goalsForCycle, selectedCycle, perfData?.Performence]);
 
   const tabsData = [
     { label: "Goals", value: "goals" },
@@ -357,18 +408,19 @@ const EmpPerformance = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-4 lg:gap-8 bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-white/60">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4 lg:gap-8 bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-white/60 relative z-10">
+                <div className="flex items-center gap-3 relative z-[9999]">
                   <Typography variant="small" color="blue-gray" className="font-medium text-xs uppercase tracking-wide opacity-70">
                     Review Cycle
                   </Typography>
-                  <div className="w-48">
+                  <div className="w-48 relative z-[9999]">
                     <CustomSelect
                       placeHolderTitle="All Review Cycles"
                       value={selectedCycle}
                       options={[{ label: "All Review Cycles", value: "" }, ...cycles]}
                       onChangeHandler={handleCycleChange}
                       isSearchable={false}
+                      menuPortalTarget={document.body}
                       customStyles={{
                         control: (base) => ({
                           ...base,
@@ -378,12 +430,37 @@ const EmpPerformance = () => {
                           boxShadow: 'none',
                           backgroundColor: 'white',
                           borderRadius: '8px',
+                          cursor: 'pointer',
                         }),
                         menu: (base) => ({
                           ...base,
-                          zIndex: 50,
+                          zIndex: 9999,
                           fontSize: '13px',
-                        })
+                        }),
+                        menuPortal: (base) => ({
+                          ...base,
+                          zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                          ...base,
+                          maxHeight: '200px',
+                          padding: '4px',
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          fontSize: '13px',
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          backgroundColor: state.isSelected 
+                            ? '#3DA5F4' 
+                            : state.isFocused 
+                              ? '#E3F1FF' 
+                              : 'white',
+                          color: state.isSelected ? 'white' : '#333',
+                          '&:hover': {
+                            backgroundColor: state.isSelected ? '#2B8FD4' : '#F0F8FF',
+                          },
+                        }),
                       }}
                     />
                   </div>
@@ -488,7 +565,7 @@ const EmpPerformance = () => {
       </Card>
 
       {/* Performance Tabs */}
-      <Card className="w-full">
+      <Card className="w-full relative z-0">
         <CardBody className="p-6">
           <div className="w-full">
             <div className='flex items-center gap-5 mb-6'>
@@ -518,14 +595,14 @@ const EmpPerformance = () => {
             {activeTab === "goals" && (
               <div className="p-0 mt-6">
                 {/* Goals Table */}
-                <div className="w-full overflow-visible">
+                <div className="w-full">
                   {loading ? (
-                    <div className="w-full overflow-x-auto">
-                      <table className="min-w-full text-center table-fixed">
+                    <div className="w-full">
+                      <table className="w-full text-center">
                         <thead>
                           <tr>
-                            {['Goal', 'Progress', 'Comment', 'Status', 'Rating', 'Action'].map((h, i) => (
-                              <th key={h} className={`border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 ${i===0 ? 'w-1/4' : ''}`}>
+                            {['Goal', 'Goal Description', 'Progress', 'Comment', 'Status', 'Rating', 'Action'].map((h, i) => (
+                              <th key={h} className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4">
                                 <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">{h}</Typography>
                               </th>
                             ))}
@@ -538,26 +615,29 @@ const EmpPerformance = () => {
                     </div>
                   ) : (
                     <>
-                      <div className="w-full overflow-visible">
-                      <table className="min-w-full text-center table-fixed">
+                      <div className="w-full overflow-hidden">
+                      <table className="w-full text-center table-auto">
                     <thead>
                       <tr>
-                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 pr-4 w-1/4">
+                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-2 text-left">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Goal</Typography>
                         </th>
-                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-1/6">
+                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-2 text-left">
+                          <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Descriptions</Typography>
+                        </th>
+                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-2">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Progress</Typography>
                         </th>
-                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-1/4">
+                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-2">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Comment</Typography>
                         </th>
-                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-1/8">
+                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-2">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Status</Typography>
                         </th>
-                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-4 w-1/8">
+                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-2">
                               <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Rating</Typography>
                             </th>
-                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 pl-4 w-1/8">
+                            <th className="border-b border-blue-gray-50 bg-blue-gray-50 py-4 px-2">
                           <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">Action</Typography>
                         </th>
                       </tr>
@@ -590,12 +670,26 @@ const EmpPerformance = () => {
 
                           return (
                             <tr key={g._id || idx}>
-                               <td className="py-4 pr-4 border-b border-blue-gray-50 text-center">
+                               <td className="py-4 px-2 border-b border-blue-gray-50 text-left">
                                      <Typography variant="small" color="blue-gray" className="font-medium">
                                    {g.name || g.title || '—'}
                                  </Typography>
                                </td>
-                               <td className="py-4 px-4 border-b border-blue-gray-50 text-center">
+                               <td className="py-4 px-2 border-b border-blue-gray-50 text-left">
+                                 <div className="flex items-center gap-2">
+                                   <Typography variant="small" color="blue-gray" className="text-sm">
+                                     Descriptions,
+                                   </Typography>
+                                   <button
+                                     type="button"
+                                     onClick={() => handleOpenDescriptionModal(g)}
+                                     className="text-blue-600 hover:text-blue-800 text-xs font-medium underline"
+                                   >
+                                     read
+                                   </button>
+                                 </div>
+                               </td>
+                               <td className="py-4 px-2 border-b border-blue-gray-50 text-center">
                                      <div className="flex flex-col items-center gap-2">
                                        <Progress value={g.progress || 0} className="w-full max-w-20" />
                                    <Typography variant="small" color="blue-gray" className="opacity-70 text-xs">
@@ -603,12 +697,12 @@ const EmpPerformance = () => {
                                    </Typography>
                                  </div>
                                </td>
-                               <td className="py-4 px-4 border-b border-blue-gray-50 text-center">
+                               <td className="py-4 px-2 border-b border-blue-gray-50 text-center">
                                      <Typography variant="small" color="blue-gray" className="font-normal">
                                    {g.comment || '—'}
                                  </Typography>
                                </td>
-                               <td className="py-4 px-4 border-b border-blue-gray-50 text-center">
+                               <td className="py-4 px-2 border-b border-blue-gray-50 text-center">
                                  <div className="flex justify-center">
                                    <div className={`px-3 py-1 rounded-full text-xs font-medium w-fit ${
                                      g.status === '0' ? 'bg-amber-50 text-amber-600' :
@@ -620,7 +714,7 @@ const EmpPerformance = () => {
                                    </div>
                                  </div>
                                </td>
-                               <td className="py-4 px-4 border-b border-blue-gray-50 text-center">
+                               <td className="py-4 px-2 border-b border-blue-gray-50 text-center">
                                      <div className="flex items-center justify-center gap-1">
                                        {Array.from({ length: 5 }).map((_, starIdx) => (
                                          <span 
@@ -634,7 +728,7 @@ const EmpPerformance = () => {
                                        ))}
                                      </div>
                                </td>
-                               <td className="py-4 pl-4 border-b border-blue-gray-50 text-center relative">
+                               <td className="py-4 px-2 border-b border-blue-gray-50 text-center relative">
                                     <div className="relative action-dropdown flex justify-center">
                                       <button
                                         onClick={() => handleDropdownToggle(g._id)}
@@ -653,18 +747,20 @@ const EmpPerformance = () => {
                                             Edit
                                           </button>
                                           <button
-                                            onClick={() => handleDeleteGoal(g)}
-                                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100 text-red-600"
-                                          >
-                                            Delete
-                                          </button>
-                                          <button
                                             onClick={() => handleStartedGoal(g)}
                                             disabled={g.status === '2' || actionGoalLoadingId === g._id}
-                                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${g.status === '2' ? 'text-gray-400 cursor-not-allowed' : ''}`}
+                                            className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b ${g.status === '2' ? 'text-gray-400 cursor-not-allowed' : ''} ${g.added_by === 'Employee' ? 'border-gray-100' : ''}`}
                                           >
                                             {actionGoalLoadingId === g._id ? 'Updating...' : getStatusActionLabel(g.status)}
                                           </button>
+                                          {g.added_by === 'Employee' && (
+                                            <button
+                                              onClick={() => handleDeleteGoal(g)}
+                                              className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600"
+                                            >
+                                              Delete
+                                            </button>
+                                          )}
                                         </div>
                                       )}
                                     </div>
@@ -675,7 +771,7 @@ const EmpPerformance = () => {
                         })()
                       ) : (
                         <tr>
-                          <td colSpan={6} className="py-12 text-center text-gray-400">
+                          <td colSpan={7} className="py-12 text-center text-gray-400">
                             <div className="flex flex-col items-center justify-center">
                               <img src={noRecordFound} alt="No record found" className='w-40 opacity-70 mix-blend-multiply mb-4' />
                               <Typography color="gray" className="font-medium">No goals found</Typography>
@@ -979,36 +1075,40 @@ const EmpPerformance = () => {
                               </td>
                               <td className="p-3 border-b border-blue-gray-50">
                                 <Typography variant="small" color="blue-gray" className="font-normal">
-                                  {formatDate(item.endDate)}
+                                  {formatDate(item.startDate)}
                                 </Typography>
                               </td>
                               <td className="p-3 border-b border-blue-gray-50">
                                 <Typography variant="small" color="blue-gray" className="font-normal">
-                                  {formatDate(item.closing_date)}
+                                  {formatDate(item.endDate)}
                                 </Typography>
                               </td>
                               <td className="p-3 border-b border-blue-gray-50">
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <Typography variant="small" color="blue-gray" className="font-medium text-xs">
+                                    {typeof item.goal_progress === 'number' 
+                                      ? (item.goal_progress % 1 === 0 ? item.goal_progress : item.goal_progress.toFixed(2))
+                                      : 0}%
+                                  </Typography>
                                   <Progress 
                                     value={item.goal_progress || 0} 
                                     className="w-full"
                                     color="blue"
                                   />
-                                  <Typography variant="small" color="blue-gray" className="opacity-70 text-xs min-w-fit">
-                                    {item.goal_progress || 0}%
-                                  </Typography>
                                 </div>
                               </td>
                               <td className="p-3 border-b border-blue-gray-50">
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <Typography variant="small" color="blue-gray" className="font-medium text-xs">
+                                    {typeof item.competency_progress === 'number' 
+                                      ? (item.competency_progress % 1 === 0 ? item.competency_progress : item.competency_progress.toFixed(2))
+                                      : 0}%
+                                  </Typography>
                                   <Progress 
                                     value={item.competency_progress || 0} 
                                     className="w-full"
-                                    color="green"
+                                    color="blue"
                                   />
-                                  <Typography variant="small" color="blue-gray" className="opacity-70 text-xs min-w-fit">
-                                    {item.competency_progress || 0}%
-                                  </Typography>
                                 </div>
                               </td>
                             </tr>
@@ -1083,11 +1183,19 @@ const EmpPerformance = () => {
         openDialog={showDeleteConfirm}
         handleOpen={setShowDeleteConfirm}
         title="Delete Goal"
-        message={`Are you sure you want to delete the goal "${deleteItem?.title || ''}"? This action cannot be undone.`}
+        message="Are you sure you want to delete the goal ?"
         handleConfirm={handleConfirmDelete}
         loading={deleteLoading}
         size="sm"
       />
+
+      {showDescriptionModal && (
+        <GoalDescriptionModal
+          open={showDescriptionModal}
+          onClose={handleCloseDescriptionModal}
+          goal={selectedGoalForDescription}
+        />
+      )}
     </div>
   )
 }

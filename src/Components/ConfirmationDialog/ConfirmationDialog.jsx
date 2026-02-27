@@ -29,7 +29,7 @@ const ConfirmationDialog = (props) => {
         <hr className="border-t border-gray-300" />
         <DialogBody className='text-center text-[15px]'>{message}</DialogBody>
         <DialogFooter  className='flex justify-center items-center gap-2'>
-          <Button className='bg-[#F55E67] px-4 py-2 font-normal' onClick={handleOpen}>
+          <Button className='bg-[#F55E67] px-4 py-2 font-normal' onClick={() => handleOpen(false)}>
             Cancel
           </Button>
           <Button className='mr-2 bg-[#3DA5F4] py-2 px-4 font-normal' onClick={handleConfirm} loading={loading}>

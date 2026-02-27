@@ -177,7 +177,7 @@ const Goals = () => {
                       </td>
                       <td className="p-4">
                         <Typography className="text-sm font-medium text-gray-700 font-poppins">
-                          {ele.total_score}
+                          {ele.total_score && Number(ele.total_score) > 0 ? `${ele.total_score}/10` : '0/10'}
                         </Typography>
                       </td>
                       <td className="p-4">

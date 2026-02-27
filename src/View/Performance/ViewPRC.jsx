@@ -98,7 +98,7 @@ const ViewPRC = (props) => {
                 </div>
             </div>
         </div>
-        <div className='grid grid-cols-2 gap-4'>
+        <div className='grid grid-cols-2 gap-4 items-start'>
             <div className='flex gap-3 border border-blue-500 rounded-md p-3'>
 
                 <div className='mt-1'>
@@ -109,14 +109,31 @@ const ViewPRC = (props) => {
                 </div>
                 <div className='flex flex-col gap-2'>
                     <span className='text-nowrap text-customBlack-100 text-[14px]'>Assigned To</span>
-                    <span className='text-customBlack-100 text-[12px]'>
+                    <div className='flex flex-col gap-2'>
                         {data.employees && Array.isArray(data.employees) && data.employees.length > 0
-                            ? data.employees.map(emp => emp.employee_name || emp.name || `Employee ${emp.employee_id}`).join(', ')
-                            : 'Not Assigned'}
-                    </span>
+                            ? data.employees.map((emp, index) => {
+                                let employeeName = emp.employee_name || emp.name || `Employee ${emp.employee_id}`;
+                                // Remove any existing ID pattern from the name (e.g., "(ID: 12345)" or "(ID:12345)")
+                                employeeName = employeeName.replace(/\s*\(ID:\s*\d+\)/gi, '').trim();
+                                // Add the ID once at the end
+                                const displayName = employeeName + (emp.employee_id ? ` (ID: ${emp.employee_id})` : '');
+                                
+                                return (
+                                    <div key={emp.employee_id || index} className='flex flex-col gap-1 border border-blue-500 rounded-md p-2'>
+                                        <span className='text-customBlack-100 text-[12px]'>
+                                            {displayName}
+                                        </span>
+                                        <span className='text-customBlack-100 text-[11px] text-gray-600'>
+                                            Score: {emp.score !== undefined && emp.score !== null ? emp.score : 0}/10
+                                        </span>
+                                    </div>
+                                );
+                            })
+                            : <span className='text-customBlack-100 text-[12px]'>Not Assigned</span>}
+                    </div>
                 </div>
             </div>
-            <div className='flex gap-3 border border-blue-500 rounded-md p-3'>
+            <div className='flex gap-3 border border-blue-500 rounded-md p-3 self-start'>
 
                 <div className='mt-1'>
                     <span className='text-primary-100'>
