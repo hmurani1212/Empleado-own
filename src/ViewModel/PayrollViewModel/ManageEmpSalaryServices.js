@@ -253,20 +253,24 @@ const useManageEmpSalary = () => {
     const [openDialogCancel, setOpenDialogCancel] = useState(false)
 
     const handleDialogCancel = (data) => {
-        console.log("data", data)
-        setCancelIncValues(data)
-        console.log("cancelIncValues after setting:", cancelIncValues)
-        setOpenDialogCancel(!openDialogCancel)
+        // Only "open" when explicitly passed the increment id (number). Close button/X pass the click event, so we close.
+        const isIncrementId = typeof data === 'number' || (typeof data === 'string' && data !== '' && !isNaN(Number(data)))
+        if (isIncrementId) {
+            setCancelIncValues({ id: data, reason: '' })
+            setOpenDialogCancel(true)
+        } else {
+            setOpenDialogCancel(false)
+            setCancelIncValues({ id: '', reason: '' })
+        }
     }
 
     const handleCancelInc = async(id) => {
         setLoading(true)
-        console.log("id", id)
+        const incrementId = id?.id ?? cancelIncValues?.id
         const data = {
-            id: id.id,
-            reason: cancelIncValues.reason
+            id: incrementId,
+            reason: cancelIncValues.reason ?? ''
         }
-        console.log("cancelIncValues", cancelIncValues)
         try{
             const response = await payrollApi.cancelincDeductHistory(data)
             const dataResponse = response.data
@@ -277,6 +281,10 @@ const useManageEmpSalary = () => {
                     id: '',
                     reason: ''
                 })
+                // Refresh increment history so the UI shows the record as cancelled
+                if (idSet) {
+                  gettingIncDeductHistory({ id: idSet })
+                }
             } else {
                 showToast('Failed to cancel incentive/deduction', 'error')
             }

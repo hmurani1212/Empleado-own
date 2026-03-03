@@ -499,7 +499,7 @@ const useAttendance = () => {
     };
 
   return {attendanceCardsItems,gettingLateComers, backNavigate, branchwiseRep, allAttArchiveReport, gettingAttReportArchive, attendanceBranches, branchesAttendance, handleSelectChangeAttendance, dept_subDeptA, flattenOptions, gettingSubBranchesAttendance, getBranchWiseAttList, attBranchList, showTable, setShowTable, handleGetAttendance, excelLayoutOptions, empListAtt, empSuggestionListAtt, rawLogsAtt, setRawLogsAtt, onChangeRaw, handleGetAttRawLogs, showTableRaw, setShowTableRaw, handleCheckboxChangeAtt, isIndividualAtt, individualExport,
-    NewAdjustRequest, gettingRequestAdj, requestData, requestPagination, handleLoadMoreRequests, handleCloseAttDetail, individualRequestDetail, handleDetailRequest, editAdjRequest, handleEditRequestedAdj, editData, editValues,handleChangeReqAdj,
+    NewAdjustRequest, gettingRequestAdj, requestData, requestPagination, handleLoadMoreRequests, handleCloseAttDetail, individualRequestDetail, handleDetailRequest, editAdjRequest, handleEditRequestedAdj, editData, editValues, handleChangeReqAdj, updateTimeAdjustment, updatedAdjRequest,
     // Employee recent records
     employeeRecentRecords, loadingRecentRecords, getEmployeeRecentRecords, loading, setLoading, AttendanceNavTitles, getLiveBiometricDevices, liveBiometricDevices, updateLiveBiometricDevice
   }

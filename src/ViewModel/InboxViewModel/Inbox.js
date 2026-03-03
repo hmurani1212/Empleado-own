@@ -99,7 +99,7 @@ const InboxViewModel = (set, get) => ({
                 // Map the new API response structure to the expected format
                 const mappedStories = data?.DB_DATA.stories.map(story => ({
                     ...story,
-                    emp_name: story.full_name || 'Unknown Employee',
+                    emp_name: story.emp_name || story.full_name || story.initiator_name || story.name || story.user_name || story.applicant_name || (story.applications?.[0]?.emp_name) || (story.applications?.[0]?.full_name) || 'Unknown Employee',
                     emp_image: story.emp_image || '/images/icons/empm.jpg',
                     id: story.story_id,
                     initiator_oneid: story.initiator_oneid,
@@ -190,7 +190,7 @@ const InboxViewModel = (set, get) => ({
                 // Map the new API response structure to the expected format
                 const mappedStories = data?.DB_DATA.stories.map(story => ({
                     ...story,
-                    emp_name: story.full_name || 'Unknown Employee',
+                    emp_name: story.emp_name || story.full_name || story.initiator_name || story.name || story.user_name || story.applicant_name || (story.applications?.[0]?.emp_name) || (story.applications?.[0]?.full_name) || 'Unknown Employee',
                     emp_image: story.emp_image || '/images/icons/empm.jpg',
                     id: story.story_id,
                     initiator_oneid: story.initiator_oneid,
@@ -267,7 +267,7 @@ const InboxViewModel = (set, get) => ({
             if (response.status === 200 && data?.STATUS === 'SUCCESSFUL') {
                 const mappedStories = data?.DB_DATA.stories.map(story => ({
                     ...story,
-                    emp_name: story.full_name || 'Unknown Employee',
+                    emp_name: story.emp_name || story.full_name || story.initiator_name || story.name || story.user_name || story.applicant_name || (story.applications?.[0]?.emp_name) || (story.applications?.[0]?.full_name) || 'Unknown Employee',
                     emp_image: story.emp_image || '/images/icons/empm.jpg',
                     id: story.story_id,
                     initiator_oneid: story.initiator_oneid,
@@ -679,6 +679,36 @@ const InboxViewModel = (set, get) => ({
                 'Action failed';
             showToast(errorMessage, 'error');
             return { success: false, error: errorMessage };
+        }
+    },
+
+    // Update time adjustment (for ATT_TIME_ADJUSTMENT in Inbox). Updates time outside form_data (root level).
+    updateAdjustmentTime: async (submissionId, payload) => {
+        try {
+            const response = await InboxApi.updateAdjustmentTime(submissionId, payload);
+            const data = response.data;
+            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+                const updated = data.DB_DATA;
+                const current = get().application_data;
+                if (updated && current && (String(current.id) === String(submissionId) || String(current._id) === String(submissionId))) {
+                    // Update root-level in_time, out_time, date (outside form_data) from payload or API response
+                    const nextRoot = {
+                        ...current,
+                        in_time: payload.in_time ?? updated.in_time ?? current.in_time,
+                        out_time: payload.out_time ?? updated.out_time ?? current.out_time,
+                        date: payload.date ?? updated.date ?? current.date,
+                    };
+                    nextRoot.form_data = { ...current?.form_data, ...updated?.form_data };
+                    set({ application_data: nextRoot });
+                }
+                return { success: true, data: data.DB_DATA };
+            }
+            showToast(data.ERROR_DESCRIPTION || 'Failed to update time adjustment', 'error');
+            return { success: false, error: data.ERROR_DESCRIPTION };
+        } catch (error) {
+            const errMsg = error?.response?.data?.ERROR_DESCRIPTION || error?.message || 'Failed to update time adjustment';
+            showToast(errMsg, 'error');
+            return { success: false, error: errMsg };
         }
     },
 

@@ -3,11 +3,14 @@ import useAttendance from "../../ViewModel/AttendanceViewModel/AttendanceService
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { getAllMonths, getAllYears } from "../../services/__appServicesData";
-import { Progress, Typography } from "@material-tailwind/react";
+import { Progress, Typography, Button } from "@material-tailwind/react";
 import { convertSecondsToTime } from "../../services/__attendanceServices";
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { showToast } from "../../Components/Toaster/Toaster";
 import * as XLSX from 'xlsx';
+import { getContentByLabel } from "../../services/getContentService";
+import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
+import { FaInfoCircle } from "react-icons/fa";
 
 const BranchWiseListReporting = () => {
   const {
@@ -44,6 +47,32 @@ const BranchWiseListReporting = () => {
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  const [contentDrawerOpen, setContentDrawerOpen] = useState(false);
+  const [contentData, setContentData] = useState(null);
+  const [contentLang, setContentLang] = useState("ENGLISH");
+  const [contentLoading, setContentLoading] = useState(false);
+
+  const openContentDrawer = async (contentLabel) => {
+    setContentDrawerOpen(true);
+    setContentLang("ENGLISH");
+    setContentLoading(true);
+    setContentData(null);
+    try {
+      const res = await getContentByLabel(contentLabel);
+      if (res?.STATUS === "SUCCESSFUL" && res?.DATA?.[0]?.contents?.length) {
+        setContentData(res.DATA[0]);
+      } else {
+        showToast("Content not available", "error");
+        setContentDrawerOpen(false);
+      }
+    } catch (err) {
+      showToast("Failed to load content", "error");
+      setContentDrawerOpen(false);
+    } finally {
+      setContentLoading(false);
+    }
+  };
 
   // Load branches on component mount
   useEffect(() => {
@@ -324,9 +353,12 @@ const BranchWiseListReporting = () => {
           <div className="flex flex-col space-y-4">
             <div className="flex flex-col space-y-4 items-center">
               <div className="w-96">
-                <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-                  Select Branch
-                </label>
+                <div className="flex items-center gap-1.5 px-2 mb-1">
+                  <label className="text-[#474747] text-[12px] font-medium font-Urbanist">
+                    Select Branch
+                  </label>
+                  <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("BRANCH_WISE_LIST_REPORTING")} />
+                </div>
                 <CustomSelect
                   placeHolderTitle="Branch"
                   value={branchwiseRep?.branch}
@@ -555,6 +587,51 @@ const BranchWiseListReporting = () => {
           </div>
         </div>
       </div>
+
+      <PortalDrawer
+        open={contentDrawerOpen}
+        closeDrawer={() => setContentDrawerOpen(false)}
+        direction="right"
+        widthSize="45vw"
+        title={contentData?.contents?.find((c) => c.lang === contentLang)?.main_heading ?? ""}
+        compo={
+          <div className="flex flex-col gap-4">
+            {contentLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : contentData?.contents?.length ? (
+              <>
+                <div
+                  className="text-gray-800 text-sm font-Urbanist leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      contentData.contents.find((c) => c.lang === contentLang)?.content ??
+                      contentData.contents.find((c) => c.lang === "ENGLISH")?.content ??
+                      "",
+                  }}
+                />
+                <div className="flex gap-2 mt-4 border-t border-gray-200 pt-4">
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${contentLang === "ENGLISH" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"}`}
+                    onClick={() => setContentLang("ENGLISH")}
+                  >
+                    ENGLISH
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${contentLang === "URDU" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"}`}
+                    onClick={() => setContentLang("URDU")}
+                  >
+                    URDU
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        }
+      />
     </>
   );
 };

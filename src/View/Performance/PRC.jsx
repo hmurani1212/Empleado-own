@@ -304,42 +304,40 @@ const PRC = () => {
         )}
       </div>
 
-      {(PRCAddValue.show || viewPRC.show) && (
-        <PortalDrawer
-          open={PRCAddValue.show || viewPRC.show}
-          compo={
-            PRCAddValue.show ? (
-              <AddEditPRC
-                handleChangeRPC={handleChangeRPC}
-                PRCAddValue={PRCAddValue}
-                handleSelectAddPRC={handleSelectAddPRC}
-                handleSubmitPRC={handleSubmitPRC}
-                handleRemoveEmp={handleRemoveEmp}
-                handleUpdatePRC={handleUpdatePRC}
-              />
-            ) : viewPRC.show ? (
-              <ViewPRC data={viewPRC.singleData} />
-            ) : null
-          }
-          title={
-            PRCAddValue.show
-              ? !PRCAddValue.update
-                ? "Create Performance Review Cycle"
-                : "Update Performance Review Cycle"
-              : viewPRC.show
-              ? "Performance Review Cycle"
-              : null
-          }
-          closeDrawer={
-            PRCAddValue.show
-              ? toggleAddPRC
-              : viewPRC.show
-              ? toggleViewPRC
-              : null
-          }
-          widthSize={PRCAddValue.show ? 550 : viewPRC.show ? 750 : null}
-        />
-      )}
+      <PortalDrawer
+        open={PRCAddValue.show || viewPRC.show}
+        compo={
+          PRCAddValue.show ? (
+            <AddEditPRC
+              handleChangeRPC={handleChangeRPC}
+              PRCAddValue={PRCAddValue}
+              handleSelectAddPRC={handleSelectAddPRC}
+              handleSubmitPRC={handleSubmitPRC}
+              handleRemoveEmp={handleRemoveEmp}
+              handleUpdatePRC={handleUpdatePRC}
+            />
+          ) : viewPRC.show ? (
+            <ViewPRC data={viewPRC.singleData} />
+          ) : null
+        }
+        title={
+          PRCAddValue.show
+            ? !PRCAddValue.update
+              ? "Create Performance Review Cycle"
+              : "Update Performance Review Cycle"
+            : viewPRC.show
+            ? "Performance Review Cycle"
+            : ""
+        }
+        closeDrawer={
+          PRCAddValue.show
+            ? toggleAddPRC
+            : viewPRC.show
+            ? toggleViewPRC
+            : () => {}
+        }
+        widthSize={PRCAddValue.show ? 550 : viewPRC.show ? 750 : 550}
+      />
 
       {deleteValue.show && (
         <ConfirmationDialog

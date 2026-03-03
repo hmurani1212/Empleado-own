@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { Form, Input } from '@material-tailwind/react'
+import { Form, Input, Button } from '@material-tailwind/react'
 import { BsFillInfoCircleFill } from "react-icons/bs";
 import MedicalApp from './MedicalApp';
 import TaApplication from './TaApplication';
@@ -8,7 +8,11 @@ import { ApplicationType } from '../../services/__applicationServices';
 import useNewApplication from '../../ViewModel/ApplicationViewModel/addNewApplicationServices';
 import useApplication from '../../ViewModel/ApplicationViewModel/ApplicationServices';
 import CustomSelect from '../../Components/CustomSelect/CustomSelect';
-import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices"
+import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
+import { getContentByLabel } from '../../services/getContentService';
+import { showToast } from '../../Components/Toaster/Toaster';
+import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer';
+import { FaInfoCircle } from 'react-icons/fa';
 
 function NewApplication() {
 
@@ -85,6 +89,31 @@ function NewApplication() {
       label: `${emp.name} (ID: ${emp.id || emp.emp_id})`
   })) || [];
 
+  const [contentDrawerOpen, setContentDrawerOpen] = useState(false);
+  const [contentData, setContentData] = useState(null);
+  const [contentLang, setContentLang] = useState('ENGLISH');
+  const [contentLoading, setContentLoading] = useState(false);
+
+  const openContentDrawer = async (contentLabel) => {
+    setContentDrawerOpen(true);
+    setContentLang('ENGLISH');
+    setContentLoading(true);
+    setContentData(null);
+    try {
+      const res = await getContentByLabel(contentLabel);
+      if (res?.STATUS === 'SUCCESSFUL' && res?.DATA?.[0]?.contents?.length) {
+        setContentData(res.DATA[0]);
+      } else {
+        showToast('Content not available', 'error');
+        setContentDrawerOpen(false);
+      }
+    } catch (err) {
+      showToast('Failed to load content', 'error');
+      setContentDrawerOpen(false);
+    } finally {
+      setContentLoading(false);
+    }
+  };
 
   return (
     <div className='w-full px-2 py-4'>
@@ -95,7 +124,10 @@ function NewApplication() {
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                 {/* Application Type */}
                 <div className='flex flex-col gap-2'>
-                    <label className='text-sm font-semibold text-gray-700 font-poppins'>Application Type</label>
+                    <div className='flex items-center gap-1.5'>
+                      <label className='text-sm font-semibold text-gray-700 font-poppins'>Application Type</label>
+                      <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('APPLICATIONTYPE_APPLICATION_EMP')} />
+                    </div>
                     <CustomSelect
                         placeHolderTitle='Select Application Type'
                         value={applicationType ? { value: applicationType, label: ApplicationType.find(t => t.id === applicationType)?.title } : null}
@@ -110,7 +142,10 @@ function NewApplication() {
 
                 {/* Employee Selection */}
                 <div className='flex flex-col gap-2'>
-                    <label className='text-sm font-semibold text-gray-700 font-poppins'>Employee</label>
+                    <div className='flex items-center gap-1.5'>
+                      <label className='text-sm font-semibold text-gray-700 font-poppins'>Employee</label>
+                      <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('ONBEHALFOF_APPLICATION_EMP')} />
+                    </div>
                     <CustomSelect
                         placeHolderTitle='Search Employee by Name or ID'
                         value={getSelectedEmployeeOption()}
@@ -160,6 +195,51 @@ function NewApplication() {
         </div>
 
       </div>
+
+      <PortalDrawer
+        open={contentDrawerOpen}
+        closeDrawer={() => setContentDrawerOpen(false)}
+        direction="right"
+        widthSize="45vw"
+        title={contentData?.contents?.find((c) => c.lang === contentLang)?.main_heading ?? ''}
+        compo={
+          <div className="flex flex-col gap-4">
+            {contentLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : contentData?.contents?.length ? (
+              <>
+                <div
+                  className="text-gray-800 text-sm font-Urbanist leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      contentData.contents.find((c) => c.lang === contentLang)?.content ??
+                      contentData.contents.find((c) => c.lang === 'ENGLISH')?.content ??
+                      '',
+                  }}
+                />
+                <div className="flex gap-2 mt-4 border-t border-gray-200 pt-4">
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${contentLang === 'ENGLISH' ? 'bg-[#3DA5F4] text-white' : 'bg-gray-200 text-gray-700'}`}
+                    onClick={() => setContentLang('ENGLISH')}
+                  >
+                    ENGLISH
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${contentLang === 'URDU' ? 'bg-[#3DA5F4] text-white' : 'bg-gray-200 text-gray-700'}`}
+                    onClick={() => setContentLang('URDU')}
+                  >
+                    URDU
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        }
+      />
     </div>
   )
 }

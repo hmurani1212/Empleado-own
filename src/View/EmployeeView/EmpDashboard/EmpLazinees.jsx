@@ -79,12 +79,22 @@ const EmpLazinees = () => {
   // Get attendance data
   const attendanceData = empDashboardData?.attendance;
 
-  // Get reminders from dashboard data and sync with local state
+  // Get reminders from dashboard data and sync with local state (single source of truth)
   const dashboardReminders = useMemo(() => {
-    return empDashboardData?.reminders || [];
+    const raw = empDashboardData?.reminders || [];
+    // Filter out invalid/empty/template entries so we never show NaN/Invalid Date or empty cards
+    return raw.filter((r) => {
+      if (!r || r.id == null) return false;
+      const ts = r.reminder_time != null ? Number(r.reminder_time) : NaN;
+      if (!Number.isFinite(ts)) return false;
+      const date = new Date(ts * 1000);
+      if (Number.isNaN(date.getTime())) return false;
+      const hasTitle = typeof r.title === "string" && r.title.trim().length > 0;
+      return hasTitle;
+    });
   }, [empDashboardData?.reminders]);
 
-  // Update local reminders when dashboard data changes
+  // Update local reminders when dashboard data changes (no optimistic add — avoids duplicate + malformed card)
   useEffect(() => {
     setLocalReminders(dashboardReminders);
   }, [dashboardReminders]);
@@ -101,16 +111,16 @@ const EmpLazinees = () => {
     setIsModalOpen(false);
   };
 
-  // Handle when a new reminder is added (called from AddTaskModal)
-  const handleReminderAdded = (newReminder) => {
-    if (newReminder) {
-      setLocalReminders((prevReminders) => [newReminder, ...prevReminders]);
-    }
-  };
+  // Called when AddTaskModal reports success. We do not add to local state here:
+  // the store already triggers a dashboard refresh (gettingEmpDashboardData), and
+  // the effect above syncs from dashboard — so we avoid duplicate + malformed "template" cards.
+  const handleReminderAdded = () => {};
 
-  // Format reminder time
+  // Format reminder time — safe for invalid timestamp
   const formatReminderTime = (timestamp) => {
-    const date = new Date(timestamp * 1000);
+    const ts = timestamp != null ? Number(timestamp) : NaN;
+    const date = Number.isFinite(ts) ? new Date(ts * 1000) : null;
+    if (!date || Number.isNaN(date.getTime())) return "—";
     const now = new Date();
     const diffTime = date - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -123,9 +133,11 @@ const EmpLazinees = () => {
     return date.toLocaleDateString();
   };
 
-  // Format date for display (DD, MMM, YY)
+  // Format date for display (DD, MMM, YY) — safe for invalid timestamp
   const formatDate = (timestamp) => {
-    const date = new Date(timestamp * 1000);
+    const ts = timestamp != null ? Number(timestamp) : NaN;
+    const date = Number.isFinite(ts) ? new Date(ts * 1000) : null;
+    if (!date || Number.isNaN(date.getTime())) return "—";
     const day = date.getDate().toString().padStart(2, "0");
     const month = date.toLocaleDateString("en-US", { month: "short" });
     const year = date.getFullYear().toString().slice(-2);
@@ -174,7 +186,9 @@ const EmpLazinees = () => {
     endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
 
     return reminders.filter((reminder) => {
-      const reminderDate = new Date(reminder.entry_time * 1000);
+      const ts = reminder.entry_time ?? reminder.reminder_time;
+      const reminderDate = ts != null ? new Date(Number(ts) * 1000) : null;
+      if (!reminderDate || Number.isNaN(reminderDate.getTime())) return false;
       const reminderDateOnly = new Date(
         reminderDate.getFullYear(),
         reminderDate.getMonth(),
@@ -396,7 +410,9 @@ const EmpLazinees = () => {
                                   : "#4ade80",
                               }}
                             >
-                              {reminder.title}
+                              {typeof reminder.title === "string" && reminder.title.trim()
+                                ? reminder.title
+                                : "—"}
                             </span>
                             <span className="text-gray-500 text-[12px]">
                               {formatDate(reminder.reminder_time)}
@@ -404,7 +420,9 @@ const EmpLazinees = () => {
                           </div>
 
                           <div className="text-gray-600 text-[13px] line-clamp-2">
-                            {reminder.text || "No description"}
+                            {typeof reminder.text === "string" && reminder.text.trim()
+                              ? reminder.text
+                              : "No description"}
                           </div>
 
                           <div className="text-green-500 text-[12px] mt-1">

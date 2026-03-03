@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 import { FaTimes } from 'react-icons/fa';
 
 const PortalDrawer = (props) => {
-  const { open, closeDrawer, compo, direction = "right", title, widthSize = '45vw', customImg = false, image } = props;
+  const { open, closeDrawer, compo, direction = "right", title, widthSize = '45vw', customImg = false, image, zIndex } = props;
   const [isToastVisible, setIsToastVisible] = useState(false)
   
   // Track toast presence to avoid accidental drawer close while interacting with toasts
@@ -19,59 +19,9 @@ const PortalDrawer = (props) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Cleanup overlay elements when drawer closes
-  useEffect(() => {
-    if (!open) {
-      // Cleanup any leftover overlay elements from Material Tailwind Drawer
-      // Material Tailwind Drawer creates overlay elements with specific classes
-      const cleanupOverlays = () => {
-        // Check if any drawer is open
-        const openDrawers = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
-        const hasOpenDrawer = Array.from(openDrawers).some(drawer => {
-          const style = window.getComputedStyle(drawer);
-          return style.display !== 'none' && style.visibility !== 'hidden';
-        });
-
-        if (!hasOpenDrawer) {
-          // Remove any overlay/backdrop elements that might be left in the DOM
-          // Material Tailwind uses specific class patterns for overlays
-          const overlaySelectors = [
-            '[class*="overlay"]',
-            '[class*="backdrop"]',
-            '[class*="bg-black"]',
-            '[class*="bg-opacity"]',
-            'div[style*="position: fixed"][style*="inset"]'
-          ];
-
-          overlaySelectors.forEach(selector => {
-            try {
-              const elements = document.querySelectorAll(selector);
-              elements.forEach(element => {
-                // Check if element is an overlay (fixed position, full screen)
-                const style = window.getComputedStyle(element);
-                const isOverlay = style.position === 'fixed' && 
-                                 (style.top === '0px' || style.inset === '0px') &&
-                                 (style.backgroundColor.includes('black') || 
-                                  style.backgroundColor.includes('rgba(0') ||
-                                  element.classList.toString().includes('overlay') ||
-                                  element.classList.toString().includes('backdrop'));
-                
-                if (isOverlay && element.parentElement === document.body) {
-                  element.remove();
-                }
-              });
-            } catch (e) {
-              // Ignore selector errors
-            }
-          });
-        }
-      };
-
-      // Small delay to ensure Material Tailwind has finished its cleanup
-      const timeoutId = setTimeout(cleanupOverlays, 150);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [open]);
+  // No aggressive overlay cleanup on close - it was removing critical DOM nodes
+  // (e.g. app root or portal container) and causing a blank white page.
+  // The Drawer receives open={false} and should clean up its own overlay.
 
   const handleDrawerClose = (e) => {
     if (isToastVisible) {
@@ -79,13 +29,19 @@ const PortalDrawer = (props) => {
       e?.stopPropagation?.();
       return;
     }
-    closeDrawer();
+    closeDrawer?.();
   };
-  
-  // Only render drawer when open to prevent DOM pollution and overlay issues
-  if (!open) {
-    return null;
-  }
+
+  // Always render Drawer with open prop so it can properly remove overlay on close.
+  // Returning null when !open caused the overlay to stay (whitening the screen).
+  const drawerStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    ...(zIndex != null && { zIndex }),
+  };
 
   return ReactDOM.createPortal(
     <>
@@ -102,7 +58,7 @@ const PortalDrawer = (props) => {
       className="px-4 py-2 customDrwerScroll overflow-auto h-full max-w-[620px]"
       placement={direction}
       size={widthSize}
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      style={drawerStyle}
     >
       <div className="flex flex-col">
         <div className="flex items-center justify-between px-[0.10vw] pt-[1.1vw] flex-shrink-0">
@@ -114,7 +70,7 @@ const PortalDrawer = (props) => {
             </Typography>
           }
           <button
-            onClick={closeDrawer}
+            onClick={() => closeDrawer?.()}
             className="w-[20px] h-[20px] hover:text-red-500 flex justify-center items-center hover:rotate-180 transition-all duration-300 "
             title="Close"
           >
@@ -123,12 +79,12 @@ const PortalDrawer = (props) => {
         </div>
         <hr className='mb-2 flex-shrink-0' />
         <div className="flex-shrink-0 pb-0">
-          {compo}
+          {open ? compo : null}
         </div>
       </div>
     </Drawer>
     </>,
-    document.body // This specifies that the drawer should be rendered as a child of the <body> element.
+    document.body
   );
 };
 

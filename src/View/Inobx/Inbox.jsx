@@ -326,7 +326,7 @@ const Inbox = () => {
     // Apply local search filter if needed
     if (debouncedSearchTerm.trim() !== "") {
       filteredData = filteredData.filter(story =>
-        (story.emp_name || story.full_name || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+        (story.emp_name || story.full_name || story.initiator_name || story.name || story.user_name || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
     }
 
@@ -1051,7 +1051,7 @@ const Inbox = () => {
                         <div className="relative flex-shrink-0 ml-1">
                           <UserAvatar
                             src={story.emp_image}
-                            alt={story.emp_name || story.full_name}
+                            alt={story.emp_name || story.full_name || story.initiator_name || story.name || story.user_name || 'Employee'}
                             className={`h-11 w-11 object-cover rounded-full ring-2 ${isSelected ? 'ring-customBlue shadow-md' : 'ring-white shadow-sm'} transition-all`}
                             showUnreadIndicator={isUnread}
                           />
@@ -1061,7 +1061,7 @@ const Inbox = () => {
                             <h4 className={`font-semibold text-[14px] truncate ${
                               isSelected ? 'text-gray-900' : isUnread ? 'text-gray-900' : 'text-gray-700'
                             }`}>
-                              {story.emp_name || story.full_name || 'Unknown Employee'}
+                              {story.emp_name || story.full_name || story.initiator_name || story.name || story.user_name || 'Unknown Employee'}
                             </h4>
                             <span className={`text-[10px] whitespace-nowrap ml-2 font-medium ${
                               isSelected ? 'text-customBlue' : 'text-gray-400'
@@ -1131,14 +1131,14 @@ const Inbox = () => {
                   <div className="relative">
                     <UserAvatar
                       src={selectedStory?.emp_image}
-                      alt={selectedStory?.emp_name || selectedStory?.full_name}
+                      alt={selectedStory?.emp_name || selectedStory?.full_name || selectedStory?.initiator_name || selectedStory?.name || selectedStory?.user_name || 'Employee'}
                       className="h-10 w-10 md:h-12 md:w-12 object-cover rounded-full ring-2 ring-white shadow-md"
                       showOnlineIndicator={true}
                     />
                   </div>
                   <div>
                     <h3 className="text-gray-900 font-bold text-[16px]">
-                      {selectedStory?.emp_name || selectedStory?.full_name || 'Unknown Employee'}
+                      {selectedStory?.emp_name || selectedStory?.full_name || selectedStory?.initiator_name || selectedStory?.name || selectedStory?.user_name || 'Unknown Employee'}
                     </h3>
                     <div className="flex items-center gap-2 text-[12px]">
                       <span className="px-2 py-0.5 bg-gray-100/80 rounded text-gray-600 font-medium border border-gray-200/50">

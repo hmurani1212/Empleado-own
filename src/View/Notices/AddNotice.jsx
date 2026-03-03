@@ -94,7 +94,7 @@ const AddNotice = () => {
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('DEPARTMENT_NOTICES_EMP')} />
             </div>
             <CustomSelect
-              placeHolderTitle={addNoticeValue.branch_id ? "Select Department" : "Select branch first"}
+              placeHolderTitle={addNoticeValue.branch_id !== undefined && addNoticeValue.branch_id !== null && addNoticeValue.branch_id !== '' ? "Select Department" : "Select branch first"}
               value={addNoticeValue.deptt_id}
               options={(filterDepartmentsNotices || []).map((dept) => ({
                 value: dept.id === '0' ? 0 : dept.id,
@@ -104,7 +104,7 @@ const AddNotice = () => {
                 handleAddNoticeBranch('deptt_id', option)
               }
               customStyles={false}
-              disabled={!addNoticeValue.branch_id}
+              disabled={addNoticeValue.branch_id === undefined || addNoticeValue.branch_id === null || addNoticeValue.branch_id === ''}
             />
           </div>
         </div>

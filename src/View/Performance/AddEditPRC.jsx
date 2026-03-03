@@ -1,11 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { includeModuleData } from "../../services/__performanceServices";
-import { Checkbox, Typography } from "@material-tailwind/react";
+import { Checkbox, Typography, Button } from "@material-tailwind/react";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import SearchReactSelect from "../../Components/CustomSelect/SearchReactSelect";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import { FaXmark } from "react-icons/fa6";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
+import { getContentByLabel } from "../../services/getContentService";
+import { showToast } from "../../Components/Toaster/Toaster";
+import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
+import { FaInfoCircle } from "react-icons/fa";
 
 const AddEditPRC = (props) => {
   const {
@@ -23,6 +27,32 @@ const AddEditPRC = (props) => {
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+  const [contentDrawerOpen, setContentDrawerOpen] = useState(false);
+  const [contentData, setContentData] = useState(null);
+  const [contentLang, setContentLang] = useState("ENGLISH");
+  const [contentLoading, setContentLoading] = useState(false);
+
+  const openContentDrawer = async (contentLabel) => {
+    setContentDrawerOpen(true);
+    setContentLang("ENGLISH");
+    setContentLoading(true);
+    setContentData(null);
+    try {
+      const res = await getContentByLabel(contentLabel);
+      if (res?.STATUS === "SUCCESSFUL" && res?.DATA?.[0]?.contents?.length) {
+        setContentData(res.DATA[0]);
+      } else {
+        showToast("Content not available", "error");
+        setContentDrawerOpen(false);
+      }
+    } catch (err) {
+      showToast("Failed to load content", "error");
+      setContentDrawerOpen(false);
+    } finally {
+      setContentLoading(false);
+    }
+  };
   
   // Use ref to track if data has been fetched to prevent duplicate calls
   const hasFetchedDataRef = useRef(false);
@@ -51,6 +81,13 @@ const AddEditPRC = (props) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [PRCAddValue.show]);
+
+  // Run once when drawer opens (avoid infinite loop: store updates would change function refs and re-trigger)
+  useEffect(() => {
+    fetchingAllBranches();
+    Get_All_Employeefn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Sync local state with PRCAddValue when it changes
   useEffect(() => {
@@ -88,9 +125,12 @@ const AddEditPRC = (props) => {
     <div className="space-y-2">
       <div className="space-y-2">
         <div className="space-y-2">
-          <label className="text-[#698592] text-[12px]">
-            Name of Review Cycle
-          </label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-[#698592] text-[12px]">
+              Name of Review Cycle
+            </label>
+            <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("CYCLE_NAME_PERFORMANCE_EMP")} />
+          </div>
           <input
             className="w-full text-[#333333] text-[12px] rounded-md   py-[8px] px-[17px] border border-gray-500 outline-none"
             type="text"
@@ -102,7 +142,10 @@ const AddEditPRC = (props) => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-[#698592] text-[12px]">Start Date</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-[#698592] text-[12px]">Start Date</label>
+            <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("STARTDATE_PERFORMANCE_EMP")} />
+          </div>
           <input
             className="w-full text-[#333333] text-[12px] rounded-md   py-[8px] px-[17px] border border-gray-500 outline-none"
             type="date"
@@ -112,7 +155,10 @@ const AddEditPRC = (props) => {
           />
         </div>
         <div className="space-y-2">
-          <label className="text-[#698592] text-[12px]">End Date</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-[#698592] text-[12px]">End Date</label>
+            <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("ENDDATE_PERFORMANCE_EMP")} />
+          </div>
           <input
             className="w-full text-[#333333] text-[12px] rounded-md   py-[8px] px-[17px] border border-gray-500 outline-none"
             type="date"
@@ -143,7 +189,10 @@ const AddEditPRC = (props) => {
       </div>
       {PRCAddValue.modulesType.length > 0 && (
         <div className="space-y-2">
-          <label className="text-[#698592] text-[12px]">Result Ratio</label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-[#698592] text-[12px]">Result Ratio</label>
+            <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("RATIO_PERFORMANCE_EMP")} />
+          </div>
           <div className="flex justify-between items-center gap-3">
             {PRCAddValue.modulesType.includes(1) && (
               <div className="space-y-2">
@@ -453,7 +502,10 @@ const AddEditPRC = (props) => {
         </small>
       </div>
       <div className="space-y-2">
-        <label className="text-[#698592] text-[12px]">Closing Date</label>
+        <div className="flex items-center gap-1.5">
+          <label className="text-[#698592] text-[12px]">Closing Date</label>
+          <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("CLOSINGDATE_PERFORMANCE_EMP")} />
+        </div>
         <input
           className="w-full text-[#333333] text-[12px] rounded-md   py-[8px] px-[17px] border border-gray-500 outline-none"
           type="date"
@@ -499,6 +551,51 @@ const AddEditPRC = (props) => {
           loading={PRCAddValue.loading}
         />
       </div>
+
+      <PortalDrawer
+        open={contentDrawerOpen}
+        closeDrawer={() => setContentDrawerOpen(false)}
+        direction="right"
+        widthSize="45vw"
+        title={contentData?.contents?.find((c) => c.lang === contentLang)?.main_heading ?? ""}
+        compo={
+          <div className="flex flex-col gap-4">
+            {contentLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : contentData?.contents?.length ? (
+              <>
+                <div
+                  className="text-gray-800 text-sm font-Urbanist leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      contentData.contents.find((c) => c.lang === contentLang)?.content ??
+                      contentData.contents.find((c) => c.lang === "ENGLISH")?.content ??
+                      "",
+                  }}
+                />
+                <div className="flex gap-2 mt-4 border-t border-gray-200 pt-4">
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${contentLang === "ENGLISH" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"}`}
+                    onClick={() => setContentLang("ENGLISH")}
+                  >
+                    ENGLISH
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={`flex-1 font-Urbanist text-[12px] ${contentLang === "URDU" ? "bg-[#3DA5F4] text-white" : "bg-gray-200 text-gray-700"}`}
+                    onClick={() => setContentLang("URDU")}
+                  >
+                    URDU
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        }
+      />
     </div>
   );
 };

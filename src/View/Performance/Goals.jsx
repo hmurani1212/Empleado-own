@@ -195,10 +195,10 @@ const Goals = () => {
           </div>
           )}
 
-          {addGoalValue.show && (
-            <PortalDrawer
-              open={addGoalValue.show}
-              compo={
+          <PortalDrawer
+            open={addGoalValue.show}
+            compo={
+              addGoalValue.show ? (
                 <AddEditGoal
                   performance={goalsValue.performance}
                   handleSelectGoals={handleSelectGoals}
@@ -207,12 +207,12 @@ const Goals = () => {
                   handleNewGoal={handleNewGoal}
                   handleRemoveEmp={handleRemoveEmp}
                 />
-              }
-              title="Add Goal"
-              closeDrawer={toggleAddGoal}
-              widthSize={550}
-            />
-          )}
+              ) : null
+            }
+            title={addGoalValue.show ? "Add Goal" : ""}
+            closeDrawer={addGoalValue.show ? toggleAddGoal : () => {}}
+            widthSize={550}
+          />
         </div>
       )}
     </>

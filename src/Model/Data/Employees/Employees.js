@@ -72,7 +72,7 @@ const employeesApi = {
         const params = new URLSearchParams()
         params.append('branch_id', data.branch_id)
         if (data.get_all_departments) {
-            params.append('get_all_departments', '1')
+            params.append('get_all_departments', 'true')
         }
         return axiosInstancecoremodule.request({
             method: 'GET',

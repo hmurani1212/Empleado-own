@@ -319,7 +319,7 @@ const ListNotices = () => {
                                   : "bg-blue-50 text-blue-600 border border-blue-100"
                               }`}
                             >
-                              {ele.emp_name || "All Branches"}
+                              {ele.branch_name || ele.emp_name || "All Branches"}
                             </span>
                           </td>
 

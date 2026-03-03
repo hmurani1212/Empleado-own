@@ -63,8 +63,9 @@ const noticeViewModel = (set, get) => ({
         set({ departmentsLoading: true });
         try {
             let departments = [{ id: '0', name: 'All Departments' }];
-            if (branchId === '0' || branchId === 0 || !branchId) {
-                const response = await departmentsApi.get_all_Department(0);
+            // All Branches: same endpoint as specific branch, branch_id=0 and removePagination=true
+            if (branchId === '0' || branchId === 0 || branchId === undefined || branchId === null) {
+                const response = await departmentsApi.manageDepartments(0, 1, 10, true);
                 const data = response?.data;
                 if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
                     const deptList = data.DB_DATA?.departments || data.DB_DATA || [];
@@ -72,7 +73,7 @@ const noticeViewModel = (set, get) => ({
                     departments = [{ id: '0', name: 'All Departments' }, ...flatDepts];
                 }
             } else {
-                const response = await departmentsApi.manageDepartments(branchId);
+                const response = await departmentsApi.manageDepartments(branchId, 1, 10, true);
                 const data = response?.data;
                 if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
                     const branchDepts = data.DB_DATA?.departments || [];
@@ -143,8 +144,9 @@ const noticeViewModel = (set, get) => ({
         set({ departmentsLoading: true });
         try {
             let departments = [{ id: '0', name: 'All Departments' }];
-            if (branchId === '0' || branchId === 0 || !branchId) {
-                const response = await departmentsApi.get_all_Department(0);
+            // All Branches: same endpoint as specific branch, branch_id=0 and removePagination=true
+            if (branchId === '0' || branchId === 0 || branchId === undefined || branchId === null) {
+                const response = await departmentsApi.manageDepartments(0, 1, 10, true);
                 const data = response?.data;
                 if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
                     const deptList = data.DB_DATA?.departments || data.DB_DATA || [];
@@ -152,7 +154,7 @@ const noticeViewModel = (set, get) => ({
                     departments = [{ id: '0', name: 'All Departments' }, ...flatDepts];
                 }
             } else {
-                const response = await departmentsApi.manageDepartments(branchId);
+                const response = await departmentsApi.manageDepartments(branchId, 1, 10, true);
                 const data = response?.data;
                 if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
                     const branchDepts = data.DB_DATA?.departments || [];

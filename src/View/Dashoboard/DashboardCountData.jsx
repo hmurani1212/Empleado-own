@@ -216,7 +216,7 @@ const DashboardCountData = (props) => {
           }
             </div> */}
       </div>
-      <div className='relative flex-1 min-h-[200px] overflow-y-auto overflow-x-hidden customDrwerScroll text-[12px] rounded-2xl border border-slate-100 bg-gradient-to-b from-white/80 to-slate-50/40 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.8)]'>
+      <div className={`relative flex-1 min-h-[200px] overflow-y-auto customDrwerScroll text-[12px] rounded-2xl border border-slate-100 bg-gradient-to-b from-white/80 to-slate-50/40 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.8)] ${isLateComers ? 'overflow-x-auto' : 'overflow-x-hidden'}`}>
         {loading ? (
           <div className='flex justify-center items-center h-full'>
             <span className='text-[#3da5f4]'>Loading {isTodayAttendance ? 'attendance' : 'late comers'} data...</span>
@@ -354,7 +354,8 @@ const DashboardCountData = (props) => {
                 })}
               </div>
             ) : (
-              <table className="w-full text-sm border-collapse rounded-xl overflow-hidden" style={{ tableLayout: 'auto', minWidth: '100%' }}>
+              <div className={isLateComers ? 'overflow-x-auto w-full' : ''}>
+              <table className={`text-sm border-collapse rounded-xl overflow-hidden ${isLateComers ? 'min-w-max w-full' : 'w-full'}`} style={isLateComers ? { tableLayout: 'auto', minWidth: 'max-content' } : { tableLayout: 'auto', minWidth: '100%' }}>
           <thead className="sticky top-0 z-20">
             <tr className="bg-gradient-to-b from-slate-50 to-slate-100/80 border-b border-slate-100 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.08),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
               {(
@@ -536,6 +537,7 @@ const DashboardCountData = (props) => {
             })}
           </tbody>
           </table>
+              </div>
             )}
           </div>
         ) : (

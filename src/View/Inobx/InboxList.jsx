@@ -12,7 +12,7 @@ const InboxList = (props) => {
   } = props;
   
   // Add safety check for emp_name
-  const employeeName = data?.emp_name || data?.full_name || 'Unknown Employee';
+  const employeeName = data?.emp_name || data?.full_name || data?.initiator_name || data?.name || data?.user_name || 'Unknown Employee';
   const { bgColor } = titleNameAlpha(employeeName);
   const rgbaColor = hexToRGBA(bgColor, 0.3);
 
