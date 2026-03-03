@@ -47,7 +47,7 @@ const EmployeeStories = ({
           />
           <div>
             <h3 className="text-customBlack-100 font-semibold text-[18px]">
-              {selectedEmployee.emp_name || selectedEmployee.full_name || 'Unknown Employee'}
+              {selectedEmployee.emp_name || selectedEmployee.full_name || selectedEmployee.initiator_name || selectedEmployee.name || selectedEmployee.user_name || 'Unknown Employee'}
             </h3>
           </div>
         </div>

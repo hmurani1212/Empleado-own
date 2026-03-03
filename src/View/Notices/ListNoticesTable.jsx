@@ -91,7 +91,7 @@ const ListNoticesTable = () => {
                     color="blue-gray"
                     className="font-normal"
                 >
-                    {ele.emp_name ? ele.emp_name : "All Branches"}
+                    {ele.branch_name ?? ele.emp_name ?? "All Branches"}
                 </Typography>
             </td>
 

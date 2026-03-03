@@ -202,10 +202,10 @@ const Competency = () => {
           </div>
           )}
 
-          {addCompetencyValue.show && (
-            <PortalDrawer
-              open={addCompetencyValue.show}
-              compo={
+          <PortalDrawer
+            open={addCompetencyValue.show}
+            compo={
+              addCompetencyValue.show ? (
                 <AddCompetency
                   addCompetencyValue={addCompetencyValue}
                   performance={competencyValue.performance}
@@ -216,12 +216,12 @@ const Competency = () => {
                   handleSubmitAddCompetency={handleSubmitAddCompetency}
                   handleRemoveEmp={handleRemoveEmp}
                 />
-              }
-              title="Add Competency"
-              closeDrawer={handleToggleAddCompetency}
-              widthSize={600}
-            />
-          )}
+              ) : null
+            }
+            title={addCompetencyValue.show ? "Add Competency" : ""}
+            closeDrawer={addCompetencyValue.show ? handleToggleAddCompetency : () => {}}
+            widthSize={600}
+          />
         </div>
       )}
     </>

@@ -1,21 +1,33 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import useManageEmpSalary from '../../ViewModel/PayrollViewModel/ManageEmpSalaryServices'
 import CustomButton from '../../Components/CustomButton/CustomButton'
 import { Textarea, Typography } from '@material-tailwind/react'
 import CustomDialog from '../../Components/CustomDialog/CustomDialog'
 import CancelInc from './CancelInc'
 
+// Format unix timestamp (seconds) to "YYYY-MM-DD hh:mm am/pm"
+const formatCancelTime = (unixTimestamp) => {
+  if (unixTimestamp == null) return '—'
+  const date = new Date(Number(unixTimestamp) * 1000)
+  if (isNaN(date.getTime())) return '—'
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  const h = date.getHours()
+  const min = String(date.getMinutes()).padStart(2, '0')
+  const ampm = h >= 12 ? 'pm' : 'am'
+  const h12 = h % 12 || 12
+  return `${y}-${m}-${d} ${String(h12).padStart(2, '0')}:${min} ${ampm}`
+}
+
 const SalaryHistory = () => {
     const {historyDataSalary, historyDataDetails, handleDialogCancel, openDialogCancel, loading, handleChangeCancel, cancelIncValues, handleCancelInc} = useManageEmpSalary()
     const headHist = ['Increment', 'Salary', 'Effective From', 'Description', 'Cancel']
-    // console.log('historyDataDetails', historyDataDetails)
-    useEffect(() => {
-        console.log('historyDataSalary', historyDataSalary)
-    })
-    const [ids, setIds] = useState(null);
+    const [ids, setIds] = useState(null)
+
   return (
     <>
-    <div className='flex flex-col space-y-4'>
+    <div className='flex flex-col space-y-4 pt-6'>
         <div className='text-[12px]'>
             <table className='w-full border-collapse border border-slate-500'>
                 <thead>
@@ -106,37 +118,34 @@ const SalaryHistory = () => {
                                 </td>
 
                                 <td className={classes}>
-                                    <Typography
-                                    variant='small'
-                                    color='blue-gray'
-                                    className="font-normal cursor-pointer hover:-translate-y-1 hover:scale-110 hover:text-black-500 duration-300">
-                                        {ele.cancelled_by ? (
-                                            <div className='text-[12px]'>
-                                            <div>
-                                                <span className='text-red-500 text-[12px]'>Cancelled</span>
-                                            </div>
-                                            <div>View Detail</div>
-                                            <div>
-                                                <span className='font-semibold'>Cancelled by: </span>
-                                                <span>{ele.cancelled_by}</span>
-                                            </div>
-                                            <div>
-                                                <span className='font-semibold'>Time: </span>
-                                                <span>{ele.time}</span>
-                                            </div>
-                                            <div>
-                                                <span className='font-semibold'>Detail: </span>
-                                                <span>{ele.detail}</span>
-                                            </div>
-
-                                        </div>) : (
-
-                                        <div  onClick={() => {setIds(ele.id); handleDialogCancel(ele.id)}}>
-                                            <span>Cancel</span>
-                                        </div>) 
-                                        }
-                                        
-                                    </Typography>
+                                    {ele.status === 0 ? (
+                                        <div className='text-[12px] text-left align-top'>
+                                            <div className='text-red-500 font-semibold'>Cancelled</div>
+                                            {ele.cancelled_info && (
+                                                <div className='mt-2 space-y-1 text-gray-700'>
+                                                    <div>
+                                                        <span className='font-semibold'>Cancelled By: </span>
+                                                        <span>{ele.cancelled_info.cancelled_by_name ?? '—'}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className='font-semibold'>Time: </span>
+                                                        <span>{formatCancelTime(ele.cancelled_info.unix_timestamp)}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className='font-semibold'>Detail: </span>
+                                                        <span>{ele.cancelled_info.reason ?? '—'}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className='font-normal cursor-pointer hover:underline text-gray-700 hover:text-blue-600'
+                                            onClick={() => { setIds(ele.id); handleDialogCancel(ele.id) }}
+                                        >
+                                            Cancel
+                                        </div>
+                                    )}
                                 </td>
                             </tr>
                         )

@@ -1,11 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { X } from 'lucide-react'
 import useStore from '../../Store/store'
 import { toast } from 'react-toastify'
 
 const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
   const { addReminder, loading } = useStore()
-  
+  const isSubmittingRef = useRef(false)
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -72,23 +73,28 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
+    // Prevent duplicate submissions (e.g. double/triple click or strict mode)
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
+
+    try {
     // Basic validation with toaster
     if (!formData.title.trim()) {
       toast.error('Please enter a title')
       return
     }
-    
+
     if (!formData.description.trim()) {
       toast.error('Please enter a reminder description')
       return
     }
-    
+
     if (!formData.reminder) {
       toast.error('Please select a reminder time')
       return
     }
-    
+
     if (!formData.notificationMethods?.length) {
       toast.error('Please select at least one notification method')
       return
@@ -97,7 +103,7 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
     // Prepare API data
     const reminderTimestamp = getReminderTimestamp(formData.reminder)
     const notificationValues = getNotificationValues(formData.notificationMethods)
-    
+
     const apiData = {
       title: formData.title,
       text: formData.description,
@@ -106,17 +112,17 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
       ...notificationValues
     }
 
-    // Make API call
+    // Make API call (single call only; guard above prevents duplicates)
     const result = await addReminder(apiData)
-    
+
     if (result.success) {
       toast.success('Reminder added successfully!')
-      
+
       // Call the callback to add reminder to local state
       if (onReminderAdded && result.data) {
         onReminderAdded(result.data)
       }
-      
+
       // Reset form and close modal
       setFormData({
         title: '',
@@ -127,6 +133,9 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
       onClose()
     } else {
       toast.error(result.error || 'Failed to add reminder')
+    }
+    } finally {
+      isSubmittingRef.current = false
     }
   }
 
