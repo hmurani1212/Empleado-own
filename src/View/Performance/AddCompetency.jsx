@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import React, { useEffect, useState } from 'react'
+//import React, { useEffect, useState } from 'react'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import SearchReactSelect from '../../Components/CustomSelect/SearchReactSelect'
 import CustomButton from '../../Components/CustomButton/CustomButton'
@@ -21,7 +21,7 @@ const AddCompetency = (props) => {
     
     // Use the same hook as Create Performance Review Cycle
     const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, Get_All_Employeefn, Get_All_Employee } = useEmployees();
-    const { empBranches, fetchingAllBranches } = useEmployees();
+    //const { empBranches, fetchingAllBranches } = useEmployees();
 
     const [contentDrawerOpen, setContentDrawerOpen] = useState(false)
     const [contentData, setContentData] = useState(null)
