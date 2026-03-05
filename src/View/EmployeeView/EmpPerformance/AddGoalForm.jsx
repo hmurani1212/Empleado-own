@@ -240,12 +240,12 @@ const AddGoalForm = ({ onSubmit, onCancel, reviewCycles, selectedCycle, editData
           setErrors({});
           onSubmit(payload); // Call parent callback
         } else {
-          toast.error(response.data?.MESSAGE || 'Failed to create goal');
+          toast.error(response.data?.ERROR_DESCRIPTION || 'Failed to create goal');
         }
       }
     } catch (error) {
       console.error(`Error ${isEdit ? 'updating' : 'creating'} goal:`, error);
-      toast.error(error.response?.data?.MESSAGE || `Failed to ${isEdit ? 'update' : 'create'} goal. Please try again.`);
+      toast.error(error.response?.data?.ERROR_DESCRIPTION );
     } finally {
       setIsSubmitting(false);
     }

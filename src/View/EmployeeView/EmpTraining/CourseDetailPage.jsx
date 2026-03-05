@@ -41,6 +41,8 @@ const CourseDetailPage = () => {
 
   const [openEditor, setOpenEditor] = useState(false)
   const [editorData, setEditorData] = useState({})
+  const [openNotesViewer, setOpenNotesViewer] = useState(false)
+  const [notesData, setNotesData] = useState({ course_name: '', content: '' })
 
   const handleCompleteCourse = async () => {
     if (!course || !course.course_id) {
@@ -93,8 +95,11 @@ const CourseDetailPage = () => {
       }
 
       if (resource.resource_type === 'Notes') {
-        setEditorData({ content: resource.attachment })
-        setOpenEditor(true)
+        setNotesData({ 
+          course_name: course.course_name || 'Notes',
+          content: resource.attachment || ''
+        })
+        setOpenNotesViewer(true)
         return
       }
 
@@ -341,6 +346,25 @@ const CourseDetailPage = () => {
           title="Notes"
           footer={false}
           compo={<EditorData editorData={editorData} />}
+        />
+      )}
+
+      {openNotesViewer && (
+        <CustomDialog
+          openDialog={openNotesViewer}
+          size="xxl"
+          handleOpen={() => setOpenNotesViewer(false)}
+          title={notesData.course_name}
+          footer={false}
+          compo={
+            <div className='p-8'>
+              <div className='bg-gray-50 rounded-xl p-6 border border-gray-200'>
+                <Typography className='text-gray-800 whitespace-pre-wrap leading-relaxed font-poppins'>
+                  {notesData.content}
+                </Typography>
+              </div>
+            </div>
+          }
         />
       )}
 

@@ -5,12 +5,30 @@ const performanceViewModel = (set, get) => ({
 
     PRCData: [],
     PRCDataCopy: [],
+    PRCPaginationData: {
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+        limit: 10
+    },
     goalsData: [],
     next: '',
     // goalsData:[],
     goalsDataCopy: [],
+    goalsPaginationData: {
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+        limit: 10
+    },
     comptencyData: [],
     comptencyDataCopy: [],
+    competencyPaginationData: {
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+        limit: 10
+    },
     subGoalsData: [],
     subComptencyData: [],
 
@@ -38,20 +56,66 @@ const performanceViewModel = (set, get) => ({
     subCompetencyLoading: false,
     historyLoading: false,
 
-    gettingPRCData: async () => {
+    gettingPRCData: async (page = 1, limit = 10) => {
         set({ PRCLoading: true })
         try {
-            const response = await performanceApi.getPRC()
-            // console.log('response', response)
+            const response = await performanceApi.getPRC(page, limit)
             const responseData = response.data
-            if (response.status === 200) {
+            if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+                // Replace data (not append) - proper pagination behavior
                 set({ PRCData: responseData.DB_DATA })
                 set({ next: responseData.Next ?? '' });
                 set({ PRCDataCopy: responseData.DB_DATA })
+                
+                // Update pagination data - ensure it's always set, even if API doesn't return it
+                if (responseData.pagination) {
+                    set({
+                        PRCPaginationData: {
+                            currentPage: responseData.pagination.page || page,
+                            totalPages: responseData.pagination.pages || 1,
+                            total: responseData.pagination.total || 0,
+                            limit: responseData.pagination.limit || limit
+                        }
+                    })
+                } else {
+                    // Fallback: set pagination based on data length and current page
+                    // This ensures pagination state is always available
+                    set({
+                        PRCPaginationData: {
+                            currentPage: page,
+                            totalPages: responseData.DB_DATA && responseData.DB_DATA.length > 0 ? (responseData.Next ? page + 1 : page) : 1,
+                            total: responseData.DB_DATA?.length || 0,
+                            limit: limit
+                        }
+                    })
+                }
+            } else {
+                // Handle error case - set empty data and reset pagination
+                set({ PRCData: [] })
+                set({ PRCDataCopy: [] })
+                set({
+                    PRCPaginationData: {
+                        currentPage: 1,
+                        totalPages: 1,
+                        total: 0,
+                        limit: limit
+                    }
+                })
             }
         }
         catch (err) {
-            console.log(err)
+            console.error('Error fetching PRC data:', err)
+            // Handle error case - set empty data and reset pagination
+            set({ PRCData: [] })
+            set({ PRCDataCopy: [] })
+            set({
+                PRCPaginationData: {
+                    currentPage: 1,
+                    totalPages: 1,
+                    total: 0,
+                    limit: limit
+                }
+            })
         } finally {
             set({ PRCLoading: false })
         }
@@ -79,6 +143,33 @@ const performanceViewModel = (set, get) => ({
         }
 
     },
+
+    // PRC Pagination functions - matching employee list pattern
+    goToNextPRCPage: () => {
+        const paginationData = get().PRCPaginationData;
+        if (paginationData && paginationData.currentPage < paginationData.totalPages) {
+            // Use the same pattern as employee list - call gettingPRCData with next page
+            get().gettingPRCData(paginationData.currentPage + 1, paginationData.limit || 10);
+        }
+    },
+
+    goToPreviousPRCPage: () => {
+        const paginationData = get().PRCPaginationData;
+        if (paginationData && paginationData.currentPage > 1) {
+            // Use the same pattern as employee list - call gettingPRCData with previous page
+            get().gettingPRCData(paginationData.currentPage - 1, paginationData.limit || 10);
+        }
+    },
+
+    goToPRCPage: (pageNumber) => {
+        const paginationData = get().PRCPaginationData;
+        const targetPage = parseInt(pageNumber);
+        // Use the same pattern as employee list - validate and call gettingPRCData
+        if (paginationData && targetPage >= 1 && targetPage <= paginationData.totalPages) {
+            get().gettingPRCData(targetPage, paginationData.limit || 10);
+        }
+    },
+
     deleteSinglePRC: (id) => {
         set({ PRCData: get().PRCData?.filter((ele) => ele._id !== id) })
         set({ PRCDataCopy: get().PRCDataCopy?.filter((ele) => ele._id !== id) })
@@ -102,7 +193,9 @@ const performanceViewModel = (set, get) => ({
 
     searchingPRC: async (searchText) => {
         if (searchText.trim() === "") {
-            set({ PRCData: get().PRCDataCopy })
+            // Reset to first page when search is cleared - use the same pattern as employee list
+            const currentLimit = get().PRCPaginationData?.limit || 10;
+            get().gettingPRCData(1, currentLimit);
         } else {
             try {
                 const response = await performanceApi.searchingPRC(searchText)
@@ -111,40 +204,126 @@ const performanceViewModel = (set, get) => ({
                 if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
                     const dbData = responseData.DB_DATA
                     set({ PRCData: dbData })
+                    set({ PRCDataCopy: dbData })
+                    
+                    // Check if search response includes pagination data
+                    if (responseData.pagination) {
+                        set({
+                            PRCPaginationData: {
+                                currentPage: responseData.pagination.page || 1,
+                                totalPages: responseData.pagination.pages || 1,
+                                total: responseData.pagination.total || 0,
+                                limit: responseData.pagination.limit || get().PRCPaginationData?.limit || 10
+                            }
+                        })
+                    } else {
+                        // Reset pagination during search (search typically returns all results)
+                        set({
+                            PRCPaginationData: {
+                                currentPage: 1,
+                                totalPages: 1,
+                                total: Array.isArray(dbData) ? dbData.length : 0,
+                                limit: get().PRCPaginationData?.limit || 10
+                            }
+                        })
+                    }
                 } else {
                     set({ PRCData: [] })
+                    set({ PRCDataCopy: [] })
+                    set({
+                        PRCPaginationData: {
+                            currentPage: 1,
+                            totalPages: 1,
+                            total: 0,
+                            limit: get().PRCPaginationData?.limit || 10
+                        }
+                    })
                 }
             } catch (err) {
                 console.error('Search error:', err)
                 set({ PRCData: [] })
+                set({ PRCDataCopy: [] })
+                set({
+                    PRCPaginationData: {
+                        currentPage: 1,
+                        totalPages: 1,
+                        total: 0,
+                        limit: get().PRCPaginationData?.limit || 10
+                    }
+                })
                 // Don't show error toast for search, just log it
             }
         }
     },
 
-    gettingGoals: async (name, searchText = null) => {
+    gettingGoals: async (name, searchText = null, page = 1, limit = 10) => {
         set({ goalsLoading: true })
+        // Store current filter and search text for pagination
+        set({ goalsCurrentFilter: name, goalsCurrentSearchText: searchText })
         try {
             let response;
             if (searchText) {
                 // Use search API if search text is provided
-                response = await performanceApi.searchGoals(searchText)
+                response = await performanceApi.searchGoals(searchText, page, limit)
             } else {
                 // Use regular get goals API - pass name instead of id
-                response = await performanceApi.getGoals(name)
+                response = await performanceApi.getGoals(name, page, limit)
             }
-            // console.log('response gettingGoals', response)
             const responseData = response.data
-            // if(response.status === 200){
             if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+                // Replace data (not append) - proper pagination behavior
                 set({ goalsData: responseData.DB_DATA })
+                set({ goalsDataCopy: responseData.DB_DATA })
+                
+                // Update pagination data - ensure it's always set, even if API doesn't return it
+                if (responseData.pagination) {
+                    set({
+                        goalsPaginationData: {
+                            currentPage: responseData.pagination.page || page,
+                            totalPages: responseData.pagination.pages || 1,
+                            total: responseData.pagination.total || 0,
+                            limit: responseData.pagination.limit || limit
+                        }
+                    })
+                } else {
+                    // Fallback: set pagination based on data length and current page
+                    set({
+                        goalsPaginationData: {
+                            currentPage: page,
+                            totalPages: responseData.DB_DATA && responseData.DB_DATA.length > 0 ? (responseData.Next ? page + 1 : page) : 1,
+                            total: responseData.DB_DATA?.length || 0,
+                            limit: limit
+                        }
+                    })
+                }
+            } else {
+                // Handle error case - set empty data and reset pagination
+                set({ goalsData: [] })
+                set({ goalsDataCopy: [] })
+                set({
+                    goalsPaginationData: {
+                        currentPage: 1,
+                        totalPages: 1,
+                        total: 0,
+                        limit: limit
+                    }
+                })
             }
-
-
         }
         catch (err) {
+            console.error('Error fetching goals data:', err)
+            // Handle error case - set empty data and reset pagination
             set({ goalsData: [] })
-            const error = err.response.data.ERROR_DESCRIPTION
+            set({ goalsDataCopy: [] })
+            set({
+                goalsPaginationData: {
+                    currentPage: 1,
+                    totalPages: 1,
+                    total: 0,
+                    limit: limit
+                }
+            })
+            const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch goals'
             showToast(error, 'error')
         } finally {
             set({ goalsLoading: false })
@@ -231,6 +410,37 @@ const performanceViewModel = (set, get) => ({
         })
     },
 
+    // Store current filter/search state for pagination
+    goalsCurrentFilter: null,
+    goalsCurrentSearchText: null,
+
+    // Goals Pagination functions - matching employee list pattern
+    goToNextGoalsPage: () => {
+        const paginationData = get().goalsPaginationData;
+        if (paginationData && paginationData.currentPage < paginationData.totalPages) {
+            // Use stored filter and search text
+            get().gettingGoals(get().goalsCurrentFilter, get().goalsCurrentSearchText, paginationData.currentPage + 1, paginationData.limit || 10);
+        }
+    },
+
+    goToPreviousGoalsPage: () => {
+        const paginationData = get().goalsPaginationData;
+        if (paginationData && paginationData.currentPage > 1) {
+            // Use stored filter and search text
+            get().gettingGoals(get().goalsCurrentFilter, get().goalsCurrentSearchText, paginationData.currentPage - 1, paginationData.limit || 10);
+        }
+    },
+
+    goToGoalsPage: (pageNumber) => {
+        const paginationData = get().goalsPaginationData;
+        const targetPage = parseInt(pageNumber);
+        // Use the same pattern as employee list - validate and call gettingGoals
+        if (paginationData && targetPage >= 1 && targetPage <= paginationData.totalPages) {
+            // Use stored filter and search text
+            get().gettingGoals(get().goalsCurrentFilter, get().goalsCurrentSearchText, targetPage, paginationData.limit || 10);
+        }
+    },
+
 
     // gettingGoalsData:async()=>{
     //     try{
@@ -243,19 +453,66 @@ const performanceViewModel = (set, get) => ({
     //     }
     // },
 
-    gettingCompetency: async (reviewCycleId = null, searchText = null) => {
+    gettingCompetency: async (reviewCycleId = null, searchText = null, page = 1, limit = 10) => {
         set({ competencyLoading: true })
+        // Store current filter and search text for pagination
+        set({ competencyCurrentFilter: reviewCycleId, competencyCurrentSearchText: searchText })
         try {
-            const response = await performanceApi.getCompetency(reviewCycleId, searchText)
+            const response = await performanceApi.getCompetency(reviewCycleId, searchText, page, limit)
             const responseData = response.data
             if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+                // Replace data (not append) - proper pagination behavior
                 set({ comptencyData: responseData.DB_DATA })
                 set({ comptencyDataCopy: responseData.DB_DATA })
+                
+                // Update pagination data - ensure it's always set, even if API doesn't return it
+                if (responseData.pagination) {
+                    set({
+                        competencyPaginationData: {
+                            currentPage: responseData.pagination.page || page,
+                            totalPages: responseData.pagination.pages || 1,
+                            total: responseData.pagination.total || 0,
+                            limit: responseData.pagination.limit || limit
+                        }
+                    })
+                } else {
+                    // Fallback: set pagination based on data length and current page
+                    set({
+                        competencyPaginationData: {
+                            currentPage: page,
+                            totalPages: responseData.DB_DATA && responseData.DB_DATA.length > 0 ? (responseData.Next ? page + 1 : page) : 1,
+                            total: responseData.DB_DATA?.length || 0,
+                            limit: limit
+                        }
+                    })
+                }
+            } else {
+                // Handle error case - set empty data and reset pagination
+                set({ comptencyData: [] })
+                set({ comptencyDataCopy: [] })
+                set({
+                    competencyPaginationData: {
+                        currentPage: 1,
+                        totalPages: 1,
+                        total: 0,
+                        limit: limit
+                    }
+                })
             }
         }
         catch (err) {
+            console.error('Error fetching competency data:', err)
+            // Handle error case - set empty data and reset pagination
             set({ comptencyData: [] })
             set({ comptencyDataCopy: [] })
+            set({
+                competencyPaginationData: {
+                    currentPage: 1,
+                    totalPages: 1,
+                    total: 0,
+                    limit: limit
+                }
+            })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch competencies'
             showToast(error, 'error')
         } finally {
@@ -290,6 +547,37 @@ const performanceViewModel = (set, get) => ({
     addNewComptency: (data) => {
         set({ comptencyData: [...new Set([...get().comptencyData, data])] })
         set({ comptencyDataCopy: [...new Set([...get().comptencyDataCopy, data])] })
+    },
+
+    // Store current filter/search state for pagination
+    competencyCurrentFilter: null,
+    competencyCurrentSearchText: null,
+
+    // Competency Pagination functions - matching employee list pattern
+    goToNextCompetencyPage: () => {
+        const paginationData = get().competencyPaginationData;
+        if (paginationData && paginationData.currentPage < paginationData.totalPages) {
+            // Use stored filter and search text
+            get().gettingCompetency(get().competencyCurrentFilter, get().competencyCurrentSearchText, paginationData.currentPage + 1, paginationData.limit || 10);
+        }
+    },
+
+    goToPreviousCompetencyPage: () => {
+        const paginationData = get().competencyPaginationData;
+        if (paginationData && paginationData.currentPage > 1) {
+            // Use stored filter and search text
+            get().gettingCompetency(get().competencyCurrentFilter, get().competencyCurrentSearchText, paginationData.currentPage - 1, paginationData.limit || 10);
+        }
+    },
+
+    goToCompetencyPage: (pageNumber) => {
+        const paginationData = get().competencyPaginationData;
+        const targetPage = parseInt(pageNumber);
+        // Use the same pattern as employee list - validate and call gettingCompetency
+        if (paginationData && targetPage >= 1 && targetPage <= paginationData.totalPages) {
+            // Use stored filter and search text
+            get().gettingCompetency(get().competencyCurrentFilter, get().competencyCurrentSearchText, targetPage, paginationData.limit || 10);
+        }
     },
 
     updateCompetencySummaryByEmployee: (competencySummaryData) => {
@@ -520,29 +808,106 @@ const performanceViewModel = (set, get) => ({
     // New state for main history data
     mainHistoryData: [],
     mainHistoryDataCopy: [],
+    historyPaginationData: {
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+        limit: 10
+    },
 
     // Function to get main history data
-    gettingMainHistory: async () => {
+    gettingMainHistory: async (page = 1, limit = 10) => {
         set({ historyLoading: true })
         console.log('Fetching main history data')
         try {
-            const response = await performanceApi.getMainHistory()
+            const response = await performanceApi.getMainHistory(page, limit)
             const responseData = response.data
             console.log('Main history response:', responseData)
             if (responseData.STATUS === "SUCCESSFUL") {
+                // Replace data (not append) - proper pagination behavior
                 set({
                     mainHistoryData: responseData.DB_DATA,
                     mainHistoryDataCopy: responseData.DB_DATA
                 })
                 console.log('Main history data set successfully:', responseData.DB_DATA)
+                
+                // Update pagination data - ensure it's always set, even if API doesn't return it
+                if (responseData.pagination) {
+                    set({
+                        historyPaginationData: {
+                            currentPage: responseData.pagination.page || page,
+                            totalPages: responseData.pagination.pages || 1,
+                            total: responseData.pagination.total || 0,
+                            limit: responseData.pagination.limit || limit
+                        }
+                    })
+                } else {
+                    // Fallback: set pagination based on data length and current page
+                    set({
+                        historyPaginationData: {
+                            currentPage: page,
+                            totalPages: responseData.DB_DATA && responseData.DB_DATA.length > 0 ? (responseData.Next ? page + 1 : page) : 1,
+                            total: responseData.DB_DATA?.length || 0,
+                            limit: limit
+                        }
+                    })
+                }
+            } else {
+                // Handle error case - set empty data and reset pagination
+                set({ mainHistoryData: [] })
+                set({ mainHistoryDataCopy: [] })
+                set({
+                    historyPaginationData: {
+                        currentPage: 1,
+                        totalPages: 1,
+                        total: 0,
+                        limit: limit
+                    }
+                })
             }
         } catch (err) {
             console.error('Error fetching main history:', err)
+            // Handle error case - set empty data and reset pagination
             set({ mainHistoryData: [] })
+            set({ mainHistoryDataCopy: [] })
+            set({
+                historyPaginationData: {
+                    currentPage: 1,
+                    totalPages: 1,
+                    total: 0,
+                    limit: limit
+                }
+            })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch history data'
             showToast(error, 'error')
         } finally {
             set({ historyLoading: false })
+        }
+    },
+
+    // History Pagination functions - matching employee list pattern
+    goToNextHistoryPage: () => {
+        const paginationData = get().historyPaginationData;
+        if (paginationData && paginationData.currentPage < paginationData.totalPages) {
+            // Use the same pattern as employee list - call gettingMainHistory with next page
+            get().gettingMainHistory(paginationData.currentPage + 1, paginationData.limit || 10);
+        }
+    },
+
+    goToPreviousHistoryPage: () => {
+        const paginationData = get().historyPaginationData;
+        if (paginationData && paginationData.currentPage > 1) {
+            // Use the same pattern as employee list - call gettingMainHistory with previous page
+            get().gettingMainHistory(paginationData.currentPage - 1, paginationData.limit || 10);
+        }
+    },
+
+    goToHistoryPage: (pageNumber) => {
+        const paginationData = get().historyPaginationData;
+        const targetPage = parseInt(pageNumber);
+        // Use the same pattern as employee list - validate and call gettingMainHistory
+        if (paginationData && targetPage >= 1 && targetPage <= paginationData.totalPages) {
+            get().gettingMainHistory(targetPage, paginationData.limit || 10);
         }
     },
 

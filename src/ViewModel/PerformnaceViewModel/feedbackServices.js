@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import performanceApi from "../../Model/Data/Performance/Performance"
-import employeesApi from "../../Model/Data/Employees/Employees"
 import useStore from "../../Store/store"
 import { showToast } from "../../Components/Toaster/Toaster"
 import { useDebounce } from "../../services/__debounceServices"
@@ -15,7 +14,11 @@ const useFeedbackServices = () => {
     })
 
     const [showQuickFeedback, setShowQuickFeedback] = useState(false)
+    const [performanceList, setPerformanceList] = useState([])
+    const [selectedPerformance, setSelectedPerformance] = useState(null)
+    const [performanceLoading, setPerformanceLoading] = useState(false)
     const [employees, setEmployees] = useState([])
+    const [employeesLoading, setEmployeesLoading] = useState(false)
     const [selectedEmployee, setSelectedEmployee] = useState(null)
     const [feedbackText, setFeedbackText] = useState('')
     const [selectedThumb, setSelectedThumb] = useState(null)
@@ -46,44 +49,73 @@ const useFeedbackServices = () => {
     const toggleQuickFeedback = () => {
         setShowQuickFeedback(!showQuickFeedback)
         if (!showQuickFeedback) {
-            getEmployees()
+            getPerformanceList()
+            setSelectedPerformance(null)
+            setSelectedEmployee(null)
+            setEmployees([])
         }
     }
 
-    const getEmployees = async () => {
+    const getPerformanceList = async () => {
+        setPerformanceLoading(true)
         try {
-            const response = await employeesApi.gettingAllEmployees();
-
+            const response = await performanceApi.getPerformance()
             if (response?.data?.STATUS === 'SUCCESSFUL') {
-                const result = response?.data?.DB_DATA;
-                console.log('Employee API response:', result)
-                
-                // Handle different response structures
-                let employeesList = [];
-                if (Array.isArray(result)) {
-                    employeesList = result;
-                } else if (result?.employees && Array.isArray(result.employees)) {
-                    employeesList = result.employees;
-                } else if (result?.data && Array.isArray(result.data)) {
-                    employeesList = result.data;
-                }
-                
-                const employeeOptions = employeesList.map(emp => ({
-                    value: emp.id || emp.employee_id || emp._id,
-                    label: emp.name || emp.employee_name || emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown Employee'
+                const list = response?.data?.DB_DATA || []
+                const options = list.map((item) => ({
+                    value: item._id,
+                    label: item.name || ''
                 }))
-                
-                setEmployees(employeeOptions)
-                console.log('Mapped employee options:', employeeOptions)
+                setPerformanceList(options)
             } else {
-                console.error('API returned error:', response?.data)
+                showToast(response?.data?.ERROR_DESCRIPTION || 'Failed to fetch performances', 'error')
+                setPerformanceList([])
+            }
+        } catch (error) {
+            console.error('Error fetching performance list:', error)
+            showToast('Failed to fetch performance list', 'error')
+            setPerformanceList([])
+        } finally {
+            setPerformanceLoading(false)
+        }
+    }
+
+    const getEmployeesByPerformance = async (performanceName) => {
+        if (!performanceName) {
+            setEmployees([])
+            return
+        }
+        setEmployeesLoading(true)
+        setSelectedEmployee(null)
+        try {
+            const response = await performanceApi.getEmpGoal(performanceName)
+            if (response?.data?.STATUS === 'SUCCESSFUL') {
+                const list = response?.data?.DB_DATA || []
+                const options = list.map((emp) => ({
+                    value: emp.employee_id || emp._id,
+                    label: emp.employee_name || emp.name || 'Unknown'
+                }))
+                setEmployees(options)
+            } else {
                 showToast(response?.data?.ERROR_DESCRIPTION || 'Failed to fetch employees', 'error')
                 setEmployees([])
             }
         } catch (error) {
-            console.error('Error fetching employees:', error)
-            showToast('Failed to fetch employees', 'error')
+            console.error('Error fetching employees by performance:', error)
+            showToast('Failed to fetch employees for this performance', 'error')
             setEmployees([])
+        } finally {
+            setEmployeesLoading(false)
+        }
+    }
+
+    const handlePerformanceSelect = (selectedOption) => {
+        setSelectedPerformance(selectedOption)
+        if (selectedOption?.label) {
+            getEmployeesByPerformance(selectedOption.label)
+        } else {
+            setEmployees([])
+            setSelectedEmployee(null)
         }
     }
 
@@ -96,6 +128,10 @@ const useFeedbackServices = () => {
     }
 
     const handleSubmitFeedback = async () => {
+        if (!selectedPerformance) {
+            showToast('Please select a performance', 'error')
+            return
+        }
         if (!selectedEmployee) {
             showToast('Please select an employee', 'error')
             return
@@ -112,6 +148,8 @@ const useFeedbackServices = () => {
         setIsSubmitting(true)
         try {
             const payload = {
+                performance_id: selectedPerformance.value,
+                performance_name: selectedPerformance.label,
                 employee_id: selectedEmployee.value,
                 employee_name: selectedEmployee.label,
                 comment: feedbackText.trim(),
@@ -121,12 +159,12 @@ const useFeedbackServices = () => {
             const response = await performanceApi.createOngoingFeedback(payload)
             if (response.data.STATUS === "SUCCESSFUL") {
                 showToast('Feedback submitted successfully', 'success')
-                // Reset form
+                setSelectedPerformance(null)
                 setSelectedEmployee(null)
+                setEmployees([])
                 setFeedbackText('')
                 setSelectedThumb(null)
                 setShowQuickFeedback(false)
-                // Refresh feedback data
                 gettingFeedback()
             } else {
                 showToast(response.data?.MESSAGE || 'Failed to submit feedback', 'error')
@@ -141,7 +179,9 @@ const useFeedbackServices = () => {
     }
 
     const handleCancelFeedback = () => {
+        setSelectedPerformance(null)
         setSelectedEmployee(null)
+        setEmployees([])
         setFeedbackText('')
         setSelectedThumb(null)
         setShowQuickFeedback(false)
@@ -188,7 +228,12 @@ const useFeedbackServices = () => {
         getFeedbackColor,
         showQuickFeedback,
         toggleQuickFeedback,
+        performanceList,
+        selectedPerformance,
+        handlePerformanceSelect,
+        performanceLoading,
         employees,
+        employeesLoading,
         selectedEmployee,
         handleEmployeeSelect,
         feedbackText,

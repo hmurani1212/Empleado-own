@@ -18,6 +18,10 @@ const useCometencyServices = ()=>{
     const deleteSingleCompetency = useStore((state)=> state.deleteSingleCompetency)
     const competencyLoading = useStore((state) => state.competencyLoading)
     const subCompetencyLoading = useStore((state) => state.subCompetencyLoading)
+    const competencyPaginationData = useStore((state) => state.competencyPaginationData)
+    const goToNextCompetencyPage = useStore((state) => state.goToNextCompetencyPage)
+    const goToPreviousCompetencyPage = useStore((state) => state.goToPreviousCompetencyPage)
+    const goToCompetencyPage = useStore((state) => state.goToCompetencyPage)
 
     const { getEmployeesByDeptId } = useDepartments();
     const navigate = useNavigate()
@@ -64,8 +68,8 @@ const useCometencyServices = ()=>{
                     performance:responseData.DB_DATA,
                     performance_id:{value: null, label: 'All'} // Set to "All" initially
                 }))
-                // Load all competencies initially (pass null)
-                gettingCompetency(null)
+                // Load all competencies initially (pass null) - start with page 1
+                gettingCompetency(null, null, 1, 10)
             }
         } catch (error) {
             console.log(error)
@@ -80,7 +84,8 @@ const useCometencyServices = ()=>{
             }))
             // If "All" is selected (value is null), pass null to get all competencies
             // Otherwise, pass the selected performance review ID
-            gettingCompetency(select.value, competencyValue.searchText)
+            // Reset to page 1 when filter changes
+            gettingCompetency(select.value, competencyValue.searchText, 1, 10)
         }
     }
 
@@ -89,8 +94,8 @@ const useCometencyServices = ()=>{
             ...prevState,
             searchText: searchText
         }))
-        // Search with current performance_id and new search text
-        gettingCompetency(competencyValue.performance_id?.value, searchText)
+        // Search with current performance_id and new search text - reset to page 1 on search
+        gettingCompetency(competencyValue.performance_id?.value, searchText, 1, 10)
     }
 
 
@@ -540,8 +545,11 @@ const useCometencyServices = ()=>{
         confirmDeleteCompetency,
         updateCompetencySummaryByEmployee,
         competencyLoading,
-        subCompetencyLoading
-        
+        subCompetencyLoading,
+        competencyPaginationData,
+        goToNextCompetencyPage,
+        goToPreviousCompetencyPage,
+        goToCompetencyPage
     }
 }
 

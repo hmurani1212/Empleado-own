@@ -569,28 +569,45 @@ const AddNewEmployee = () => {
                     customStyles={{
                       control: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the control (input box)
+                        fontSize: "12px", // Font size for the control (input box)
+                        minHeight: "38px",
                       }),
                       singleValue: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the selected value
+                        fontSize: "12px", // Font size for the selected value
+                        color: "#474747",
                       }),
                       placeholder: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the placeholder text
+                        fontSize: "12px", // Font size for the placeholder text
+                        color: "#698592",
                       }),
-                      option: (base) => ({
+                      option: (base, state) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for each option in the dropdown
-                        padding: "1px 3px", // Reduce padding for smaller options
+                        fontSize: "14px", // Font size for each option in the dropdown
+                        padding: "10px 12px", // Proper padding for readable options
+                        backgroundColor: state.isSelected 
+                          ? "#f3f4f6" 
+                          : state.isFocused 
+                          ? "#f9fafb" 
+                          : base.backgroundColor,
+                        color: state.isSelected ? "#111827" : "#495057",
+                        cursor: "pointer",
+                        ":active": {
+                          backgroundColor: "#e5e7eb",
+                        },
                       }),
                       menu: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the dropdown menu
+                        fontSize: "14px", // Font size for the dropdown menu
+                        zIndex: 9999,
+                        boxShadow: "0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)",
                       }),
                       menuList: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the menu list
+                        fontSize: "14px", // Font size for the menu list
+                        maxHeight: "300px",
+                        padding: "4px 0",
                       }),
                     }}
                   />
@@ -618,28 +635,45 @@ const AddNewEmployee = () => {
                         customStyles={{
                           control: (base) => ({
                             ...base,
-                            fontSize: "0.175rem", // Font size for the control (input box)
+                            fontSize: "12px", // Font size for the control (input box)
+                            minHeight: "38px",
                           }),
                           singleValue: (base) => ({
                             ...base,
-                            fontSize: "0.175rem", // Font size for the selected value
+                            fontSize: "12px", // Font size for the selected value
+                            color: "#474747",
                           }),
                           placeholder: (base) => ({
                             ...base,
-                            fontSize: "0.175rem", // Font size for the placeholder text
+                            fontSize: "12px", // Font size for the placeholder text
+                            color: "#698592",
                           }),
-                          option: (base) => ({
+                          option: (base, state) => ({
                             ...base,
-                            fontSize: "0.14rem", // Font size for each option in the dropdown
-                            padding: "1px 3px", // Reduce padding for smaller options
+                            fontSize: "14px", // Font size for each option in the dropdown
+                            padding: "10px 12px", // Proper padding for readable options
+                            backgroundColor: state.isSelected 
+                              ? "#f3f4f6" 
+                              : state.isFocused 
+                              ? "#f9fafb" 
+                              : base.backgroundColor,
+                            color: state.isSelected ? "#111827" : "#495057",
+                            cursor: "pointer",
+                            ":active": {
+                              backgroundColor: "#e5e7eb",
+                            },
                           }),
                           menu: (base) => ({
                             ...base,
-                            fontSize: "0.14rem", // Font size for the dropdown menu
+                            fontSize: "14px", // Font size for the dropdown menu
+                            zIndex: 9999,
+                            boxShadow: "0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)",
                           }),
                           menuList: (base) => ({
                             ...base,
-                            fontSize: "0.14rem", // Font size for the menu list
+                            fontSize: "14px", // Font size for the menu list
+                            maxHeight: "300px",
+                            padding: "4px 0",
                           }),
                         }}
                       />
@@ -741,28 +775,45 @@ const AddNewEmployee = () => {
                     customStyles={{
                       control: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the control (input box)
+                        fontSize: "12px",
+                        minHeight: "38px",
                       }),
                       singleValue: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the selected value
+                        fontSize: "12px",
+                        color: "#474747",
                       }),
                       placeholder: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the placeholder text
+                        fontSize: "12px",
+                        color: "#698592",
                       }),
-                      option: (base) => ({
+                      option: (base, state) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for each option in the dropdown
-                        padding: "1px 3px", // Reduce padding for smaller options
+                        fontSize: "14px",
+                        padding: "10px 12px",
+                        backgroundColor: state.isSelected 
+                          ? "#f3f4f6" 
+                          : state.isFocused 
+                          ? "#f9fafb" 
+                          : base.backgroundColor,
+                        color: state.isSelected ? "#111827" : "#495057",
+                        cursor: "pointer",
+                        ":active": {
+                          backgroundColor: "#e5e7eb",
+                        },
                       }),
                       menu: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the dropdown menu
+                        fontSize: "14px",
+                        zIndex: 9999,
+                        boxShadow: "0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)",
                       }),
                       menuList: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the menu list
+                        fontSize: "14px",
+                        maxHeight: "300px",
+                        padding: "4px 0",
                       }),
                     }}
                   />
@@ -808,28 +859,45 @@ const AddNewEmployee = () => {
                     customStyles={{
                       control: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the control (input box)
+                        fontSize: "12px",
+                        minHeight: "38px",
                       }),
                       singleValue: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the selected value
+                        fontSize: "12px",
+                        color: "#474747",
                       }),
                       placeholder: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the placeholder text
+                        fontSize: "12px",
+                        color: "#698592",
                       }),
-                      option: (base) => ({
+                      option: (base, state) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for each option in the dropdown
-                        padding: "1px 3px", // Reduce padding for smaller options
+                        fontSize: "14px",
+                        padding: "10px 12px",
+                        backgroundColor: state.isSelected 
+                          ? "#f3f4f6" 
+                          : state.isFocused 
+                          ? "#f9fafb" 
+                          : base.backgroundColor,
+                        color: state.isSelected ? "#111827" : "#495057",
+                        cursor: "pointer",
+                        ":active": {
+                          backgroundColor: "#e5e7eb",
+                        },
                       }),
                       menu: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the dropdown menu
+                        fontSize: "14px",
+                        zIndex: 9999,
+                        boxShadow: "0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)",
                       }),
                       menuList: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the menu list
+                        fontSize: "14px",
+                        maxHeight: "300px",
+                        padding: "4px 0",
                       }),
                     }}
                   />
@@ -859,28 +927,45 @@ const AddNewEmployee = () => {
                     customStyles={{
                       control: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the control (input box)
+                        fontSize: "12px",
+                        minHeight: "38px",
                       }),
                       singleValue: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the selected value
+                        fontSize: "12px",
+                        color: "#474747",
                       }),
                       placeholder: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the placeholder text
+                        fontSize: "12px",
+                        color: "#698592",
                       }),
-                      option: (base) => ({
+                      option: (base, state) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for each option in the dropdown
-                        padding: "1px 3px", // Reduce padding for smaller options
+                        fontSize: "14px",
+                        padding: "10px 12px",
+                        backgroundColor: state.isSelected 
+                          ? "#f3f4f6" 
+                          : state.isFocused 
+                          ? "#f9fafb" 
+                          : base.backgroundColor,
+                        color: state.isSelected ? "#111827" : "#495057",
+                        cursor: "pointer",
+                        ":active": {
+                          backgroundColor: "#e5e7eb",
+                        },
                       }),
                       menu: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the dropdown menu
+                        fontSize: "14px",
+                        zIndex: 9999,
+                        boxShadow: "0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)",
                       }),
                       menuList: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the menu list
+                        fontSize: "14px",
+                        maxHeight: "300px",
+                        padding: "4px 0",
                       }),
                     }}
                   />
@@ -906,28 +991,45 @@ const AddNewEmployee = () => {
                     customStyles={{
                       control: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the control (input box)
+                        fontSize: "12px",
+                        minHeight: "38px",
                       }),
                       singleValue: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the selected value
+                        fontSize: "12px",
+                        color: "#474747",
                       }),
                       placeholder: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the placeholder text
+                        fontSize: "12px",
+                        color: "#698592",
                       }),
-                      option: (base) => ({
+                      option: (base, state) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for each option in the dropdown
-                        padding: "1px 3px", // Reduce padding for smaller options
+                        fontSize: "14px",
+                        padding: "10px 12px",
+                        backgroundColor: state.isSelected 
+                          ? "#f3f4f6" 
+                          : state.isFocused 
+                          ? "#f9fafb" 
+                          : base.backgroundColor,
+                        color: state.isSelected ? "#111827" : "#495057",
+                        cursor: "pointer",
+                        ":active": {
+                          backgroundColor: "#e5e7eb",
+                        },
                       }),
                       menu: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the dropdown menu
+                        fontSize: "14px",
+                        zIndex: 9999,
+                        boxShadow: "0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)",
                       }),
                       menuList: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the menu list
+                        fontSize: "14px",
+                        maxHeight: "300px",
+                        padding: "4px 0",
                       }),
                     }}
                   />
@@ -953,28 +1055,45 @@ const AddNewEmployee = () => {
                     customStyles={{
                       control: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the control (input box)
+                        fontSize: "12px",
+                        minHeight: "38px",
                       }),
                       singleValue: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the selected value
+                        fontSize: "12px",
+                        color: "#474747",
                       }),
                       placeholder: (base) => ({
                         ...base,
-                        fontSize: "0.175rem", // Font size for the placeholder text
+                        fontSize: "12px",
+                        color: "#698592",
                       }),
-                      option: (base) => ({
+                      option: (base, state) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for each option in the dropdown
-                        padding: "1px 3px", // Reduce padding for smaller options
+                        fontSize: "14px",
+                        padding: "10px 12px",
+                        backgroundColor: state.isSelected 
+                          ? "#f3f4f6" 
+                          : state.isFocused 
+                          ? "#f9fafb" 
+                          : base.backgroundColor,
+                        color: state.isSelected ? "#111827" : "#495057",
+                        cursor: "pointer",
+                        ":active": {
+                          backgroundColor: "#e5e7eb",
+                        },
                       }),
                       menu: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the dropdown menu
+                        fontSize: "14px",
+                        zIndex: 9999,
+                        boxShadow: "0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)",
                       }),
                       menuList: (base) => ({
                         ...base,
-                        fontSize: "0.14rem", // Font size for the menu list
+                        fontSize: "14px",
+                        maxHeight: "300px",
+                        padding: "4px 0",
                       }),
                     }}
                   />

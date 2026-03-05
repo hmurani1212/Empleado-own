@@ -200,12 +200,8 @@ const EmployeeSubFeed = ({
                         </Typography>
                       </div>
 
-                      <Typography className="font-medium text-[12px] font-Urbanist text-[#474747]">
-                        {getFeedbackText(feedback.thumb)}
-                      </Typography>
-
                       <Typography className="font-normal text-[12px] font-Urbanist text-[#474747]">
-                        {feedback.comment}
+                        <span className="font-bold underline">Comment:</span> {feedback.comment}
                       </Typography>
                     </div>
                   </div>
@@ -272,12 +268,8 @@ const EmployeeSubFeed = ({
                         </Typography>
                       </div>
 
-                      <Typography className="font-medium text-[12px] text-[#474747] font-Urbanist">
-                        {getFeedbackText(feedback.thumb)}
-                      </Typography>
-
                       <Typography className="font-normal text-[12px] text-[#474747] font-Urbanist">
-                        {feedback.comment}
+                        <span className="font-bold underline">Comment:</span> {feedback.comment}
                       </Typography>
                     </div>
                   </div>

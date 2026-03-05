@@ -283,6 +283,7 @@ const EmployeeGoals = () => {
     "Status",
     "Actions",
     "Rating",
+    "Score",
   ];
 
   return (
@@ -394,18 +395,16 @@ const EmployeeGoals = () => {
                       <td className="p-4">
                         <div className="text-sm text-gray-600 font-poppins max-w-xs mx-auto">
                           {isDescriptionLong(goal.descriptions) ? (
-                            <div className="flex flex-col gap-1">
-                              <Typography className="text-sm text-gray-600 font-poppins">
-                                {truncateDescription(goal.descriptions)}...
-                              </Typography>
+                            <Typography className="text-sm text-gray-600 font-poppins">
+                              {truncateDescription(goal.descriptions)}{' '}
                               <button
                                 type="button"
                                 onClick={() => handleOpenDescriptionModal(goal)}
-                                className="text-blue-600 hover:text-blue-800 text-xs font-medium text-left underline"
+                                className="text-blue-600 hover:text-blue-800 font-medium underline"
                               >
                                 read more
                               </button>
-                            </div>
+                            </Typography>
                           ) : (
                             <Typography className="text-sm text-gray-600 font-poppins">
                               {goal.descriptions || '—'}
@@ -483,6 +482,11 @@ const EmployeeGoals = () => {
                         <div className="flex items-center justify-center gap-0.5">
                           {renderStars(goal.rating, goal)}
                         </div>
+                      </td>
+                      <td className="p-4">
+                        <Typography className="text-sm font-normal text-gray-600 font-poppins">
+                          {goal.score !== undefined && goal.score !== null ? goal.score : 0}
+                        </Typography>
                       </td>
                     </motion.tr>
                   ))}

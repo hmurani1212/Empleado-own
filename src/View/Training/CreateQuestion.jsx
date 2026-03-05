@@ -155,6 +155,9 @@ const CreateQuestion = ({ courseId, courseName, closeDrawer }) => {
         console.log('Questions generated successfully:', response.DB_DATA)
         
         const dbData = response.DB_DATA
+        // Get total questions generated from response (more accurate)
+        const totalQuestionsGenerated = dbData?.total_questions_generated || 0
+        let questionsAlreadySaved = false
         const questionsToSave = []
         
         // Check if we have results with questions array
@@ -162,15 +165,21 @@ const CreateQuestion = ({ courseId, courseName, closeDrawer }) => {
           dbData.results.forEach((result) => {
             if (result.questions && Array.isArray(result.questions)) {
               result.questions.forEach((question) => {
-                questionsToSave.push({
-                  course_id: courseId,
-                  question: question.question || question.question_text || '',
-                  question_type: questionType === 'input' ? 'short_answer' : questionType,
-                  options: question.options || [],
-                  correct_answer: question.correct_answer || '',
-                  points: question.points || 1,
-                  resource_id: result.resource_id || question.resource_id
-                })
+                // Check if question already has an _id (meaning it's already saved by the backend)
+                if (question._id) {
+                  questionsAlreadySaved = true
+                } else {
+                  // Only add to save list if question doesn't have an ID
+                  questionsToSave.push({
+                    course_id: courseId,
+                    question: question.question || question.question_text || '',
+                    question_type: questionType === 'input' ? 'short_answer' : questionType,
+                    options: question.options || [],
+                    correct_answer: question.correct_answer || '',
+                    points: question.points || 1,
+                    resource_id: result.resource_id || question.resource_id
+                  })
+                }
               })
             }
           })
@@ -190,33 +199,49 @@ const CreateQuestion = ({ courseId, courseName, closeDrawer }) => {
               }
             }
             
-            questionsToSave.push({
-              course_id: courseId,
-              question: questionText.trim(),
-              question_type: questionType === 'input' ? 'short_answer' : questionType,
-              options: [],
-              correct_answer: '',
-              points: 1,
-              resource_id: resourceId
-            })
+            // Only add to save list if questions weren't already saved
+            if (!questionsAlreadySaved) {
+              questionsToSave.push({
+                course_id: courseId,
+                question: questionText.trim(),
+                question_type: questionType === 'input' ? 'short_answer' : questionType,
+                options: [],
+                correct_answer: '',
+                points: 1,
+                resource_id: resourceId
+              })
+            }
           })
         }
         
-        // Save all questions to question bank
-        if (questionsToSave.length > 0) {
+        // If questions are already saved by the backend (have _id), show success message
+        if (questionsAlreadySaved) {
+          showToast(`Successfully generated and saved ${totalQuestionsGenerated} questions!`, 'success')
+        } else if (questionsToSave.length > 0) {
+          // Only try to save if questions don't have IDs (backward compatibility)
           try {
             const saveResponse = await saveQuestions({ questions: questionsToSave })
             if (saveResponse && saveResponse.STATUS === 'SUCCESSFUL') {
               showToast(`Successfully generated and saved ${questionsToSave.length} questions!`, 'success')
             } else {
-              showToast('Questions generated but failed to save some questions', 'warning')
+              showToast(`Questions generated but failed to save some questions`, 'warning')
             }
           } catch (saveError) {
             console.error('Error saving questions:', saveError)
-            showToast('Questions generated but failed to save', 'warning')
+            // If save fails but questions were generated, still show success for generation
+            if (totalQuestionsGenerated > 0) {
+              showToast(`Successfully generated ${totalQuestionsGenerated} questions!`, 'success')
+            } else {
+              showToast('Questions generated but failed to save', 'warning')
+            }
           }
         } else {
-          showToast('Questions generated successfully!', 'success')
+          // Fallback: show success if questions were generated
+          if (totalQuestionsGenerated > 0) {
+            showToast(`Successfully generated ${totalQuestionsGenerated} questions!`, 'success')
+          } else {
+            showToast('Questions generated successfully!', 'success')
+          }
         }
         
         // Close drawer on success

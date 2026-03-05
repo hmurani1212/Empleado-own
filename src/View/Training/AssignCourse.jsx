@@ -47,27 +47,6 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
     setSelectedEmployees([]) // Clear employee selection
   }
 
-  // Handle employee selection (multi-select)
-  const handleEmployeeChange = (selectedOptions) => {
-    // With isMulti={true}, react-select passes:
-    // - An array when multiple items are selected
-    // - An empty array [] when all items are cleared
-    // - null when cleared (if isClearable is true)
-    
-    // Ensure it's always an array
-    let selected = []
-    if (selectedOptions === null || selectedOptions === undefined) {
-      selected = []
-    } else if (Array.isArray(selectedOptions)) {
-      selected = selectedOptions
-    } else {
-      // Single object (shouldn't happen with isMulti, but handle it)
-      selected = [selectedOptions]
-    }
-    
-    setSelectedEmployees(selected)
-  }
-
   // Create branch options with "All Branches" option
   const branchOptions = [
     { value: 0, label: 'All Branches' },
@@ -94,29 +73,29 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
     }))
   ]
 
-  // Build employee options: when All Branch + All Department, use full employee list; otherwise from departments API
-  const employeeOptions = (() => {
+  // Build base employee list: when All Branch + All Department, use full employee list; otherwise from departments API
+  const baseEmployeeList = (() => {
     if (!selectedDepartment || selectedDepartment.value === undefined || selectedDepartment.value === null) {
       return []
     }
     const branchValue = selectedBranch?.value === 0 || selectedBranch?.value === '0' ? 0 : selectedBranch?.value
     const deptValue = selectedDepartment.value === 0 || selectedDepartment.value === '0' ? 0 : Number(selectedDepartment.value) || selectedDepartment.value
 
+    let baseEmployees = []
+
     // All Branches + All Departments: show all employees from Get_All_Employee
     if (branchValue === 0 && deptValue === 0) {
-      return Array.isArray(Get_All_Employee)
+      baseEmployees = Array.isArray(Get_All_Employee)
         ? Get_All_Employee.map((emp) => ({
             value: emp.id || emp.oneid || emp.emp_id,
             label: emp.name || 'N/A',
             id: emp.id || emp.oneid || emp.emp_id
           }))
         : []
-    }
-
-    if (deptValue === 0) {
+    } else if (deptValue === 0) {
       // All Departments (but specific branch): flatten employees from departmentsList and dedupe
       const seen = new Set()
-      return departmentsList
+      baseEmployees = departmentsList
         .flatMap((dept) => (dept.employees || []))
         .filter((emp) => {
           const id = emp.id
@@ -129,19 +108,56 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
           label: emp.name || 'N/A',
           id: emp.id
         }))
+    } else {
+      // Specific department: use that department's employees array
+      const department = departmentsList.find(
+        (d) => (d.id || d.dept_id) === deptValue || Number(d.id || d.dept_id) === deptValue
+      )
+      const employees = department?.employees || []
+      baseEmployees = employees.map((emp) => ({
+        value: emp.id,
+        label: emp.name || 'N/A',
+        id: emp.id
+      }))
     }
 
-    // Specific department: use that department's employees array
-    const department = departmentsList.find(
-      (d) => (d.id || d.dept_id) === deptValue || Number(d.id || d.dept_id) === deptValue
-    )
-    const employees = department?.employees || []
-    return employees.map((emp) => ({
-      value: emp.id,
-      label: emp.name || 'N/A',
-      id: emp.id
-    }))
+    return baseEmployees
   })()
+
+  // Build employee options with "All Employees" option at the beginning
+  const employeeOptions = [
+    { value: 0, label: 'All Employees' },
+    ...baseEmployeeList
+  ]
+
+  // Handle employee selection (multi-select)
+  const handleEmployeeChange = (selectedOptions) => {
+    // With isMulti={true}, react-select passes:
+    // - An array when multiple items are selected
+    // - An empty array [] when all items are cleared
+    // - null when cleared (if isClearable is true)
+    
+    // Ensure it's always an array
+    let selected = []
+    if (selectedOptions === null || selectedOptions === undefined) {
+      selected = []
+    } else if (Array.isArray(selectedOptions)) {
+      selected = selectedOptions
+    } else {
+      // Single object (shouldn't happen with isMulti, but handle it)
+      selected = [selectedOptions]
+    }
+    
+    // Check if "All Employees" (value 0) is selected
+    const hasAllEmployees = selected.some(emp => emp.value === 0 || emp.value === '0')
+    
+    if (hasAllEmployees) {
+      // If "All Employees" is selected, select all available employees (excluding "All Employees" option)
+      setSelectedEmployees(baseEmployeeList)
+    } else {
+      setSelectedEmployees(selected)
+    }
+  }
   // Handle form submission - using new bulk assignment API
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -157,8 +173,11 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
       return
     }
 
+    // Check if "All Employees" is selected (value 0) or if specific employees are selected
+    const hasAllEmployees = selectedEmployees.some(emp => emp.value === 0 || emp.value === '0')
+    
     if (!selectedEmployees || selectedEmployees.length === 0) {
-      showToast('Please select at least one employee', 'error')
+      showToast('Please select at least one employee or select All Employees', 'error')
       return
     }
 
@@ -364,24 +383,40 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
                     Selected Employees ({selectedEmployees.length}):
                   </Typography>
                   <div className='flex flex-wrap gap-2'>
-                    {selectedEmployees.map((employee, index) => (
-                      <div
-                        key={employee.value || index}
-                        className='inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs'
-                      >
-                        <span>{employee.label}</span>
+                    {/* Check if all available employees are selected (equivalent to "All Employees") */}
+                    {selectedEmployees.length === baseEmployeeList.length && baseEmployeeList.length > 0 ? (
+                      <div className='inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium'>
+                        <span>All Employees</span>
                         <button
                           type='button'
                           onClick={() => {
-                            const updated = selectedEmployees.filter(emp => emp.value !== employee.value)
-                            setSelectedEmployees(updated)
+                            setSelectedEmployees([])
                           }}
                           className='ml-1 text-blue-600 hover:text-blue-800 font-bold'
                         >
                           ×
                         </button>
                       </div>
-                    ))}
+                    ) : (
+                      selectedEmployees.map((employee, index) => (
+                        <div
+                          key={employee.value || index}
+                          className='inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs'
+                        >
+                          <span>{employee.label}</span>
+                          <button
+                            type='button'
+                            onClick={() => {
+                              const updated = selectedEmployees.filter(emp => emp.value !== employee.value)
+                              setSelectedEmployees(updated)
+                            }}
+                            className='ml-1 text-blue-600 hover:text-blue-800 font-bold'
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}

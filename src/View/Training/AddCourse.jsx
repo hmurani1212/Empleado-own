@@ -203,7 +203,7 @@ function AddCourse(props) {
 
   return (
     <>
-      <div className=''>
+      <div className='mt-6'>
         <form className='' onSubmit={handleSubmit}>
           <div className='flex flex-col gap-4'>
             {/* Course Name */}

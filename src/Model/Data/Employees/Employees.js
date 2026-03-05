@@ -396,16 +396,17 @@ const employeesApi = {
     },
 
 
-    updatingOfficialInfo: function (data) {
-        return axiosInstance.request({
-            method: 'PATCH',
-            url: '/processors/set_data.php',
-            data: {
-                operation: 'emp_official_info',
-                ...data
-            }
-        })
-    },
+    // Removed updatingOfficialInfo - now using updateEmployeeProfile API instead
+    // updatingOfficialInfo: function (data) {
+    //     return axiosInstance.request({
+    //         method: 'PATCH',
+    //         url: '/processors/set_data.php',
+    //         data: {
+    //             operation: 'emp_official_info',
+    //             ...data
+    //         }
+    //     })
+    // },
     gettingOfficialInfoSalary: function (data) {
         return axiosInstance.request({
             method: 'POST',
@@ -807,7 +808,7 @@ const employeesApi = {
     updateEmployeeProfile: function (data) {
         return axiosInstancecoremodule.request({
             method: 'POST',
-            url: `/api/v1/employee_v2/update_employee_profile`,
+            url: `/api/v1/employee_v2/update_employee_profile?id=${data.id}`,
             data: data
         })
     },
@@ -1272,7 +1273,7 @@ const employeesApi = {
     // Update employee profile image
     updateEmployeeProfileImage: function (formData) {
         const jwt = getLocalStorage();
-        
+
         // Create a new axios instance for file uploads with multipart/form-data
         const axiosFileInstance = axios.create({
             baseURL: CORE_BASE_URL,
@@ -1281,7 +1282,7 @@ const employeesApi = {
                 'Authorization': `Bearer ${jwt}`
             }
         });
-        
+
         return axiosFileInstance.request({
             method: 'POST',
             url: `/api/v1/employee_v3/update_img_profile`,

@@ -1,9 +1,13 @@
 import { performanceAxiosInstance } from "../../base"
 const performanceApi = {
-    getPRC: function () {
+    getPRC: function (page = 1, limit = 10) {
         return performanceAxiosInstance.request({
             method: 'GET',
-            url: `/performance_management/get_performance_review`
+            url: `/performance_management/get_performance_review`,
+            params: {
+                page: page,
+                limit: limit
+            }
         })
     },
     getNextPRC: function (url) {
@@ -59,19 +63,26 @@ const performanceApi = {
             url: `/performance_management/get_performance`,
         })
     },
-    getGoals: function (name) {
-        const params = name ? { name: name } : {};
+    getGoals: function (name, page = 1, limit = 10) {
+        const params = {};
+        if (name) params.name = name;
+        params.page = page;
+        params.limit = limit;
         return performanceAxiosInstance.request({
             method: 'GET',
             url: `/performance_management/get_goals`,
             params: params
         })
     },
-    searchGoals: function (text) {
+    searchGoals: function (text, page = 1, limit = 10) {
         return performanceAxiosInstance.request({
             method: 'GET',
             url: `/performance_management/get_goals`,
-            params: { text: text }
+            params: { 
+                text: text,
+                page: page,
+                limit: limit
+            }
         })
     },
 
@@ -104,9 +115,12 @@ const performanceApi = {
         })
     },
 
-    getCompetency: function (reviewCycleId = null, searchText = null) {
+    getCompetency: function (reviewCycleId = null, searchText = null, page = 1, limit = 10) {
         let url = '/performance_management/get_competencies'
-        const params = {}
+        const params = {
+            page: page,
+            limit: limit
+        }
         
         if (reviewCycleId) {
             params.review_cycle = reviewCycleId
@@ -119,7 +133,7 @@ const performanceApi = {
         return performanceAxiosInstance.request({
             method: 'GET',
             url: url,
-            params: Object.keys(params).length > 0 ? params : undefined
+            params: params
         })
     },
     getBranchDepartment: function (performanceName) {
@@ -269,10 +283,14 @@ const performanceApi = {
         })
     },
 
-    getMainHistory: function () {
+    getMainHistory: function (page = 1, limit = 10) {
         return performanceAxiosInstance.request({
             method: 'GET',
-            url: '/performance_management/get_main_history'
+            url: '/performance_management/get_main_history',
+            params: {
+                page: page,
+                limit: limit
+            }
         })
     },
 

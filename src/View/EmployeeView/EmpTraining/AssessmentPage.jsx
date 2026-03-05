@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Card, CardBody, Typography, Button, Input, Textarea } from '@material-tailwind/react'
-import { FaArrowLeft, FaCheckCircle, FaBook, FaClock, FaTrophy } from 'react-icons/fa'
+import { FaArrowLeft, FaCheckCircle, FaBook, FaClock, FaTrophy, FaUser } from 'react-icons/fa'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useEmpTrainingService from '../../../ViewModel/EmpViewModel/EmpTrainingViewModel/EmpTrainingServices'
 import { showToast } from '../../../Components/Toaster/Toaster'
@@ -206,16 +206,23 @@ const AssessmentPage = () => {
                   </Typography>
                   
                   {question.question_type === 'short_answer' && (
-                    <Textarea
-                      label='Your Answer'
-                      value={answers[question.question_id] || ''}
-                      onChange={(e) => handleAnswerChange(question.question_id, e.target.value)}
-                      rows={4}
-                      className='w-full !border-gray-200 focus:!border-blue-500 bg-gray-50/30'
-                      labelProps={{
-                        className: "text-gray-500",
-                      }}
-                    />
+                    <div className='mt-4'>
+                      <label className='block text-sm font-medium text-gray-700 mb-2'>
+                        Your Answer
+                      </label>
+                      <Textarea
+                        value={answers[question.question_id] || ''}
+                        onChange={(e) => handleAnswerChange(question.question_id, e.target.value)}
+                        rows={4}
+                        className='w-full !border-gray-200 focus:!border-blue-500 bg-gray-50/30 !outline-none focus:!ring-2 focus:!ring-blue-500/20'
+                        labelProps={{
+                          className: "hidden",
+                        }}
+                        containerProps={{
+                          className: "!min-w-0"
+                        }}
+                      />
+                    </div>
                   )}
 
                   {question.question_type === 'multiple_choice' && question.options && question.options.length > 0 && (
@@ -255,18 +262,18 @@ const AssessmentPage = () => {
         </div>
 
         {/* Submit Section */}
-        <div className='sticky bottom-6 z-20'>
-          <div className="bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-100 flex items-center justify-between">
+        <div className='mt-8'>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <Typography className='font-bold text-gray-800'>
                 Ready to Submit?
               </Typography>
-              <Typography className='text-xs text-gray-500'>
+              <Typography className='text-xs text-gray-500 mt-1'>
                 {Object.keys(answers).length} of {currentAssignment.questions.length} questions answered
               </Typography>
             </div>
             <Button
-              className='flex items-center gap-2 bg-green-500 hover:bg-green-600 shadow-green-500/20 hover:shadow-green-500/40 rounded-xl px-8 py-3 normal-case text-base font-medium'
+              className='flex items-center gap-2 bg-green-500 hover:bg-green-600 shadow-green-500/20 hover:shadow-green-500/40 rounded-xl px-8 py-3 normal-case text-base font-medium w-full sm:w-auto'
               onClick={handleSubmitAssessment}
               disabled={isSubmitting || loading}
             >

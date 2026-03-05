@@ -92,17 +92,17 @@ const GridEmployee = (props) => {
                                 
                                 {/* Action Menu Dropdown */}
                                 {openMenuValue[index] && (
-                                    <div className="absolute top-6 right-0 z-50 border border-gray-200 rounded-lg bg-white w-[200px] shadow-md">
+                                    <div className="absolute top-0 right-0 z-50 border border-gray-200 rounded-lg bg-white w-[200px] shadow-md">
                                         <motion.div
                                             initial={{ opacity: 0, y: -10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -10 }}
                                             transition={{ duration: 0.2 }}
                                         >
-                                            <ul className="flex w-full flex-col gap-1">
+                                            <ul className="flex w-full flex-col gap-1 py-1">
                                                 {getFilteredActionList().map((menuItem) => (
                                                     <MenuItem
-                                                        className="flex items-center justify-between"
+                                                        className="flex items-center justify-between py-2.5 px-4"
                                                         key={menuItem.id}
                                                         onClick={(e) => {
                                                             e.stopPropagation();

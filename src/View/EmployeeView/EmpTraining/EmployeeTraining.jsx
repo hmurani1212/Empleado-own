@@ -126,9 +126,25 @@ const EmployeeTraining = () => {
                     </div>
 
                     <div className='mt-auto pt-4 border-t border-gray-100'>
+                      {course.is_assessment ? (
+                        <Button
+                          fullWidth
+                          className='flex items-center justify-center gap-2 bg-green-50 text-green-600 hover:bg-green-600 hover:text-white shadow-none hover:shadow-md transition-all duration-300 normal-case font-medium rounded-xl py-2.5'
+                          onClick={() => handleTakeAssessment(course)}
+                        >
+                          <FaCheckCircle className="text-sm" />
+                          View Assessment
+                        </Button>
+                      ) : (
+                        <div className='flex items-center justify-center py-2.5'>
+                          <Typography className='text-sm text-gray-500 font-medium'>
+                            No assessment
+                          </Typography>
+                        </div>
+                      )}
                       <Button
                         fullWidth
-                        className='flex items-center justify-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white shadow-none hover:shadow-md transition-all duration-300 normal-case font-medium rounded-xl py-2.5'
+                        className='flex items-center justify-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white shadow-none hover:shadow-md transition-all duration-300 normal-case font-medium rounded-xl py-2.5 mt-2'
                         onClick={() => handleViewCourse(index)}
                       >
                         <FaPlayCircle className="text-sm" />

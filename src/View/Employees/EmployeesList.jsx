@@ -81,8 +81,8 @@ const EmployeesList = (props) => {
     setPortalState({
       openIndex,
       left,
-      top: openAbove ? undefined : rect.bottom + 4,
-      bottom: openAbove ? window.innerHeight - rect.top + 4 : undefined,
+      top: openAbove ? undefined : rect.bottom + 0,
+      bottom: openAbove ? window.innerHeight - rect.top + 0 : undefined,
       openAbove,
     });
   }, [openMenuValue, sortedEmployees.length]);
@@ -344,7 +344,7 @@ const EmployeesList = (props) => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.15 }}
-            className="fixed w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[9999]"
+            className="fixed  w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[9999]"
             style={{
               left: portalState.left,
               top: portalState.top,

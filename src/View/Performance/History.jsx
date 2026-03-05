@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import ReactDOM from "react-dom";
 import { Typography, Progress, Button } from "@material-tailwind/react";
 import {
   FaThumbsUp,
@@ -14,6 +15,7 @@ import {
 import useStore from "../../Store/store";
 import { formatTimestampToDate } from "../../services/__dateTimeServices";
 import { HistorySkeleton } from "./PerformanceSkeletons";
+import { motion, AnimatePresence } from "framer-motion";
 // import ProfileManagement from './ProfileManagement';
 
 const History = ({
@@ -35,6 +37,10 @@ const History = ({
     gettingEmployeeHistory,
     currentEmployeeId,
     historyLoading,
+    historyPaginationData,
+    goToNextHistoryPage,
+    goToPreviousHistoryPage,
+    goToHistoryPage,
   } = useStore();
 
   // Check if we're in profile view (employee-specific history)
@@ -53,8 +59,8 @@ const History = ({
           const employeeId = selectedEmployeeId || currentEmployeeId;
           await gettingEmployeeHistory(employeeId);
         } else {
-          // Fetch main history
-          await gettingMainHistory();
+          // Fetch main history - start with page 1
+          await gettingMainHistory(1, 10);
         }
       } catch (error) {
         console.error("Error fetching history data:", error);
@@ -489,104 +495,196 @@ const History = ({
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-[10px] drop-shadow-md p-2">
-        <div className="h-[calc(100vh-100px)] overflow-auto customScroll">
-          <table className="w-full text-center">
-            <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
+      <div className="bg-white rounded-xl shadow-card p-1 border border-gray-100 overflow-hidden">
+        <div className="relative w-full min-h-[calc(100vh-200px)] overflow-auto customScroll">
+          <table className="min-w-full table-fixed text-center border-collapse">
+            <colgroup>
+              <col span="5" />
+            </colgroup>
+            <thead className="sticky top-0 z-20 bg-gray-50 shadow-sm">
               <tr>
                 {tableHeader?.map((head, i) => (
-                  <th key={i} className="bg-[#F8F9FA] p-4">
-                    <Typography
-                      // variant="small"
-                      // color="blue-gray"
-                      className="font-medium leading-none text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                    >
-                      {head}
-                    </Typography>
+                  <th key={i} className="px-4 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider font-poppins first:rounded-tl-lg last:rounded-tr-lg">
+                    {head}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {filteredData?.map((item, i) => {
-                const isLast = i === filteredData?.length - 1;
-                const classes = isLast
-                  ? "p-4"
-                  : "p-4 border-b border-[#F2F2F9]";
-                const competencyProgress = calculateCompetencyProgress(
-                  item.competency_progress || 0
-                );
-
-                return (
-                  <tr key={item._id || i}>
-                    <td className={classes}>
-                      <Typography
-                        // variant="small"
-                        // color="blue-gray"
-                        className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                      >
-                        {item.name || "N/A"}
-                      </Typography>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {historyLoading &&
+                [...Array(6)].map((_, rowIndex) => (
+                  <tr key={rowIndex} className="animate-pulse border-b border-gray-100">
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-100 rounded w-full max-w-[120px] mx-auto" />
                     </td>
-                    <td className={classes}>
-                      <Typography
-                        // variant="small"
-                        // color="blue-gray"
-                        className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                      >
-                        {formatDisplayDate(item.startDate || item.closing_date)}
-                      </Typography>
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-100 rounded w-full max-w-[100px] mx-auto" />
                     </td>
-                    <td className={classes}>
-                      <Typography
-                        // variant="small"
-                        // color="blue-gray"
-                        className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                      >
-                        {formatDisplayDate(item.endDate || item.closing_date)}
-                      </Typography>
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-100 rounded w-full max-w-[100px] mx-auto" />
                     </td>
-                    <td className={classes}>
-                      <div className="w-full flex flex-col items-center justify-center gap-2">
-                        <Typography
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap"
-                        >
-                          {item.goal_progress || 0}%
-                        </Typography>
-                        <Progress
-                          value={item.goal_progress || 0}
-                          color="blue"
-                          className="h-2 w-full"
-                        />
-                      </div>
+                    <td className="px-4 py-4">
+                      <div className="h-8 bg-gray-100 rounded w-full max-w-[120px] mx-auto" />
                     </td>
-                    <td className={classes}>
-                      <div className="w-full flex flex-col items-center justify-center gap-2">
-                        <Typography
-                          className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap"
-                        >
-                          {competencyProgress}%
-                        </Typography>
-                        <Progress
-                          value={competencyProgress}
-                          color="blue"
-                          className="h-2 w-full"
-                        />
-                      </div>
+                    <td className="px-4 py-4">
+                      <div className="h-8 bg-gray-100 rounded w-full max-w-[120px] mx-auto" />
                     </td>
                   </tr>
-                );
-              })}
+                ))}
+              {!historyLoading && filteredData && filteredData.length > 0 && (
+                filteredData.map((item, i) => {
+                  const competencyProgress = calculateCompetencyProgress(
+                    item.competency_progress || 0
+                  );
+
+                  return (
+                    <motion.tr
+                      key={item._id || i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="hover:bg-brand-50/30 transition-colors duration-200 group"
+                    >
+                      <td className="px-4 py-4">
+                        <Typography className="text-sm font-semibold text-gray-800 font-poppins group-hover:text-brand-600 transition-colors">
+                          {item.name || "N/A"}
+                        </Typography>
+                      </td>
+                      <td className="px-4 py-4">
+                        <Typography className="text-sm font-normal text-gray-600 font-poppins">
+                          {formatDisplayDate(item.startDate || item.closing_date)}
+                        </Typography>
+                      </td>
+                      <td className="px-4 py-4">
+                        <Typography className="text-sm font-normal text-gray-600 font-poppins">
+                          {formatDisplayDate(item.endDate || item.closing_date)}
+                        </Typography>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="w-full flex flex-col items-center justify-center gap-2">
+                          <Typography className="text-sm font-normal text-gray-600 font-poppins">
+                            {item.goal_progress || 0}%
+                          </Typography>
+                          <Progress
+                            value={item.goal_progress || 0}
+                            color="blue"
+                            className="h-2 w-full"
+                          />
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="w-full flex flex-col items-center justify-center gap-2">
+                          <Typography className="text-sm font-normal text-gray-600 font-poppins">
+                            {competencyProgress}%
+                          </Typography>
+                          <Progress
+                            value={competencyProgress}
+                            color="blue"
+                            className="h-2 w-full"
+                          />
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })
+              )}
+
+              {!historyLoading && filteredData && filteredData.length === 0 && (
+                <tr>
+                  <td colSpan={tableHeader.length} className="p-10 text-center">
+                    <div className="flex flex-col items-center justify-center text-gray-400">
+                      <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                      <Typography className="font-medium">
+                        {historyData?.length === 0
+                          ? "No performance history found"
+                          : "No results match your search criteria"}
+                      </Typography>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
 
-          {filteredData?.length === 0 && (
-            <div className="text-center py-8">
-              <Typography variant="h6" color="gray" className="font-normal">
-                {historyData?.length === 0
-                  ? "No performance history found"
-                  : "No results match your search criteria"}
-              </Typography>
+          {/* Pagination */}
+          {filteredData && filteredData.length > 0 && historyPaginationData && historyPaginationData.totalPages > 1 && (
+            <div className="w-full flex justify-center items-center gap-2 mt-6 mb-2">
+              {/* Previous Button */}
+              <button
+                title="Previous Page"
+                disabled={historyPaginationData.currentPage <= 1}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                  historyPaginationData.currentPage > 1
+                    ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                    : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                }`}
+                onClick={goToPreviousHistoryPage}
+              >
+                ‹
+              </button>
+              
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1.5">
+                {(() => {
+                  const currentPage = historyPaginationData.currentPage;
+                  const totalPages = historyPaginationData.totalPages;
+                  
+                  const renderPageButton = (page) => (
+                    <button
+                      key={page}
+                      onClick={() => goToHistoryPage(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                        page === currentPage
+                          ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+
+                  // If 7 or fewer pages, show all
+                  if (totalPages <= 7) {
+                    return Array.from({ length: totalPages }, (_, i) => i + 1).map(renderPageButton);
+                  }
+                  
+                  const pages = [];
+                  pages.push(renderPageButton(1));
+                  
+                  if (currentPage > 3) {
+                    pages.push(<span key="start-ellipsis" className="text-gray-400 px-1">...</span>);
+                  }
+                  
+                  const startPage = Math.max(2, currentPage - 1);
+                  const endPage = Math.min(totalPages - 1, currentPage + 1);
+                  
+                  for (let i = startPage; i <= endPage; i++) {
+                    pages.push(renderPageButton(i));
+                  }
+                  
+                  if (currentPage < totalPages - 2) {
+                    pages.push(<span key="end-ellipsis" className="text-gray-400 px-1">...</span>);
+                  }
+                  
+                  pages.push(renderPageButton(totalPages));
+                  
+                  return pages;
+                })()}
+              </div>
+              
+              {/* Next Button */}
+              <button
+                title="Next Page"
+                disabled={historyPaginationData.currentPage >= historyPaginationData.totalPages}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                  historyPaginationData.currentPage < historyPaginationData.totalPages
+                    ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                    : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                }`}
+                onClick={goToNextHistoryPage}
+              >
+                ›
+              </button>
             </div>
           )}
         </div>

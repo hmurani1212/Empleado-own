@@ -2995,7 +2995,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <Button
                         variant="text"
                         size="sm"
-                        className="p-2 text-green-500 rounded-full"
+                        className="p-1.5 sm:p-2 text-green-500 rounded-full"
                         onClick={() => setOpenAttendanceSettingDrawer(true)}
                     >
                         <FaRegPenToSquare size={18} />
@@ -4118,12 +4118,27 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             >
                                 {section.title}
                             </Typography>
-                            <div className="text-brand-500">
-                                <FaChevronDown
-                                    size={18}
-                                    className={`transition-transform duration-500 ease-in-out ${expandedSections[section.id] ? 'rotate-0' : 'rotate-180'
-                                        }`}
-                                />
+                            <div className="flex items-center gap-2">
+                                {section.id === "officialInfo" && (
+                                    <Button
+                                        variant="text"
+                                        size="sm"
+                                        className="p-1.5 sm:p-2 text-green-500 rounded-full"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenOfficialInfoDrawer(true);
+                                        }}
+                                    >
+                                        <FaRegPenToSquare size={18} />
+                                    </Button>
+                                )}
+                                <div className="text-brand-500">
+                                    <FaChevronDown
+                                        size={18}
+                                        className={`transition-transform duration-500 ease-in-out ${expandedSections[section.id] ? 'rotate-0' : 'rotate-180'
+                                            }`}
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div
@@ -4133,30 +4148,6 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 }`}
                         >
                             <div className="px-4 pb-4">
-                                {section.id === "officialInfo" && (
-                                    <div className="flex justify-end mb-4">
-                                        <Button
-                                            variant="text"
-                                            size="sm"
-                                            className="p-2 hover:bg-gray-200 rounded-full"
-                                            onClick={() => setOpenOfficialInfoDrawer(true)}
-                                        >
-                                            {/* <svg
-                                                className="w-5 h-5 text-gray-600"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                />
-                                            </svg> */}
-                                        </Button>
-                                    </div>
-                                )}
                                 {section.content}
                             </div>
                         </div>

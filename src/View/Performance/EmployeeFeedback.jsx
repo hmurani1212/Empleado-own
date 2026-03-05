@@ -108,14 +108,11 @@ const EmployeeFeedback = () => {
                       </div>
                     </div>
                     <Typography variant="body2" color="gray" className="ml-11">
-                      {feedback.comment}
+                      <span className="font-bold underline">Comment:</span> {feedback.comment}
                     </Typography>
                   </div>
                   <div className="flex items-center gap-2">
                     {getFeedbackIcon(feedback.thumb)}
-                    <Badge color={getFeedbackColor(feedback.thumb)}>
-                      {getFeedbackText(feedback.thumb)}
-                    </Badge>
                   </div>
                 </div>
               </div>
@@ -150,14 +147,11 @@ const EmployeeFeedback = () => {
                       </div>
                     </div>
                     <Typography variant="body2" color="gray" className="ml-11">
-                      {feedback.comment}
+                      <span className="font-bold underline">Comment:</span> {feedback.comment}
                     </Typography>
                   </div>
                   <div className="flex items-center gap-2">
                     {getFeedbackIcon(feedback.thumb)}
-                    <Badge color={getFeedbackColor(feedback.thumb)}>
-                      {getFeedbackText(feedback.thumb)}
-                    </Badge>
                   </div>
                 </div>
               </div>

@@ -22,6 +22,10 @@ const useGoalServices = ()=>{
     const deleteSingleGoal = useStore((state)=> state.deleteSingleGoal)
     const goalsLoading = useStore((state) => state.goalsLoading)
     const subGoalsLoading = useStore((state) => state.subGoalsLoading)
+    const goalsPaginationData = useStore((state) => state.goalsPaginationData)
+    const goToNextGoalsPage = useStore((state) => state.goToNextGoalsPage)
+    const goToPreviousGoalsPage = useStore((state) => state.goToPreviousGoalsPage)
+    const goToGoalsPage = useStore((state) => state.goToGoalsPage)
     
     // New employee goals functions
     const gettingGoalsByEmployeeId = useStore((state)=> state.gettingGoalsByEmployeeId)
@@ -139,8 +143,8 @@ const useGoalServices = ()=>{
                     performance:responseData.DB_DATA,
                     performance_id:{value: null, label: 'All'} // Set to "All" initially
                 }))
-                // Load all goals initially (pass null)
-                gettingGoals(null)
+                // Load all goals initially (pass null) - start with page 1
+                gettingGoals(null, null, 1, 10)
             }
         } catch (error) {
             console.log(error)
@@ -150,8 +154,9 @@ const useGoalServices = ()=>{
     // Search goals function
     const searchGoals = async (searchText) => {
         if (!searchText.trim()) {
-            // If search is empty, get all goals
-            gettingGoals(null);
+            // If search is empty, get all goals - reset to page 1
+            const currentPerformanceId = goalsValue.performance_id?.value ? goalsValue.performance_id.label : null;
+            gettingGoals(currentPerformanceId, null, 1, 10);
             return;
         }
 
@@ -161,8 +166,9 @@ const useGoalServices = ()=>{
                 searchLoading: true
             }));
 
-            // Use the modified gettingGoals function with search text
-            gettingGoals(null, searchText);
+            // Use the modified gettingGoals function with search text - reset to page 1 on search
+            const currentPerformanceId = goalsValue.performance_id?.value ? goalsValue.performance_id.label : null;
+            gettingGoals(currentPerformanceId, searchText, 1, 10);
             
         } catch (error) {
             console.log("Error searching goals:", error);
@@ -716,11 +722,15 @@ const useGoalServices = ()=>{
         currentEmployeeId,
         clearEmployeeGoals,
         // Search functionality
-        gettingGoals,
-        handleGoalsSearch,
-        searchGoals,
-        goalsLoading,
-        subGoalsLoading
+        gettingGoals, 
+        handleGoalsSearch, 
+        searchGoals, 
+        goalsLoading, 
+        subGoalsLoading,
+        goalsPaginationData,
+        goToNextGoalsPage,
+        goToPreviousGoalsPage,
+        goToGoalsPage
     }
     
 }

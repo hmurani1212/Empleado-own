@@ -402,6 +402,16 @@ const usePRCServices = () => {
                     label: dbData.employee_name
                 }] : [];
                 
+                // Handle branch label - show "All Branch" if branch is 0
+                const branchLabel = (dbData.branch === 0 || dbData.branch === '0') 
+                    ? 'All Branch' 
+                    : `Branch ${dbData.branch}`;
+                
+                // Handle department label - show "All Department" if department is 0
+                const departmentLabel = (dbData.department === 0 || dbData.department === '0') 
+                    ? 'All Department' 
+                    : `Department ${dbData.department}`;
+                
                 setPRCAddValue((prevState) => ({
                     ...prevState,
                     id: id,
@@ -411,8 +421,8 @@ const usePRCServices = () => {
                     end_date: formatTimestampToDate(dbData.endDate),
                     competancy_rate: dbData.competency_rate || 0,
                     goal_rate: dbData.goal_rate || 0,
-                    branch_id: { value: dbData.branch, label: `Branch ${dbData.branch}` }, // Placeholder label
-                    department_id: { value: dbData.department, label: `Department ${dbData.department}` }, // Placeholder label
+                    branch_id: { value: dbData.branch, label: branchLabel },
+                    department_id: { value: dbData.department, label: departmentLabel },
                     selectedEmp: selectedEmpArray,
                     review_day: formatTimestampToDate(dbData.closing_date),
                     show: true,
@@ -667,7 +677,9 @@ const usePRCServices = () => {
                 updatePRC(storeData)
                 showToast('Review Cycle Updated successfully', 'success')
                 toggleAddPRC()
-                gettingPRCData(); // Refresh data after successful update
+                // Refresh data with current pagination after successful update
+                const currentPagination = useStore.getState().PRCPaginationData
+                gettingPRCData(currentPagination?.currentPage || 1, currentPagination?.limit || 10)
             }
 
         } catch (err) {

@@ -6,6 +6,9 @@ const employeePerformanceApi = {
         
         // Add pagination parameters
         if (params.goal_page) queryParams.append('goal_page', params.goal_page);
+        if (params.goals_page) queryParams.append('goal_page', params.goals_page); // Support both naming conventions
+        if (params.competency_page) queryParams.append('competency_page', params.competency_page);
+        if (params.competencies_page) queryParams.append('competency_page', params.competencies_page); // Support both naming conventions
         if (params.feedback_page) queryParams.append('feedback_page', params.feedback_page);
         if (params.history_page) queryParams.append('history_page', params.history_page);
         if (params.performance_id) queryParams.append('performance_id', params.performance_id);

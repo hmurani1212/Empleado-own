@@ -89,12 +89,12 @@ const ViewPRC = (props) => {
 
                 <div className='mt-1'>
                     <span className='text-primary-100'>
-                        <FaBullseye />
+                        <BiCalendar />
                     </span>
                 </div>
                 <div className='flex flex-col gap-2'>
-                    <span className='text-nowrap text-customBlack-100 text-[14px]'>Modules</span>
-                    <span className='text-customBlack-100 text-[12px]'>Goals & Competency</span>
+                    <span className='text-nowrap text-customBlack-100 text-[14px]'>Closing Date</span>
+                    <span className='text-customBlack-100 text-[12px]'>{formatTimestampToDate(data.closing_date)}</span>
                 </div>
             </div>
         </div>
@@ -105,7 +105,6 @@ const ViewPRC = (props) => {
                     <span className='text-primary-100'>
                         <LiaTasksSolid />
                     </span>
-                    
                 </div>
                 <div className='flex flex-col gap-2'>
                     <span className='text-nowrap text-customBlack-100 text-[14px]'>Assigned To</span>
@@ -113,17 +112,14 @@ const ViewPRC = (props) => {
                         {data.employees && Array.isArray(data.employees) && data.employees.length > 0
                             ? data.employees.map((emp, index) => {
                                 let employeeName = emp.employee_name || emp.name || `Employee ${emp.employee_id}`;
-                                // Remove any existing ID pattern from the name (e.g., "(ID: 12345)" or "(ID:12345)")
                                 employeeName = employeeName.replace(/\s*\(ID:\s*\d+\)/gi, '').trim();
-                                // Add the ID once at the end
                                 const displayName = employeeName + (emp.employee_id ? ` (ID: ${emp.employee_id})` : '');
-                                
                                 return (
                                     <div key={emp.employee_id || index} className='flex flex-col gap-1 border border-blue-500 rounded-md p-2'>
                                         <span className='text-customBlack-100 text-[12px]'>
                                             {displayName}
                                         </span>
-                                        <span className='text-customBlack-100 text-[11px] text-gray-600'>
+                                        <span className='text-[11px] text-gray-600'>
                                             Score: {emp.score !== undefined && emp.score !== null ? emp.score : 0}/10
                                         </span>
                                     </div>
@@ -133,16 +129,49 @@ const ViewPRC = (props) => {
                     </div>
                 </div>
             </div>
-            <div className='flex gap-3 border border-blue-500 rounded-md p-3 self-start'>
+            <div className='flex gap-3 border border-blue-500 rounded-md p-3'>
 
                 <div className='mt-1'>
                     <span className='text-primary-100'>
-                        <BiCalendar />
+                        <FaBullseye />
                     </span>
                 </div>
                 <div className='flex flex-col gap-2'>
-                    <span className='text-nowrap text-customBlack-100 text-[14px]'>Closing Date</span>
-                    <span className='text-customBlack-100 text-[12px]'>{formatTimestampToDate(data.closing_date)}</span>
+                    <span className='text-nowrap text-customBlack-100 text-[14px]'>Modules</span>
+                    <span className='text-customBlack-100 text-[12px]'>Goals & Competency</span>
+                </div>
+            </div>
+        </div>
+        {/* Row 4: Goal and Competency from response */}
+        <div className='grid grid-cols-2 gap-4'>
+            <div className='flex gap-3 border border-blue-500 rounded-md p-3'>
+                <div className='mt-1'>
+                    <span className='text-primary-100'>
+                        <FaBullseye />
+                    </span>
+                </div>
+                <div className='flex flex-col gap-2'>
+                    <span className='text-nowrap text-customBlack-100 text-[14px]'>Goal</span>
+                    <span className='text-customBlack-100 text-[12px]'>
+                        {data.Goal && Array.isArray(data.Goal) && data.Goal.length > 0
+                            ? data.Goal.join(', ')
+                            : 'No Goal'}
+                    </span>
+                </div>
+            </div>
+            <div className='flex gap-3 border border-blue-500 rounded-md p-3'>
+                <div className='mt-1'>
+                    <span className='text-primary-100'>
+                        <LiaTasksSolid />
+                    </span>
+                </div>
+                <div className='flex flex-col gap-2'>
+                    <span className='text-nowrap text-customBlack-100 text-[14px]'>Competency</span>
+                    <span className='text-customBlack-100 text-[12px]'>
+                        {data.competency && Array.isArray(data.competency) && data.competency.length > 0
+                            ? data.competency.join(', ')
+                            : 'No competency'}
+                    </span>
                 </div>
             </div>
         </div>

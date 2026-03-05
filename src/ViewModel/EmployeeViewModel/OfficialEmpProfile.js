@@ -326,10 +326,10 @@ const useEmpProfileInfo = ()=>{
             
 
 
-            const response = await employeesApi.updatingOfficialInfo(apiData)
+            const response = await employeesApi.updateEmployeeProfile(apiData)
             console.log('response', response)
             const responseData = response.data 
-            if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
+            if(response.status === 200 && (responseData.STATUS === "SUCCESSFUL" || responseData.status === "success")){
                 updateEmpOfficialInfo(apiData)
                 setOfficialInfoValue((prevState)=>({
                     ...prevState,

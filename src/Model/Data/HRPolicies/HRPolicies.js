@@ -50,7 +50,7 @@ const hrPoliciesApi = {
             method: 'GET',
             url: `/api/v1/hr-api/get_all_policies`,
             params: {
-                id: data
+                branch_id: data
             }
         })
     },

@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useLayoutEffect, useMemo } from "react";
+import ReactDOM from "react-dom";
 import { BiSearch } from "react-icons/bi";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import { Typography, Button } from "@material-tailwind/react";
@@ -15,7 +16,7 @@ import {
   useOutletContext,
   useNavigate,
 } from "react-router";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { PerformanceTableSkeleton } from "./PerformanceSkeletons";
 
 const Goals = () => {
@@ -41,6 +42,10 @@ const Goals = () => {
     employeeGoalsData,
     handleGoalsSearch,
     goalsLoading,
+    goalsPaginationData,
+    goToNextGoalsPage,
+    goToPreviousGoalsPage,
+    goToGoalsPage,
   } = useGoalServices();
 
   const location = useLocation();
@@ -116,84 +121,183 @@ const Goals = () => {
           </div>
 
           {/* Table */}
-          {goalsLoading ? (
-            <PerformanceTableSkeleton headers={tableHeader} />
-          ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="min-h-[calc(100vh-250px)] overflow-auto customScroll">
-              <table className="min-w-full table-auto text-center">
-                <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
+          <div className="bg-white rounded-xl shadow-card p-1 border border-gray-100 overflow-hidden">
+            <div className="relative w-full min-h-[calc(100vh-200px)] overflow-auto customScroll">
+              <table className="min-w-full table-fixed text-center border-collapse">
+                <colgroup>
+                  <col span="5" />
+                </colgroup>
+                <thead className="sticky top-0 z-20 bg-gray-50 shadow-sm">
                   <tr>
                     {tableHeader?.map((head, i) => (
-                      <th key={i} className="p-4 first:pl-6 last:pr-6 whitespace-nowrap">
-                        <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
-                          {head}
-                        </Typography>
+                      <th key={i} className="px-4 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider font-poppins first:rounded-tl-lg last:rounded-tr-lg">
+                        {head}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {goalsData?.map((ele, i) => (
-                    <motion.tr 
-                      key={i}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: i * 0.05 }}
-                      className="hover:bg-blue-50/30 transition-colors group"
-                    >
-                      <td className="p-4">
-                        <span className="text-xs font-medium text-gray-500 font-poppins bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                          #{ele.employee_id}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <Typography className="text-sm font-semibold text-gray-900 font-poppins">
-                          {ele.employee_name}
-                        </Typography>
-                      </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100">
-                          {ele.total_goals} Goals
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <Typography className="text-sm font-medium text-gray-700 font-poppins">
-                          {ele.total_score && Number(ele.total_score) > 0 ? `${ele.total_score}/10` : '0/10'}
-                        </Typography>
-                      </td>
-                      <td className="p-4">
-                        <Button
-                          variant="text"
-                          className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                          onClick={() => handleProfileClick(ele.employee_id)}
-                          title="View Employee Profile"
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {goalsLoading &&
+                    [...Array(6)].map((_, rowIndex) => (
+                      <tr key={rowIndex} className="animate-pulse border-b border-gray-100">
+                        <td className="px-4 py-4">
+                          <div className="h-4 bg-gray-100 rounded w-full max-w-[60px] mx-auto" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-4 bg-gray-100 rounded w-full max-w-[120px] mx-auto" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-6 bg-gray-100 rounded-full w-full max-w-[80px] mx-auto" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-4 bg-gray-100 rounded w-full max-w-[60px] mx-auto" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-8 bg-gray-100 rounded-lg w-full max-w-[64px] mx-auto" />
+                        </td>
+                      </tr>
+                    ))}
+                  {!goalsLoading && goalsData && goalsData.length > 0 && (
+                    goalsData.map((ele, i) => {
+                      return (
+                        <motion.tr
+                          key={i}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="hover:bg-brand-50/30 transition-colors duration-200 group"
                         >
-                          <FaEye size={18} />
-                        </Button>
-                      </td>
-                    </motion.tr>
-                  ))}
-                  
-                  {goalsData?.length === 0 && (
+                          <td className="px-4 py-4">
+                            <Typography className="text-sm font-normal text-gray-600 font-poppins">
+                              {ele.employee_id || "-"}
+                            </Typography>
+                          </td>
+                          <td className="px-4 py-4">
+                            <Typography className="text-sm font-semibold text-gray-800 font-poppins group-hover:text-brand-600 transition-colors">
+                              {ele.employee_name || "-"}
+                            </Typography>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              {ele.total_goals || 0} Goals
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <Typography className="text-sm font-normal text-gray-600 font-poppins">
+                              {ele.total_score && Number(ele.total_score) > 0 ? `${ele.total_score}/10` : '0/10'}
+                            </Typography>
+                          </td>
+                          <td className="px-4 py-4">
+                            <Button
+                              variant="text"
+                              className="p-2 rounded-lg text-brand-500 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+                              onClick={() => handleProfileClick(ele.employee_id)}
+                              title="View Employee Profile"
+                            >
+                              <FaEye size={18} />
+                            </Button>
+                          </td>
+                        </motion.tr>
+                      );
+                    })
+                  )}
+
+                  {!goalsLoading && goalsData && goalsData.length === 0 && (
                     <tr>
-                      <td colSpan={tableHeader.length} className="p-12 text-center text-gray-400">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
-                            <FaClipboardList className="text-3xl text-gray-300" />
-                          </div>
-                          <Typography color="gray" className="font-medium font-poppins">
-                            No goals found
-                          </Typography>
+                      <td colSpan={tableHeader.length} className="p-10 text-center">
+                        <div className="flex flex-col items-center justify-center text-gray-400">
+                          <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                          <Typography className="font-medium">No goals found</Typography>
                         </div>
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
+
+              {/* Pagination */}
+              {goalsData && goalsData.length > 0 && goalsPaginationData && goalsPaginationData.totalPages > 1 && (
+                <div className="w-full flex justify-center items-center gap-2 mt-6 mb-2">
+                  {/* Previous Button */}
+                  <button
+                    title="Previous Page"
+                    disabled={goalsPaginationData.currentPage <= 1}
+                    className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                      goalsPaginationData.currentPage > 1
+                        ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                        : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                    }`}
+                    onClick={goToPreviousGoalsPage}
+                  >
+                    ‹
+                  </button>
+                  
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1.5">
+                    {(() => {
+                      const currentPage = goalsPaginationData.currentPage;
+                      const totalPages = goalsPaginationData.totalPages;
+                      
+                      const renderPageButton = (page) => (
+                        <button
+                          key={page}
+                          onClick={() => goToGoalsPage(page)}
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                            page === currentPage
+                              ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                              : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+
+                      // If 7 or fewer pages, show all
+                      if (totalPages <= 7) {
+                        return Array.from({ length: totalPages }, (_, i) => i + 1).map(renderPageButton);
+                      }
+                      
+                      const pages = [];
+                      pages.push(renderPageButton(1));
+                      
+                      if (currentPage > 3) {
+                        pages.push(<span key="start-ellipsis" className="text-gray-400 px-1">...</span>);
+                      }
+                      
+                      const startPage = Math.max(2, currentPage - 1);
+                      const endPage = Math.min(totalPages - 1, currentPage + 1);
+                      
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(renderPageButton(i));
+                      }
+                      
+                      if (currentPage < totalPages - 2) {
+                        pages.push(<span key="end-ellipsis" className="text-gray-400 px-1">...</span>);
+                      }
+                      
+                      pages.push(renderPageButton(totalPages));
+                      
+                      return pages;
+                    })()}
+                  </div>
+                  
+                  {/* Next Button */}
+                  <button
+                    title="Next Page"
+                    disabled={goalsPaginationData.currentPage >= goalsPaginationData.totalPages}
+                    className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                      goalsPaginationData.currentPage < goalsPaginationData.totalPages
+                        ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                        : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                    }`}
+                    onClick={goToNextGoalsPage}
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-          )}
 
           {addGoalValue.show && (
             <PortalDrawer
