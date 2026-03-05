@@ -912,7 +912,7 @@ const useEmployees = () => {
                 }
                 return
             }
-            const data = { parent_id: 0, branch_id: id, getAll: true }
+            const data = { parent_id: 0, branch_id: id, getAll: true, get_all_departments: true }
             const response = await employeesApi.gettingSubDepts(data)
             const resData = response.data
             console.log('Departments API response:', resData.DB_DATA?.departments);

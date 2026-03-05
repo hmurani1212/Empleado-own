@@ -270,11 +270,21 @@ function Dashboard() {
           <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-lg border border-gray-200">
             <div className="flex gap-2 items-center px-2">
               <span className="text-xs font-semibold text-brand-500 uppercase tracking-wider">
-                Filter Stats
+                Filter Statistics
               </span>
-              <span className="text-gray-400 text-lg cursor-help hover:text-brand-500 transition-colors">
-                <HiQuestionMarkCircle />
-              </span>
+              <div className="group relative inline-block">
+                <span className="text-gray-400 text-lg cursor-help hover:text-brand-500 transition-colors inline-flex">
+                  <HiQuestionMarkCircle />
+                </span>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 w-72 p-3 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none">
+                  <p className="mb-2">This feature lets you filter the following data only, for a specific date</p>
+                  <ol className="list-none space-y-1 pl-0">
+                    <li>i) Today Attendance</li>
+                    <li>ii) Today Late Comers</li>
+                    <li>iii) Last 7 days Late Comers</li>
+                  </ol>
+                </div>
+              </div>
             </div>
             <div>
               <input

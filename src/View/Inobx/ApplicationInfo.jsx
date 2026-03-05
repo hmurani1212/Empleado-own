@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaFileAlt, FaCalendarCheck } from "react-icons/fa";
 import ApplicationLeave from '../Application/ApplicationLeave';
 import RequestLeave from '../Application/RequestLeave';
+import RequestedAdjustmentInbox from './RequestedAdjustmentInbox';
 
 const ApplicationInfo = ({ data, isLoading, onClose, applicationType }) => {
   const [activePage, setActivePage] = useState('application'); // 'application' or 'requestedLeave'
@@ -11,10 +12,19 @@ const ApplicationInfo = ({ data, isLoading, onClose, applicationType }) => {
     setActivePage(page);
   };
 
-  const sidebarItems = [
+  const isTimeAdjustment = useMemo(() => {
+    const formLabel = applicationType?.form_label ?? data?.form_label;
+    if (formLabel && typeof formLabel === 'string') {
+      return formLabel.trim() === 'ATT_TIME_ADJUSTMENT';
+    }
+    const t = applicationType ? String(applicationType).trim() : '';
+    return t === 'ATT_TIME_ADJUSTMENT' || t.toLowerCase() === 'time adjustment request';
+  }, [applicationType, data?.form_label]);
+
+  const sidebarItems = useMemo(() => [
     { id: 'application', label: 'Application', icon: FaFileAlt },
-    { id: 'requestedLeave', label: 'Requested Leave', icon: FaCalendarCheck },
-  ];
+    { id: 'requestedLeave', label: isTimeAdjustment ? 'Requested Adjustment' : 'Requested Leave', icon: FaCalendarCheck },
+  ], [isTimeAdjustment]);
 
   // Loading state
   if (isLoading) {
@@ -41,9 +51,9 @@ const ApplicationInfo = ({ data, isLoading, onClose, applicationType }) => {
   }
 
   return (
-    <div className='h-full flex flex-col md:flex-row w-full relative overflow-hidden bg-white/60'>
+    <div className='h-full flex flex-col md:flex-row w-full relative overflow-hidden bg-white/60 rounded-xl'>
       {/* Sidebar */}
-      <div className='w-full md:w-[280px] bg-gradient-to-b from-gray-50 to-white border-r border-gray-100 p-4 flex-shrink-0 flex flex-col'>
+      <div className='w-full md:w-[280px] bg-gradient-to-b from-gray-50 to-white border-r border-gray-100 p-4 flex-shrink-0 flex flex-col rounded-l-xl'>
         <div className="mb-6 px-2">
           <h3 className="text-gray-800 font-bold text-lg">Details</h3>
           <p className="text-gray-500 text-xs mt-1">View application information</p>
@@ -105,7 +115,11 @@ const ApplicationInfo = ({ data, isLoading, onClose, applicationType }) => {
               )}
               {activePage === 'requestedLeave' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-1 min-h-full">
-                  <RequestLeave applicationData={data} onClose={onClose} />
+                  {isTimeAdjustment ? (
+                    <RequestedAdjustmentInbox applicationData={data} onClose={onClose} />
+                  ) : (
+                    <RequestLeave applicationData={data} onClose={onClose} />
+                  )}
                 </div>
               )}
             </motion.div>

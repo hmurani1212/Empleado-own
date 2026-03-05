@@ -45,6 +45,7 @@ const useInboxServives = () => {
     const application_data = useStore((state) => state.application_data);
     const isLoadingApplicationDetails = useStore((state) => state.isLoadingApplicationDetails);
     const getFormDetailsByTypeRef = useStore((state) => state.getFormDetailsByTypeRef);
+    const updateAdjustmentTime = useStore((state) => state.updateAdjustmentTime);
     const applicationDetailsCache = useStore((state) => state.applicationDetailsCache);
     const shouldAutoScroll = useStore((state) => state.shouldAutoScroll);
 
@@ -189,6 +190,7 @@ const useInboxServives = () => {
         application_data,
         isLoadingApplicationDetails,
         getFormDetailsByTypeRef,
+        updateAdjustmentTime,
         applicationDetailsCache,
         shouldAutoScroll
     }

@@ -296,14 +296,29 @@ const attendanceViewModel = (set, get) => ({
             const formsData = formsResp?.data
             if (formsResp?.status === 200 && formsData?.STATUS === 'SUCCESSFUL') {
                 const d = formsData.DB_DATA || {}
-                // Map Forms detail to shape expected by UI (use nulls if missing)
+                // Merge top-level display fields into form_data so UI has emp_name, branch, etc.
+                const formData = { ...(d.form_data || {}) }
+                if (d.emp_name != null) formData.emp_name = d.emp_name
+                if (d.emp_id != null) formData.emp_id = d.emp_id
+                if (d.emp_email != null) formData.emp_email = d.emp_email
+                if (d.emp_phone != null) formData.emp_phone = d.emp_phone
+                if (d.branch != null) formData.branch = d.branch
+                if (d.department != null) formData.department = d.department
+                if (d.designation_name != null) formData.designation_name = d.designation_name
+                if (d.designation_id != null) formData.designation_id = d.designation_id
+                // Map Forms detail to shape expected by UI (root-level date/in_time/out_time for Section 2)
                 const mapped = [{
-                    _id: d._id ?? (Number(id) || id) ?? null,
-                    user_name: d.name ?? null,
+                    _id: d.id ?? d._id ?? (Number(id) || id) ?? null,
+                    user_name: d.emp_name ?? d.form_data?.emp_name ?? d.name ?? null,
+                    emp_name: d.emp_name ?? d.form_data?.emp_name ?? null,
+                    emp_id: d.emp_id ?? d.form_data?.emp_id ?? null,
                     one_id: d.one_id ?? null,
                     entry_time: d.entry_time ?? null,
-                    update_time: d.update_time ?? null,
-                    form_data: d.form_data ?? {},
+                    update_time: d.updated_at ?? d.update_time ?? null,
+                    date: d.date ?? d.form_data?.date ?? null,
+                    in_time: d.in_time ?? d.form_data?.in_time ?? null,
+                    out_time: d.out_time ?? d.form_data?.out_time ?? null,
+                    form_data: formData,
                     form_labels: {
                         in_time: 'In Time',
                         out_time: 'Out Time'
@@ -311,17 +326,17 @@ const attendanceViewModel = (set, get) => ({
                     approval_members: [
                         {
                             approval_index: 1,
-                            approved_by: d.approvel_by ?? null,
-                            approved_name: d.approvel_flow ?? null,
-                            oneid: d.employee_info?.user_oneID ?? d.employee_details?.user_oneID ?? null,
-                            status_lbl: d.type_base_info ?? null,
-                            last_update_time: d.update_time ?? null,
+                            approved_by: d.approvel_by ?? d.approved_by ?? null,
+                            approved_name: d.approvel_flow ?? d.approved_name ?? null,
+                            oneid: d.one_id ?? d.employee_info?.user_oneID ?? d.employee_details?.user_oneID ?? null,
+                            status_lbl: d.status ?? d.type_base_info ?? null,
+                            last_update_time: d.updated_at ?? d.update_time ?? null,
                         }
                     ]
                 }]
 
                 set({ individualRequestDetail: mapped })
-                set({ allFormData: d?.form_data ?? {} })
+                set({ allFormData: formData })
                 return
             }
         } catch (err) {
@@ -366,6 +381,8 @@ const attendanceViewModel = (set, get) => ({
                 req._id === request._id
                     ? {
                         ...req,
+                        in_time: request.in_time ?? req.in_time,
+                        out_time: request.out_time ?? req.out_time,
                         form_data: {
                             ...req.form_data,
                             in_time: request.in_time,

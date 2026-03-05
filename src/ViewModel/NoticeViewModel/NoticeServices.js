@@ -80,7 +80,9 @@ const useNotice = () => {
             }));
             setEmployeeOptions([]);
             setEmployeeOptionsFull([]);
-            getDepartmentsByBranch(value);
+            // When "All Branches" is selected (value 0 or '0'), call department API with branch_id = 0
+            const branchIdForApi = value === 0 || value === '0' ? 0 : value;
+            getDepartmentsByBranch(branchIdForApi);
         }
         if (name === 'deptt_id') {
             setAddNoticeValue((prevState) => ({
@@ -117,12 +119,14 @@ const useNotice = () => {
     const fetchEmployeesByDepartment = async (deptId) => {
         setEmployeeOptionsFull([]);
         setEmployeeOptions([]);
+        const deptIdRaw = deptId?.value !== undefined ? deptId.value : deptId;
         try {
-            const response = await departmentsApi.getDeptEmployees(deptId);
+            const response = await departmentsApi.getDeptEmployees(deptIdRaw);
             const data = response.data;
 
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                const departmentEmployees = data.DB_DATA.employees || [];
+                const raw = data.DB_DATA;
+                const departmentEmployees = Array.isArray(raw) ? raw : (raw?.employees || []);
                 const employeeData = departmentEmployees.map((employee) => ({
                     label: employee.name || 'Unknown Employee',
                     value: Number(employee.id) || 0,
@@ -147,7 +151,8 @@ const useNotice = () => {
             const response = await departmentsApi.getDeptEmployees(deptId);
             const data = response.data;
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                const departmentEmployees = data.DB_DATA.employees || [];
+                const raw = data.DB_DATA;
+                const departmentEmployees = Array.isArray(raw) ? raw : (raw?.employees || []);
                 return departmentEmployees.length > 0;
             }
             return false;

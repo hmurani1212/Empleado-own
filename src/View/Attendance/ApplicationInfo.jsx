@@ -1,10 +1,9 @@
 import { Typography } from '@material-tailwind/react'
-import React from 'react'
+import React, { useEffect } from 'react'
 import useAttendance from '../../ViewModel/AttendanceViewModel/AttendanceServices'
-import { formatTimestamp } from '../../services/__formApprovalServices'
-import { FaUser, FaUserCheck, FaCalendar, FaFileAlt, FaUserEdit, FaEdit } from "react-icons/fa";
+import { FaUser, FaUserCheck, FaCalendar, FaFileAlt, FaUserEdit, FaEdit, FaFile, FaTimes } from "react-icons/fa";
 
-const ApplicationInfo = () => {
+const ApplicationInfo = ({ onClose }) => {
     const { individualRequestDetail } = useAttendance()
     const titleInfo = ['Approval Index', 'Approval Type', 'Approve By', 'Status', 'Last update time']
 
@@ -30,13 +29,60 @@ const ApplicationInfo = () => {
         return snakeCase;
     };
 
+    const formatEntryTime = (entryTime) => {
+        if (entryTime == null || entryTime === undefined) return "N/A";
+        if (typeof entryTime === "number") {
+            const date = new Date(entryTime * (entryTime.toString().length === 10 ? 1000 : 1));
+            return date.toISOString().slice(0, 10);
+        }
+        if (typeof entryTime === "string") {
+            return entryTime.slice(0, 10);
+        }
+        return "N/A";
+    };
+
+    /** Dated display like "26 Feb, 2026" */
+    const formatDatedDisplay = (entryTime) => {
+        if (entryTime == null || entryTime === undefined) return "N/A";
+        let ms;
+        if (typeof entryTime === "number") {
+            ms = entryTime.toString().length === 10 ? entryTime * 1000 : entryTime;
+        } else if (typeof entryTime === "string") {
+            ms = new Date(entryTime).getTime();
+        } else {
+            return "N/A";
+        }
+        if (isNaN(ms)) return "N/A";
+        const d = new Date(ms);
+        const day = d.getDate();
+        const month = d.toLocaleString("en-US", { month: "short" });
+        const year = d.getFullYear();
+        return `${day} ${month}, ${year}`;
+    };
+
+
+    useEffect(() => {
+        console.log("individualRequestDetail", individualRequestDetail);
+    });
+
     return (
         <>
-            <div className="bg-white  flex flex-col overflow-hidden">
-                {/* Application Info Header */}
-                {/* <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 flex-shrink-0">
+            <div className="bg-white flex flex-col overflow-hidden">
+                {/* Application Info Header — same as image */}
+                <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 flex-shrink-0">
                     <h2 className="text-[#3DA5F4] font-semibold text-lg">Application Info</h2>
-                </div> */}
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
+                            title="Close"
+                            aria-label="Close"
+                        >
+                            <FaTimes className="text-blue-500" size={14} />
+                        </button>
+                    )}
+                </div>
 
                 {/* Application Info Content */}
                 <div className="flex-1 overflow-y-auto">
@@ -54,7 +100,7 @@ const ApplicationInfo = () => {
                                                 </div>
                                                 <div className="flex flex-col items-start justify-start gap-1">
                                                     <span className="text-gray-600 font-normal text-sm">From:</span>
-                                                    <span className="text-gray-800 font-Urbanist font-semibold text-sm">{ele.user_name || "N/A"}</span>
+                                                    <span className="text-gray-800 font-Urbanist font-semibold text-sm">{ele.emp_name || "N/A"}</span>
                                                 </div>
                                             </div>
 
@@ -81,7 +127,7 @@ const ApplicationInfo = () => {
                                             </div>
                                         </div>
 
-                                        {/* Row 2: Dated, Subject, Emp OneID */}
+                                        {/* Row 2: Dated, Subject, File — same as image */}
                                         <div className="grid grid-cols-3 gap-4 py-4 border-b border-dashed border-gray-300">
                                             {/* Dated */}
                                             <div className="flex items-center gap-4">
@@ -90,7 +136,7 @@ const ApplicationInfo = () => {
                                                 </div>
                                                 <div className="flex flex-col items-start justify-start gap-1">
                                                     <span className="text-gray-600 font-normal text-sm">Dated:</span>
-                                                    <span className="text-gray-800 font-Urbanist font-semibold text-sm">{ele?.entry_time?.slice(0, 10)}</span>
+                                                    <span className="text-gray-800 font-Urbanist font-semibold text-sm">{formatDatedDisplay(ele?.entry_time)}</span>
                                                 </div>
                                             </div>
 
@@ -105,7 +151,20 @@ const ApplicationInfo = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Emp OneID */}
+                                            {/* File */}
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex-shrink-0 w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                                                    <FaFile className="text-[#3DA5F4] text-lg" />
+                                                </div>
+                                                <div className="flex flex-col items-start justify-start gap-1">
+                                                    <span className="text-gray-600 font-normal text-sm">File:</span>
+                                                    <span className="text-gray-800 font-Urbanist font-semibold text-sm">{ele?.form_data?.attachment_url || ele?.attachment_url ? "File attached" : "No file attached"}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Row 3: Emp OneID, Application Detail — same as image */}
+                                        <div className="grid grid-cols-3 gap-4 py-4 border-b border-dashed border-gray-300">
                                             <div className="flex items-center gap-4">
                                                 <div className="flex-shrink-0 w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                                                     <FaUserEdit className="text-[#3DA5F4] text-lg" />
@@ -115,18 +174,13 @@ const ApplicationInfo = () => {
                                                     <span className="text-gray-800 font-Urbanist font-semibold text-sm">{ele.one_id || "N/A"}</span>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        {/* Row 3: Reason (spanning full width) */}
-                                        <div className="grid grid-cols-3 gap-4 py-4">
-                                            {/* Reason - spans full width */}
-                                            <div className="flex items-start gap-4 col-span-3">
+                                            <div className="flex items-start gap-4 col-span-2">
                                                 <div className="flex-shrink-0 w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                                                     <FaEdit className="text-[#3DA5F4] text-lg" />
                                                 </div>
                                                 <div className="flex flex-col items-start justify-start gap-1">
-                                                    <span className="text-gray-600 font-normal text-sm">Reason:</span>
-                                                    <span className="text-gray-800 font-Urbanist font-semibold text-sm leading-relaxed">{ele?.form_data?.reason || "N/A"}</span>
+                                                    <span className="text-gray-600 font-normal text-sm">Application Detail:</span>
+                                                    <span className="text-gray-800 font-Urbanist font-semibold text-sm leading-relaxed">{ele?.form_data?.application_detail ?? ele?.form_data?.reason ?? "N/A"}</span>
                                                 </div>
                                             </div>
                                         </div>

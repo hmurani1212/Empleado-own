@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Typography } from '@material-tailwind/react';
-import { FaEdit, FaTimes } from 'react-icons/fa';
+import { FaTimes, FaEdit } from 'react-icons/fa';
 import formatTime from '../../services/__attendanceServices';
-import useAttendance from '../../ViewModel/AttendanceViewModel/AttendanceServices';
+import useStore from '../../Store/store';
+import useInboxServives from '../../ViewModel/InboxViewModel/inboxServices';
 import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer';
 import { Input } from '@material-tailwind/react';
 import SubmitButton from '../../Components/SubmitButton/SubmitButton';
@@ -19,13 +20,6 @@ function formatTimeSafe(val) {
   if (val == null || val === '') return '—';
   if (typeof val === 'string' && val.includes(':')) return formatTime(val);
   return String(val);
-}
-
-function toDateInputValue(val) {
-  if (val == null || val === '') return '';
-  const d = new Date(val);
-  if (isNaN(d.getTime())) return String(val).slice(0, 10) || '';
-  return d.toISOString().slice(0, 10);
 }
 
 /** Format Unix timestamp (seconds) to HH:mm (24-hour) */
@@ -48,7 +42,7 @@ function formatUnixToTime12(unixSec) {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-/** Build rows from form_data actual_in1/actual_out1, etc. when value > 0. Date from form_data.date. Out time in 12h. */
+/** Build rows from form_data actual_in1/actual_out1, etc. when value > 0. Date from form_data.date. First section: in 24h, out in 12h. */
 function buildActualTimeRows(formData) {
   if (!formData || typeof formData !== 'object') return [];
   const date = formData.date ?? '';
@@ -69,48 +63,39 @@ function buildActualTimeRows(formData) {
   return rows;
 }
 
-const RequestedAdjust = ({ onClose }) => {
-  const { individualRequestDetail, updateTimeAdjustment, updatedAdjRequest } = useAttendance();
+export default function RequestedAdjustmentInbox({ applicationData: applicationDataProp, onClose }) {
+  const { updateAdjustmentTime } = useInboxServives();
+  // Subscribe to store so UI updates immediately when updateAdjustmentTime updates application_data
+  const applicationDataFromStore = useStore((state) => state.application_data);
+  const applicationData = applicationDataFromStore ?? applicationDataProp;
+
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [editForm, setEditForm] = useState({ date: '', in_time: '', out_time: '' });
-  const [editingSubmissionId, setEditingSubmissionId] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const detailList = individualRequestDetail || [];
-  const firstItem = detailList[0];
+  const submissionId = applicationData?.id ?? applicationData?._id ?? applicationData?.type_ref;
+  const formData = applicationData?.form_data || {};
 
-  // Section 1: Adjustment details — actual_in1/actual_out1, etc. when value > 0 (same as Inbox)
-  const actualTimeRows = React.useMemo(
-    () => (firstItem?.form_data ? buildActualTimeRows(firstItem.form_data) : []),
-    [firstItem?.form_data]
-  );
+  // Section 1: Adjustment details — actual_in1/actual_out1, etc. when value > 0; date from form_data.date
+  const actualTimeRows = React.useMemo(() => buildActualTimeRows(formData), [formData]);
 
-  // Section 2: Edit adjustment — date, in_time, out_time from root level (outside form_data), same as Inbox
-  const rootTimeRows = React.useMemo(
-    () =>
-      detailList
-        .map((ele) => ({
-          _id: ele._id ?? ele.id,
-          date: ele.date ?? ele?.form_data?.date ?? '',
-          in_time: ele.in_time ?? ele?.form_data?.in_time ?? '',
-          out_time: ele.out_time ?? ele?.form_data?.out_time ?? '',
-        }))
-        .filter((row) => row._id != null),
-    [detailList]
-  );
+  // Section 2: Edit adjustment — date, in_time, out_time from outside form_data (root level)
+  const rootTimeRow = React.useMemo(() => {
+    const date = applicationData?.date ?? formData?.date ?? '';
+    const in_time = applicationData?.in_time ?? formData?.in_time ?? '';
+    const out_time = applicationData?.out_time ?? formData?.out_time ?? '';
+    if (date || in_time || out_time) return [{ date, in_time, out_time }];
+    return [];
+  }, [applicationData?.date, applicationData?.in_time, applicationData?.out_time, formData?.date, formData?.in_time, formData?.out_time]);
 
-  const openEdit = (row) => {
-    setEditingSubmissionId(row._id);
+  const openEdit = () => {
     setEditForm({
-      date: toDateInputValue(row.date),
-      in_time: row.in_time ?? '',
-      out_time: row.out_time ?? '',
+      date: applicationData?.date ?? formData.date ?? '',
+      in_time: applicationData?.in_time ?? formData.in_time ?? '',
+      out_time: applicationData?.out_time ?? formData.out_time ?? '',
     });
     setEditDrawerOpen(true);
   };
-
-  const hasSection1Data = actualTimeRows.length > 0;
-  const hasSection2Data = rootTimeRows.length > 0;
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -119,28 +104,20 @@ const RequestedAdjust = ({ onClose }) => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (!editingSubmissionId) {
+    if (!submissionId) {
       showToast('Cannot update: missing submission id', 'error');
       return;
     }
     setLoading(true);
     try {
-      const result = await updateTimeAdjustment(
-        editingSubmissionId,
-        editForm.in_time,
-        editForm.out_time
-      );
+      const result = await updateAdjustmentTime(submissionId, {
+        in_time: editForm.in_time,
+        out_time: editForm.out_time,
+      });
       if (result?.success) {
         showToast('Time adjustment updated successfully', 'success');
-        updatedAdjRequest({
-          _id: editingSubmissionId,
-          in_time: editForm.in_time,
-          out_time: editForm.out_time,
-        });
         setEditDrawerOpen(false);
-        setEditingSubmissionId(null);
-      } else {
-        showToast(result?.error || 'Failed to update time adjustment', 'error');
+        // First section will update automatically because store application_data is updated and parent re-renders with new data
       }
     } finally {
       setLoading(false);
@@ -151,17 +128,15 @@ const RequestedAdjust = ({ onClose }) => {
     <div className="bg-white h-full flex flex-col">
       <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
         <h2 className="text-[#3DA5F4] font-semibold text-lg">Requested Adjustment</h2>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
-            title="Close"
-            aria-label="Close"
-          >
-            <FaTimes className="text-blue-500" size={14} />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
+          title="Close"
+          aria-label="Close"
+        >
+          <FaTimes className="text-blue-500" size={14} />
+        </button>
       </div>
 
       <div className="mt-4 flex-1 px-6 pb-6 space-y-6">
@@ -190,7 +165,7 @@ const RequestedAdjust = ({ onClose }) => {
                 </tr>
               </thead>
               <tbody>
-                {hasSection1Data ? (
+                {actualTimeRows.length > 0 ? (
                   actualTimeRows.map((row, idx) => (
                     <tr key={idx} className="hover:bg-gray-50 border-b border-gray-200">
                       <td className="p-4">
@@ -222,7 +197,7 @@ const RequestedAdjust = ({ onClose }) => {
           </div>
         </div>
 
-        {/* Section 2: Root-level date, in_time, out_time + Edit button (same as Inbox) */}
+        {/* Section 2: Date, In time, Out time from root (outside form_data) + Edit button */}
         <div>
           <h3 className="text-gray-700 font-medium text-sm mb-3">Requested Adjustment Time</h3>
           <div className="bg-white rounded-[10px] drop-shadow-md overflow-x-auto border border-gray-100">
@@ -248,9 +223,9 @@ const RequestedAdjust = ({ onClose }) => {
                 </tr>
               </thead>
               <tbody>
-                {hasSection2Data ? (
-                  rootTimeRows.map((row, idx) => (
-                    <tr key={row._id ?? idx} className="hover:bg-gray-50 border-b border-gray-200">
+                {rootTimeRow.length > 0 ? (
+                  rootTimeRow.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 border-b border-gray-200">
                       <td className="p-4">
                         <Typography variant="small" color="blue-gray" className="font-normal">
                           {formatDateDisplay(row.date)}
@@ -269,7 +244,7 @@ const RequestedAdjust = ({ onClose }) => {
                       <td className="p-4">
                         <button
                           type="button"
-                          onClick={() => openEdit(row)}
+                          onClick={openEdit}
                           className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 text-[#3DA5F4] hover:bg-blue-50 transition-colors text-sm font-medium"
                           title="Edit"
                           aria-label="Edit adjustment"
@@ -295,10 +270,7 @@ const RequestedAdjust = ({ onClose }) => {
       {/* Side modal: Date, In time, Out time + Update button */}
       <PortalDrawer
         open={editDrawerOpen}
-        closeDrawer={() => {
-          setEditDrawerOpen(false);
-          setEditingSubmissionId(null);
-        }}
+        closeDrawer={() => setEditDrawerOpen(false)}
         widthSize={420}
         title="Edit time adjustment"
         compo={
@@ -336,6 +308,4 @@ const RequestedAdjust = ({ onClose }) => {
       />
     </div>
   );
-};
-
-export default RequestedAdjust;
+}

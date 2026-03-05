@@ -15,15 +15,19 @@ const departmentsApi = {
         })
     },
 
-    manageDepartments: function (bid, page = 1, limit = 10) {
+    manageDepartments: function (bid, page = 1, limit = 10, get_all_departments = false) {
+        const params = {
+            branch_id: bid,
+            page,
+            limit
+        };
+        if (get_all_departments === true) {
+            params.get_all_departments = true;
+        }
         return axiosInstancecoremodule.request({
             method: 'GET',
             url: `/api/v1/departments`,
-            params: {
-                branch_id: bid,
-                page,
-                limit
-            }
+            params
         })
     },
 
@@ -50,10 +54,16 @@ const departmentsApi = {
     },
 
     getDeptEmployees: function (dept_id, page = 1, limit = 10, search = '') {
-        const params = new URLSearchParams();
-        if (dept_id !== 0 && dept_id !== '0' && dept_id !== null && dept_id !== undefined) {
-            params.append('dept_id', dept_id);
+        // All Departments: dept_id=0 and page=all only
+        if (dept_id === 0 || dept_id === '0') {
+            return axiosInstancecoremodule.request({
+                method: 'GET',
+                url: `/api/v1/employees`,
+                params: { dept_id: 0, page: 'all' }
+            })
         }
+        const params = new URLSearchParams();
+        params.append('dept_id', dept_id);
         params.append('page', page);
         params.append('limit', limit);
         if (search && String(search).trim() !== '') {
@@ -213,12 +223,12 @@ const departmentsApi = {
     },
 
 
-    get_all_Department: function (data) {
+    get_all_Department: function (branchId) {
         return axiosInstancecoremodule.request({
             method: 'GET',
             url: "/api/v1/departments/list/all",
             params: {
-                branch_id: data
+                branch_id: branchId === undefined || branchId === null ? 0 : branchId
             }
         })
     }

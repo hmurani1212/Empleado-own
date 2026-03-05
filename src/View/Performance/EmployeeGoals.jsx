@@ -521,10 +521,10 @@ const EmployeeGoals = () => {
 
       {currentView === "feedback" && <EmployeeFeedback />}
 
-      {addGoalValue.show && (
-        <PortalDrawer
-          open={addGoalValue.show}
-          compo={
+      <PortalDrawer
+        open={addGoalValue.show}
+        compo={
+          addGoalValue.show ? (
             addGoalValue.view ? (
               <ViewGoal
                 goalData={addGoalValue}
@@ -542,12 +542,12 @@ const EmployeeGoals = () => {
                 handleRemoveEmp={handleRemoveEmp}
               />
             )
-          }
-          title={addGoalValue.view ? "View Goal" : addGoalValue.update ? "Edit Goal" : "Add Goal"}
-          closeDrawer={toggleAddGoal}
-          widthSize={addGoalValue.view ? 700 : 550}
-        />
-      )}
+          ) : null
+        }
+        title={addGoalValue.show ? (addGoalValue.view ? "View Goal" : addGoalValue.update ? "Edit Goal" : "Add Goal") : ""}
+        closeDrawer={addGoalValue.show ? toggleAddGoal : () => {}}
+        widthSize={addGoalValue.show ? (addGoalValue.view ? 700 : 550) : 550}
+      />
 
       <ConfirmationDialog
         openDialog={showDeleteDialog}
