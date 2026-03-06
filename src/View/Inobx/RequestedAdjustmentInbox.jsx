@@ -42,7 +42,7 @@ function formatUnixToTime12(unixSec) {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-/** Build rows from form_data actual_in1/actual_out1, etc. when value > 0. Date from form_data.date. First section: in 24h, out in 12h. */
+/** Build rows from form_data actual_in1/actual_out1, etc. when value > 0. Date from form_data.date. Both in and out in 12-hour with AM/PM. */
 function buildActualTimeRows(formData) {
   if (!formData || typeof formData !== 'object') return [];
   const date = formData.date ?? '';
@@ -55,7 +55,7 @@ function buildActualTimeRows(formData) {
     if (inNum > 0 || outNum > 0) {
       rows.push({
         date,
-        in_time: formatUnixToTime(inVal),
+        in_time: formatUnixToTime12(inVal),
         out_time: formatUnixToTime12(outVal),
       });
     }

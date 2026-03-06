@@ -10,6 +10,33 @@ import {
 } from "../../services/__frequentApiServices";
 import { NotepadTextDashedIcon } from "lucide-react";
 
+/** Extract plain text from block.data.text (string or rich-text object). */
+function getBlockText(block) {
+  const raw = block?.data?.text;
+  if (raw == null) return '';
+  if (typeof raw === 'string') return raw.replace(/<[^>]*>/g, '').trim();
+  if (typeof raw === 'object' && raw.blocks) {
+    const first = raw.blocks[0];
+    return first?.data?.text != null ? String(first.data.text).replace(/<[^>]*>/g, '').trim() : '';
+  }
+  return String(raw).replace(/<[^>]*>/g, '').trim();
+}
+
+/** Returns true if blocks are the default auto-filled content (userID, title, name) so we can treat as empty. */
+function isDefaultNoteContent(blocks, noteTitle, creatorName) {
+  if (!blocks || !Array.isArray(blocks) || blocks.length === 0) return false;
+  const title = (noteTitle || '').trim();
+  const name = (creatorName || '').trim();
+  const validBlocks = blocks.filter((b) => b != null && typeof b === 'object');
+  if (validBlocks.length === 0) return false;
+  const allParagraph = validBlocks.every((b) => b.type === 'paragraph' || b.type === 'text');
+  if (!allParagraph) return false;
+  const texts = validBlocks.map((b) => getBlockText(b));
+  const isOnlyDigits = (s) => /^\d+$/.test(s);
+  const isDefaultText = (t) => t === '' || t === title || t === name || isOnlyDigits(t);
+  return texts.every(isDefaultText);
+}
+
 const useNoteHandler = () => {
   const noteDelete = useStore((state) => state.noteDelete);
   const newNote = useStore((state) => state.newNote);
@@ -333,10 +360,9 @@ const useNoteHandler = () => {
         const data = response.data;
         if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
           showToast("Note Added Successfully", "success");
-          handleDrawerToggleNote();
+          setAddNoteValue((prev) => ({ ...prev, note_title: "", show: false, titleOnlyEdit: false }));
           
           // Refetch notes from database to get the correct data instead of relying on API response
-          // This ensures we get the actual database ID and all correct fields
           await gettingNotes({ id: addNoteValue.notebook_id });
         } else {
           const error = data.ERROR_DESCRIPTION;
@@ -434,7 +460,6 @@ const useNoteHandler = () => {
         let parsedEditorContent = null;
         if (dbData.editor_content) {
           try {
-            // Handle nested structure: dbData.editor_content.editor_content
             const contentToParse = dbData.editor_content.editor_content || dbData.editor_content;
             parsedEditorContent = typeof contentToParse === 'string' 
               ? JSON.parse(contentToParse) 
@@ -444,13 +469,23 @@ const useNoteHandler = () => {
             parsedEditorContent = null;
           }
         }
+        const creatorNameForView = dbData.creator_name || dbData.created_by || dbData.user_name || dbData.author || dbData.creator || "";
+        const noteTitleForView = dbData.note_title || dbData.note?.note_title || "";
+        const blocks = parsedEditorContent?.blocks || [];
+        const useEmptyContent = isDefaultNoteContent(blocks, noteTitleForView, creatorNameForView);
+        const emptyContent = { blocks: [], time: Date.now(), version: parsedEditorContent?.version || "2.31.0" };
+        const finalEditorContent = useEmptyContent ? emptyContent : (dbData.note?.editor_content || dbData.editor_content);
+        const finalParsedContent = useEmptyContent ? emptyContent : parsedEditorContent;
         
-        // Try different possible data structures for the note content
         const editorData = {
           ...dbData,
-          editor_content: dbData.note?.editor_content || dbData.editor_content, // Get from note object
+          editor_content: finalEditorContent,
+          editor_content_parsed: finalParsedContent,
           entry_time: dbData.entry_time || dbData.note?.entry_time || Math.floor(Date.now() / 1000),
-          attachments: dbData.attachments || dbData.attachements || []
+          attachments: dbData.attachments || dbData.attachements || [],
+          ...(dbData.note && useEmptyContent
+            ? { note: { ...dbData.note, editor_content: emptyContent, editor_content_parsed: emptyContent } }
+            : {}),
         };
         
         // Update the note in the store with the new view_count immediately
@@ -552,11 +587,15 @@ const useNoteHandler = () => {
               parsedEditorContent = {};
             }
           } else if (rawEditorContent.blocks) {
-            // Already parsed content
             parsedEditorContent = rawEditorContent;
           } else {
             parsedEditorContent = rawEditorContent;
           }
+        }
+        const creatorName = dbData.creator_name || dbData.created_by || dbData.user_name || dbData.author || dbData.creator || "";
+        const noteTitle = dbData.note_title || "";
+        if (parsedEditorContent?.blocks && isDefaultNoteContent(parsedEditorContent.blocks, noteTitle, creatorName)) {
+          parsedEditorContent = { ...parsedEditorContent, blocks: [], time: Date.now(), version: parsedEditorContent.version || "2.30.5" };
         }
 
         // Process tags - they should be directly in dbData.tags
@@ -579,7 +618,6 @@ const useNoteHandler = () => {
           });
         }
         
-        const creatorName = dbData.creator_name || dbData.created_by || dbData.user_name || dbData.author || dbData.creator || "";
         setEditorValue((prevState) => ({
             ...prevState,
             note_id: noteId,

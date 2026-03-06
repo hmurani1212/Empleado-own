@@ -125,6 +125,7 @@ const useCreatePolicies = () => {
     forceTimeOut: '',
     timeOutPolicy: '',
     lateMinutBuket: '',
+    monthlyBucketType: '', // '' | 'late_minutes' | 'early_leave' — only early_leave sends early_leave=1 in payload
     lateComerPenalty: '',
     workingDaysdutyClosingMinutesOT: '',
     minReqOT: '',
@@ -687,6 +688,7 @@ const useCreatePolicies = () => {
       timeout_policy: parseInt(newhrPolicesValues.timeOutPolicy?.value) || 0,
       late_time_in_minutes: parseInt(newhrPolicesValues.lateMinutBuket) || 0,
       late_comers_penalty: parseFloat(newhrPolicesValues.lateComerPenalty) || 0,
+      ...(newhrPolicesValues.monthlyBucketType === 'early_leave' ? { early_leave: 1 } : {}),
 
       // === OVERTIME SETTINGS ===
       overtime_pay: newhrPolicesValues.overTimeCounter?.value === 1 ? 1 : 0, // Ensure only 0 or 1, no parseInt needed
