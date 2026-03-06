@@ -192,19 +192,19 @@ function ApplicationsLists() {
       gettingApplicationsList();
       return;
     }
-    const branchVal = selectedOption.value === '0' || selectedOption.value === 0 ? 0 : selectedOption.value;
-    filters.branch = branchVal;
-
+       const branchVal = selectedOption.value === '0' || selectedOption.value === 0 ? 0 : selectedOption.value;
+       filters.branch = branchVal;
+       
     await gettingSubBranches(branchVal);
-    if (branchVal !== 0) {
-      setSelectedDepartment(null);
-    } else {
-      setSelectedDepartment({ value: 0, label: 'All Departments' });
+       if (branchVal !== 0) {
+         setSelectedDepartment(null);
+       } else {
+         setSelectedDepartment({ value: 0, label: 'All Departments' });
       // Do not set filters.deptt when All Branches - API should receive branch_id=0 only, not dep_id
-    }
-
-    if (selectedStatus?.value) filters.status = selectedStatus.value;
-    gettingFilteredApplicationsList(filters);
+       }
+       
+       if (selectedStatus?.value) filters.status = selectedStatus.value;
+       gettingFilteredApplicationsList(filters);
   };
 
   const handleDepartmentChange = (selectedOption) => {
@@ -491,57 +491,57 @@ function ApplicationsLists() {
         >
           {/* Controls Bar */}
           <div className="flex flex-col gap-4">
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div className="w-full min-w-0">
-                  <CustomSelect
-                    placeHolderTitle="Filter by Branch"
-                    value={selectedBranch}
-                    options={[
-                      { value: 0, label: 'All Branches' },
-                      ...(empBranches?.map((branch) => ({ value: branch.id, label: branch.branch_name })) || [])
-                    ]}
-                    onChangeHandler={handleBranchChange}
-                    customStyles={false}
-                  />
-                </div>
+                <CustomSelect
+                  placeHolderTitle="Filter by Branch"
+                  value={selectedBranch}
+                  options={[
+                    { value: 0, label: 'All Branches' },
+                    ...(empBranches?.map((branch) => ({ value: branch.id, label: branch.branch_name })) || [])
+                  ]}
+                  onChangeHandler={handleBranchChange}
+                  customStyles={false}
+                />
+              </div>
                 <div className="w-full min-w-0">
-                  <CustomSelect
-                    placeHolderTitle="Filter by Department"
-                    value={selectedDepartment}
-                    options={[
-                      { value: 0, label: 'All Departments' },
-                      ...(dept_subDept?.departments?.map((dept) => ({ value: dept.id, label: dept.name })) || [])
-                    ]}
-                    onChangeHandler={handleDepartmentChange}
-                    customStyles={false}
-                  />
-                </div>
+                <CustomSelect
+                  placeHolderTitle="Filter by Department"
+                  value={selectedDepartment}
+                  options={[
+                    { value: 0, label: 'All Departments' },
+                    ...(dept_subDept?.departments?.map((dept) => ({ value: dept.id, label: dept.name })) || [])
+                  ]}
+                  onChangeHandler={handleDepartmentChange}
+                  customStyles={false}
+                />
+              </div>
                 <div className="w-full min-w-0">
-                  <CustomSelect
-                    placeHolderTitle="Filter by Status"
-                    value={selectedStatus}
-                    options={[
-                      { value: 0, label: 'All' },
-                      { value: '1', label: 'Approved' },
-                      { value: '2', label: 'Rejected' },
-                      { value: '3', label: 'Pending' }
-                    ]}
-                    onChangeHandler={handleStatusChange}
-                    customStyles={false}
-                  />
-                </div>
+                <CustomSelect
+                  placeHolderTitle="Filter by Status"
+                  value={selectedStatus}
+                  options={[
+                    { value: 0, label: 'All' },
+                    { value: '1', label: 'Approved' },
+                    { value: '2', label: 'Rejected' },
+                    { value: '3', label: 'Pending' }
+                  ]}
+                  onChangeHandler={handleStatusChange}
+                  customStyles={false}
+                />
+              </div>
                 <div className="w-full min-w-0">
-                  <CustomSelect
-                    placeHolderTitle="Search Employee"
-                    value={selectedEmployee}
-                    options={employeeOptions}
-                    onChangeHandler={handleEmployeeChange}
-                    isSearchable={true}
-                    isClearable={true}
-                    customStyles={false}
-                  />
-                </div>
+                <CustomSelect
+                  placeHolderTitle="Search Employee"
+                  value={selectedEmployee}
+                  options={employeeOptions}
+                  onChangeHandler={handleEmployeeChange}
+                  isSearchable={true}
+                  isClearable={true}
+                  customStyles={false}
+                />
+              </div>
               </div>
             </div>
             {showPrintSection && (
@@ -618,9 +618,9 @@ function ApplicationsLists() {
                           </div>
                         </td>
                         <td className="p-4 text-left">
-                            <Typography className="text-sm font-semibold text-gray-900 font-poppins line-clamp-1" title={ele?.subject}>
-                                {ele?.subject}
-                            </Typography>
+                                <Typography className="text-sm font-semibold text-gray-900 font-poppins line-clamp-1" title={ele?.subject}>
+                                    {ele?.subject}
+                                </Typography>
                         </td>
                         <td className="p-4">
                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-600 border border-purple-100">

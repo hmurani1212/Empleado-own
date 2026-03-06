@@ -1,25 +1,20 @@
-import { Button } from "@material-tailwind/react";
 import React, { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import usePayroll from "../../ViewModel/PayrollViewModel/PayrollServices";
+import { HiOutlineCurrencyDollar } from "react-icons/hi2";
 
-// localStorage keys for clearing persisted data
 const PAYSLIP_GENERATION_OPTIONS_KEY = "payslipGenerationOptions";
-const GENERATE_PAYSLIP_SEARCH_FILTER_KEY = "generatePayslipSearchFilter";
-const GENERATE_PAYSLIP_FILTERS_KEY = "generatePayslipFilters";
+const GENERATE_PAYSLIP_SEARCH_FILTER_KEY = "generatePayrollSearchFilter";
+const GENERATE_PAYSLIP_FILTERS_KEY = "generatePayrollFilters";
 
-// Function to clear all Generate Payslip persisted data
-const clearAllGeneratePayslipData = () => {
+const clearAllGeneratePayrollData = () => {
   try {
     localStorage.removeItem(PAYSLIP_GENERATION_OPTIONS_KEY);
     localStorage.removeItem(GENERATE_PAYSLIP_SEARCH_FILTER_KEY);
     localStorage.removeItem(GENERATE_PAYSLIP_FILTERS_KEY);
   } catch (error) {
-    console.error(
-      "Error clearing Generate Payslip data from localStorage:",
-      error
-    );
+    console.error("Error clearing Generate Payslip data from localStorage:", error);
   }
 };
 
@@ -34,88 +29,96 @@ const Payroll = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Clear persisted Generate Payslip data when leaving the payroll module
+  const isTabActive = (link) => {
+    if (!link || link === "#") return false;
+    if (link === "/payroll" || link === "/payroll/payroll_overview")
+      return location.pathname === "/payroll" || location.pathname === "/payroll/payroll_overview";
+    return location.pathname === link || location.pathname.startsWith(link + "/");
+  };
+
   useEffect(() => {
-    // Check if we're navigating away from payroll routes
     const currentPath = location.pathname;
-    const isInPayrollModule = currentPath.startsWith("/payroll");
-
-    // If we're not in the payroll module, clear the persisted data
-    if (!isInPayrollModule) {
-      clearAllGeneratePayslipData();
-    }
-
-    // Cleanup function: clear data when component unmounts (leaving payroll module entirely)
+    if (!currentPath.startsWith("/payroll")) clearAllGeneratePayrollData();
     return () => {
-      // Only clear if we're actually leaving (not just navigating within payroll)
-      const pathOnUnmount = window.location.pathname;
-      if (!pathOnUnmount.startsWith("/payroll")) {
-        clearAllGeneratePayslipData();
-      }
+      if (!window.location.pathname.startsWith("/payroll")) clearAllGeneratePayrollData();
     };
   }, [location.pathname]);
 
-  // Tooba
-  // Manage Payslips, Export Reports, Settings
   const handleNavLinksPayroll = (e, link, id) => {
     e.preventDefault();
     navigate(link);
-
-    if (id === 1) {
-      getDataGrossNet();
-    } else if (id === 2) {
-      getAllBranchesPayroll();
-    } else if (id === 3) {
-      // No template filter - pass null for template_id
-      gettingManageEmpSalary(null, null, "", false, null, true);
-    }
+    if (id === 1) getDataGrossNet();
+    else if (id === 2) getAllBranchesPayroll();
+    else if (id === 3) gettingManageEmpSalary(null, null, "", false, null, true);
   };
 
   return (
-    <>
-      <div className="py-2 lg:px-2 md:px-2 px-0">
-        <span className="text-[20px] font-Urbanist font-semibold text-[#474747]">
-          Payroll
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-2 pb-3 rounded-[10px]">
-        <div className="flex justify-between items-center gap-5 lg:px-2 md:px-2 px-0 py-5">
-          <div className="flex items-center gap-5 w-full flex-wrap">
-            {payrollNavTitles.map((ele) => (
-              <NavLink
-                key={ele.id}
-                className={`${
-                  location.pathname === ele.link
-                    ? "text-white"
-                    : "hover:text-black/60 text-[#474747]"
-                } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
-                style={{
-                  WebkitTapHighlightColor: "transparent",
-                }}
-                onClick={(e) => handleNavLinksPayroll(e, ele.link, ele.id)}
-              >
-                {location.pathname === ele.link && (
-                  <motion.span
-                    layoutId="bubble"
-                    className="absolute inset-0 z-10 bg-[#8bc9f8]"
-                    style={{ borderRadius: 9999 }}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <span className="relative cursor-pointer text-[14px] z-20 font-Urbanist">
-                  {ele.title}
-                </span>
-              </NavLink>
-            ))}
+    <div className="min-h-screen p-6 font-poppins">
+      <div className="mx-auto space-y-6">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-50 rounded-xl text-bgBlue shadow-sm border border-blue-100">
+              <HiOutlineCurrencyDollar className="text-2xl" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Payroll</h1>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Overview, salary templates, payslips & reports
+              </p>
+            </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div>
+        {/* Tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.05 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-100 inline-flex flex-wrap gap-1"
+        >
+          {payrollNavTitles.map((ele) => (
+            <NavLink
+              key={ele.id}
+              to={ele.link}
+              onClick={(e) => handleNavLinksPayroll(e, ele.link, ele.id)}
+              className={({ isActive }) => {
+                const active = isTabActive(ele.link);
+                return `relative px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ease-out z-10 ${
+                  active
+                    ? "text-white shadow-md shadow-blue-500/20"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                }`;
+              }}
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              {isTabActive(ele.link) && (
+                <motion.span
+                  layoutId="payrollActiveTab"
+                  className="absolute inset-0 bg-bgBlue rounded-xl -z-10"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                />
+              )}
+              <span className="relative z-20">{ele.title}</span>
+            </NavLink>
+          ))}
+        </motion.div>
+
+        {/* Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.08 }}
+        >
           <Outlet />
-        </div>
+        </motion.div>
       </div>
-    </>
+    </div>
   );
 };
 

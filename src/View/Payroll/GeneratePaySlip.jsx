@@ -8,6 +8,7 @@ import PaySlipGenerationSelection from "./PaySlipGenerationSelection";
 import useManagePaySlipGeneration from "../../ViewModel/PayrollViewModel/ManagePaySlipGeneration";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { getContentByLabel } from "../../services/getContentService";
+import { GeneratePayslipSkeleton } from "./PayrollSkeletons";
 import { showToast } from "../../Components/Toaster/Toaster";
 
 const empListTableHeader = ["All", "Name", "Designation", "Employee ID", "Salary"];
@@ -55,7 +56,6 @@ const GeneratePaySlip = () => {
     branches_payroll,
     managePaySlipState,
     handleSelectManagePaySlip,
-    handleInputChange,
   } = useManagePaySlip();
 
   // Load saved search and filter state from localStorage
@@ -224,21 +224,12 @@ const GeneratePaySlip = () => {
     }
   };
 
-  // Handle individual employee selection
-  const handleRowSelect = (employee, e) => {
-    if (e.target.checked) {
-      setSelectedEmployees([
-        ...managePaySlipGeneration.selectedEmployees,
-        employee,
-      ]);
-    } else {
-      setSelectedEmployees(
-        managePaySlipGeneration.selectedEmployees.filter(
-          (emp) => emp.id !== employee.id
-        )
-      );
-    }
-  };
+  // Handle row select logic ...
+
+  if (managePaySlipState.loading) {
+    return <GeneratePayslipSkeleton />;
+  }
+
   return (
     <div className="flex flex-col gap-4 pt-4 lg:px-2 md:px-2 px-0">
       <div className="font-medium text-[18px] text-[#474747] font-Poppins">

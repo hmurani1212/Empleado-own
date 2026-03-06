@@ -7,6 +7,7 @@ import { showToast } from "../../Components/Toaster/Toaster";
 import payrollApi from "../../Model/Data/Payroll/Payroll";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { getContentByLabel } from "../../services/getContentService";
+import { SettingsSkeleton } from "./PayrollSkeletons";
 
 const SettingPayroll = () => {
   const [activeSection, setActiveSection] = useState("tax_exemptions");
@@ -74,6 +75,7 @@ const SettingPayroll = () => {
   const getAllBranchesPayroll = useStore(
     (state) => state.getAllBranchesPayroll
   );
+  const branchesLoaded = useStore((state) => state.branchesLoaded);
   const savingSocialSecuritySettings = useStore(
     (state) => state.savingSocialSecuritySettings
   );
@@ -135,6 +137,10 @@ const SettingPayroll = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection]);
+
+  if (!branchesLoaded) {
+    return <SettingsSkeleton />;
+  }
 
   const navigationItems = [
     { id: "social_security", label: "Social Security", active: false },
