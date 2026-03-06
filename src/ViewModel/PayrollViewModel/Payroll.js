@@ -52,6 +52,7 @@ const payrollViewModel = (set, get) => ({
     allDeductList : [],
     allIncentDeductListBoth : [],
     mountPayrollOverview: false,
+    payrollOverviewLoading: true,
     // Raw API payslips data - stored exactly as received from API (same to same)
     // Structure: Array of payslip objects with ALL fields preserved:
     // - wf_employee (nested object with employee details)
@@ -223,6 +224,12 @@ const payrollViewModel = (set, get) => ({
             return
         }
         
+        set({
+            allEmpSalary : [],
+            copyAllEmpSalary: [],
+            empSalaryLoaded: false
+        })
+
         try {
             const response = await payrollApi.getEmpSalary(branch_id, deptt_id, search, template_id, get_all)
             console.log('response gettingManageEmpSalary:', response);
@@ -344,6 +351,7 @@ const payrollViewModel = (set, get) => ({
             return
         }
         
+        set({ payrollOverviewLoading: true })
         try{
             const response = await payrollApi.getDashboardData(year, 'annual_salary')
             const data = response.data
@@ -367,7 +375,8 @@ const payrollViewModel = (set, get) => ({
                     annualGrossSalary: [],
                     grossSalary: [],
                     netSalary: [],
-                    dashboardDataLoaded: false
+                    dashboardDataLoaded: false,
+                    payrollOverviewLoading: false
                 })
             }
 
@@ -377,8 +386,11 @@ const payrollViewModel = (set, get) => ({
                 annualGrossSalary: [],
                 grossSalary: [],
                 netSalary: [],
-                dashboardDataLoaded: false
+                dashboardDataLoaded: false,
+                payrollOverviewLoading: false
             })
+        } finally {
+            set({ payrollOverviewLoading: false })
         }
     },
 

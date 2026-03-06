@@ -49,6 +49,7 @@ const useManagePaySlip = ()=>{
         originalEmpSalary: [], // To store the unfiltered list of employees
         search_emp:'',
         showFilter:false, 
+        loading: false
     });
 
     // Load saved filters from localStorage or use defaults
@@ -71,7 +72,9 @@ const useManagePaySlip = ()=>{
             case 'SELECTION':
                 return{...state, [action.field]:action.value }
             case 'EMP_SALARY':
-                return{...state, empSalary:action.payload, originalEmpSalary: action.payload }
+                return{...state, empSalary:action.payload, originalEmpSalary: action.payload, loading: false }
+            case 'SET_LOADING':
+                return{...state, loading: action.payload}
             default:
                 return state;
         }
@@ -152,6 +155,7 @@ const useManagePaySlip = ()=>{
 
     const gettingEmpSalary = async(branchData, deptId = null)=>{
         console.log('gettingEmpSalary called with:', { branchData, deptId })
+        dispatch({type: 'SET_LOADING', payload: true})
         const apiData = {
             bid: branchData?.value || branchData,
             did: deptId && deptId !== 'all' ? deptId : '',
@@ -189,8 +193,9 @@ const useManagePaySlip = ()=>{
     }
 
 
-    const gettingEmpSalaryByDept = async(dept, branch)=>{
+    const     gettingEmpSalaryByDept = async(dept, branch)=>{
         console.log('gettingEmpSalaryByDept called with:', { dept, branch })
+        dispatch({type: 'SET_LOADING', payload: true})
         const apiData = {
             bid: branch?.value || '',
             did: dept?.value || '',
@@ -231,6 +236,7 @@ const useManagePaySlip = ()=>{
 
     const gettingAllEmpSalary = async(deptId = null)=>{
         console.log('Fetching all employees from all branches')
+        dispatch({type: 'SET_LOADING', payload: true})
         const apiData = {
             bid:0, // Send 0 when "All Branch" is selected
             did: deptId && deptId !== 'all' ? deptId : '',

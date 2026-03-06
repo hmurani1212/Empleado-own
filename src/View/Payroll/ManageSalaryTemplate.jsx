@@ -7,6 +7,7 @@ import usePayroll from "../../ViewModel/PayrollViewModel/PayrollServices";
 import ManageSalaryTempList from "./ManageSalaryTempList";
 import GridManageSalary from "./GridManageSalary";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
+import { ManageSalaryTemplateSkeleton, SalaryTemplateTableSkeleton } from "./PayrollSkeletons";
 
 const ManageSalaryTemplate = () => {
   const {
@@ -23,6 +24,7 @@ const ManageSalaryTemplate = () => {
     branchFilter,
     handleBranchFilterPayroll,
     handleCreateTemplateDrawer,
+    salaryTemplatesLoaded,
   } = usePayroll();
 
   // Handle data loading for direct navigation/page reload
@@ -36,6 +38,7 @@ const ManageSalaryTemplate = () => {
       getAllBranchesPayroll();
     }
   }, []); // Empty dependency array to run only once on mount
+
   return (
     <>
       <div className="flex flex-col gap-4 lg:px-2 md:px-2 px-0">
@@ -119,14 +122,18 @@ const ManageSalaryTemplate = () => {
           </div>
         </div>
 
-        {listViewPayroll ? (
-          <div className="">
-            <ManageSalaryTempList allSalaryTemp={allSalaryTemp} />
-          </div>
+        {salaryTemplatesLoaded ? (
+          listViewPayroll ? (
+            <div className="">
+              <ManageSalaryTempList allSalaryTemp={allSalaryTemp} />
+            </div>
+          ) : (
+            <div>
+              <GridManageSalary allSalaryTemp={allSalaryTemp} />
+            </div>
+          )
         ) : (
-          <div>
-            <GridManageSalary allSalaryTemp={allSalaryTemp} />
-          </div>
+          <SalaryTemplateTableSkeleton />
         )}
       </div>
     </>

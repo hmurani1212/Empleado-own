@@ -111,6 +111,7 @@ const CustomSelect = (props) => {
       borderRadius: '10px',
       color: '#495057',
       width: isTrue === true ? '100%' : '100%',
+      backgroundColor: 'white',
     }),
     option: (base, state) => ({
       ...base,

@@ -6,6 +6,7 @@ import { IoGrid } from "react-icons/io5";
 import usePayroll from "../../ViewModel/PayrollViewModel/PayrollServices";
 import GridManageEmpSalary from "./GridManageEmpSalary";
 import ManageEmpSalaryList from "./ManageEmpSalaryList";
+import { ManageEmployeesSalarySkeleton, EmployeeSalaryTableSkeleton } from "./PayrollSkeletons";
 import { gettingDepartmentsServices } from "../../services/__frequentApiServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 
@@ -20,6 +21,7 @@ const ManageEmployeesSalary = () => {
     empSalaryTemplate,
     copyBranchesData,
     getAllBranchesPayroll,
+    empSalaryLoaded,
   } = usePayroll();
 
   const [filters, setFilters] = React.useState({
@@ -472,7 +474,9 @@ const ManageEmployeesSalary = () => {
         </div>
 
         {/* Employee List or Grid */}
-        {allEmpSalary?.length === 0 ? (
+        {!empSalaryLoaded ? (
+          <EmployeeSalaryTableSkeleton />
+        ) : allEmpSalary?.length === 0 ? (
           <div
             style={{
               display: "flex",
