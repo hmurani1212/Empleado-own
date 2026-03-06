@@ -157,6 +157,7 @@ const CreateNew = () => {
         forceTimeOut: forceTimeOut ? { value: forceTimeOut.id, label: forceTimeOut.title } : null,
         timeOutPolicy: tOPolicy ? { value: tOPolicy.value, label: tOPolicy.title } : null,
         lateMinutBuket: data.late_time_in_minutes || '',
+        monthlyBucketType: data.early_leave === 1 ? 'early_leave' : '',
         lateComerPenalty: data.late_comers_penalty || '',
         overTimeCounter: otCounter ? { value: otCounter.value, label: otCounter.title } : null,
         workingDaysdutyClosingMinutesOT: data.overtime_due_minutes || '',

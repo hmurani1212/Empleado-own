@@ -21,7 +21,7 @@ const formatCancelTime = (unixTimestamp) => {
 }
 
 const SalaryHistory = () => {
-    const {historyDataSalary, historyDataDetails, handleDialogCancel, openDialogCancel, loading, handleChangeCancel, cancelIncValues, handleCancelInc} = useManageEmpSalary()
+    const {historyDataSalary, historyDataDetails, handleDialogCancel, openDialogCancel, loading, handleChangeCancel, cancelIncValues, handleCancelInc, handleDrawerIncentive, dataSet} = useManageEmpSalary()
     const headHist = ['Increment', 'Salary', 'Effective From', 'Description', 'Cancel']
     const [ids, setIds] = useState(null)
 
@@ -50,7 +50,11 @@ const SalaryHistory = () => {
         </div>
 
         <div>
-            <CustomButton title='Increment'/>
+            <CustomButton
+                type='button'
+                title='Increment'
+                onClick={() => dataSet && handleDrawerIncentive(dataSet)}
+            />
         </div>
 
         <div>

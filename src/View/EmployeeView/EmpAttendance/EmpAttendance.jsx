@@ -35,6 +35,8 @@ const EmpAttendance = () => {
   const workingDays = lastPolicy?.working_days || [];
   const personalInfo = empAttendancData?.personal_info
   const webAttendance = empDashboardData?.section1?.web_attendance_status;
+  const workingStatus = empDashboardData?.section2?.working_status;
+  const loginTime = empDashboardData?.section2?.login_time;
 
   // Utility function to calculate duration
   function getDuration(starting_time, closing_time) {
@@ -108,7 +110,7 @@ const EmpAttendance = () => {
                 className="bg-brand-500 text-white py-2 px-6 rounded-xl text-sm font-bold shadow-md shadow-brand-500/20 hover:bg-brand-600 transition-all active:scale-95 flex items-center gap-2"
                 onClick={() => handleMobileBaseAttendance({ user_id: personalInfo?.emp_id })}
               >
-                <IoFingerPrintOutline className="text-lg" /> Check In
+                <IoFingerPrintOutline className="text-lg" /> {workingStatus === 'Duty Time' ? 'Check Out' : 'Check In'}
               </button>
             )}
         </div>
@@ -194,8 +196,8 @@ const EmpAttendance = () => {
                  <div className='w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md mb-3 text-brand-500 text-2xl'>
                     <FaClock />
                  </div>
-                 <h3 className='text-lg font-bold text-gray-800 mb-1'>{attendanceDetails?.is_even_or_odd === 'Odd' ? 'Login' : 'Logout'} Time</h3>
-                 <p className='text-3xl font-bold text-brand-600 mb-2'>{attendanceDetails?.login_time || "--:--"}</p>
+                 <h3 className='text-lg font-bold text-gray-800 mb-1'>{workingStatus === 'Duty Time' ? 'Login' : 'Logout'} Time</h3>
+                 <p className='text-3xl font-bold text-brand-600 mb-2'>{loginTime || "--:--"}</p>
                  <Chip value="Current Status" size="sm" variant="ghost" color="blue" className="rounded-full" />
              </CardBody>
         </Card>

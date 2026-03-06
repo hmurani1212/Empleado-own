@@ -185,8 +185,8 @@ const formatContent = (content) => {
 };
 
 const RenderEditorContent = ({ data }) => {
-  // console.log(" what is data Rendering editor content with data:", data);
   const renderBlock = (block, index) => {
+    if (block == null || typeof block !== 'object') return null;
     switch (block.type) {
       case 'header':
         let headerText = block.data.text || '';
@@ -213,11 +213,11 @@ const RenderEditorContent = ({ data }) => {
           paragraphText = formatContent(paragraphText);
         }
         return (
-          <div className='my-4' key={index}>
+          <div className='my-4 min-w-0 break-words' key={index}>
             <p
               key={index}
               dangerouslySetInnerHTML={{ __html: String(paragraphText) }}
-              className="paragraph-content"
+              className="paragraph-content break-words"
             />
           </div>
         );
@@ -263,8 +263,8 @@ const RenderEditorContent = ({ data }) => {
 
       case 'table':
         return (
-          <div className='my-4' key={index}>
-            <table className='w-full min-w-max table-auto my-4'>
+          <div className='my-4 overflow-x-auto' key={index}>
+            <table className='w-full table-auto my-4 editor-note-table'>
               <thead>
                 <tr>
                   {block.data.content[0].map((headerCell, headerIndex) => {
@@ -273,10 +273,10 @@ const RenderEditorContent = ({ data }) => {
                       headerText = formatContent(headerCell);
                     }
                     return (
-                      <th key={headerIndex} className='border-b border-blue-gray-100 bg-blue-gray-50 p-4 text-center'>
+                      <th key={headerIndex} className='border-b border-blue-gray-100 bg-blue-gray-50 p-4 text-left align-top min-w-0 max-w-[50%]'>
                         <Typography
                           variant="small"
-                          className="text-[#474747]"
+                          className="text-[#474747] break-words whitespace-normal"
                         >
                           {String(headerText)}
                         </Typography>
@@ -295,10 +295,10 @@ const RenderEditorContent = ({ data }) => {
                         cellText = formatContent(cell);
                       }
                       return (
-                        <td key={cellIndex} className='p-4 border-b border-blue-gray-100 text-center'>
+                        <td key={cellIndex} className='p-4 border-b border-blue-gray-100 text-left align-top min-w-0 max-w-[50%]'>
                           <Typography
                             variant="small"
-                            className="font-normal leading-none opacity-100 text-[#474747]"
+                            className="font-normal leading-snug opacity-100 text-[#474747] break-words whitespace-normal"
                           >
                             {String(cellText)}
                           </Typography>
@@ -391,9 +391,10 @@ const RenderEditorContent = ({ data }) => {
     }
   };
 
+  const safeBlocks = Array.isArray(data) ? data.filter((b) => b != null) : [];
   return (
     <div>
-      {data?.map((block, index) => renderBlock(block, index))}
+      {safeBlocks.map((block, index) => renderBlock(block, index))}
     </div>
   );
 };
@@ -503,8 +504,8 @@ const EditorData = (props) => {
       }
     }
 
-    // Default to empty array
-    return Object.values(editorData);
+    // No valid blocks structure found (e.g. editor_content is "" or missing) — show empty content
+    return [];
   }, [editorData]);
 
   return (
@@ -591,9 +592,27 @@ const EditorData = (props) => {
             color: #1976d2;
             text-decoration: underline;
           }
+          
+          .editor-note-content {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+          }
+          
+          .editor-note-content .editor-note-table {
+            table-layout: fixed;
+          }
+          
+          .editor-note-content .editor-note-table th,
+          .editor-note-content .editor-note-table td {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+          }
         `}
       </style>
-      <div className='w-[1100px] mx-auto space-y-4 pb-0'>
+      <div className='w-full max-w-[1100px] mx-auto space-y-4 pb-0 overflow-hidden'>
         <div className='flex items-center justify-between border-b pb-4'>
           <div className='flex items-center gap-4'>
             {/* Beautiful user avatar with initials */}

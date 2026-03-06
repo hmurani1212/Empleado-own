@@ -174,7 +174,7 @@ const WorkingHours = (props) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-1.5">
-            <label className="text-sm font-medium text-gray-700 font-poppins">Late Minute Monthly Bucket</label>
+            <label className="text-sm font-medium text-gray-700 font-poppins">Monthly Bucket</label>
             {openContentDrawer && (
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("LATEMINUTE_HRPOLICY_EMP")} />
             )}
@@ -189,6 +189,33 @@ const WorkingHours = (props) => {
             max={999}
             className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-poppins text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all placeholder:text-gray-400"
           />
+          <div className="flex flex-col gap-2 mt-2">
+            <label className="text-xs font-medium text-gray-500 font-poppins">Bucket type (optional)</label>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  color="blue"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500/20"
+                  containerProps={{ className: "p-0" }}
+                  checked={newhrPolicesValues.monthlyBucketType === 'late_minutes'}
+                  disabled={!newhrPolicesValues.lateMinutBuket || newhrPolicesValues.lateMinutBuket === ''}
+                  onChange={() => handleChange({ target: { name: 'monthlyBucketType', value: newhrPolicesValues.monthlyBucketType === 'late_minutes' ? '' : 'late_minutes' } })}
+                />
+                <span className={`text-sm font-poppins ${!newhrPolicesValues.lateMinutBuket ? 'text-gray-400' : 'text-gray-700'}`}>Late minutes</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  color="blue"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500/20"
+                  containerProps={{ className: "p-0" }}
+                  checked={newhrPolicesValues.monthlyBucketType === 'early_leave'}
+                  disabled={!newhrPolicesValues.lateMinutBuket || newhrPolicesValues.lateMinutBuket === ''}
+                  onChange={() => handleChange({ target: { name: 'monthlyBucketType', value: newhrPolicesValues.monthlyBucketType === 'early_leave' ? '' : 'early_leave' } })}
+                />
+                <span className={`text-sm font-poppins ${!newhrPolicesValues.lateMinutBuket ? 'text-gray-400' : 'text-gray-700'}`}>Early Leave</span>
+              </label>
+            </div>
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-1.5">

@@ -309,7 +309,7 @@ const payrollApi = {
     empSalaryDetaisl : function(data){
         return payRollinstancemodule.request({
             method: 'GET',
-            url: `/manage_payslip/employees/${data.emp_id}/comprehensive-salary`,
+            url: `/manage_payslip/employees/${data.emp_id}/salary-history`,
             params: {}
         })
     },
