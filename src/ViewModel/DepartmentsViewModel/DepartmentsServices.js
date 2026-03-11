@@ -739,32 +739,32 @@ const useDepartments = () => {
 
     const gettingDesignation = async (id, isBranch = false, page = 1, append = false) => {
         const data = isBranch ? { branch_id: id } : { d_id: id, page: page, limit: 10 };
-        // console.log('11111111111', data)
         try {
-            const response = await departmentsApi.getDesignations(data)
-            const resData = response.data
-            console.log('Designations API response:', resData?.DB_DATA?.designations);
-            if (resData.STATUS === "SUCCESSFUL") {
-                // Handle different response structures (DB_DATA or top-level DESIGNATIONS)
-                let designationsData = [];
+            const response = await departmentsApi.getDesignations(data);
+            // 304 Not Modified can have empty response.data; accept 200 and 304 and use data when present
+            const resData = response?.data;
+            const isSuccess = (response?.status === 200 || response?.status === 304) &&
+                resData && resData.STATUS === "SUCCESSFUL";
 
-                if (resData?.DB_DATA?.designations) {
+            if (isSuccess && resData) {
+                // API returns top-level DESIGNATIONS: [{ id, org_id, dept_id, title, job_description }]
+                let designationsData = [];
+                if (Array.isArray(resData.DESIGNATIONS)) {
+                    designationsData = resData.DESIGNATIONS;
+                } else if (resData?.DB_DATA?.designations) {
                     designationsData = resData.DB_DATA.designations;
                 } else if (resData?.DB_DATA?.departments) {
                     designationsData = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
-                } else if (Array.isArray(resData.DESIGNATIONS)) {
-                    designationsData = resData.DESIGNATIONS;
                 }
 
-                // Set pagination data - use the page we requested, not necessarily what API returns
-                if (resData?.DB_DATA?.pagination) {
+                // Pagination: API may return top-level pagination or DB_DATA.pagination
+                const pagination = resData.pagination || resData?.DB_DATA?.pagination;
+                if (pagination) {
                     const paginationData = {
-                        ...resData.DB_DATA.pagination,
-                        // Ensure we use the page number we actually requested
-                        page: page || resData.DB_DATA.pagination.page || 1,
-                        hasMore: (page || resData.DB_DATA.pagination.page || 1) < (resData.DB_DATA.pagination.pages || 1)
+                        ...pagination,
+                        page: page || pagination.page || 1,
+                        hasMore: (page || pagination.page || 1) < (pagination.pages || 1)
                     };
-                    console.log('Setting pagination data:', paginationData, 'Requested page:', page);
                     settingDesignationPagination(paginationData);
                 } else if (append) {
                     // If no pagination in response but we're appending, update page manually

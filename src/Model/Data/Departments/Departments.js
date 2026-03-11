@@ -179,10 +179,16 @@ const departmentsApi = {
     getDesignations: function (data) {
         return axiosInstancecoremodule.request({
             method: 'GET',
-            url: `/api/v1/designations?dept_id=${data.d_id}`,
+            url: `/api/v1/designations`,
             params: {
+                dept_id: data.d_id,
                 page: data.page || 1,
                 limit: data.limit || 10
+            },
+            // Avoid 304 Not Modified so response body is always present (304 often has empty body)
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
             }
         })
     },

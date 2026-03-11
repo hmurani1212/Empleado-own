@@ -178,18 +178,24 @@ const useEmployees = () => {
         }
     };
 
-    // Centralized API call for branches - ensures only one call is made
+    // Centralized API call for branches - GET /api/v1/branches/get_branch_employee (Core module)
+    // Response: { STATUS, DB_DATA: { branches: [{ id, branch_name }, ...] } }
     const centralizedGetBranches = async () => {
         const apiKey = createApiKey('/api/v1/branches/get_branch_employee', {});
         try {
             const response = await executeApiCall(apiKey, () => employeesApi.gettingAllBranches());
-            const data = response.data;
-            if (data.STATUS === "SUCCESSFUL") {
-                // console.log('Setting empBranches with:', data.DB_DATA.branches);
-                setEmpBranches(data.DB_DATA.branches);
+            const data = response?.data;
+            if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.branches) {
+                const branches = Array.isArray(data.DB_DATA.branches)
+                    ? data.DB_DATA.branches
+                    : [];
+                setEmpBranches(branches);
+            } else {
+                setEmpBranches([]);
             }
         } catch (err) {
-            console.error('Error fetching branches:', err);
+            console.error('Error fetching branches (get_branch_employee):', err);
+            setEmpBranches([]);
         }
     };
 
@@ -583,7 +589,14 @@ const useEmployees = () => {
 
     const fetchingAllBranches = async () => {
         await centralizedGetBranches();
-    }
+    };
+
+    // Load branches from get_branch_employee when Add Employee (or any useEmployees consumer) mounts
+    // so "Select Branch" dropdown shows branch_name and sends branch id to backend
+    useEffect(() => {
+        centralizedGetBranches();
+    }, []);
+
     const fetchingAllEmployess = async (branch_id) => {
         try {
             const response = await employeesApi.getEmpReportManager(branch_id)
