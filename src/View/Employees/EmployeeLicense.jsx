@@ -15,10 +15,10 @@ const EmployeeLicense = ({
     setEmployeeData,
     editingRecord,
     setEditingRecord,
-    onDeleteLicense
+    onDeleteLicense,
+    onRefreshDocuments
 }) => {
     const addEmployeeLicense = useStore((state) => state.addEmployeeLicense);
-    const gettingEmployeeProfile = useStore((state) => state.gettingEmployeeProfile);
     
     const [licenseForm, setLicenseForm] = useState({
         licenseTitle: '',
@@ -40,7 +40,16 @@ const EmployeeLicense = ({
         { value: '7', label: 'Other' }
     ];
 
-    // Reset form when drawer closes or populate when editing
+    const mapLicenseToForm = (record) => ({
+        licenseTitle: record.license_title || '',
+        licenseType: (record.license_type ?? record.licenseType?.id)?.toString() || '',
+        licenseNumber: record.license_number || '',
+        issuingAuthority: record.issuing_authority || '',
+        issueDate: record.issue_date ? record.issue_date.split('T')[0] : '',
+        expiryDate: record.expiry_date ? record.expiry_date.split('T')[0] : ''
+    });
+
+    // Reset form when drawer closes; when opening, populate from editing record or latest license
     useEffect(() => {
         if (!openLicenseDrawer) {
             setLicenseForm({
@@ -53,15 +62,12 @@ const EmployeeLicense = ({
             });
             setEditingRecord(null);
         } else if (editingRecord) {
-            // Populate form with editing record data
-            setLicenseForm({
-                licenseTitle: editingRecord.license_title || '',
-                licenseType: editingRecord.license_type?.toString() || '',
-                licenseNumber: editingRecord.license_number || '',
-                issuingAuthority: editingRecord.issuing_authority || '',
-                issueDate: editingRecord.issue_date ? editingRecord.issue_date.split('T')[0] : '',
-                expiryDate: editingRecord.expiry_date ? editingRecord.expiry_date.split('T')[0] : ''
-            });
+            setLicenseForm(mapLicenseToForm(editingRecord));
+        } else {
+            const list = employeeData?.employee_documents?.employee_License;
+            if (list && Array.isArray(list) && list.length > 0) {
+                setLicenseForm(mapLicenseToForm(list[list.length - 1]));
+            }
         }
     }, [openLicenseDrawer, editingRecord, setEditingRecord]);
 
@@ -143,24 +149,9 @@ const EmployeeLicense = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast(editingRecord ? 'License record updated successfully' : 'License record added successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
-                
+
+                if (onRefreshDocuments) await onRefreshDocuments();
+
                 setOpenLicenseDrawer(false);
                 
                 // Reset form
@@ -200,23 +191,8 @@ const EmployeeLicense = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast('License record deleted successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+
+                if (onRefreshDocuments) await onRefreshDocuments();
             } else {
                 showToast('Failed to delete license record', 'error');
             }

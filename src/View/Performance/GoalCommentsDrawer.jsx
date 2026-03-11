@@ -29,7 +29,7 @@ const GoalCommentsDrawer = ({ open, onClose, goal }) => {
       }
     } catch (err) {
       console.error('Error fetching comments:', err);
-      setError('Failed to load comments');
+      setError(err.response?.data?.ERROR_DESCRIPTION || 'An error occurred while fetching comments');
       setComments([]);
     } finally {
       setIsLoading(false);

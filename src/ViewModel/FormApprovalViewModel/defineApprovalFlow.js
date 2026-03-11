@@ -175,7 +175,8 @@ const useDefineApprovalFlow = () => {
                     const responseData = response.data
 
                     if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-                        const dbData = responseData.DB_DATA.designations
+                        // API may return DESIGNATIONS (top-level) or DB_DATA.designations
+                        const dbData = responseData.DESIGNATIONS ?? responseData.DB_DATA?.designations
                         const designationList = Array.isArray(dbData) ? dbData : []
                         console.log('Designation list:', designationList)
 

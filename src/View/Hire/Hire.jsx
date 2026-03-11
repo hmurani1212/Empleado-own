@@ -60,6 +60,8 @@ const Hire = ({ data }) => {
     get_record();
   }, []);
 
+  const jwt = localStorage.getItem("jwt");
+
   // console.log("cardValues:", cardValues);
 
   // hireCardList.map((data) => {
@@ -104,7 +106,7 @@ const Hire = ({ data }) => {
 
         {/* Tooba */}
         {/* Career Page */}
-        <Link to={`http://172.18.0.44:8080/${org_id}`} target="_blank">
+        <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank">
           <Button className="bg-[#0ACF97] capitalize p-2 font-medium">
             Career Page
           </Button>
@@ -117,11 +119,10 @@ const Hire = ({ data }) => {
             {hireMenu.map((ele) => (
               <NavLink
                 key={ele.id}
-                className={`${
-                  location.pathname === ele.link
+                className={`${location.pathname === ele.link
                     ? "text-white"
                     : "hover:text-[#474747]/60 text-[#474747]"
-                } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
+                  } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
                 style={{
                   WebkitTapHighlightColor: "transparent",
                 }}

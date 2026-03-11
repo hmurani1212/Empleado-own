@@ -745,15 +745,15 @@ const useDepartments = () => {
             const resData = response.data
             console.log('Designations API response:', resData?.DB_DATA?.designations);
             if (resData.STATUS === "SUCCESSFUL") {
-                // Handle different response structures
+                // Handle different response structures (DB_DATA or top-level DESIGNATIONS)
                 let designationsData = [];
 
                 if (resData?.DB_DATA?.designations) {
-                    // Direct designations array
                     designationsData = resData.DB_DATA.designations;
                 } else if (resData?.DB_DATA?.departments) {
-                    // Designations nested in departments
                     designationsData = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
+                } else if (Array.isArray(resData.DESIGNATIONS)) {
+                    designationsData = resData.DESIGNATIONS;
                 }
 
                 // Set pagination data - use the page we requested, not necessarily what API returns

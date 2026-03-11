@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Typography,
@@ -101,7 +101,7 @@ import usePriviligesService from "../../ViewModel/EmployeeViewModel/PreviligesSe
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { Link } from "react-router-dom";
 import { File_BASE_URL } from "../../Model/BaseUri";
-import { getImageUrlFromEmployeeData } from "../../utils/imageUrlUtils";
+import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../utils/imageUrlUtils";
 import ProfileImageUpload from "../../Components/ProfileImageUpload/ProfileImageUpload";
 
 import { Stepper, Step } from "@material-tailwind/react";
@@ -222,6 +222,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         bioId: "",
         hrPolicyId: null,
     });
+    const [attendanceProfileLoading, setAttendanceProfileLoading] = useState(false);
     const [basicInfoForm, setBasicInfoForm] = useState({
         name: "",
         fatherName: "",
@@ -280,6 +281,13 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     const {
         gettingEmployeeById,
         gettingEmployeeProfile,
+        gettingEmpProfileAttendance,
+        gettingEmpProfileDocuments,
+        gettingEmpProfileSalarySettings,
+        gettingEmpProfileLeaveBalance,
+        gettingEmpProfileChecklist,
+        gettingEmpProfileModulePrivileges,
+        gettingEmpProfileRepetitiveDuties,
         hrPolicyDropdown,
         fetchHrPolicyDropdown,
         hrPolicyDropdownLoading,
@@ -501,6 +509,241 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             getAllAccelerate(employeeId);
         }
     }, [activeTab, employeeId, getAllAccelerate]);
+
+    // Ref to avoid re-fetching attendance when tab is already shown
+    const attendanceTabFetchedRef = useRef(false);
+    // Fetch attendance data when user switches to Attendance Setting tab so the card shows data
+    useEffect(() => {
+        if (activeTab === 1 && employeeId && gettingEmpProfileAttendance) {
+            if (!attendanceTabFetchedRef.current) {
+                attendanceTabFetchedRef.current = true;
+                gettingEmpProfileAttendance(employeeId).then((data) => {
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.attendence) {
+                        setEmployeeData((prev) => ({
+                            ...prev,
+                            attendence: data.DB_DATA.attendence,
+                        }));
+                    }
+                });
+            }
+        } else if (activeTab !== 1) {
+            attendanceTabFetchedRef.current = false;
+        }
+    }, [activeTab, employeeId, gettingEmpProfileAttendance]);
+
+    // Ref to avoid re-fetching documents when tab is already shown
+    const documentsTabFetchedRef = useRef(false);
+    // Fetch documents data when user switches to Documents tab (academics, experience, dependents, licenses, references, documents)
+    useEffect(() => {
+        if (activeTab === 3 && employeeId && gettingEmpProfileDocuments) {
+            if (!documentsTabFetchedRef.current) {
+                documentsTabFetchedRef.current = true;
+                gettingEmpProfileDocuments(employeeId).then((data) => {
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.employee_documents) {
+                        setEmployeeData((prev) => ({
+                            ...prev,
+                            employee_documents: data.DB_DATA.employee_documents,
+                        }));
+                    }
+                });
+            }
+        } else if (activeTab !== 3) {
+            documentsTabFetchedRef.current = false;
+        }
+    }, [activeTab, employeeId, gettingEmpProfileDocuments]);
+
+    // Ref to avoid re-fetching salary settings when tab is already shown
+    const salarySettingsTabFetchedRef = useRef(false);
+    // Fetch salary settings when user switches to Salary Settings tab; keep key Salary_Settings same as API
+    useEffect(() => {
+        if (activeTab === 4 && employeeId && gettingEmpProfileSalarySettings) {
+            if (!salarySettingsTabFetchedRef.current) {
+                salarySettingsTabFetchedRef.current = true;
+                gettingEmpProfileSalarySettings(employeeId).then((data) => {
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                        setEmployeeData((prev) => ({
+                            ...prev,
+                            Salary_Settings: data.DB_DATA.Salary_Settings,
+                        }));
+                    }
+                });
+            }
+        } else if (activeTab !== 4) {
+            salarySettingsTabFetchedRef.current = false;
+        }
+    }, [activeTab, employeeId, gettingEmpProfileSalarySettings]);
+
+    // Ref to avoid re-fetching leave balance when tab is already shown
+    const leaveBalanceTabFetchedRef = useRef(false);
+    // Fetch leave balance when user switches to Leave Balance tab; keep key leave_balanace same as API
+    useEffect(() => {
+        if (activeTab === 5 && employeeId && gettingEmpProfileLeaveBalance) {
+            if (!leaveBalanceTabFetchedRef.current) {
+                leaveBalanceTabFetchedRef.current = true;
+                gettingEmpProfileLeaveBalance(employeeId).then((data) => {
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                        setEmployeeData((prev) => ({
+                            ...prev,
+                            leave_balanace: data.DB_DATA.leave_balanace,
+                        }));
+                    }
+                });
+            }
+        } else if (activeTab !== 5) {
+            leaveBalanceTabFetchedRef.current = false;
+        }
+    }, [activeTab, employeeId, gettingEmpProfileLeaveBalance]);
+
+    // Ref to avoid re-fetching checklist when tab is already shown
+    const checklistTabFetchedRef = useRef(false);
+    // Fetch checklist when user switches to Checklist tab; keep key emp_checklist same as API
+    useEffect(() => {
+        if (activeTab === 6 && employeeId && gettingEmpProfileChecklist) {
+            if (!checklistTabFetchedRef.current) {
+                checklistTabFetchedRef.current = true;
+                gettingEmpProfileChecklist(employeeId).then((data) => {
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                        setEmployeeData((prev) => ({
+                            ...prev,
+                            emp_checklist: data.DB_DATA.emp_checklist,
+                        }));
+                    }
+                });
+            }
+        } else if (activeTab !== 6) {
+            checklistTabFetchedRef.current = false;
+        }
+    }, [activeTab, employeeId, gettingEmpProfileChecklist]);
+
+    // Ref to avoid re-fetching module privileges when tab is already shown
+    const modulePrivilegesTabFetchedRef = useRef(false);
+    // Fetch module privileges when user switches to Account Privileges tab; keep key module_privileges same as API
+    useEffect(() => {
+        if (activeTab === 7 && employeeId && gettingEmpProfileModulePrivileges) {
+            if (!modulePrivilegesTabFetchedRef.current) {
+                modulePrivilegesTabFetchedRef.current = true;
+                gettingEmpProfileModulePrivileges(employeeId).then((data) => {
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.module_privileges) {
+                        const list = data.DB_DATA.module_privileges;
+                        setEmployeeData((prev) => ({
+                            ...prev,
+                            module_privileges: list,
+                        }));
+                        // Populate privileges form from first item so dropdowns show current values
+                        if (Array.isArray(list) && list.length > 0) {
+                            const first = list[0];
+                            setPrivilegesForm((prev) => ({
+                                ...prev,
+                                privilege: first.privileges != null ? String(first.privileges) : prev.privilege,
+                                ipFilter: first.ip_filter ?? prev.ipFilter,
+                            }));
+                        }
+                    }
+                });
+            }
+        } else if (activeTab !== 7) {
+            modulePrivilegesTabFetchedRef.current = false;
+        }
+    }, [activeTab, employeeId, gettingEmpProfileModulePrivileges]);
+
+    // Ref to avoid re-fetching repetitive duties when tab is already shown
+    const repetitiveDutiesTabFetchedRef = useRef(false);
+    // Fetch repetitive duties when user switches to Repetitive Duties tab; keep key Repetitive_Duties same as API
+    useEffect(() => {
+        if (activeTab === 8 && employeeId && gettingEmpProfileRepetitiveDuties) {
+            if (!repetitiveDutiesTabFetchedRef.current) {
+                repetitiveDutiesTabFetchedRef.current = true;
+                gettingEmpProfileRepetitiveDuties(employeeId).then((data) => {
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                        setEmployeeData((prev) => ({
+                            ...prev,
+                            Repetitive_Duties: data.DB_DATA.Repetitive_Duties,
+                        }));
+                    }
+                });
+            }
+        } else if (activeTab !== 8) {
+            repetitiveDutiesTabFetchedRef.current = false;
+        }
+    }, [activeTab, employeeId, gettingEmpProfileRepetitiveDuties]);
+
+    /**
+     * Refresh a profile section by calling its get API and merging into employeeData.
+     * Call after update (documents, salary, leave, checklist, privileges, duties, accelerate).
+     */
+    const refreshProfileSection = useCallback(async (section) => {
+        if (!employeeId) return;
+        try {
+            switch (section) {
+                case "documents": {
+                    const data = await gettingEmpProfileDocuments(employeeId);
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.employee_documents) {
+                        setEmployeeData((prev) => ({ ...prev, employee_documents: data.DB_DATA.employee_documents }));
+                    }
+                    break;
+                }
+                case "salary": {
+                    const data = await gettingEmpProfileSalarySettings(employeeId);
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                        setEmployeeData((prev) => ({ ...prev, Salary_Settings: data.DB_DATA.Salary_Settings }));
+                    }
+                    break;
+                }
+                case "leaveBalance": {
+                    const data = await gettingEmpProfileLeaveBalance(employeeId);
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                        setEmployeeData((prev) => ({ ...prev, leave_balanace: data.DB_DATA.leave_balanace }));
+                    }
+                    break;
+                }
+                case "checklist": {
+                    const data = await gettingEmpProfileChecklist(employeeId);
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                        setEmployeeData((prev) => ({ ...prev, emp_checklist: data.DB_DATA.emp_checklist }));
+                    }
+                    break;
+                }
+                case "privileges": {
+                    const data = await gettingEmpProfileModulePrivileges(employeeId);
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                        setEmployeeData((prev) => ({ ...prev, module_privileges: data.DB_DATA.module_privileges }));
+                    }
+                    break;
+                }
+                case "repetitiveDuties": {
+                    const data = await gettingEmpProfileRepetitiveDuties(employeeId);
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                        setEmployeeData((prev) => ({ ...prev, Repetitive_Duties: data.DB_DATA.Repetitive_Duties }));
+                    }
+                    break;
+                }
+                case "attendance": {
+                    const data = await gettingEmpProfileAttendance(employeeId);
+                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.attendence) {
+                        setEmployeeData((prev) => ({ ...prev, attendence: data.DB_DATA.attendence }));
+                    }
+                    break;
+                }
+                case "accelerate":
+                    if (getAllAccelerate) await getAllAccelerate(employeeId);
+                    break;
+                default:
+                    break;
+            }
+        } catch (err) {
+            console.error("Error refreshing profile section:", section, err);
+        }
+    }, [
+        employeeId,
+        gettingEmpProfileDocuments,
+        gettingEmpProfileSalarySettings,
+        gettingEmpProfileLeaveBalance,
+        gettingEmpProfileChecklist,
+        gettingEmpProfileModulePrivileges,
+        gettingEmpProfileRepetitiveDuties,
+        gettingEmpProfileAttendance,
+        getAllAccelerate,
+    ]);
 
     const getMaritalStatusLabel = (status) => {
         // Handle null, undefined, or empty values
@@ -994,13 +1237,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (response && response.STATUS === "SUCCESSFUL") {
                 showToast("Salary Settings Updated Successfully", "success");
 
-                // Refresh employee data to show updated information
-                if (gettingEmployeeProfile) {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData?.DB_DATA) {
-                        setEmployeeData(refreshedData.DB_DATA);
-                    }
-                }
+                await refreshProfileSection("salary");
 
                 setOpenSalarySettingsDrawer(false);
             } else {
@@ -1193,17 +1430,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 // Close drawer
                 setOpenAssetDrawer(false);
 
-                // Refresh employee data to show new asset
-                if (gettingEmployeeProfile && employeeId) {
-                    try {
-                        const refreshedData = await gettingEmployeeProfile(employeeId);
-                        if (refreshedData && refreshedData?.DB_DATA) {
-                            setEmployeeData(refreshedData.DB_DATA);
-                        }
-                    } catch (refreshError) {
-                        console.error("Error refreshing employee data:", refreshError);
-                    }
-                }
+                await refreshProfileSection("checklist");
             }
         } catch (error) {
             console.error("Error adding asset:", error);
@@ -1242,17 +1469,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 setOpenDeleteConfirmDialog(false);
                 setAssetToDelete(null);
 
-                // Refresh employee data to remove deleted asset
-                if (gettingEmployeeProfile && employeeId) {
-                    try {
-                        const refreshedData = await gettingEmployeeProfile(employeeId);
-                        if (refreshedData && refreshedData?.DB_DATA) {
-                            setEmployeeData(refreshedData.DB_DATA);
-                        }
-                    } catch (refreshError) {
-                        console.error("Error refreshing employee data:", refreshError);
-                    }
-                }
+                await refreshProfileSection("checklist");
             }
         } catch (error) {
             console.error("Error deleting asset:", error);
@@ -1411,18 +1628,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (result) {
                 // showToast('Attendance settings updated successfully', 'success');
 
-                // Refresh employee profile data to update the UI in real-time
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        setEmployeeData((prevData) => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA,
-                        }));
-                    }
-                } catch (error) {
-                    console.error("Error refreshing employee data:", error);
-                }
+                await refreshProfileSection("attendance");
 
                 setOpenAttendanceSettingDrawer(false);
             }
@@ -1473,18 +1679,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             const result = await updateAttendanceSettings(payload);
 
             if (result && result.STATUS === "SUCCESSFUL") {
-                // Refresh employee profile data to update the UI in real-time
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        setEmployeeData((prevData) => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA,
-                        }));
-                    }
-                } catch (error) {
-                    console.error("Error refreshing employee data:", error);
-                }
+                await refreshProfileSection("attendance");
 
                 setOpenAttendanceToggleDrawer(false);
                 setAttendanceToggleType(null);
@@ -1746,6 +1941,18 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         return roleMapping[roleName] !== undefined ? roleMapping[roleName] : null;
     };
 
+    // Get display name for role (supports user_roles.role_name or module_privileges.privileges)
+    const getRoleDisplayName = (role) => {
+        if (!role) return "N/A";
+        if (role.role_name) return role.role_name;
+        const p = role.privileges;
+        if (p === "0" || p === 0) return "Employee";
+        if (p === "1" || p === 1) return "Super Admin";
+        if (p === "2" || p === 2) return "Branch Admin";
+        if (p === "3" || p === 3) return "Department Admin";
+        return String(p);
+    };
+
     // Handle delete role click
     const handleDeleteRole = (role) => {
         setRoleToDelete(role);
@@ -1760,10 +1967,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
 
         setIsDeletingRole(true);
         try {
-            const privilegeNumber = getPrivilegeNumber(roleToDelete.role_name);
+            const privilegeNumber = roleToDelete.privileges != null
+                ? Number(roleToDelete.privileges)
+                : getPrivilegeNumber(roleToDelete.role_name);
 
-            if (privilegeNumber === null) {
-                showToast("Invalid role name", "error");
+            if (privilegeNumber === null || isNaN(privilegeNumber)) {
+                showToast("Invalid role", "error");
                 return;
             }
 
@@ -1775,15 +1984,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
 
             if (responseData.STATUS === "SUCCESSFUL") {
                 showToast(
-                    `Role ${roleToDelete.role_name} removed successfully`,
+                    `Role ${getRoleDisplayName(roleToDelete)} removed successfully`,
                     "success"
                 );
 
-                // Refresh employee profile data
-                const refreshedData = await gettingEmployeeProfile(employeeId);
-                if (refreshedData && refreshedData.DB_DATA) {
-                    setEmployeeData(refreshedData.DB_DATA);
-                }
+                await refreshProfileSection("privileges");
 
                 setOpenDeleteConfirmDialog(false);
                 setRoleToDelete(null);
@@ -1909,12 +2114,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
 
     const handleRefreshEmployeeData = async () => {
         try {
-            if (gettingEmployeeProfile && employeeId) {
-                const refreshedData = await gettingEmployeeProfile(employeeId);
-                if (refreshedData && refreshedData?.DB_DATA) {
-                    setEmployeeData(refreshedData.DB_DATA);
-                }
-            }
+            await refreshProfileSection("privileges");
         } catch (error) {
             console.error("Error refreshing employee data:", error);
         }
@@ -1944,22 +2144,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast("Experience record deleted successfully", "success");
 
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-
-                        // Update the parent component's employeeData state
-                        setEmployeeData((prevData) => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA,
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error("Error refreshing employee profile:", refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+                await refreshProfileSection("documents");
             } else {
                 showToast("Failed to delete experience record", "error");
             }
@@ -1989,22 +2174,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast("Dependent record deleted successfully", "success");
 
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-
-                        // Update the parent component's employeeData state
-                        setEmployeeData((prevData) => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA,
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error("Error refreshing employee profile:", refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+                await refreshProfileSection("documents");
             } else {
                 showToast("Failed to delete dependent record", "error");
             }
@@ -2034,22 +2204,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast("License record deleted successfully", "success");
 
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-
-                        // Update the parent component's employeeData state
-                        setEmployeeData((prevData) => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA,
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error("Error refreshing employee profile:", refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+                await refreshProfileSection("documents");
             } else {
                 showToast("Failed to delete license record", "error");
             }
@@ -2079,22 +2234,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast("Reference record deleted successfully", "success");
 
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-
-                        // Update the parent component's employeeData state
-                        setEmployeeData((prevData) => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA,
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error("Error refreshing employee profile:", refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+                await refreshProfileSection("documents");
             } else {
                 showToast("Failed to delete reference record", "error");
             }
@@ -2124,22 +2264,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast("Document record deleted successfully", "success");
 
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-
-                        // Update the parent component's employeeData state
-                        setEmployeeData((prevData) => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA,
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error("Error refreshing employee profile:", refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+                await refreshProfileSection("documents");
             } else {
                 showToast("Failed to delete document record", "error");
             }
@@ -2169,21 +2294,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast("Academic record deleted successfully", "success");
 
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-
-                        // Update the parent component's employeeData state
-                        setEmployeeData((prevData) => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA,
-                        }));
-                    }
-                } catch (error) {
-                    console.error("Error refreshing employee data:", error);
-                }
+                await refreshProfileSection("documents");
             } else {
                 showToast("Failed to delete academic record", "error");
             }
@@ -2222,24 +2333,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast("Duty deleted successfully", "success");
 
-                // Close dialog
                 setOpenDeleteConfirmDialog(false);
                 setDutyToDelete(null);
 
-                // Refresh employee data to remove deleted duty
-                if (gettingEmployeeProfile && employeeId) {
-                    try {
-                        const refreshedData = await gettingEmployeeProfile(employeeId);
-                        if (refreshedData && refreshedData.DB_DATA) {
-                            setEmployeeData((prevData) => ({
-                                ...prevData,
-                                ...refreshedData.DB_DATA,
-                            }));
-                        }
-                    } catch (error) {
-                        console.error("Error refreshing employee data:", error);
-                    }
-                }
+                await refreshProfileSection("repetitiveDuties");
             } else {
                 showToast("Failed to delete duty", "error");
             }
@@ -2996,9 +3093,42 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         variant="text"
                         size="sm"
                         className="p-1.5 sm:p-2 text-green-500 rounded-full"
-                        onClick={() => setOpenAttendanceSettingDrawer(true)}
+                        disabled={attendanceProfileLoading}
+                        onClick={async () => {
+                            if (!employeeId || !gettingEmpProfileAttendance) return;
+                            setAttendanceProfileLoading(true);
+                            try {
+                                const data = await gettingEmpProfileAttendance(employeeId);
+                                if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                                    const attendence = data.DB_DATA.attendence;
+                                    setEmployeeData((prev) => ({
+                                        ...prev,
+                                        attendence: attendence ?? prev?.attendence,
+                                    }));
+                                    if (attendence) {
+                                        setAttendanceSettingsForm((prev) => ({
+                                            ...prev,
+                                            hrPolicy: attendence?.policyData?.policy_name ?? prev.hrPolicy,
+                                            bioId: attendence?.bioRegistration != null ? String(attendence.bioRegistration) : prev.bioId,
+                                            hrPolicyId: attendence?.policyData?.id ?? prev.hrPolicyId,
+                                        }));
+                                    }
+                                    setOpenAttendanceSettingDrawer(true);
+                                } else {
+                                    showToast(data?.ERROR_DESCRIPTION || "Failed to load attendance settings", "error");
+                                }
+                            } catch (err) {
+                                showToast("Failed to load attendance settings", "error");
+                            } finally {
+                                setAttendanceProfileLoading(false);
+                            }
+                        }}
                     >
-                        <FaRegPenToSquare size={18} />
+                        {attendanceProfileLoading ? (
+                            <span className="inline-block w-[18px] h-[18px] border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <FaRegPenToSquare size={18} />
+                        )}
                         {/* <svg
                             className="w-5 h-5 text-gray-600"
                             fill="none"
@@ -4592,6 +4722,15 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                                         Title
                                                                     </Typography>
                                                                 </th>
+                                                                <th className="text-center py-3 px-4 w-1/6">
+                                                                    <Typography
+                                                                        variant="small"
+                                                                        color="gray"
+                                                                        className="font-semibold text-xs uppercase tracking-wide"
+                                                                    >
+                                                                        Preview
+                                                                    </Typography>
+                                                                </th>
                                                                 <th className="text-center py-3 px-4 w-1/2">
                                                                     <Typography
                                                                         variant="small"
@@ -4988,58 +5127,87 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                         (employeeData?.employee_documents?.employee_document
                                                             ?.length > 0 ? (
                                                             employeeData.employee_documents.employee_document.map(
-                                                                (doc, index) => (
-                                                                    <tr key={index} className="hover:bg-gray-50 transition-colors">
-                                                                        <td className="py-4 px-4 border-b border-gray-100">
-                                                                            <Typography
-                                                                                variant="small"
-                                                                                color="blue-gray"
-                                                                                className="font-medium text-sm"
-                                                                            >
-                                                                                {doc.doc_title || "--"}
-                                                                            </Typography>
-                                                                        </td>
-                                                                        <td className="py-4 px-4 border-b border-gray-100 text-center">
-                                                                            <div className="flex gap-2 justify-center">
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        if (doc.doc_name) {
-                                                                                            window.open(doc.doc_name, "_blank");
+                                                                (doc, index) => {
+                                                                    const docUrl = buildDocumentFileUrl(doc);
+                                                                    const isImage = /\.(png|jpg|jpeg|gif|webp|bmp|svg)(\?|$)/i.test(doc.doc_name || "");
+                                                                    return (
+                                                                        <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                                                            <td className="py-4 px-4 border-b border-gray-100">
+                                                                                <Typography
+                                                                                    variant="small"
+                                                                                    color="blue-gray"
+                                                                                    className="font-medium text-sm"
+                                                                                >
+                                                                                    {doc.doc_title || "--"}
+                                                                                </Typography>
+                                                                            </td>
+                                                                            <td className="py-4 px-4 border-b border-gray-100 text-center">
+                                                                                {docUrl && isImage ? (
+                                                                                    <a
+                                                                                        href={docUrl}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
+                                                                                        className="inline-block"
+                                                                                    >
+                                                                                        <img
+                                                                                            src={docUrl}
+                                                                                            alt={doc.doc_title || "Document"}
+                                                                                            className="h-12 w-12 object-cover rounded border border-gray-200"
+                                                                                            onError={(e) => {
+                                                                                                e.target.style.display = "none";
+                                                                                                if (e.target.nextSibling) e.target.nextSibling.style.display = "inline";
+                                                                                            }}
+                                                                                        />
+                                                                                        <span className="hidden text-xs text-gray-500">View</span>
+                                                                                    </a>
+                                                                                ) : docUrl ? (
+                                                                                    <span className="text-xs text-gray-500">Document</span>
+                                                                                ) : (
+                                                                                    <span className="text-xs text-gray-400">—</span>
+                                                                                )}
+                                                                            </td>
+                                                                            <td className="py-4 px-4 border-b border-gray-100 text-center">
+                                                                                <div className="flex gap-2 justify-center">
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            if (docUrl) {
+                                                                                                window.open(docUrl, "_blank");
+                                                                                            }
+                                                                                        }}
+                                                                                        className="px-4 py-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-lg transition-colors duration-200 text-sm font-medium"
+                                                                                        title="View Document"
+                                                                                    >
+                                                                                        <FaEye size={14} className="inline mr-2" />
+                                                                                        View
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            setEditingDocumentRecord(doc);
+                                                                                            setOpenDocumentsDrawer(true);
+                                                                                        }}
+                                                                                        className="p-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-full transition-colors duration-200"
+                                                                                        title="Edit record"
+                                                                                    >
+                                                                                        <FaEdit size={14} />
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() =>
+                                                                                            handleDeleteDocument(doc.id)
                                                                                         }
-                                                                                    }}
-                                                                                    className="px-4 py-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-lg transition-colors duration-200 text-sm font-medium"
-                                                                                    title="View Document"
-                                                                                >
-                                                                                    <FaEye size={14} className="inline mr-2" />
-                                                                                    View
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        setEditingDocumentRecord(doc);
-                                                                                        setOpenDocumentsDrawer(true);
-                                                                                    }}
-                                                                                    className="p-2 text-brand-500 hover:text-blue-700 hover:bg-brand-50 rounded-full transition-colors duration-200"
-                                                                                    title="Edit record"
-                                                                                >
-                                                                                    <FaEdit size={14} />
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() =>
-                                                                                        handleDeleteDocument(doc.id)
-                                                                                    }
-                                                                                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
-                                                                                    title="Delete record"
-                                                                                >
-                                                                                    <FaTrash size={14} />
-                                                                                </button>
-                                                                            </div>
-                                                                        </td>
-                                                                    </tr>
-                                                                )
+                                                                                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
+                                                                                        title="Delete record"
+                                                                                    >
+                                                                                        <FaTrash size={14} />
+                                                                                    </button>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    );
+                                                                }
                                                             )
                                                         ) : (
                                                             <tr>
-                                                                <td colSpan="2" className="py-8 text-center border-b border-gray-100">
+                                                                <td colSpan="3" className="py-8 text-center border-b border-gray-100">
                                                                     <Typography variant="small" color="gray" className="text-sm">
                                                                         No document records found
                                                                     </Typography>
@@ -5848,7 +6016,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     </div> */}
                 </div>
 
-                {/* User Roles Table */}
+                {/* User Roles Table - shows module_privileges from API (Role, Description = IP Filter + Modules enabled, Action) */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                         <thead>
@@ -5874,46 +6042,33 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {employeeData?.user_roles &&
-                                employeeData.user_roles.length > 0 ? (
-                                employeeData.user_roles.map((role, index) => (
-                                    <tr key={index} className="bg-white border-b border-gray-100">
-                                        <td className="px-4 py-3 text-gray-900">
-                                            {role.role_name || "N/A"}
-                                        </td>
-                                        <td className="px-4 py-3 text-gray-700">
-                                            {role.description || "N/A"}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {/* <button
-                                                onClick={() => handleDeleteRole(role)}
-                                                className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white transition-colors"
-                                                title="Delete role"
-                                            >
-                                                <svg
-                                                    className="w-4 h-4"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
+                            {employeeData?.module_privileges && employeeData.module_privileges.length > 0 ? (
+                                employeeData.module_privileges.map((item, index) => {
+                                    const roleLabel = item.privileges === "0" ? "Employee" : item.privileges === "1" ? "Super Admin" : item.privileges === "2" ? "Branch Admin" : item.privileges === "3" ? "Department Admin" : item.privileges;
+                                    const moduleCount = item.module_privileges && typeof item.module_privileges === "object"
+                                        ? Object.values(item.module_privileges).filter((v) => v === 1 || v === "1").length
+                                        : 0;
+                                    const description = `${item.ip_filter ?? "—"} · ${moduleCount} modules enabled`;
+                                    return (
+                                        <tr key={index} className="bg-white border-b border-gray-100">
+                                            <td className="px-4 py-3 text-gray-900">
+                                                {roleLabel}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-700">
+                                                {description}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <button
+                                                    onClick={() => handleDeleteRole(item)}
+                                                    className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-red-500 hover:bg-red-50 transition-colors"
+                                                    title="Remove"
                                                 >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M6 18L18 6M6 6l12 12"
-                                                    />
-                                                </svg>
-                                            </button> */}
-
-                                            <button
-                                                onClick={() => handleDeleteRole(role)}
-                                                className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-red-500 hover:bg-red-50 transition-colors"
-                                                title="Close">
-                                                <FaTimes className="text-red-500" size={14} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
+                                                    <FaTimes className="text-red-500" size={14} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             ) : (
                                 <tr>
                                     <td colSpan="3" className="px-4 py-4 text-center">
@@ -6304,43 +6459,34 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* Left Section - Profile Picture */}
                     <div className="w-full md:w-40 lg:w-48 flex-shrink-0 h-40 sm:h-48 md:h-48 relative overflow-hidden min-w-0 group">
                         {(() => {
-                            // Get image URL from full employee data - automatically extracts dp, dp_folder, and gender
+                            // Get image URL from full employee data (extracts dp, dp_folder, gender; supports full URL)
                             const profileImageUrl = getImageUrlFromEmployeeData(employeeData);
+                            // console.log("Profile Image URL:", profileImageUrl);
+                            const altText = employeeData?.basic_information?.emp_name || employeeData?.employee?.name || "Profile";
 
-                            console.log('Full Image URL:', profileImageUrl);
-                            console.log('Employee Data Structure:', {
-                                hasDB_DATA: !!employeeData?.DB_DATA,
-                                hasOfficial_Info: !!employeeData?.Official_Info,
-                                dp: employeeData?.DB_DATA?.Official_Info?.dp || employeeData?.Official_Info?.dp,
-                                dp_folder: employeeData?.DB_DATA?.Official_Info?.dp_folder || employeeData?.Official_Info?.dp_folder || 'NOT FOUND (using default 1)'
-                            });
-
-                            // Check if we have a valid image URL (not the default)
-                            const hasValidImage = profileImageUrl && !profileImageUrl.includes('/images/icons/');
-
-                            return hasValidImage ? (
-                                <Avatar
-                                    src={profileImageUrl}
-                                    alt={employeeData?.basic_information?.emp_name || employeeData?.employee?.name || "Profile"}
-                                    variant="rounded"
-                                    className="!w-full !h-full !rounded-none md:!rounded-l-lg"
-                                    style={{
-                                        borderRadius: 0
-                                    }}
-                                    onError={(e) => {
-                                        console.error('Image failed to load:', profileImageUrl);
-                                        // If image fails to load, show default icon
-                                        e.target.style.display = 'none';
-                                        const parent = e.target.parentElement;
-                                        if (parent) {
-                                            parent.innerHTML = '<div class="w-full h-full bg-gray-300 flex items-center justify-center rounded-none md:rounded-l-lg"><svg class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg></div>';
-                                        }
-                                    }}
-                                    onLoad={() => {
-                                        console.log('Image loaded successfully:', profileImageUrl);
-                                    }}
-                                />
-                            ) : (
+                            // Show Avatar whenever we have a URL (custom or default gender icon); placeholder only when none
+                            if (profileImageUrl) {
+                                return (
+                                    <Avatar
+                                        src={profileImageUrl}
+                                        alt={altText}
+                                        variant="rounded"
+                                        className="!w-full !h-full !rounded-none md:!rounded-l-lg"
+                                        style={{ borderRadius: 0 }}
+                                        onError={(e) => {
+                                            e.target.style.display = "none";
+                                            const parent = e.target.parentElement;
+                                            if (parent && !parent.querySelector(".profile-fallback")) {
+                                                const fallback = document.createElement("div");
+                                                fallback.className = "profile-fallback w-full h-full bg-gray-300 flex items-center justify-center rounded-none md:rounded-l-lg";
+                                                fallback.innerHTML = '<svg class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-900" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>';
+                                                parent.appendChild(fallback);
+                                            }
+                                        }}
+                                    />
+                                );
+                            }
+                            return (
                                 <div className="w-full h-full bg-gray-300 flex items-center justify-center rounded-none md:rounded-l-lg">
                                     <FaUser className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-900" />
                                 </div>
@@ -7369,6 +7515,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 editingRecord={editingAcademicRecord}
                 setEditingRecord={setEditingAcademicRecord}
                 onDeleteAcademic={handleDeleteAcademic}
+                onRefreshDocuments={() => refreshProfileSection("documents")}
             />
 
             <EmployeeExperience
@@ -7382,6 +7529,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 editingRecord={editingExperienceRecord}
                 setEditingRecord={setEditingExperienceRecord}
                 onDeleteExperience={handleDeleteExperience}
+                onRefreshDocuments={() => refreshProfileSection("documents")}
             />
 
             <EmployeeDependent
@@ -7395,6 +7543,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 editingRecord={editingDependentRecord}
                 setEditingRecord={setEditingDependentRecord}
                 onDeleteDependent={handleDeleteDependent}
+                onRefreshDocuments={() => refreshProfileSection("documents")}
             />
 
             <EmployeeLicense
@@ -7408,6 +7557,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 editingRecord={editingLicenseRecord}
                 setEditingRecord={setEditingLicenseRecord}
                 onDeleteLicense={handleDeleteLicense}
+                onRefreshDocuments={() => refreshProfileSection("documents")}
             />
 
             <EmployeeReference
@@ -7421,6 +7571,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 editingRecord={editingReferenceRecord}
                 setEditingRecord={setEditingReferenceRecord}
                 onDeleteReference={handleDeleteReference}
+                onRefreshDocuments={() => refreshProfileSection("documents")}
             />
 
             <EmployeeDocuments
@@ -7434,6 +7585,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 editingRecord={editingDocumentRecord}
                 setEditingRecord={setEditingDocumentRecord}
                 onDeleteDocument={handleDeleteDocument}
+                onRefreshDocuments={() => refreshProfileSection("documents")}
             />
 
             {/* Emergency Contact Update Drawer */}
@@ -7628,6 +7780,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 setEmployeeData={setEmployeeData}
                 editingRecord={editingDutyRecord}
                 setEditingRecord={setEditingDutyRecord}
+                onRefreshRepetitiveDuties={() => refreshProfileSection("repetitiveDuties")}
             />
 
             {/* Delete Asset Confirmation Dialog */}
@@ -7651,7 +7804,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     setRoleToDelete(null);
                 }}
                 title="Delete Role"
-                message={`Are you sure you want to remove the role "${roleToDelete?.role_name}"? This action cannot be undone.`}
+                message={`Are you sure you want to remove the role "${roleToDelete ? getRoleDisplayName(roleToDelete) : ""}"? This action cannot be undone.`}
                 handleConfirm={handleConfirmDeleteRole}
                 loading={isDeletingRole}
             />
@@ -7774,28 +7927,32 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     customStyles={{
                                         control: (base) => ({
                                             ...base,
-                                            fontSize: "0.175rem",
+                                            fontSize: "14px",
+                                            minHeight: "42px",
                                         }),
                                         singleValue: (base) => ({
                                             ...base,
-                                            fontSize: "0.175rem",
+                                            fontSize: "14px",
                                         }),
                                         placeholder: (base) => ({
                                             ...base,
-                                            fontSize: "0.175rem",
+                                            fontSize: "14px",
                                         }),
                                         option: (base) => ({
                                             ...base,
-                                            fontSize: "0.14rem",
-                                            padding: "1px 3px",
+                                            fontSize: "14px",
+                                            padding: "10px 12px",
                                         }),
                                         menu: (base) => ({
                                             ...base,
-                                            fontSize: "0.14rem",
+                                            minWidth: "100%",
+                                            zIndex: 9999,
                                         }),
                                         menuList: (base) => ({
                                             ...base,
-                                            fontSize: "0.14rem",
+                                            fontSize: "14px",
+                                            maxHeight: "260px",
+                                            padding: "4px 0",
                                         }),
                                     }}
                                 />
@@ -7909,28 +8066,32 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     customStyles={{
                                         control: (base) => ({
                                             ...base,
-                                            fontSize: "0.175rem",
+                                            fontSize: "14px",
+                                            minHeight: "42px",
                                         }),
                                         singleValue: (base) => ({
                                             ...base,
-                                            fontSize: "0.175rem",
+                                            fontSize: "14px",
                                         }),
                                         placeholder: (base) => ({
                                             ...base,
-                                            fontSize: "0.175rem",
+                                            fontSize: "14px",
                                         }),
                                         option: (base) => ({
                                             ...base,
-                                            fontSize: "0.14rem",
-                                            padding: "1px 3px",
+                                            fontSize: "14px",
+                                            padding: "10px 12px",
                                         }),
                                         menu: (base) => ({
                                             ...base,
-                                            fontSize: "0.14rem",
+                                            minWidth: "100%",
+                                            zIndex: 9999,
                                         }),
                                         menuList: (base) => ({
                                             ...base,
-                                            fontSize: "0.14rem",
+                                            fontSize: "14px",
+                                            maxHeight: "260px",
+                                            padding: "4px 0",
                                         }),
                                     }}
                                 />

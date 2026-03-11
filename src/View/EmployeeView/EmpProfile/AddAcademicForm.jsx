@@ -28,10 +28,11 @@ const AddAcademicForm = ({ onSubmit, onCancel }) => {
 
   const [errors, setErrors] = useState({});
 
-  // Fetch degrees on component mount
+  // Fetch degrees on component mount (pass current user id for user_id query param)
   useEffect(() => {
     if (degrees.length === 0) {
-      getDegrees();
+      const userId = localStorage.getItem('id') || localStorage.getItem('user_id');
+      getDegrees(userId);
     }
   }, [degrees.length, getDegrees]);
 

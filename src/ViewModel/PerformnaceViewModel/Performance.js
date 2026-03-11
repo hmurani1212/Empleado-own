@@ -38,7 +38,7 @@ const performanceViewModel = (set, get) => ({
     employeeGoalsNext: '',
     currentEmployeeId: null,
     lastWeekComments: [],
-    
+
     // New state for employee-specific competencies
     employeeCompetencyData: [],
     employeeCompetencyNext: '',
@@ -46,6 +46,13 @@ const performanceViewModel = (set, get) => ({
     // New state for feedback
     feedbackData: [],
     feedbackDataCopy: [],
+    feedbackPaginationData: {
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+        limit: 10
+    },
+    feedbackCurrentSearchText: '',
 
     // Loading states
     PRCLoading: false,
@@ -66,7 +73,7 @@ const performanceViewModel = (set, get) => ({
                 set({ PRCData: responseData.DB_DATA })
                 set({ next: responseData.Next ?? '' });
                 set({ PRCDataCopy: responseData.DB_DATA })
-                
+
                 // Update pagination data - ensure it's always set, even if API doesn't return it
                 if (responseData.pagination) {
                     set({
@@ -205,7 +212,7 @@ const performanceViewModel = (set, get) => ({
                     const dbData = responseData.DB_DATA
                     set({ PRCData: dbData })
                     set({ PRCDataCopy: dbData })
-                    
+
                     // Check if search response includes pagination data
                     if (responseData.pagination) {
                         set({
@@ -274,7 +281,7 @@ const performanceViewModel = (set, get) => ({
                 // Replace data (not append) - proper pagination behavior
                 set({ goalsData: responseData.DB_DATA })
                 set({ goalsDataCopy: responseData.DB_DATA })
-                
+
                 // Update pagination data - ensure it's always set, even if API doesn't return it
                 if (responseData.pagination) {
                     set({
@@ -464,7 +471,7 @@ const performanceViewModel = (set, get) => ({
                 // Replace data (not append) - proper pagination behavior
                 set({ comptencyData: responseData.DB_DATA })
                 set({ comptencyDataCopy: responseData.DB_DATA })
-                
+
                 // Update pagination data - ensure it's always set, even if API doesn't return it
                 if (responseData.pagination) {
                     set({
@@ -520,27 +527,93 @@ const performanceViewModel = (set, get) => ({
         }
     },
 
-    gettingFeedback: async (searchText = '') => {
+
+
+   
+
+    gettingFeedback: async (searchText = '', page = 1, limit = 10) => {
         set({ feedbackLoading: true })
         try {
-            const params = {};
+            const params = { page, limit };
             if (searchText && searchText.trim()) {
                 params.text = searchText.trim();
             }
+            set({ feedbackCurrentSearchText: searchText || get().feedbackCurrentSearchText });
             const response = await performanceApi.getOngoingFeedback(params)
             const responseData = response.data
             if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
                 set({ feedbackData: responseData.DB_DATA })
                 set({ feedbackDataCopy: responseData.DB_DATA })
+                if (responseData.pagination) {
+                    set({
+                        feedbackPaginationData: {
+                            currentPage: responseData.pagination.page || page,
+                            totalPages: responseData.pagination.pages || 1,
+                            total: responseData.pagination.total || 0,
+                            limit: responseData.pagination.limit || limit
+                        }
+                    })
+                } else {
+                    set({
+                        feedbackPaginationData: {
+                            currentPage: page,
+                            totalPages: 1,
+                            total: responseData.DB_DATA?.length ?? 0,
+                            limit: limit
+                        }
+                    })
+                }
+            } else {
+                set({ feedbackData: [], feedbackDataCopy: [] })
+                set({
+                    feedbackPaginationData: {
+                        currentPage: 1,
+                        totalPages: 1,
+                        total: 0,
+                        limit: limit
+                    }
+                })
             }
         }
         catch (err) {
-            set({ feedbackData: [] })
-            set({ feedbackDataCopy: [] })
+            set({ feedbackData: [], feedbackDataCopy: [] })
+            set({
+                feedbackPaginationData: {
+                    currentPage: 1,
+                    totalPages: 1,
+                    total: 0,
+                    limit: 10
+                }
+            })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch feedback'
             showToast(error, 'error')
         } finally {
             set({ feedbackLoading: false })
+        }
+    },
+
+    goToNextFeedbackPage: () => {
+        const paginationData = get().feedbackPaginationData;
+        const searchText = get().feedbackCurrentSearchText || '';
+        if (paginationData && paginationData.currentPage < paginationData.totalPages) {
+            get().gettingFeedback(searchText, paginationData.currentPage + 1, paginationData.limit || 10);
+        }
+    },
+
+    goToPreviousFeedbackPage: () => {
+        const paginationData = get().feedbackPaginationData;
+        const searchText = get().feedbackCurrentSearchText || '';
+        if (paginationData && paginationData.currentPage > 1) {
+            get().gettingFeedback(searchText, paginationData.currentPage - 1, paginationData.limit || 10);
+        }
+    },
+
+    goToFeedbackPage: (pageNumber) => {
+        const paginationData = get().feedbackPaginationData;
+        const targetPage = parseInt(pageNumber, 10);
+        const searchText = get().feedbackCurrentSearchText || '';
+        if (paginationData && !Number.isNaN(targetPage) && targetPage >= 1 && targetPage <= paginationData.totalPages) {
+            get().gettingFeedback(searchText, targetPage, paginationData.limit || 10);
         }
     },
 
@@ -707,7 +780,7 @@ const performanceViewModel = (set, get) => ({
         try {
             const response = await performanceApi.getGoalsByEmployeeId(null, next)
             const responseData = response.data;
-            console.log("this is next Gaol of employee", responseData)
+            
             if (responseData.STATUS === "SUCCESSFUL") {
                 set((state) => ({
                     employeeGoalsData: [...state.employeeGoalsData, ...responseData.DB_DATA],
@@ -727,6 +800,9 @@ const performanceViewModel = (set, get) => ({
             currentEmployeeId: null
         })
     },
+
+
+    
 
     // Function to refresh employee goals data
     refreshEmployeeGoals: async (employeeId) => {
@@ -830,7 +906,7 @@ const performanceViewModel = (set, get) => ({
                     mainHistoryDataCopy: responseData.DB_DATA
                 })
                 console.log('Main history data set successfully:', responseData.DB_DATA)
-                
+
                 // Update pagination data - ensure it's always set, even if API doesn't return it
                 if (responseData.pagination) {
                     set({

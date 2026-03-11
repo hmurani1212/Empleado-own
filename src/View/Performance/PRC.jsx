@@ -25,6 +25,14 @@ const PRC = () => {
     "Actions",
   ];
 
+  // Format Assigned To column: "1 Employee" or "X Employees"
+  const formatAssignedTo = (assignTo) => {
+    if (assignTo == null || assignTo === "") return "-";
+    const count = typeof assignTo === "number" ? assignTo : parseInt(assignTo, 10);
+    if (Number.isNaN(count)) return assignTo;
+    return count === 1 ? "1 Employee" : `${count} Employees`;
+  };
+
   // Helper function to format timestamps to dates
   const formatTimestampToDate = (timestamp) => {
     if (!timestamp) return "";
@@ -73,6 +81,7 @@ const PRC = () => {
     searchValue,
     handlePRCSearch,
     searchLoading,
+    fetchPermissionEmployees,
   } = usePRCServices();
 
   const {
@@ -243,7 +252,7 @@ const PRC = () => {
                       </td>
                       <td className="px-4 py-4">
                         <Typography className="text-sm font-normal text-gray-600 font-poppins">
-                          {ele.assign_to ?? "-"}
+                          {formatAssignedTo(ele.assign_to)}
                         </Typography>
                       </td>
                       <td className="px-4 py-4">
@@ -431,6 +440,7 @@ const PRC = () => {
                 handleSubmitPRC={handleSubmitPRC}
                 handleRemoveEmp={handleRemoveEmp}
                 handleUpdatePRC={handleUpdatePRC}
+                fetchPermissionEmployees={fetchPermissionEmployees}
               />
             ) : viewPRC.show ? (
               <ViewPRC data={viewPRC.singleData} />
@@ -452,7 +462,7 @@ const PRC = () => {
               ? toggleViewPRC
               : null
           }
-          widthSize={PRCAddValue.show ? 550 : viewPRC.show ? 750 : null}
+          widthSize={PRCAddValue.show ? 605 : viewPRC.show ? 750 : null}
         />
       )}
 

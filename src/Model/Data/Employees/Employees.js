@@ -777,6 +777,100 @@ const employeesApi = {
         })
     },
 
+    /**
+     * Get employee profile attendance settings (bio, policy, team, shift, planner, web/mobile attendance).
+     * Call when user opens Attendance Setting section. Response: DB_DATA.attendence
+     */
+    getEmpProfileAttendance: function (userId) {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: '/api/v1/employee_v2/get_emp_profile_attendance',
+            params: {
+                user_id: userId
+            }
+        })
+    },
+
+    /**
+     * Get employee profile documents (education, experience, dependents, licenses, references, documents).
+     * Response: DB_DATA.employee_documents with employee_documents, employee_experience, depanedent,
+     * employee_License, employee_refcence, employee_document.
+     */
+    getEmpProfileDocuments: function (userId) {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: '/api/v1/employee_v2/get_emp_profile_documents',
+            params: {
+                user_id: userId
+            }
+        })
+    },
+
+    /**
+     * Get employee profile salary settings. Response: DB_DATA.Salary_Settings (keep key same as API).
+     */
+    getEmpProfileSalarySettings: function (userId) {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: '/api/v1/employee_v2/get_emp_profile_salary_settings',
+            params: {
+                user_id: userId
+            }
+        })
+    },
+
+    /**
+     * Get employee profile leave balance. Response: DB_DATA.leave_balanace (key kept same as API).
+     */
+    getEmpProfileLeaveBalance: function (userId) {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: '/api/v1/employee_v2/get_emp_profile_leave_balance',
+            params: {
+                user_id: userId
+            }
+        })
+    },
+
+    /**
+     * Get employee profile checklist (assets etc.). Response: DB_DATA.emp_checklist (key kept same as API).
+     */
+    getEmpProfileChecklist: function (userId) {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: '/api/v1/employee_v2/get_emp_profile_checklist',
+            params: {
+                user_id: userId
+            }
+        })
+    },
+
+    /**
+     * Get employee profile module privileges. Response: DB_DATA.module_privileges (key kept same as API).
+     */
+    getEmpProfileModulePrivileges: function (userId) {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: '/api/v1/employee_v2/get_emp_profile_module_privileges',
+            params: {
+                user_id: userId
+            }
+        })
+    },
+
+    /**
+     * Get employee profile repetitive duties. Response: DB_DATA.Repetitive_Duties (key kept same as API).
+     */
+    getEmpProfileRepetitiveDuties: function (userId) {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: '/api/v1/employee_v2/get_emp_profile_repetitive_duties',
+            params: {
+                user_id: userId
+            }
+        })
+    },
+
     // Update employee basic information
     updateEmployee: function (employeeId, data) {
         return axiosInstancecoremodule.request({
@@ -846,11 +940,12 @@ const employeesApi = {
         })
     },
 
-    // Get degrees list from new API endpoint
-    getDegrees: function () {
+    // Get degrees list from new API endpoint. Pass user_id when available (e.g. employee profile context).
+    getDegrees: function (userId) {
         return axiosInstancecoremodule.request({
             method: 'GET',
-            url: '/api/v1/employee_v2/get_degress'
+            url: '/api/v1/employee_v2/get_degress',
+            params: userId != null && userId !== '' ? { user_id: userId } : undefined
         })
     },
 

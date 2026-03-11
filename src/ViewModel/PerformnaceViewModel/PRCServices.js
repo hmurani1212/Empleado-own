@@ -1,14 +1,14 @@
 import { useState } from "react"
 import performanceApi from "../../Model/Data/Performance/Performance"
+import employeesApi from "../../Model/Data/Employees/Employees"
 import { showToast } from "../../Components/Toaster/Toaster"
 import useStore from "../../Store/store"
 import { includeModuleData } from "../../services/__performanceServices"
-import { gettingDepartmentsServices, gettingEmployeeFrequentHit, gettingEmployesServices } from "../../services/__frequentApiServices"
+import { gettingDepartmentsServices, gettingEmployeeFrequentHit } from "../../services/__frequentApiServices"
 import { validateInput } from "../../Validation/CustomValidation"
 import { validateMultipleEmployeePRC, validateSingleEmployeePRCUpdate } from "../../Validation/Validation"
 import { formatDateYMD } from "../../services/__dateTimeServices"
 import { useDebounce } from "../../services/__debounceServices"
-import useDepartments from "../DepartmentsViewModel/DepartmentsServices"
 const usePRCServices = () => {
     const deleteSinglePRC = useStore((state) => state.deleteSinglePRC)
     const addNewRPC = useStore((state) => state.addNewRPC)
@@ -44,6 +44,14 @@ const usePRCServices = () => {
         update: false,
         selectedEmp: [], // Now supports multiple employees for creation
         isMultipleEmployeeMode: false, // Flag to distinguish between create and update modes
+        // Permissions: Who Can Assign Goals / Competencies
+        permissionsSectionOpen: false,
+        allow_goal_type: 'Admin',
+        allow_goal_custom_employees: [],
+        allow_competency_type: 'Admin',
+        allow_competency_custom_employees: [],
+        permissionEmployeesOptions: [],
+        permissionEmployeesLoading: false,
     })
 
 
@@ -51,10 +59,33 @@ const usePRCServices = () => {
         show: false,
         singleData: {}
     })
-    const { getEmployeesByDeptId } = useDepartments();
 
 
     // console.log("type", typeof handleEmpDetails)
+
+    const fetchPermissionEmployees = async (departmentId) => {
+        setPRCAddValue((prev) => ({ ...prev, permissionEmployeesLoading: true }))
+        try {
+            const deptId = departmentId === 0 || departmentId === '0' ? null : departmentId
+            const response = await employeesApi.get_all_employeee(deptId)
+            const responseData = response?.data
+            if (response?.status === 200 && responseData?.STATUS === 'SUCCESSFUL' && Array.isArray(responseData?.DB_DATA)) {
+                const options = responseData.DB_DATA.map((emp) => ({
+                    value: emp.id ?? emp.emp_id ?? emp.employee_id,
+                    label: `${emp.name ?? ''} (ID: ${emp.id ?? emp.emp_id ?? emp.employee_id ?? ''})`,
+                }))
+                setPRCAddValue((prev) => ({ ...prev, permissionEmployeesOptions: options }))
+            } else {
+                setPRCAddValue((prev) => ({ ...prev, permissionEmployeesOptions: [] }))
+            }
+        } catch (err) {
+            console.error('Error fetching employees for permissions:', err)
+            showToast(err?.response?.data?.ERROR_DESCRIPTION ?? 'Failed to load employees', 'error')
+            setPRCAddValue((prev) => ({ ...prev, permissionEmployeesOptions: [] }))
+        } finally {
+            setPRCAddValue((prev) => ({ ...prev, permissionEmployeesLoading: false }))
+        }
+    }
 
     const toggleAddPRC = async () => {
         setPRCAddValue((prevState) => ({
@@ -80,7 +111,14 @@ const usePRCServices = () => {
             selectedEmp: [],
             isMultipleEmployeeMode: true, // Enable multiple employee selection for creation
             // Don't load branches initially - load on demand
-            branches: []
+            branches: [],
+            permissionsSectionOpen: false,
+            allow_goal_type: 'Admin',
+            allow_goal_custom_employees: [],
+            allow_competency_type: 'Admin',
+            allow_competency_custom_employees: [],
+            permissionEmployeesOptions: [],
+            permissionEmployeesLoading: false,
         }))
     }
 
@@ -330,24 +368,32 @@ const usePRCServices = () => {
             }))
 
         } else if (field === 'department_id') {
-            // If "All Departments" is selected (value is 0), get all employees
+            // Fetch employees only after department is selected (not on modal open).
+            // Pass dept_id to get_all_employee: null for "All Departments", else department id.
             const deptValue = select.value === 0 || select.value === '0' ? 0 : select.value;
-            
-            let data = [];
-            if (deptValue === 0) {
-                // For "All Departments", we need to get all employees
-                // This will be filtered by the branch if a specific branch is selected
-                // For now, we'll use Get_All_Employee from the store
-                // The filtering will be done in the component
-                data = [];
-            } else {
-                data = await getEmployeesByDeptId(deptValue);
+            const deptIdForApi = deptValue === 0 ? null : deptValue;
+
+            let employeeOptions = [];
+            try {
+                const response = await employeesApi.get_all_employeee(deptIdForApi);
+                const responseData = response?.data;
+                if (response?.status === 200 && responseData?.STATUS === 'SUCCESSFUL' && Array.isArray(responseData?.DB_DATA)) {
+                    employeeOptions = responseData.DB_DATA.map((emp) => ({
+                        value: emp.id ?? emp.emp_id ?? emp.employee_id,
+                        label: `${emp.name ?? ''} (ID: ${emp.id ?? emp.emp_id ?? emp.employee_id ?? ''})`,
+                        id: emp.id,
+                        name: emp.name
+                    }));
+                }
+            } catch (err) {
+                console.error('Error fetching employees for PRC:', err);
+                showToast(err?.response?.data?.ERROR_DESCRIPTION ?? 'Failed to load employees', 'error');
             }
-            
+
             setPRCAddValue((prevState) => ({
                 ...prevState,
                 [field]: select,
-                employees: data,
+                employees: employeeOptions,
                 emp_id: deptValue === 0 ? { value: 0, label: 'All Employees' } : null,
                 selectedEmp: [] // Clear selected employees when department changes
             }))
@@ -379,6 +425,11 @@ const usePRCServices = () => {
                 emp_id: null // Clear the employee selection after adding
             }))
             showToast('Employee Added', 'success')
+        } else if (field === 'allow_goal_custom_employees' || field === 'allow_competency_custom_employees') {
+            const arr = Array.isArray(select) ? select : (select ? [select] : [])
+            setPRCAddValue((prevState) => ({ ...prevState, [field]: arr }))
+        } else if (field === 'allow_goal_type' || field === 'allow_competency_type' || field === 'permissionsSectionOpen') {
+            setPRCAddValue((prevState) => ({ ...prevState, [field]: select }))
         } else {
             setPRCAddValue((prevState) => ({
                 ...prevState,
@@ -392,47 +443,63 @@ const usePRCServices = () => {
         try {
             const response = await performanceApi.getSinglePRC(id)
             const responseData = response.data
-            // console.log(response)
-            if (responseData.STATUS === "SUCCESSFUL") {
-                const dbData = responseData.DB_DATA
-                
-                // Handle new API response structure
-                const selectedEmpArray = dbData.employee_name ? [{
-                    value: dbData.employee_id || dbData.one_id,
-                    label: dbData.employee_name
-                }] : [];
-                
-                // Handle branch label - show "All Branch" if branch is 0
-                const branchLabel = (dbData.branch === 0 || dbData.branch === '0') 
-                    ? 'All Branch' 
-                    : `Branch ${dbData.branch}`;
-                
-                // Handle department label - show "All Department" if department is 0
-                const departmentLabel = (dbData.department === 0 || dbData.department === '0') 
-                    ? 'All Department' 
-                    : `Department ${dbData.department}`;
-                
-                setPRCAddValue((prevState) => ({
-                    ...prevState,
-                    id: id,
-                    update: true,
-                    name: dbData.name,
-                    start_date: formatTimestampToDate(dbData.startDate),
-                    end_date: formatTimestampToDate(dbData.endDate),
-                    competancy_rate: dbData.competency_rate || 0,
-                    goal_rate: dbData.goal_rate || 0,
-                    branch_id: { value: dbData.branch, label: branchLabel },
-                    department_id: { value: dbData.department, label: departmentLabel },
-                    selectedEmp: selectedEmpArray,
-                    review_day: formatTimestampToDate(dbData.closing_date),
-                    show: true,
-                    isMultipleEmployeeMode: false, // Disable multiple selection for updates
-                    // Don't load branches, departments, employees initially
-                    branches: [],
-                    departments: [],
-                    employees: []
-                }))
+            if (responseData.STATUS !== "SUCCESSFUL") return
+            const dbData = responseData.DB_DATA
+
+            const selectedEmpArray = dbData.employee_name ? [{
+                value: dbData.employee_id || dbData.one_id,
+                label: dbData.employee_name
+            }] : []
+
+            // Resolve branch label: show branch name only (no ID)
+            let branchLabel = 'All Branch'
+            if (dbData.branch !== 0 && dbData.branch !== '0') {
+                try {
+                    const branchRes = await gettingEmployeeFrequentHit()
+                    const branches = branchRes?.DB_DATA || []
+                    const branch = Array.isArray(branches) && branches.find(
+                        (b) => String(b?.id) === String(dbData.branch)
+                    )
+                    branchLabel = branch?.branch_name ?? branch?.name ?? 'Branch'
+                } catch (_) {
+                    branchLabel = 'Branch'
+                }
             }
+
+            // Resolve department label: show department name only (no ID)
+            let departmentLabel = 'All Department'
+            if (dbData.department !== 0 && dbData.department !== '0') {
+                try {
+                    const branchId = dbData.branch === 0 || dbData.branch === '0' ? 0 : dbData.branch
+                    const deptOptions = await gettingDepartmentsServices(branchId) || []
+                    const dept = Array.isArray(deptOptions) && deptOptions.find(
+                        (d) => String(d?.value ?? d?.id) === String(dbData.department)
+                    )
+                    departmentLabel = dept?.label ?? dept?.name ?? 'Department'
+                } catch (_) {
+                    departmentLabel = 'Department'
+                }
+            }
+
+            setPRCAddValue((prevState) => ({
+                ...prevState,
+                id: id,
+                update: true,
+                name: dbData.name,
+                start_date: formatTimestampToDate(dbData.startDate),
+                end_date: formatTimestampToDate(dbData.endDate),
+                competancy_rate: dbData.competency_rate || 0,
+                goal_rate: dbData.goal_rate || 0,
+                branch_id: { value: dbData.branch, label: branchLabel },
+                department_id: { value: dbData.department, label: departmentLabel },
+                selectedEmp: selectedEmpArray,
+                review_day: formatTimestampToDate(dbData.closing_date),
+                show: true,
+                isMultipleEmployeeMode: false,
+                branches: [],
+                departments: [],
+                employees: []
+            }))
         } catch (err) {
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Error fetching performance review'
             showToast(error, 'error')
@@ -543,8 +610,17 @@ const usePRCServices = () => {
         
         // Check if "All Employees" is selected
         const isAllEmployeesSelected = emp_id && (emp_id.value === 0 || emp_id.value === '0');
-        
-        // Prepare API data - always use array format for employee and assigned_to
+
+        // Build allow_goal: ['Admin'] | ['reporting manager'] | ['Self'] | [empId, ...]
+        const allow_goal = PRCAddValue.allow_goal_type === 'custom'
+            ? (PRCAddValue.allow_goal_custom_employees ?? []).map((opt) => (typeof opt === 'object' && opt?.value != null ? opt.value : opt))
+            : [PRCAddValue.allow_goal_type];
+
+        // Build allow_compenetency: ['Admin'] | ['reporting manager'] | [empId, ...]
+        const allow_compenetency = PRCAddValue.allow_competency_type === 'custom'
+            ? (PRCAddValue.allow_competency_custom_employees ?? []).map((opt) => (typeof opt === 'object' && opt?.value != null ? opt.value : opt))
+            : [PRCAddValue.allow_competency_type];
+
         const apiData = {
             name: name,
             start_date: start_date,
@@ -555,7 +631,9 @@ const usePRCServices = () => {
             department: deptValue,
             employee: isAllEmployeesSelected ? [0] : selectedEmp.map(emp => emp.value.toString()), // Convert to string or [0] for all
             assigned_to: isAllEmployeesSelected ? ['All Employees'] : selectedEmp.map(emp => emp.label), // Always array
-            review_day: review_day
+            review_day: review_day,
+            allow_goal,
+            allow_compenetency,
         };
 
         // Validate with schema
@@ -740,8 +818,8 @@ const usePRCServices = () => {
         toggleDeleteConfirmatio, confirmDelete,
         handleChangeRPC, handleSelectAddPRC,
         handleSubmitPRC, handleRemoveEmp, handleUpdatePRC,
-        searchValue, handlePRCSearch, searchLoading
-
+        searchValue, handlePRCSearch, searchLoading,
+        fetchPermissionEmployees,
     }
 
 }

@@ -289,6 +289,14 @@ const hireApi = {
         })
     },
 
+    // Cities list for Hiring module (used by Create Vacancy)
+    getHiringCities: function () {
+        return axiosInstanceHire.request({
+            method: 'GET',
+            url: `/api/v1/locations/hiring_city`,
+        })
+    },
+
     // Get cities by country (Pakistan = 162)
     getCitiesByCountry: function (countryId = 162) {
         return axiosInstanceHire.request({

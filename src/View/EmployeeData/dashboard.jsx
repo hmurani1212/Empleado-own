@@ -162,6 +162,7 @@ const EmployeeDashboard = () => {
                 <div className="h-32 bg-gradient-to-r from-brand-400 to-brand-600 relative">
                   <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2">
                     <div className="p-1 bg-white rounded-full">
+                    {/* <h1>This is image</h1> */}
                       <Avatar 
                         src={employeeData?.dp || "https://emp-beta.veevotech.com/images/icons/empm.jpg"} 
                         alt="Profile" 

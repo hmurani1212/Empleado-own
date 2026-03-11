@@ -177,12 +177,12 @@ const CreateVacancy = () => {
         description: newVacValues.description,
       };
 
-      // Sequential validation
+      // Step 0 validations aligned with backend Joi vacancy_creation_schema (first page)
       try {
         await Yup.string()
-          .min(1, "Please enter title")
-          .max(150, "Title is too long")
-          .required("Please enter title")
+          .min(1, "Vacancy title is required")
+          .max(150, "Vacancy title cannot exceed 150 characters")
+          .required("Vacancy title is required")
           .validate(step0Data.title);
       } catch (error) {
         toast.error(error.message);
@@ -192,8 +192,8 @@ const CreateVacancy = () => {
       if (step0Data.vacancy_type === 2) {
         try {
           await Yup.array()
-            .min(1, "Please select location")
-            .required("Please select location")
+            .min(1, "Please provide at least one location for office job")
+            .required("Locations are required for office job")
             .validate(step0Data.locations);
         } catch (error) {
           toast.error(error.message);
@@ -203,8 +203,9 @@ const CreateVacancy = () => {
 
       try {
         await Yup.number()
-          .min(14, "Minimum age is 14 years")
-          .required("Please enter minimum age")
+          .integer("Minimum age must be a number")
+          .min(14, "You cannot hire under 14 for a job")
+          .required("Minimum age is required")
           .validate(step0Data.age_from);
       } catch (error) {
         toast.error(error.message);
@@ -213,25 +214,26 @@ const CreateVacancy = () => {
 
       try {
         await Yup.number()
-          .max(80, "Maximum age is 80 years")
-          .required("Please enter maximum age")
+          .integer("Maximum age must be a number")
+          .max(80, "Upper age limit cannot be more than 80 years")
+          .required("Maximum age is required")
           .validate(step0Data.age_upto);
       } catch (error) {
         toast.error(error.message);
         return false;
       }
 
-      // Validate age range
       if (step0Data.age_from >= step0Data.age_upto) {
-        toast.error("Maximum age must be greater than minimum age");
+        toast.error("Age upper limit cannot be less than lower limit");
         return false;
       }
 
       try {
         await Yup.number()
+          .integer()
           .min(0, "Seats cannot be negative")
-          .max(500, "Maximum 500 seats allowed")
-          .required("Please enter seats")
+          .max(500, "Total seats cannot exceed 500")
+          .required("Available seats are required")
           .validate(step0Data.seats);
       } catch (error) {
         toast.error(error.message);
@@ -239,8 +241,19 @@ const CreateVacancy = () => {
       }
 
       try {
+        await Yup.number()
+          .integer()
+          .oneOf([0, 1, 2], "Please choose a valid gender requirement")
+          .required("Gender requirement is required")
+          .validate(step0Data.req_gender);
+      } catch (error) {
+        toast.error(error.message);
+        return false;
+      }
+
+      try {
         await Yup.string()
-          .required("Please enter experience")
+          .required("Experience is required")
           .validate(step0Data.experience);
       } catch (error) {
         toast.error(error.message);
@@ -249,7 +262,7 @@ const CreateVacancy = () => {
 
       try {
         await Yup.string()
-          .required("Please enter qualification")
+          .required("Required qualification is required")
           .validate(step0Data.required_qualification);
       } catch (error) {
         toast.error(error.message);
@@ -258,7 +271,7 @@ const CreateVacancy = () => {
 
       try {
         await Yup.string()
-          .required("Please enter description")
+          .required("Job description is required")
           .validate(step0Data.description);
       } catch (error) {
         toast.error(error.message);
@@ -267,8 +280,8 @@ const CreateVacancy = () => {
 
       try {
         await Yup.string()
-          .matches(/^\d{4}-\d{2}-\d{2}$/, "Please select start date")
-          .required("Please select start date")
+          .matches(/^\d{4}-\d{2}-\d{2}$/, "Apply start date must be a valid date")
+          .required("Apply start date is required")
           .validate(step0Data.apply_from);
       } catch (error) {
         toast.error(error.message);
@@ -277,19 +290,31 @@ const CreateVacancy = () => {
 
       try {
         await Yup.string()
-          .matches(/^\d{4}-\d{2}-\d{2}$/, "Please select end date")
-          .required("Please select end date")
+          .matches(/^\d{4}-\d{2}-\d{2}$/, "Apply end date must be a valid date")
+          .required("Apply end date is required")
           .validate(step0Data.last_date);
       } catch (error) {
         toast.error(error.message);
         return false;
       }
 
-      // Validate date range
       const lastDate = new Date(step0Data.last_date);
       const applyFrom = new Date(step0Data.apply_from);
-      if (lastDate < applyFrom) {
-        toast.error("End date must be after start date");
+      lastDate.setHours(0, 0, 0, 0);
+      applyFrom.setHours(0, 0, 0, 0);
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      if (lastDate.getTime() - applyFrom.getTime() < oneDayMs) {
+        toast.error("End date must be at least one day after start date");
+        return false;
+      }
+
+      // Apply last date cannot be in the past (backend custom: !value.id && new Date(value.last_date) < new Date())
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const lastDateOnly = new Date(lastDate.getTime());
+      lastDateOnly.setHours(0, 0, 0, 0);
+      if (lastDateOnly < today) {
+        toast.error("Apply last date cannot be in the past");
         return false;
       }
 
@@ -426,18 +451,42 @@ const CreateVacancy = () => {
       const isValid = await validateStep2();
       if (!isValid) return;
 
+      // Re-validate apply last date is not in the past (in case user changed it after step 0)
+      const lastDate = new Date(newVacValues.last_date);
+      const applyFrom = new Date(newVacValues.apply_from);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      lastDate.setHours(0, 0, 0, 0);
+      applyFrom.setHours(0, 0, 0, 0);
+      if (lastDate < today) {
+        toast.error("Apply last date cannot be in the past");
+        return;
+      }
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      if (lastDate.getTime() - applyFrom.getTime() < oneDayMs) {
+        toast.error("End date must be at least one day after start date");
+        return;
+      }
+
       // Format the data according to the API requirements
+      const locationIds =
+        newVacValues.locations === "1" && Array.isArray(newVacValues.city_id)
+          ? newVacValues.city_id
+          : [];
+      const city_name = locationIds.map((id) => {
+        const city = allCities?.find(
+          (c) => c.id === id || c.id === Number(id)
+        );
+        return city?.name ?? city?.city_name ?? "";
+      });
+
       const formattedData = {
         dept: 0,
         title: newVacValues.title,
         seats: validateNumericField(newVacValues.seats),
         vacancy_type: newVacValues.locations === "0" ? 1 : 2,
-        locations:
-          newVacValues.locations === "1"
-            ? Array.isArray(newVacValues.city_id)
-              ? newVacValues.city_id
-              : []
-            : [],
+        locations: locationIds,
+        city_name,
         experience: newVacValues.experience,
         required_qualification: newVacValues.required_qualification,
         age_from: validateNumericField(newVacValues.age_from),
@@ -541,7 +590,7 @@ const CreateVacancy = () => {
       // Call the API
       const success = await create_vacancy(formattedData);
       if (success) {
-        navigate("/hire/vacancies_list");
+        // navigate("/hire/vacancies_list");
       }
     } catch (error) {
       console.error("Error creating vacancy:", error);
@@ -694,11 +743,11 @@ const CreateVacancy = () => {
                               placeHolderTitle="Select Cities"
                               value={selectedCities.map(city => ({
                                 value: city.id.toString(),
-                                label: city.name
+                                label: city.city_name ?? city.name
                               }))}
                               options={allCities?.map((city) => ({
                                 value: city.id.toString(),
-                                label: city.name
+                                label: city.city_name ?? city.name
                               })) || []}
                               onChangeHandler={handleChangeCity}
                               isMulti={true}

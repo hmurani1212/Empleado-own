@@ -10,6 +10,14 @@ const hireApi = {
         })
     },
 
+    /** GET single vacancy by id (locations from vacancy_location should be returned by backend) */
+    getVacancyById: function (id) {
+        return axiosInstanceHire.request({
+            method: 'GET',
+            url: `api/v1/vacancies/${id}`,
+        })
+    },
+
     deactiveVacancies: function (vacancyId) {
         return axiosInstanceHire.request({
             method: 'PUT',

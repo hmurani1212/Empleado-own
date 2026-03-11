@@ -15,10 +15,10 @@ const EmployeeDocuments = ({
     setEmployeeData,
     editingRecord,
     setEditingRecord,
-    onDeleteDocument
+    onDeleteDocument,
+    onRefreshDocuments
 }) => {
     const addEmployeeDocument = useStore((state) => state.addEmployeeDocument);
-    const gettingEmployeeProfile = useStore((state) => state.gettingEmployeeProfile);
     
     const [documentsForm, setDocumentsForm] = useState({
         docTitle: '',
@@ -29,7 +29,14 @@ const EmployeeDocuments = ({
 
     const [isUploadingFile, setIsUploadingFile] = useState(false);
 
-    // Reset form when drawer closes or populate when editing
+    const mapDocumentToForm = (record) => ({
+        docTitle: record.doc_title || '',
+        docName: record.doc_name || '',
+        docFile: null,
+        docFileUrl: record.doc_name || ''
+    });
+
+    // Reset form when drawer closes; when opening, populate from editing record or latest document
     useEffect(() => {
         if (!openDocumentsDrawer) {
             setDocumentsForm({
@@ -40,13 +47,12 @@ const EmployeeDocuments = ({
             });
             setEditingRecord(null);
         } else if (editingRecord) {
-            // Populate form with editing record data
-            setDocumentsForm({
-                docTitle: editingRecord.doc_title || '',
-                docName: editingRecord.doc_name || '',
-                docFile: null,
-                docFileUrl: editingRecord.doc_name || ''
-            });
+            setDocumentsForm(mapDocumentToForm(editingRecord));
+        } else {
+            const list = employeeData?.employee_documents?.employee_document;
+            if (list && Array.isArray(list) && list.length > 0) {
+                setDocumentsForm(mapDocumentToForm(list[list.length - 1]));
+            }
         }
     }, [openDocumentsDrawer, editingRecord, setEditingRecord]);
 
@@ -135,24 +141,9 @@ const EmployeeDocuments = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast(editingRecord ? 'Document record updated successfully' : 'Document record added successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
-                
+
+                if (onRefreshDocuments) await onRefreshDocuments();
+
                 setOpenDocumentsDrawer(false);
                 
                 // Reset form
@@ -190,23 +181,8 @@ const EmployeeDocuments = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast('Document record deleted successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+
+                if (onRefreshDocuments) await onRefreshDocuments();
             } else {
                 showToast('Failed to delete document record', 'error');
             }

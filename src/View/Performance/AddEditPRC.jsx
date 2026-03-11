@@ -4,7 +4,7 @@ import { Checkbox, Typography, Button } from "@material-tailwind/react";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import SearchReactSelect from "../../Components/CustomSelect/SearchReactSelect";
 import CustomButton from "../../Components/CustomButton/CustomButton";
-import { FaXmark } from "react-icons/fa6";
+import { FaXmark, FaChevronDown, FaChevronRight } from "react-icons/fa6";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
 import { getContentByLabel } from "../../services/getContentService";
 import { showToast } from "../../Components/Toaster/Toaster";
@@ -19,9 +19,10 @@ const AddEditPRC = (props) => {
     handleSubmitPRC,
     handleRemoveEmp,
     handleUpdatePRC,
+    fetchPermissionEmployees,
   } = props;
   //   console.log("handleSelectAddPRChandleSelectAddPRC", PRCAddValue);
-  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, Get_All_Employeefn, Get_All_Employee } = useEmployees();
+  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept } = useEmployees();
   
   // State for cascading dropdowns
   const [selectedBranch, setSelectedBranch] = useState(null);
@@ -59,35 +60,23 @@ const AddEditPRC = (props) => {
   const previousShowStateRef = useRef(false);
   const lastFetchedBranchIdRef = useRef(null);
   
-  // Only fetch data when modal opens (PRCAddValue.show changes from false to true)
+  // Only fetch branches when modal opens; do NOT call employee API here (employees load after department selection)
   useEffect(() => {
-    // Check if modal just opened (was closed, now open)
     const modalJustOpened = PRCAddValue.show && !previousShowStateRef.current;
-    
+
     if (modalJustOpened && !hasFetchedDataRef.current) {
-      // Fetch data only when modal opens for the first time
       fetchingAllBranches();
-      Get_All_Employeefn();
       hasFetchedDataRef.current = true;
     }
-    
-    // Update previous show state
+
     previousShowStateRef.current = PRCAddValue.show;
-    
-    // Reset fetch flag when modal closes
+
     if (!PRCAddValue.show) {
       hasFetchedDataRef.current = false;
       lastFetchedBranchIdRef.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [PRCAddValue.show]);
-
-  // Run once when drawer opens (avoid infinite loop: store updates would change function refs and re-trigger)
-  useEffect(() => {
-    fetchingAllBranches();
-    Get_All_Employeefn();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   
   // Sync local state with PRCAddValue when it changes
   useEffect(() => {
@@ -186,6 +175,7 @@ const AddEditPRC = (props) => {
             ))}
           </div>
         </div>
+
       </div>
       {PRCAddValue.modulesType.length > 0 && (
         <div className="space-y-2">
@@ -221,6 +211,135 @@ const AddEditPRC = (props) => {
           </div>
         </div>
       )}
+
+      {/* Permissions: Who Can Assign Goals / Competencies */}
+      <div className="space-y-2 border-t border-gray-100 pt-4">
+        <button
+          type="button"
+          className="flex items-center gap-2 w-full text-left text-[#698592] text-[12px] font-medium hover:text-[#3DA5F4] focus:outline-none"
+          onClick={() => handleSelectAddPRC(!PRCAddValue.permissionsSectionOpen, "permissionsSectionOpen")}
+        >
+          {PRCAddValue.permissionsSectionOpen ? <FaChevronDown className="text-sm" /> : <FaChevronRight className="text-sm" />}
+          Permissions
+        </button>
+        {PRCAddValue.permissionsSectionOpen && (
+          <div className="space-y-4 pl-4 border-l-2 border-gray-100">
+            {/* Who Can Assign Goals - show when Goal module is included */}
+            {PRCAddValue.modulesType.includes(1) && (
+              <div className="space-y-2">
+                <label className="text-[#698592] text-[12px] font-medium block">Who Can Assign Goals</label>
+                <div className="flex flex-wrap gap-3">
+                  {['Admin', 'reporting manager', 'Self', 'custom'].map((opt) => (
+                    <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="allow_goal_type"
+                        checked={PRCAddValue.allow_goal_type === opt}
+                        onChange={() => {
+                          handleSelectAddPRC(opt, 'allow_goal_type');
+                          if (opt === 'custom' && PRCAddValue.permissionEmployeesOptions.length === 0) {
+                            const deptId = PRCAddValue.department_id?.value ?? null;
+                            fetchPermissionEmployees(deptId);
+                          }
+                        }}
+                        className="rounded border-gray-300 text-[#3DA5F4] focus:ring-[#3DA5F4]"
+                      />
+                      <span className="text-[12px] text-gray-700 capitalize">
+                        {opt === 'custom' ? 'Custom Employee Selection' : opt === 'reporting manager' ? 'Reporting Manager' : opt}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {PRCAddValue.allow_goal_type === 'custom' && (
+                  <div className="mt-2 space-y-1">
+                    <SearchReactSelect
+                      placeHolderTitle={PRCAddValue.permissionEmployeesLoading ? "Loading employees..." : "Select employees"}
+                      value={PRCAddValue.allow_goal_custom_employees}
+                      options={PRCAddValue.permissionEmployeesOptions}
+                      onChangeHandler={(selected) => handleSelectAddPRC(selected, 'allow_goal_custom_employees')}
+                      disabled={PRCAddValue.permissionEmployeesLoading}
+                      isMulti
+                      isClearable
+                      cStyle={true}
+                      customStyles={{
+                        control: (base) => ({ ...base, fontSize: '12px', minHeight: '36px', borderRadius: '10px' }),
+                        menu: (base) => ({ ...base, zIndex: 9999 }),
+                      }}
+                    />
+                    {PRCAddValue.allow_goal_custom_employees?.length > 0 && (
+                      <p className="text-[11px] text-gray-600 mt-1">
+                        Selected: {PRCAddValue.allow_goal_custom_employees.map((e) => e?.label ?? e?.name ?? e).join(', ')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {PRCAddValue.allow_goal_type !== 'custom' && (
+                  <p className="text-[11px] text-gray-600">
+                    Selected: {PRCAddValue.allow_goal_type === 'reporting manager' ? 'Reporting Manager' : PRCAddValue.allow_goal_type === 'Self' ? 'Self' : 'Admin'}
+                  </p>
+                )}
+              </div>
+            )}
+            {/* Who Can Assign Competencies - show when Competency module is included */}
+            {PRCAddValue.modulesType.includes(2) && (
+              <div className="space-y-2">
+                <label className="text-[#698592] text-[12px] font-medium block">Who Can Assign Competencies</label>
+                <div className="flex flex-wrap gap-3">
+                  {['Admin', 'reporting manager', 'custom'].map((opt) => (
+                    <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="allow_competency_type"
+                        checked={PRCAddValue.allow_competency_type === opt}
+                        onChange={() => {
+                          handleSelectAddPRC(opt, 'allow_competency_type');
+                          if (opt === 'custom' && PRCAddValue.permissionEmployeesOptions.length === 0) {
+                            const deptId = PRCAddValue.department_id?.value ?? null;
+                            fetchPermissionEmployees(deptId);
+                          }
+                        }}
+                        className="rounded border-gray-300 text-[#3DA5F4] focus:ring-[#3DA5F4]"
+                      />
+                      <span className="text-[12px] text-gray-700 capitalize">
+                        {opt === 'custom' ? 'Custom Selection' : opt === 'reporting manager' ? 'Reporting Manager' : opt}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {PRCAddValue.allow_competency_type === 'custom' && (
+                  <div className="mt-2 space-y-1">
+                    <SearchReactSelect
+                      placeHolderTitle={PRCAddValue.permissionEmployeesLoading ? "Loading employees..." : "Select employees"}
+                      value={PRCAddValue.allow_competency_custom_employees}
+                      options={PRCAddValue.permissionEmployeesOptions}
+                      onChangeHandler={(selected) => handleSelectAddPRC(selected, 'allow_competency_custom_employees')}
+                      disabled={PRCAddValue.permissionEmployeesLoading}
+                      isMulti
+                      isClearable
+                      cStyle={true}
+                      customStyles={{
+                        control: (base) => ({ ...base, fontSize: '12px', minHeight: '36px', borderRadius: '10px' }),
+                        menu: (base) => ({ ...base, zIndex: 9999 }),
+                      }}
+                    />
+                    {PRCAddValue.allow_competency_custom_employees?.length > 0 && (
+                      <p className="text-[11px] text-gray-600 mt-1">
+                        Selected: {PRCAddValue.allow_competency_custom_employees.map((e) => e?.label ?? e?.name ?? e).join(', ')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {PRCAddValue.allow_competency_type !== 'custom' && (
+                  <p className="text-[11px] text-gray-600">
+                    Selected: {PRCAddValue.allow_competency_type === 'reporting manager' ? 'Reporting Manager' : 'Admin'}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="space-y-2">
         <label className="text-[#698592] text-[12px]">Branch</label>
         <SearchReactSelect
@@ -379,53 +498,15 @@ const AddEditPRC = (props) => {
       <div className="space-y-2">
         <label className="text-[#698592] text-[12px]">Employee</label>
         <SearchReactSelect
-          placeHolderTitle="Select Employee"
+          placeHolderTitle={selectedDepartment ? "Select Employee" : "Select department first"}
           value={selectedEmployee}
           options={[
             { value: 0, label: 'All Employees' },
-            ...(Array.isArray(Get_All_Employee)
-              ? Get_All_Employee
-                  .filter(emp => {
-                    // Filter by branch if selected and not "All Branches" (value 0)
-                    if (selectedBranch?.value && selectedBranch.value !== 0 && selectedBranch.value !== '0') {
-                      const branchValue = Number(selectedBranch.value) || selectedBranch.value;
-                      const branchId = Number(selectedBranch.id) || selectedBranch.id;
-                      const empBranchId = Number(emp.branch_id) || emp.branch_id;
-                      const empBranchObjId = Number(emp.branch?.id) || emp.branch?.id;
-
-                      if (empBranchId !== branchValue &&
-                        empBranchId !== branchId &&
-                        empBranchObjId !== branchValue &&
-                        empBranchObjId !== branchId &&
-                        emp.branch !== branchValue &&
-                        emp.branch !== branchId) {
-                        return false;
-                      }
-                    }
-
-                    // Filter by department if selected and not "All Departments" (value 0)
-                    if (selectedDepartment?.value && selectedDepartment.value !== 0 && selectedDepartment.value !== '0') {
-                      const deptValue = Number(selectedDepartment.value) || selectedDepartment.value;
-                      const deptId = Number(selectedDepartment.id) || selectedDepartment.id;
-                      const empDeptId = Number(emp.department_id) || Number(emp.dept_id) || emp.department_id || emp.dept_id;
-                      const empDeptObjId = Number(emp.department?.id) || emp.department?.id;
-
-                      if (empDeptId !== deptValue &&
-                        empDeptId !== deptId &&
-                        empDeptObjId !== deptValue &&
-                        empDeptObjId !== deptId &&
-                        emp.department !== deptValue &&
-                        emp.department !== deptId) {
-                        return false;
-                      }
-                    }
-
-                    return true;
-                  })
-                  .map((emp) => ({
-                    value: emp.id || emp.emp_id || emp.employee_id,
-                    label: `${emp.name} (ID: ${emp.id || emp.emp_id || emp.employee_id})`
-                  }))
+            ...(Array.isArray(PRCAddValue.employees)
+              ? PRCAddValue.employees.map((emp) => ({
+                  value: emp.value ?? emp.id ?? emp.emp_id ?? emp.employee_id,
+                  label: emp.label ?? `${emp.name ?? ''} (ID: ${emp.id ?? emp.emp_id ?? emp.employee_id ?? ''})`
+                }))
               : [])
           ]}
           onChangeHandler={async (selectedOption) => {

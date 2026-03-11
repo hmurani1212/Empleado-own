@@ -14,10 +14,10 @@ const EmployeeDependent = ({
     setEmployeeData,
     editingRecord,
     setEditingRecord,
-    onDeleteDependent
+    onDeleteDependent,
+    onRefreshDocuments
 }) => {
     const addEmployeeDependent = useStore((state) => state.addEmployeeDependent);
-    const gettingEmployeeProfile = useStore((state) => state.gettingEmployeeProfile);
     
     const [dependentForm, setDependentForm] = useState({
         name: '',
@@ -27,7 +27,15 @@ const EmployeeDependent = ({
         contact: ''
     });
 
-    // Reset form when drawer closes or populate when editing
+    const mapDependentToForm = (record) => ({
+        name: record.name || '',
+        relationship: record.relationship || '',
+        gender: record.gender === '0' ? 'Male' : record.gender === '1' ? 'Female' : '',
+        dob: record.dob ? record.dob.split('T')[0] : '',
+        contact: record.contact || ''
+    });
+
+    // Reset form when drawer closes; when opening, populate from editing record or latest dependent
     useEffect(() => {
         if (!openDependentDrawer) {
             setDependentForm({
@@ -39,14 +47,12 @@ const EmployeeDependent = ({
             });
             setEditingRecord(null);
         } else if (editingRecord) {
-            // Populate form with editing record data
-            setDependentForm({
-                name: editingRecord.name || '',
-                relationship: editingRecord.relationship || '',
-                gender: editingRecord.gender === '0' ? 'Male' : editingRecord.gender === '1' ? 'Female' : '',
-                dob: editingRecord.dob ? editingRecord.dob.split('T')[0] : '',
-                contact: editingRecord.contact || ''
-            });
+            setDependentForm(mapDependentToForm(editingRecord));
+        } else {
+            const list = employeeData?.employee_documents?.depanedent;
+            if (list && Array.isArray(list) && list.length > 0) {
+                setDependentForm(mapDependentToForm(list[list.length - 1]));
+            }
         }
     }, [openDependentDrawer, editingRecord, setEditingRecord]);
 
@@ -113,24 +119,9 @@ const EmployeeDependent = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast(editingRecord ? 'Dependent record updated successfully' : 'Dependent record added successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
-                
+
+                if (onRefreshDocuments) await onRefreshDocuments();
+
                 setOpenDependentDrawer(false);
                 
                 // Reset form
@@ -169,23 +160,8 @@ const EmployeeDependent = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast('Dependent record deleted successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+
+                if (onRefreshDocuments) await onRefreshDocuments();
             } else {
                 showToast('Failed to delete dependent record', 'error');
             }

@@ -122,6 +122,9 @@ const EmployeesList = (props) => {
 
   const isAnyActionMenuOpen = Object.values(openMenuValue || {}).some(Boolean);
 
+
+  // console.log('what is the paginations data', paginationData)
+
   // this is our react js code
   return (
     <div
@@ -231,9 +234,8 @@ const EmployeesList = (props) => {
                       >
                         Action
                         <FaChevronDown
-                          className={`w-3 h-3 transition-transform duration-200 ${
-                            openMenuValue[i] ? "rotate-180" : ""
-                          }`}
+                          className={`w-3 h-3 transition-transform duration-200 ${openMenuValue[i] ? "rotate-180" : ""
+                            }`}
                         />
                       </Button>
                       {/* Dropdown is rendered via portal below to avoid clipping by overflow container */}
@@ -243,16 +245,16 @@ const EmployeesList = (props) => {
               );
             }))}
 
-            {!isLoading && empListData?.employees?.length === 0 && (
-              <tr>
-                <td colSpan={data.length} className="p-10 text-center">
-                  <div className="flex flex-col items-center justify-center text-gray-400">
-                    <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <Typography className="font-medium">No employees found</Typography>
-                  </div>
-                </td>
-              </tr>
-            )}
+          {!isLoading && empListData?.employees?.length === 0 && (
+            <tr>
+              <td colSpan={data.length} className="p-10 text-center">
+                <div className="flex flex-col items-center justify-center text-gray-400">
+                  <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                  <Typography className="font-medium">No employees found</Typography>
+                </div>
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 
@@ -263,31 +265,29 @@ const EmployeesList = (props) => {
           <button
             title="Previous Page"
             disabled={paginationData.currentPage <= 1}
-            className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
-              paginationData.currentPage > 1
+            className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${paginationData.currentPage > 1
                 ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
                 : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
-            }`}
+              }`}
             onClick={onPreviousPage}
           >
             ‹
           </button>
-          
+
           {/* Page Numbers */}
           <div className="flex items-center gap-1.5">
             {(() => {
               const currentPage = paginationData.currentPage;
               const totalPages = paginationData.totalPages;
-              
+
               const renderPageButton = (page) => (
                 <button
                   key={page}
                   onClick={() => onGoToPage(page)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
-                    page === currentPage
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${page === currentPage
                       ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
                       : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>
@@ -297,40 +297,39 @@ const EmployeesList = (props) => {
               if (totalPages <= 7) {
                 return Array.from({ length: totalPages }, (_, i) => i + 1).map(renderPageButton);
               }
-              
+
               const pages = [];
               pages.push(renderPageButton(1));
-              
+
               if (currentPage > 3) {
                 pages.push(<span key="start-ellipsis" className="text-gray-400 px-1">...</span>);
               }
-              
+
               const startPage = Math.max(2, currentPage - 1);
               const endPage = Math.min(totalPages - 1, currentPage + 1);
-              
+
               for (let i = startPage; i <= endPage; i++) {
                 pages.push(renderPageButton(i));
               }
-              
+
               if (currentPage < totalPages - 2) {
                 pages.push(<span key="end-ellipsis" className="text-gray-400 px-1">...</span>);
               }
-              
+
               pages.push(renderPageButton(totalPages));
-              
+
               return pages;
             })()}
           </div>
-          
+
           {/* Next Button */}
           <button
             title="Next Page"
             disabled={paginationData.currentPage >= paginationData.totalPages}
-            className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
-              paginationData.currentPage < paginationData.totalPages
+            className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${paginationData.currentPage < paginationData.totalPages
                 ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
                 : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
-            }`}
+              }`}
             onClick={onNextPage}
           >
             ›
@@ -390,7 +389,7 @@ const EmployeesList = (props) => {
           }
           title="Salary Details"
           closeDrawer={handleToggleSalaryDetails}
-          // widthSize={620}
+        // widthSize={620}
         />
       )}
     </div>

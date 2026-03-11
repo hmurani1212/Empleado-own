@@ -14,10 +14,10 @@ const EmployeeExperience = ({
     setEmployeeData,
     editingRecord,
     setEditingRecord,
-    onDeleteExperience
+    onDeleteExperience,
+    onRefreshDocuments
 }) => {
     const addEmployeeExperience = useStore((state) => state.addEmployeeExperience);
-    const gettingEmployeeProfile = useStore((state) => state.gettingEmployeeProfile);
     
     const [experienceForm, setExperienceForm] = useState({
         orgInstituteName: '',
@@ -28,7 +28,16 @@ const EmployeeExperience = ({
         reasonOfLeaving: ''
     });
 
-    // Reset form when drawer closes or populate when editing
+    const mapExperienceToForm = (record) => ({
+        orgInstituteName: record.org_name || '',
+        designation: record.designation || '',
+        fromDate: record.from_date ? record.from_date.split('T')[0] : '',
+        toDate: record.to_date ? record.to_date.split('T')[0] : '',
+        salary: record.salary || '',
+        reasonOfLeaving: record.leave_reason || ''
+    });
+
+    // Reset form when drawer closes; when opening, populate from editing record or latest experience
     useEffect(() => {
         if (!openExperienceDrawer) {
             setExperienceForm({
@@ -41,15 +50,12 @@ const EmployeeExperience = ({
             });
             setEditingRecord(null);
         } else if (editingRecord) {
-            // Populate form with editing record data
-            setExperienceForm({
-                orgInstituteName: editingRecord.org_name || '',
-                designation: editingRecord.designation || '',
-                fromDate: editingRecord.from_date ? editingRecord.from_date.split('T')[0] : '',
-                toDate: editingRecord.to_date ? editingRecord.to_date.split('T')[0] : '',
-                salary: editingRecord.salary || '',
-                reasonOfLeaving: editingRecord.leave_reason || ''
-            });
+            setExperienceForm(mapExperienceToForm(editingRecord));
+        } else {
+            const list = employeeData?.employee_documents?.employee_experience;
+            if (list && Array.isArray(list) && list.length > 0) {
+                setExperienceForm(mapExperienceToForm(list[list.length - 1]));
+            }
         }
     }, [openExperienceDrawer, editingRecord, setEditingRecord]);
 
@@ -120,24 +126,9 @@ const EmployeeExperience = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast(editingRecord ? 'Experience record updated successfully' : 'Experience record added successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
-                
+
+                if (onRefreshDocuments) await onRefreshDocuments();
+
                 setOpenExperienceDrawer(false);
                 
                 // Reset form
@@ -177,23 +168,8 @@ const EmployeeExperience = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast('Experience record deleted successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+
+                if (onRefreshDocuments) await onRefreshDocuments();
             } else {
                 showToast('Failed to delete experience record', 'error');
             }

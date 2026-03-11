@@ -303,8 +303,9 @@ const useBulkService = () => {
         try {
             const response = await employeesApi.getDesignations(data)
             if (response.status === 200 && response.data.STATUS === "SUCCESSFUL") {
-                // Extract designations array from DB_DATA and format it
-                const designations = response.data.DB_DATA?.designations || [];
+                // Extract designations: API may return DESIGNATIONS (top-level) or DB_DATA.designations
+                const raw = response.data.DESIGNATIONS ?? response.data.DB_DATA?.designations ?? [];
+                const designations = Array.isArray(raw) ? raw : [];
                 setBulkOptionsDbData((prevState) => ({
                     ...prevState,
                     4: { 

@@ -405,6 +405,127 @@ const employeeViewModel = (set, get) => ({
         }
     },
 
+    /**
+     * Fetch employee profile attendance data (bio, policy, team, shift, planner, web/mobile attendance).
+     * Used when user opens Attendance Setting; returns full API response or null.
+     */
+    gettingEmpProfileAttendance: async (userId) => {
+        try {
+            const response = await employeesApi.getEmpProfileAttendance(userId);
+            const data = response?.data;
+            if (data?.STATUS === 'SUCCESSFUL') {
+                return data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error in gettingEmpProfileAttendance:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Fetch employee profile documents (education, experience, dependents, licenses, references, documents).
+     * Used when user opens Documents tab; returns full API response or null.
+     */
+    gettingEmpProfileDocuments: async (userId) => {
+        try {
+            const response = await employeesApi.getEmpProfileDocuments(userId);
+            const data = response?.data;
+            if (data?.STATUS === 'SUCCESSFUL') {
+                return data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error in gettingEmpProfileDocuments:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Fetch employee profile salary settings. Returns full API response or null. DB_DATA.Salary_Settings (key kept same).
+     */
+    gettingEmpProfileSalarySettings: async (userId) => {
+        try {
+            const response = await employeesApi.getEmpProfileSalarySettings(userId);
+            const data = response?.data;
+            if (data?.STATUS === 'SUCCESSFUL') {
+                return data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error in gettingEmpProfileSalarySettings:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Fetch employee profile leave balance. Returns full API response or null. DB_DATA.leave_balanace (key kept same).
+     */
+    gettingEmpProfileLeaveBalance: async (userId) => {
+        try {
+            const response = await employeesApi.getEmpProfileLeaveBalance(userId);
+            const data = response?.data;
+            if (data?.STATUS === 'SUCCESSFUL') {
+                return data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error in gettingEmpProfileLeaveBalance:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Fetch employee profile checklist. Returns full API response or null. DB_DATA.emp_checklist (key kept same).
+     */
+    gettingEmpProfileChecklist: async (userId) => {
+        try {
+            const response = await employeesApi.getEmpProfileChecklist(userId);
+            const data = response?.data;
+            if (data?.STATUS === 'SUCCESSFUL') {
+                return data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error in gettingEmpProfileChecklist:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Fetch employee profile module privileges. Returns full API response or null. DB_DATA.module_privileges (key kept same).
+     */
+    gettingEmpProfileModulePrivileges: async (userId) => {
+        try {
+            const response = await employeesApi.getEmpProfileModulePrivileges(userId);
+            const data = response?.data;
+            if (data?.STATUS === 'SUCCESSFUL') {
+                return data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error in gettingEmpProfileModulePrivileges:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Fetch employee profile repetitive duties. Returns full API response or null. DB_DATA.Repetitive_Duties (key kept same).
+     */
+    gettingEmpProfileRepetitiveDuties: async (userId) => {
+        try {
+            const response = await employeesApi.getEmpProfileRepetitiveDuties(userId);
+            const data = response?.data;
+            if (data?.STATUS === 'SUCCESSFUL') {
+                return data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error in gettingEmpProfileRepetitiveDuties:', error);
+            return null;
+        }
+    },
+
     // Update employee basic information
     updateEmployee: async (employeeId, data) => {
         try {
@@ -1205,10 +1326,10 @@ const employeeViewModel = (set, get) => ({
     degrees: [],
     isLoadingDegrees: false,
 
-    getDegrees: async () => {
+    getDegrees: async (userId) => {
         set({ isLoadingDegrees: true })
         try {
-            const response = await employeesApi.getDegrees()
+            const response = await employeesApi.getDegrees(userId)
             const data = response.data
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
                 const degreesList = data.DB_DATA?.degrees || []

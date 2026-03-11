@@ -13,8 +13,9 @@ import { formatTimestamp } from "../Branches/utils";
 import { motion } from "framer-motion";
 import { FaChevronDown } from "react-icons/fa";
 import { getAllMonths } from "../../services/__appServicesData";
-import { getAllYearsHire } from "../../services/__hireServices";
+import { getAllYearsHire, getCityNamesFromIds } from "../../services/__hireServices";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
+import useStore from "../../Store/store";
 import { useNavigate } from "react-router";
 import { useDebounce } from "../../services/__debounceServices";
 const VacanciesList = () => {
@@ -45,6 +46,9 @@ const VacanciesList = () => {
     loading,
   } = useHire_2();
 
+  const allCities = useStore((state) => state.allCities);
+  const gettingAllLocations = useStore((state) => state.gettingAllLocations);
+
   const dataVacancies = [
     "Title",
     "Age Limit",
@@ -52,6 +56,7 @@ const VacanciesList = () => {
     "Gender Ratio",
     "Valid Through",
     "Status",
+    "Location",
     "Share Link",
     "Actions",
   ];
@@ -73,6 +78,11 @@ const VacanciesList = () => {
     }, []),
     500
   );
+
+  // Load hiring cities so we can resolve vacancy.locations (from vacancy_location) to city names
+  useEffect(() => {
+    gettingAllLocations();
+  }, [gettingAllLocations]);
 
   // Initial load with default Active Vacancy filter
   useEffect(() => {
@@ -398,6 +408,20 @@ const VacanciesList = () => {
                               : hire.status === "EXPIRED"
                               ? "Expired"
                               : "Closed"}
+                          </Typography>
+                        </td>
+
+                        <td className={classes}>
+                          <Typography
+                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
+                          >
+                            {(() => {
+                              const names = getCityNamesFromIds(hire.locations, allCities);
+                              if (names.length) return names.join(", ");
+                              if (Array.isArray(hire.city_name) && hire.city_name.length)
+                                return hire.city_name.join(", ");
+                              return "—";
+                            })()}
                           </Typography>
                         </td>
 

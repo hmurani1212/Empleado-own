@@ -207,9 +207,11 @@ const useEmpProfileInfo = ()=>{
             const resData = response.data
             // console.log('response', response)
             if(response.status === 200 && resData.STATUS === "SUCCESSFUL"){
+                // API may return DESIGNATIONS (top-level) or DB_DATA
+                const designationList = Array.isArray(resData.DESIGNATIONS) ? resData.DESIGNATIONS : (resData.DB_DATA || []);
                 setOfficialInfoValue((prevState)=>({
                     ...prevState, 
-                    designation_list:resData.DB_DATA,
+                    designation_list: designationList,
                     designation:'',
                 }))
             }else{

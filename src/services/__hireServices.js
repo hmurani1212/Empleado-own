@@ -14,10 +14,28 @@ export const getAllYearsHire = () => {
     const startAge = 18;
     const endAge = 60;
     const ages = [];
-  
+
     for (let age = startAge; age <= endAge; age++) {
       ages.push(age);
     }
-  
+
     return ages;
-  }
+  };
+
+/**
+ * Resolve city ids to city names using hiring_city list (id, city_name).
+ * Handles vacancy.locations from vacancy_location table.
+ * @param {number[]|undefined} cityIds - e.g. [105]
+ * @param {Array<{id: number, city_name?: string, name?: string}>|undefined} hiringCityList - from GET /api/v1/locations/hiring_city
+ * @returns {string[]} - e.g. ["Islamabad"]
+ */
+export const getCityNamesFromIds = (cityIds, hiringCityList) => {
+  if (!Array.isArray(cityIds) || cityIds.length === 0) return [];
+  if (!Array.isArray(hiringCityList)) return [];
+  return cityIds
+    .map((id) => {
+      const city = hiringCityList.find((c) => c.id === id || c.id === Number(id));
+      return city?.city_name ?? city?.name ?? "";
+    })
+    .filter(Boolean);
+};

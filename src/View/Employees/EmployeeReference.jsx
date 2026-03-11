@@ -15,10 +15,10 @@ const EmployeeReference = ({
     setEmployeeData,
     editingRecord,
     setEditingRecord,
-    onDeleteReference
+    onDeleteReference,
+    onRefreshDocuments
 }) => {
     const addEmployeeReference = useStore((state) => state.addEmployeeReference);
-    const gettingEmployeeProfile = useStore((state) => state.gettingEmployeeProfile);
     
     const [referenceForm, setReferenceForm] = useState({
         refName: '',
@@ -36,7 +36,15 @@ const EmployeeReference = ({
         { value: '4', label: 'Personal' }
     ];
 
-    // Reset form when drawer closes or populate when editing
+    const mapReferenceToForm = (record) => ({
+        refName: record.ref_name || '',
+        refRelation: record.ref_relation || '',
+        refSource: record.ref_source?.toString() || '1',
+        refAddress: record.ref_address || '',
+        refContact: record.ref_contact || ''
+    });
+
+    // Reset form when drawer closes; when opening, populate from editing record or latest reference
     useEffect(() => {
         if (!openReferenceDrawer) {
             setReferenceForm({
@@ -48,14 +56,12 @@ const EmployeeReference = ({
             });
             setEditingRecord(null);
         } else if (editingRecord) {
-            // Populate form with editing record data
-            setReferenceForm({
-                refName: editingRecord.ref_name || '',
-                refRelation: editingRecord.ref_relation || '',
-                refSource: editingRecord.ref_source?.toString() || '1',
-                refAddress: editingRecord.ref_address || '',
-                refContact: editingRecord.ref_contact || ''
-            });
+            setReferenceForm(mapReferenceToForm(editingRecord));
+        } else {
+            const list = employeeData?.employee_documents?.employee_refcence;
+            if (list && Array.isArray(list) && list.length > 0) {
+                setReferenceForm(mapReferenceToForm(list[list.length - 1]));
+            }
         }
     }, [openReferenceDrawer, editingRecord, setEditingRecord]);
 
@@ -122,24 +128,9 @@ const EmployeeReference = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast(editingRecord ? 'Reference record updated successfully' : 'Reference record added successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
-                
+
+                if (onRefreshDocuments) await onRefreshDocuments();
+
                 setOpenReferenceDrawer(false);
                 
                 // Reset form
@@ -178,23 +169,8 @@ const EmployeeReference = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast('Reference record deleted successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
+
+                if (onRefreshDocuments) await onRefreshDocuments();
             } else {
                 showToast('Failed to delete reference record', 'error');
             }

@@ -21,6 +21,7 @@ const AddBulkEmployee = () => {
   const [branchCheckboxes, setBranchCheckboxes] = useState({}); // Track which rows have checkbox checked
   const [departmentCheckboxes, setDepartmentCheckboxes] = useState({}); // Track which rows have department checkbox checked
   const [designationCheckboxes, setDesignationCheckboxes] = useState({}); // Track which rows have designation checkbox checked
+  const [reportingManagerCheckboxes, setReportingManagerCheckboxes] = useState({}); // Track which rows have reporting manager checkbox checked
   const [workPolicyCheckboxes, setWorkPolicyCheckboxes] = useState({}); // Track which rows have work policy checkbox checked
   const [salaryTemplateCheckboxes, setSalaryTemplateCheckboxes] = useState({}); // Track which rows have salary template checkbox checked
 
@@ -333,6 +334,52 @@ const AddBulkEmployee = () => {
         });
       }
     }
+  };
+
+  // Handle reporting manager checkbox change - apply selected manager to all rows below
+  const handleReportingManagerCheckboxChange = (rowIndex, isChecked) => {
+    setReportingManagerCheckboxes(prev => ({
+      ...prev,
+      [rowIndex]: isChecked
+    }));
+
+    if (isChecked) {
+      const currentRow = importedData[rowIndex];
+      const managerName = currentRow?.['Reporting Manager'];
+
+      if (managerName) {
+        setImportedData(prevData => {
+          const newData = [...prevData];
+          for (let i = rowIndex + 1; i < newData.length; i++) {
+            newData[i] = {
+              ...newData[i],
+              'Reporting Manager': managerName
+            };
+          }
+          return newData;
+        });
+      }
+    }
+  };
+
+  // Handle reporting manager select change - if "apply below" is checked, apply to all rows below
+  const handleReportingManagerChange = (managerName, rowIndex) => {
+    setImportedData(prevData => {
+      const newData = [...prevData];
+      newData[rowIndex] = {
+        ...newData[rowIndex],
+        'Reporting Manager': managerName
+      };
+      if (reportingManagerCheckboxes[rowIndex] && managerName) {
+        for (let i = rowIndex + 1; i < newData.length; i++) {
+          newData[i] = {
+            ...newData[i],
+            'Reporting Manager': managerName
+          };
+        }
+      }
+      return newData;
+    });
   };
 
   // Handle work policy change for a specific row
@@ -721,7 +768,9 @@ const AddBulkEmployee = () => {
             const headerMapping = {
               'Mobile No': 'Mobile No',
               'Mobile No (+92XXXXXXXXXX)': 'Mobile No',
+              'Mobile No (+923130000000)': 'Mobile No',
               'Mobile No\n(+92XXXXXXXXXX)': 'Mobile No', // Handle line break
+              'Mobile No\n(+923130000000)': 'Mobile No',
               'Email': 'Email',
               'Full Name': 'Full Name',
               'Father Name': 'Father Name',
@@ -745,6 +794,14 @@ const AddBulkEmployee = () => {
               'Employment Status': 'Employment Status',
               'Salary Template': 'Salary Template'
             };
+            // Map any "Mobile No (...)" variant to "Mobile No" (e.g. Excel template with example number)
+            const getMappedHeader = (normalized, original) => {
+              const raw = (original !== undefined && original !== null) ? original.toString().replace(/\n/g, ' ').trim() : '';
+              if (/^Mobile No(\s*\([^)]*\))?$/i.test(normalized) || /^Mobile No(\s*\([^)]*\))?$/i.test(raw)) {
+                return 'Mobile No';
+              }
+              return headerMapping[normalized] || headerMapping[raw] || normalized;
+            };
 
             // Filter out empty rows - only keep rows with actual data
             const nonEmptyRows = rows.filter((row, index) => {
@@ -763,13 +820,18 @@ const AddBulkEmployee = () => {
                 const cellValue = row[colIndex];
                 // Normalize the header and map it to our expected column name
                 const normalizedHeader = normalizeHeader(header);
-                const mappedHeader = headerMapping[normalizedHeader] || headerMapping[header] || header;
+                const mappedHeader = getMappedHeader(normalizedHeader, header);
 
                 // Only add non-empty values, skip empty cells
                 if (cellValue !== null && cellValue !== undefined && cellValue.toString().trim() !== '') {
                   // Convert date fields to proper format
                   if (mappedHeader === 'Date of Birth' || mappedHeader === 'Joining Data') {
                     obj[mappedHeader] = convertDateFormat(cellValue);
+                  } else if (mappedHeader === 'Mobile No') {
+                    // Excel may return mobile as number; ensure string and optional + prefix for display
+                    const raw = typeof cellValue === 'number' ? String(cellValue) : cellValue.toString().trim();
+                    const digits = raw.replace(/\D/g, '');
+                    obj[mappedHeader] = digits.length >= 10 && digits.startsWith('92') ? `+${digits}` : raw;
                   } else {
                     obj[mappedHeader] = cellValue;
                   }
@@ -1352,16 +1414,35 @@ const AddBulkEmployee = () => {
                           </div>
                         </td>
                         <td className="font-normal text-[clamp(12px,0.9vw,14px)] whitespace-nowrap text-[#474747] font-Urbanist p-4 border-b border-[#F2F2F9]">
-                          <select
-                            value={row['Reporting Manager'] || ''}
-                            onChange={(e) => handleCellChange(rowIndex, 'Reporting Manager', e.target.value)}
-                            className="w-32 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="">Select Manager</option>
-                            {Array.isArray(empManager) ? empManager.map(manager => (
-                              <option key={manager.id} value={manager.name}>{manager.name}</option>
-                            )) : []}
-                          </select>
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 relative group" style={{ width: '20px', minWidth: '20px', visibility: rowIndex === 0 ? 'visible' : 'hidden' }}>
+                              {rowIndex === 0 && (
+                                <>
+                                  <input
+                                    type="checkbox"
+                                    id={`reporting-manager-checkbox-${rowIndex}`}
+                                    checked={reportingManagerCheckboxes[rowIndex] || false}
+                                    onChange={(e) => handleReportingManagerCheckboxChange(rowIndex, e.target.checked)}
+                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                                  />
+                                  <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10 shadow-lg pointer-events-none">
+                                    Apply below to all
+                                    <span className="absolute top-full left-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            <select
+                              value={row['Reporting Manager'] || ''}
+                              onChange={(e) => handleReportingManagerChange(e.target.value, rowIndex)}
+                              className="w-32 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="">Select Manager</option>
+                              {Array.isArray(empManager) ? empManager.map(manager => (
+                                <option key={manager.id} value={manager.name}>{manager.name}</option>
+                              )) : []}
+                            </select>
+                          </div>
                         </td>
                         <td className="font-normal text-[clamp(12px,0.9vw,14px)] whitespace-nowrap text-[#474747] font-Urbanist p-4 border-b border-[#F2F2F9]">
                           <div className="flex items-center gap-2">

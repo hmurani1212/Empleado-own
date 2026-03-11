@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import useStore from "../../Store/store"
 import employeesApi from "../../Model/Data/Employees/Employees"
 import { showToast } from "../../Components/Toaster/Toaster"
@@ -10,9 +11,14 @@ import InactiveEmployeesDetails from "../../View/Employees/InactiveEmployeesDeta
 import { executeApiCall, createApiKey } from "../../services/__apiManager"
 import departmentsApi from "../../Model/Data/Departments/Departments"
 import payrollApi from "../../Model/Data/Payroll/Payroll"
+
+// Cache duration for employees list API (5 min) – matches React Query provider defaults
+const EMPLOYEES_CACHE_MS = 5 * 60 * 1000
+const EMPLOYEES_QUERY_KEY = 'employees'
 // import useDepartments from '../../ViewModel/DepartmentsViewModel/DepartmentsServices';
 
 const useEmployees = () => {
+    const queryClient = useQueryClient()
 
     const getEmployeesList = useStore((state) => state.getEmployeesList)
     const allEmployees = useStore((state) => state.allEmployees)
@@ -152,13 +158,19 @@ const useEmployees = () => {
         setCurrentEmployeeStatus(status);
     };
 
-    // Centralized API call for employees - ensures only one call is made
+    // Centralized API call for employees – uses React Query cache (5 min) to avoid repeated requests
     const centralizedGetEmployees = async (filters = {}) => {
-        const apiKey = createApiKey('/api/v1/employees', filters);
         try {
-            const response = await executeApiCall(apiKey, () => employeesApi.getEmployeesWithFilters(filters));
-            const data = response.data;
-            if (data.STATUS === "SUCCESSFUL") {
+            const data = await queryClient.fetchQuery({
+                queryKey: [EMPLOYEES_QUERY_KEY, filters],
+                queryFn: async () => {
+                    const res = await employeesApi.getEmployeesWithFilters(filters);
+                    return res.data;
+                },
+                staleTime: EMPLOYEES_CACHE_MS,
+                gcTime: EMPLOYEES_CACHE_MS,
+            });
+            if (data && data.STATUS === "SUCCESSFUL") {
                 useStore.setState({ allEmployees: data.DB_DATA });
             }
         } catch (err) {
@@ -969,15 +981,15 @@ const useEmployees = () => {
             const resData = response.data
             ///console.log('Designations API response:', resData);
             if (response.status === 200 && resData.STATUS === "SUCCESSFUL") {
-                // Handle different response structures
+                // Handle different response structures (DB_DATA or top-level DESIGNATIONS)
                 let designationsData = [];
 
                 if (resData?.DB_DATA?.designations) {
-                    // Direct designations array
                     designationsData = resData.DB_DATA.designations;
                 } else if (resData?.DB_DATA?.departments) {
-                    // Designations nested in departments
                     designationsData = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
+                } else if (Array.isArray(resData.DESIGNATIONS)) {
+                    designationsData = resData.DESIGNATIONS;
                 }
 
                 setDesignations(designationsData);
@@ -1265,14 +1277,21 @@ const useEmployees = () => {
 
             /////console.log('API call with filters:', currentFilters);
 
-            // Use centralized API call for initial load, direct API call for filters/pagination
+            // Use centralized path for empty filters; otherwise fetch via React Query (cached 5 min)
             if (Object.keys(currentFilters).length === 0) {
                 await centralizedGetEmployees(currentFilters);
             } else {
-                const response = await employeesApi.getEmployeesWithFilters(currentFilters);
-                const data = response.data;
+                const data = await queryClient.fetchQuery({
+                    queryKey: [EMPLOYEES_QUERY_KEY, currentFilters],
+                    queryFn: async () => {
+                        const res = await employeesApi.getEmployeesWithFilters(currentFilters);
+                        return res.data;
+                    },
+                    staleTime: EMPLOYEES_CACHE_MS,
+                    gcTime: EMPLOYEES_CACHE_MS,
+                });
 
-                if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+                if (data && data.STATUS === "SUCCESSFUL") {
                     const newEmployees = data.DB_DATA.employees;
                     const pagination = data.DB_DATA.pagination;
 

@@ -8,6 +8,10 @@ const useFeedbackServices = () => {
     const gettingFeedback = useStore((state) => state.gettingFeedback)
     const feedbackData = useStore((state) => state.feedbackData)
     const feedbackLoading = useStore((state) => state.feedbackLoading)
+    const feedbackPaginationData = useStore((state) => state.feedbackPaginationData)
+    const goToNextFeedbackPage = useStore((state) => state.goToNextFeedbackPage)
+    const goToPreviousFeedbackPage = useStore((state) => state.goToPreviousFeedbackPage)
+    const goToFeedbackPage = useStore((state) => state.goToFeedbackPage)
 
     const [feedbackValue, setFeedbackValue] = useState({
         searchText: ''
@@ -32,9 +36,9 @@ const useFeedbackServices = () => {
         }))
     }
 
-    // Create debounced search function
+    // Create debounced search function (resets to page 1 on search)
     const debouncedSearch = useDebounce((searchText) => {
-        gettingFeedback(searchText)
+        gettingFeedback(searchText, 1, 10)
     }, 500)
 
     const handleSearchFeedback = (searchText) => {
@@ -243,7 +247,11 @@ const useFeedbackServices = () => {
         handleSubmitFeedback,
         handleCancelFeedback,
         isSubmitting,
-        feedbackLoading
+        feedbackLoading,
+        feedbackPaginationData,
+        goToNextFeedbackPage,
+        goToPreviousFeedbackPage,
+        goToFeedbackPage
     }
 }
 

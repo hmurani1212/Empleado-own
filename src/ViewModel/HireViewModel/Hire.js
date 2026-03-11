@@ -381,10 +381,10 @@ const hireViewModel = (set, get) => ({
         })
     },
 
-    // Updated to use new cities API endpoint for Pakistan (country_id: 162)
+    // Cities list for Create Vacancy (Hiring module)
     gettingAllLocations: async () => {
         try {
-            const response = await hireApi.getCitiesByCountry(162) // Use new endpoint
+            const response = await hireApi.getHiringCities()
             const data = response.data
 
             if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {

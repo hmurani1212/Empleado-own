@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button, Input, Typography, Select, Option, Textarea, Checkbox } from '@material-tailwind/react';
 import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer';
 import { showToast } from '../../Components/Toaster/Toaster';
-import useStore from '../../Store/store';
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices';
 
 const EmployeeDuties = ({
@@ -14,19 +13,10 @@ const EmployeeDuties = ({
     setIsUpdating,
     setEmployeeData,
     editingRecord,
-    setEditingRecord
+    setEditingRecord,
+    onRefreshRepetitiveDuties
 }) => {
     const { addEmployeeDuty, updateEmployeeDuty } = useEmployees();
-    const { gettingEmployeeProfile } = useStore();
-
-    // Debug: Check if functions are available
-    useEffect(() => {
-        console.log('EmployeeDuties - Functions available:', {
-            addEmployeeDuty: typeof addEmployeeDuty,
-            updateEmployeeDuty: typeof updateEmployeeDuty,
-            gettingEmployeeProfile: typeof gettingEmployeeProfile
-        });
-    }, [addEmployeeDuty, updateEmployeeDuty, gettingEmployeeProfile]);
 
     const [dutiesForm, setDutiesForm] = useState({
         title: '',
@@ -179,30 +169,8 @@ const EmployeeDuties = ({
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast(editingRecord ? 'Duty updated successfully' : 'Duty assigned successfully', 'success');
 
-                // Refresh employee profile data
-                try {
-                    console.log('Refreshing employee data for ID:', employeeId);
+                if (onRefreshRepetitiveDuties) await onRefreshRepetitiveDuties();
 
-                    // Add small delay to ensure backend has processed the update
-                    await new Promise(resolve => setTimeout(resolve, 300));
-
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    console.log('Refreshed data:', refreshedData);
-
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        console.log('Setting employee data with refreshed data');
-                        console.log('Repetitive_Duties in refresh:', refreshedData.DB_DATA.Repetitive_Duties);
-                        // Directly replace employee data with fresh API data
-                        setEmployeeData(refreshedData.DB_DATA);
-                        console.log('Employee data updated successfully');
-                    } else {
-                        console.warn('No DB_DATA in refreshed response');
-                    }
-                } catch (error) {
-                    console.error('Error refreshing employee data:', error);
-                }
-
-                // Clear editing record and close drawer
                 setEditingRecord(null);
                 setOpenDutiesDrawer(false);
             } else {

@@ -178,9 +178,9 @@ const AllApplicants = () => {
     get_record(); // Fetch application counts
   }, []);
 
-    const token_data = getUserData();
+  const token_data = getUserData();
 
-    console.log('what is the testttt', token_data)
+  console.log('what is the testttt', token_data)
 
   let org_id;
   if (token_data !== undefined) {
@@ -188,6 +188,7 @@ const AllApplicants = () => {
   } else {
     org_id = 123
   }
+  const jwt = localStorage.getItem("jwt");
   return (
     <>
       <div className="pl-2 flex flex-col gap-3">
@@ -195,7 +196,7 @@ const AllApplicants = () => {
           <CustomButton className="bg-[#8bc9f8]" title="Back" onClick={handleBackVacancies}>
             Back
           </CustomButton>
-          <Link to={`http://172.18.0.44:8080/${org_id}`} target="_blank">
+          <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank">
             <Button className="bg-[#0ACF97] capitalize p-3  font-medium">
               Career Page
             </Button>

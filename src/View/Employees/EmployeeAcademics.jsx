@@ -15,10 +15,10 @@ const EmployeeAcademics = ({
     setEmployeeData,
     editingRecord,
     setEditingRecord,
-    onDeleteAcademic
+    onDeleteAcademic,
+    onRefreshDocuments
 }) => {
     const addEmployeeEducation = useStore((state) => state.addEmployeeEducation);
-    const gettingEmployeeProfile = useStore((state) => state.gettingEmployeeProfile);
     const degrees = useStore((state) => state.degrees);
     const isLoadingDegrees = useStore((state) => state.isLoadingDegrees);
     const getDegrees = useStore((state) => state.getDegrees);
@@ -59,14 +59,28 @@ const EmployeeAcademics = ({
         { value: '3', label: '3rd division' }
     ];
 
-    // Fetch degrees when drawer opens
+    // Fetch degrees when drawer opens (pass employeeId for user_id query param)
     useEffect(() => {
-        if (openAcademicsDrawer && degrees.length === 0) {
-            getDegrees();
+        if (openAcademicsDrawer && degrees.length === 0 && employeeId) {
+            getDegrees(employeeId);
         }
-    }, [openAcademicsDrawer, degrees.length, getDegrees]);
+    }, [openAcademicsDrawer, degrees.length, getDegrees, employeeId]);
 
-    // Reset form when drawer closes or populate when editing
+    // Helper: map academic record from API to form state
+    const mapAcademicToForm = (record) => ({
+        degree: record.degree_id ? String(record.degree_id) : '',
+        degreeTitle: record.major_subject || record.degree_title || '',
+        studyType: record.study_type === '1' || record.study_type === 'regular' ? 'Regular' : 'Private',
+        obtainedMarks: record.obtained_marks || record.obtained_marks_gpa || '',
+        grade: record.grade || '',
+        boardUniversity: record.board_univ || record.board_university || '',
+        passingYear: record.passing_year || '',
+        totalMarks: record.total_marks || record.total_marks_gpa || '',
+        division: record.division ? String(record.division) : '',
+        remarks: record.remarks || ''
+    });
+
+    // Reset form when drawer closes; when opening, populate from editing record or latest academic
     useEffect(() => {
         if (!openAcademicsDrawer) {
             setAcademicsForm({
@@ -83,19 +97,14 @@ const EmployeeAcademics = ({
             });
             setEditingRecord(null);
         } else if (editingRecord) {
-            // Populate form with editing record data
-            setAcademicsForm({
-                degree: editingRecord.degree_id ? String(editingRecord.degree_id) : '',
-                degreeTitle: editingRecord.major_subject || editingRecord.degree_title || '',
-                studyType: editingRecord.study_type === '1' || editingRecord.study_type === 'regular' ? 'Regular' : 'Private',
-                obtainedMarks: editingRecord.obtained_marks || editingRecord.obtained_marks_gpa || '',
-                grade: editingRecord.grade || '',
-                boardUniversity: editingRecord.board_univ || editingRecord.board_university || '',
-                passingYear: editingRecord.passing_year || '',
-                totalMarks: editingRecord.total_marks || editingRecord.total_marks_gpa || '',
-                division: editingRecord.division ? String(editingRecord.division) : '',
-                remarks: editingRecord.remarks || ''
-            });
+            setAcademicsForm(mapAcademicToForm(editingRecord));
+        } else {
+            // Add mode: pre-fill form with latest academic if employee has existing records
+            const academics = employeeData?.employee_documents?.employee_documents;
+            if (academics && Array.isArray(academics) && academics.length > 0) {
+                const latestAcademic = academics[academics.length - 1];
+                setAcademicsForm(mapAcademicToForm(latestAcademic));
+            }
         }
     }, [openAcademicsDrawer, editingRecord]);
 
@@ -205,24 +214,9 @@ const EmployeeAcademics = ({
 
             if (result && result.STATUS === "SUCCESSFUL") {
                 showToast(editingRecord ? 'Academic record updated successfully' : 'Academic record added successfully', 'success');
-                
-                // Refresh employee profile data and update parent state
-                try {
-                    const refreshedData = await gettingEmployeeProfile(employeeId);
-                    if (refreshedData && refreshedData.DB_DATA) {
-                        // console.log('Employee profile refreshed successfully');
-                        
-                        // Update the parent component's employeeData state
-                        setEmployeeData(prevData => ({
-                            ...prevData,
-                            ...refreshedData.DB_DATA
-                        }));
-                    }
-                } catch (refreshError) {
-                    console.error('Error refreshing employee profile:', refreshError);
-                    // Don't show error to user as the main operation was successful
-                }
-                
+
+                if (onRefreshDocuments) await onRefreshDocuments();
+
                 setOpenAcademicsDrawer(false);
                 
                 // Reset form

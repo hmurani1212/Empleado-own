@@ -1,13 +1,16 @@
 /**
  * DP (Display Picture) URL Builder
- * 
+ *
  * This module provides functions to build image URLs from database values
  * Database stores:
  * - dp: filename (e.g., "dp6996acea823291771482346_10824961.png")
  * - dp_folder: numeric folder ID (e.g., 1)
- * 
+ *
  * The dp_folder is encrypted using simple_encrypt algorithm before being used in URL
  */
+
+/** Base URL for profile images when API returns relative path */
+const FILE_BASE_URL = 'https://emp-beta.veevotech.com/';
 
 /**
  * Simple encryption function (replicates PHP simple_encrypt)
@@ -160,27 +163,35 @@ export function buildThumbnailUrl(dp, dp_folder, gender = null) {
  */
 export function extractImageDataFromEmployee(employeeData) {
   if (!employeeData) {
-    return { dp: null, dp_folder: 2, gender: null };
+    return { dp: null, dp_folder: 1, gender: null, dpIsFullUrl: false };
   }
 
-  // Try to find dp in various locations (check DB_DATA structure first if it exists)
-  let dp = 
+  // Try to find dp in various locations (API may return DB_DATA or flat structure)
+  let dp =
     employeeData?.DB_DATA?.Official_Info?.dp ||
     employeeData?.DB_DATA?.official_info?.dp ||
+    employeeData?.DB_DATA?.employee?.dp ||
     employeeData?.Official_Info?.dp ||
     employeeData?.official_info?.dp ||
     employeeData?.OfficialInfo?.dp ||
+    employeeData?.employee?.Official_Info?.dp ||
+    employeeData?.employee?.official_info?.dp ||
+    employeeData?.employee?.dp ||
+    employeeData?.basic_information?.dp ||
+    employeeData?.basicInformation?.dp ||
     employeeData?.dp ||
     employeeData?.DP ||
     employeeData?.display_picture ||
     employeeData?.profile_picture ||
+    employeeData?.image_url ||
+    employeeData?.photo ||
     null;
 
-  // Try to find dp_folder in various locations
-  // Note: dp_folder is often not in the API response
-  // Check DB_DATA structure first, then other locations
-  // If not found, try to infer from dp filename pattern or default to 2 (common value)
-  let dp_folder = 
+  // If dp is already a full URL (e.g. from some APIs), return it as-is via a flag
+  const dpIsFullUrl = typeof dp === 'string' && /^https?:\/\//i.test(dp);
+
+  // Try to find dp_folder in various locations (default 1 or 2 when missing)
+  let dp_folder =
     employeeData?.DB_DATA?.Official_Info?.dp_folder ||
     employeeData?.DB_DATA?.official_info?.dp_folder ||
     employeeData?.Official_Info?.dp_folder ||
@@ -194,7 +205,7 @@ export function extractImageDataFromEmployee(employeeData) {
     employeeData?.dpFolderId ||
     employeeData?.folder_id ||
     employeeData?.folderId ||
-    2; // Default to 2 if not found (based on example URL pattern)
+    1; // Default to 1 when not found (common for profile images)
 
   // Try to find gender in various locations (check DB_DATA structure first)
   let gender = 
@@ -208,33 +219,33 @@ export function extractImageDataFromEmployee(employeeData) {
     employeeData?.Gender ||
     null;
 
-  return { dp, dp_folder, gender };
+  return { dp, dp_folder, gender, dpIsFullUrl: !!dpIsFullUrl };
 }
 
 /**
  * Build image URL from full employee data object
- * Automatically extracts dp, dp_folder, and gender from the data
- * 
- * @param {Object} employeeData - Full employee data object
+ * Automatically extracts dp, dp_folder, and gender from the data.
+ * If dp is already a full URL (http/https), returns it as-is.
+ *
+ * @param {Object} employeeData - Full employee data object (e.g. API response.DB_DATA)
  * @param {boolean} thumbnail - Whether to return thumbnail URL (default: false)
  * @returns {string} Complete image URL
  */
 export function getImageUrlFromEmployeeData(employeeData, thumbnail = false) {
-  const { dp, dp_folder, gender } = extractImageDataFromEmployee(employeeData);
-  
-  const encryptedFolder = dp_folder ? simpleEncrypt(dp_folder) : '';
-  const finalUrl = thumbnail ? buildThumbnailUrl(dp, dp_folder, gender) : buildImageUrl(dp, dp_folder, gender);
-  
-  // Debug logging
-  console.log('Image URL Debug:', {
-    dp,
-    dp_folder,
-    gender,
-    encryptedFolder,
-    finalUrl
-  });
-  
-  return finalUrl;
+  const { dp, dp_folder, gender, dpIsFullUrl } = extractImageDataFromEmployee(employeeData);
+
+  // If API returned a full image URL, use it directly
+  if (dpIsFullUrl && typeof dp === 'string') {
+    return dp;
+  }
+
+  // If API returned a relative path (e.g. "files/images/...")
+  if (typeof dp === 'string' && dp && !/^https?:\/\//i.test(dp) && (dp.startsWith('files/') || dp.startsWith('/'))) {
+    const path = dp.startsWith('/') ? dp.slice(1) : dp;
+    return `${FILE_BASE_URL}${path}`;
+  }
+
+  return thumbnail ? buildThumbnailUrl(dp, dp_folder, gender) : buildImageUrl(dp, dp_folder, gender);
 }
 
 /**
@@ -259,6 +270,27 @@ export function buildEmployeeImageUrl(employee, thumbnail = false) {
   }
   
   return buildImageUrl(dp, dp_folder, gender);
+}
+
+/**
+ * Build full URL for employee document file (for viewing/download).
+ * doc has doc_name (filename or full URL), folder_id, host_id.
+ * If doc_name is already a full URL, return as-is. Otherwise build from base URL and folder.
+ *
+ * @param {Object} doc - Document object with doc_name, folder_id, host_id
+ * @returns {string} Full URL to the document
+ */
+export function buildDocumentFileUrl(doc) {
+  if (!doc || !doc.doc_name) return '';
+  const name = doc.doc_name.trim();
+  if (/^https?:\/\//i.test(name)) return name;
+  const folderId = doc.folder_id ?? doc.host_id ?? 1;
+  const folderStr = String(folderId);
+  if (folderStr.length > 5) {
+    return `https://elephant.veevotech.com/files/${folderId}/${name}`;
+  }
+  const encryptedFolder = simpleEncrypt(folderId);
+  return `${FILE_BASE_URL}files/images/${encryptedFolder}/${name}`;
 }
 
 /**

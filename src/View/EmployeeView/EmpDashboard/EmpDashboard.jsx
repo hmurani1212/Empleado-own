@@ -21,9 +21,8 @@ import { GrFormClose } from "react-icons/gr";
 import { MdDone, MdUpload } from "react-icons/md";
 import { GrPowerReset } from "react-icons/gr";
 import defaultUserAvatar from '../../../constants/avatar';
-
+// import { getImageUrlFromEmployeeData } from "../../";
 const EmpDashboard = () => {
-
   const { empDashboardData, handlePolicyView } = useEmpDashboard();
   const [showTooltip, setShowTooltip] = useState(false);
   const [showTooltipTwo, setShowTooltipTwo] = useState(false);

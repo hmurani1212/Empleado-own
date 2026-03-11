@@ -184,10 +184,13 @@ const AddGoalForm = ({ onSubmit, onCancel, reviewCycles, selectedCycle, editData
           }
         }
         
-        // Final validation - ensure we have a name, not an ID
-        if (!reviewCycleName || reviewCycleName.length > 24 || (!reviewCycleName.includes(' ') && /^[a-f0-9]{24}$/i.test(reviewCycleName))) {
-          console.error('ERROR: reviewCycleName looks like an ID:', reviewCycleName);
-          console.error('This should not happen. Available cycles:', reviewCycles);
+        // Final validation - ensure we have a name, not a 24-char hex ID (e.g. MongoDB ObjectId)
+        const looksLikeId = reviewCycleName && !reviewCycleName.includes(' ') && /^[a-f0-9]{24}$/i.test(reviewCycleName.trim());
+        if (!reviewCycleName || looksLikeId) {
+          if (looksLikeId) {
+            console.error('ERROR: reviewCycleName looks like an ID:', reviewCycleName);
+            console.error('This should not happen. Available cycles:', reviewCycles);
+          }
           // Try one more time to find it
           if (formData.review_cycle && reviewCycles) {
             const lastAttempt = reviewCycles.find(c => c.value === formData.review_cycle || c.value?.toString() === formData.review_cycle?.toString());
@@ -198,8 +201,9 @@ const AddGoalForm = ({ onSubmit, onCancel, reviewCycles, selectedCycle, editData
           }
         }
         
-        // If we still don't have a valid name, throw an error
-        if (!reviewCycleName || reviewCycleName.length > 24) {
+        // If we still don't have a valid name, show error (allow long names; only reject empty or 24-char hex ID)
+        const hasValidName = reviewCycleName && reviewCycleName.trim() && !/^[a-f0-9]{24}$/i.test(reviewCycleName.trim());
+        if (!hasValidName) {
           const errorMsg = `Cannot create goal: Review cycle name not found for ID: ${formData.review_cycle}`;
           console.error(errorMsg);
           toast.error('Error: Could not find review cycle name. Please select a review cycle again.');

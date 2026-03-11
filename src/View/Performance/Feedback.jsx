@@ -32,6 +32,10 @@ const Feedback = () => {
     handleCancelFeedback,
     isSubmitting,
     feedbackLoading,
+    feedbackPaginationData,
+    goToNextFeedbackPage,
+    goToPreviousFeedbackPage,
+    goToFeedbackPage,
   } = useFeedbackServices();
 
   // console.log('selectedEmployee selectedEmployee', selectedEmployee)
@@ -95,31 +99,28 @@ const Feedback = () => {
         <div className="flex gap-4 mb-6">
           <button
             onClick={() => handleThumbSelect("1")}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-              selectedThumb === "1"
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${selectedThumb === "1"
                 ? "bg-green-800 scale-110 shadow-lg"
                 : "bg-green-400 hover:bg-green-500"
-            }`}
+              }`}
           >
             <FaThumbsUp className="text-white text-xl" />
           </button>
           <button
             onClick={() => handleThumbSelect("0")}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-              selectedThumb === "0"
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${selectedThumb === "0"
                 ? "bg-red-800 scale-110 shadow-lg"
                 : "bg-red-400 hover:bg-red-500"
-            }`}
+              }`}
           >
             <FaThumbsDown className="text-white text-xl" />
           </button>
           <button
             onClick={() => handleThumbSelect("2")}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-              selectedThumb === "2"
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${selectedThumb === "2"
                 ? "bg-orange-800 scale-110 shadow-lg"
                 : "bg-orange-400 hover:bg-orange-500"
-            }`}
+              }`}
           >
             <FaTrophy className="text-white text-xl" />
           </button>
@@ -148,8 +149,8 @@ const Feedback = () => {
               !selectedPerformance
                 ? "Select performance first"
                 : employeesLoading
-                ? "Loading employees..."
-                : "Select Employee"
+                  ? "Loading employees..."
+                  : "Select Employee"
             }
             cStyle={true}
             value={selectedEmployee}
@@ -289,7 +290,7 @@ const Feedback = () => {
                             {feedback.total_feedback || 0}
                           </Typography>
                         </td>
-                        <td className="px-4 py-4 text-left max-w-[200px]">
+                        <td className="px-4 py-4 text-left max-w-[320px]">
                           {(() => {
                             const commentList = feedback.comment;
                             if (!Array.isArray(commentList) || commentList.length === 0) {
@@ -302,21 +303,21 @@ const Feedback = () => {
                             const firstComment = commentList[0] || "";
                             if (commentList.length === 1) {
                               return (
-                                <Typography className="text-sm font-normal text-gray-600 font-poppins truncate" title={firstComment}>
+                                <Typography className="text-sm font-normal text-gray-600 font-poppins break-words whitespace-pre-wrap">
                                   {firstComment}
                                 </Typography>
                               );
                             }
                             return (
-                              <span className="inline-flex items-center gap-1 text-sm font-normal text-gray-600 font-poppins">
-                                <span className="truncate max-w-[140px]" title={firstComment}>{firstComment}</span>
+                              <span className="inline-flex flex-wrap items-baseline gap-1 text-sm font-normal text-gray-600 font-poppins">
+                                <span className="break-words whitespace-pre-wrap">{firstComment}</span>
                                 <button
                                   type="button"
                                   onClick={() => openCommentsModal(feedback)}
                                   className="text-brand-600 hover:text-brand-700 font-medium shrink-0 focus:outline-none cursor-pointer"
                                   title="View all comments"
                                 >
-                                  ...
+                                  More?
                                 </button>
                               </span>
                             );
@@ -340,6 +341,73 @@ const Feedback = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {!feedbackLoading && feedbackData && feedbackData.length > 0 && feedbackPaginationData && feedbackPaginationData.totalPages > 1 && (
+            <div className="w-full flex justify-center items-center gap-2 mt-6 mb-2">
+              <button
+                title="Previous Page"
+                disabled={feedbackPaginationData.currentPage <= 1}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                  feedbackPaginationData.currentPage > 1
+                    ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                    : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                }`}
+                onClick={goToPreviousFeedbackPage}
+              >
+                ‹
+              </button>
+              <div className="flex items-center gap-1.5">
+                {(() => {
+                  const currentPage = feedbackPaginationData.currentPage;
+                  const totalPages = feedbackPaginationData.totalPages;
+                  const renderPageButton = (page) => (
+                    <button
+                      key={page}
+                      onClick={() => goToFeedbackPage(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                        page === currentPage
+                          ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                  if (totalPages <= 7) {
+                    return Array.from({ length: totalPages }, (_, i) => i + 1).map(renderPageButton);
+                  }
+                  const pages = [];
+                  pages.push(renderPageButton(1));
+                  if (currentPage > 3) {
+                    pages.push(<span key="start-ellipsis" className="text-gray-400 px-1">...</span>);
+                  }
+                  const startPage = Math.max(2, currentPage - 1);
+                  const endPage = Math.min(totalPages - 1, currentPage + 1);
+                  for (let i = startPage; i <= endPage; i++) {
+                    pages.push(renderPageButton(i));
+                  }
+                  if (currentPage < totalPages - 2) {
+                    pages.push(<span key="end-ellipsis" className="text-gray-400 px-1">...</span>);
+                  }
+                  pages.push(renderPageButton(totalPages));
+                  return pages;
+                })()}
+              </div>
+              <button
+                title="Next Page"
+                disabled={feedbackPaginationData.currentPage >= feedbackPaginationData.totalPages}
+                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                  feedbackPaginationData.currentPage < feedbackPaginationData.totalPages
+                    ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                    : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                }`}
+                onClick={goToNextFeedbackPage}
+              >
+                ›
+              </button>
+            </div>
+          )}
         </div>
       )}
 
