@@ -722,10 +722,16 @@ const IndividualPayslipPreview = () => {
   // Calculate net pay: Total Pay - Total Deductions (for future use if needed)
   // const calculatedNetPay = Math.max(0, totalPay - totalDeductions)
   
-  // Attendance fields - use the calculated values from transformPayslipData
-  const totalDays = payslipData.total_days || Math.round((payslipData.total_working || 0) / 3600 / 8)
-  const presentDays = payslipData.present_days || Math.round((payslipData.total_present || 0) / 3600 / 8)
-  const absentDays = payslipData.absent_days || Math.max(0, totalDays - presentDays)
+  // Attendance fields - use API values from transformPayslipData (preserve 0; only fallback when missing)
+  const totalDays = (payslipData.total_days !== undefined && payslipData.total_days !== null)
+    ? Number(payslipData.total_days)
+    : Math.round((payslipData.total_working || 0) / 3600 / 8)
+  const presentDays = (payslipData.present_days !== undefined && payslipData.present_days !== null)
+    ? Number(payslipData.present_days)
+    : Math.round((payslipData.total_present || 0) / 3600 / 8)
+  const absentDays = (payslipData.absent_days !== undefined && payslipData.absent_days !== null)
+    ? Number(payslipData.absent_days)
+    : Math.max(0, totalDays - presentDays)
 
   return (
     // <div className="h-screen w-full bg-gray-50 p-4 overflow-auto">

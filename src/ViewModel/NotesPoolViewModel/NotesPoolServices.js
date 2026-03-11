@@ -335,7 +335,12 @@ const useNotesPoolServices = () => {
 
         showToast("Note Added Successfully", "success");
         handleNoteDrawer();
-        const notePayload = { ...(rawInserted || insertedData), notebook_id: resolvedNotebookId };
+        const notePayload = {
+          ...(rawInserted || insertedData),
+          notebook_id: resolvedNotebookId,
+          editor_content: { blocks: [], time: Date.now(), version: '2.31.0' },
+          editorContent: { blocks: [], time: Date.now(), version: '2.31.0' },
+        };
         newNote(notePayload, resolvedNotebookId);
         setAddNoteValue((prevState) => ({
           ...prevState,

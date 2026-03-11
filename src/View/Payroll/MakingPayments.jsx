@@ -26,6 +26,7 @@ import Calendar from "react-calendar";
 import ExportPayslip from "./ExportPayslip";
 import { useNavigate } from "react-router-dom";
 import payrollApi from "../../Model/Data/Payroll/Payroll";
+import { MakingPaymentsSkeleton } from "./PayrollSkeletons";
 
 // Convert salary_month "0126" (MMYY) to "January/2026" - first 2 digits = month, last 2 = year (use current century)
 const formatSalaryMonthFTM = (salaryMonth) => {
@@ -93,6 +94,7 @@ const MakingPayments = () => {
   const copyBranchesData = useStore((state) => state.copyBranchesData);
   const gettingPayslips = useStore((state) => state.gettingPayslips);
   const payslips = useStore((state) => state.payslips);
+  const payslipsLoaded = useStore((state) => state.payslipsLoaded);
   const totalPayslipsCount = useStore((state) => state.totalPayslipsCount);
   const payslipsPagination = useStore((state) => state.payslipsPagination);
   const deletingBulkPayslips = useStore((state) => state.deletingBulkPayslips);
@@ -1624,6 +1626,10 @@ const MakingPayments = () => {
     { value: "paid", label: "Paid" },
     { value: "due", label: "Due" },
   ];
+
+  if (!payslipsLoaded) {
+    return <MakingPaymentsSkeleton />;
+  }
 
   return (
     <div className="flex flex-col gap-4 lg:px-2 md:px-2 px-0">

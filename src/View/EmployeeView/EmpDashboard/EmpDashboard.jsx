@@ -478,7 +478,7 @@ const EmpDashboard = () => {
         >
           <img
             className='w-full h-[170px] object-cover rounded-tl-lg rounded-bl-lg transition-transform duration-300 ease-in-out'
-            src={pInfo?.dp || defaultUserAvatar}
+            src={pInfo?.dp !== null ? pInfo?.dp : defaultUserAvatar}
             alt='profile'
           />
           {showCamera && (

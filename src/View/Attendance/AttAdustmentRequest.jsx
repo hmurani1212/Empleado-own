@@ -20,6 +20,13 @@ import { showToast } from "../../Components/Toaster/Toaster";
 import { BiSearch } from "react-icons/bi";
 import { motion, AnimatePresence } from "framer-motion";
 
+/** Format time string (e.g. "09:22", "19:22") to 12-hour with AM/PM; safe for null/empty. */
+function formatTimeDisplay(val) {
+  if (val == null || val === "") return "—";
+  if (typeof val === "string" && val.includes(":")) return formatTime(val);
+  return String(val);
+}
+
 const AttAdustmentRequest = () => {
   const {
     requestData,
@@ -276,10 +283,10 @@ const AttAdustmentRequest = () => {
                                </span>
                                <div className="flex items-center gap-2 text-xs">
                                   <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
-                                    In: {ele?.form_data?.in_time}
+                                    In: {formatTimeDisplay(ele?.form_data?.in_time)}
                                   </span>
                                   <span className="bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-100">
-                                    Out: {ele?.form_data?.out_time}
+                                    Out: {formatTimeDisplay(ele?.form_data?.out_time)}
                                   </span>
                                </div>
                             </div>

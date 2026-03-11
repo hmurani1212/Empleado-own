@@ -72,6 +72,7 @@ const useManageEmpSalary = () => {
 
     const openSalaryHistory = (data) => {
         console.log('for salary history',data)
+        settingData(data)
         settingEmpId(data.id)
         gettingIncDeductHistory(data)
         openDrawer()
@@ -604,6 +605,7 @@ const useManageEmpSalary = () => {
 
     return{ 
         handleActionManageEmpSalary, 
+        handleDrawerIncentive,
         idSet, 
         gettingManageIncDeduct,
         incentDeductTitles,  

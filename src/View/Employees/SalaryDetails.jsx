@@ -12,18 +12,35 @@ const SalaryDetails = (props) => {
     const { salaryDetailsValue, ToggleCancelIncDialog, handleOnChangeCancelInc, handleSubmitCancelInc, handleSalaryIncrement } = props
 
     const data = salaryDetailsValue?.data
+
+    // Support new salary-history API (DB_DATA: starting_salary, current_salary, increment_history, recurring_incentives)
+    const isNewApi = Array.isArray(data?.increment_history)
+    const startingSalary = isNewApi ? (data?.starting_salary ?? 0) : (data?.summary?.basic_salary ?? data?.salary?.basic_salary ?? 0)
+    const currentSalary = isNewApi ? (data?.current_salary ?? 0) : (data?.summary?.net_salary ?? data?.salary?.current_salary ?? 0)
+    const incrementDetails = isNewApi ? (data?.increment_history ?? []) : (Array.isArray(data?.increments) ? data.increments : (data?.increments?.increment_details ?? []))
+    const recurringIncentives = isNewApi ? (data?.recurring_incentives ?? []) : (Array.isArray(data?.incentives?.incentive_details) ? data.incentives.incentive_details.filter((inc) => String(inc?.re_occuring || '').toUpperCase() === 'YES') : [])
+
     const summary = data?.summary ?? {}
     const salary = data?.salary ?? {}
-    const increments = data?.increments ?? {}
-    const incentives = data?.incentives ?? {}
-    const rawIncrements = data?.increments
-    const incrementDetails = Array.isArray(rawIncrements) ? rawIncrements : (increments?.increment_details ?? [])
-    const incentiveDetails = Array.isArray(incentives?.incentive_details) ? incentives.incentive_details : []
-    const recurringIncentives = incentiveDetails.filter((inc) => String(inc?.re_occuring || '').toUpperCase() === 'YES')
-
-    const startingSalary = summary?.basic_salary ?? salary?.basic_salary ?? 0
-    const currentSalary = summary?.net_salary ?? salary?.current_salary ?? 0
     const employeeInfo = data?.employee_info ?? {}
+    const basicSalary = Number(salary?.basic_salary ?? summary?.basic_salary ?? 0)
+
+    // Old API: sort by effective_from and compute cumulative amount; New API: use as-is and salary_after
+    const sortedIncrementDetails = isNewApi ? incrementDetails : [...(incrementDetails || [])].sort((a, b) => (a.effective_from ?? 0) - (b.effective_from ?? 0))
+    const getAmountDisplay = (index) => {
+        if (isNewApi && sortedIncrementDetails[index]?.salary_after != null) return Number(sortedIncrementDetails[index].salary_after).toLocaleString()
+        let salaryAfter = basicSalary
+        for (let i = 0; i <= index; i++) {
+            const inc = sortedIncrementDetails[i]
+            salaryAfter += Number(inc?.calculated_value ?? inc?.increment_amount ?? inc?.amount ?? 0)
+        }
+        return Number(salaryAfter).toLocaleString()
+    }
+    const formatCancelTime = (unix) => {
+        if (unix == null) return '—'
+        const d = new Date(unix * 1000)
+        return d.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
+    }
 
   return (
     <div className='flex flex-col space-y-6 w-[700] px-4'>
@@ -83,21 +100,37 @@ const SalaryDetails = (props) => {
                         </thead>
 
                         <tbody>
-                            {incrementDetails?.map((ele, index) => (
+                            {sortedIncrementDetails?.map((ele, index) => {
+                                const isCancelled = ele.status === '0' || ele.status === 0
+                                const ci = ele.cancelled_info
+                                const cancelledBy = ci?.cancelled_by_name ?? ele.cancelled_by ?? '—'
+                                const cancelledTime = ci?.unix_timestamp != null ? formatCancelTime(ci.unix_timestamp) : (ele.cancelled_at ?? ele.cancelled_at_formatted ?? '—')
+                                const cancelledDetail = ci?.reason ?? ele.cancel_reason ?? ele.cancel_detail ?? ele.reason ?? '—'
+                                const cancelBlock = (
+                                    <div className='text-[12px]'>
+                                        <div className='text-red-500 font-semibold'>Cancelled</div>
+                                        <div className='mt-1.5 space-y-1 text-black'>
+                                            <div><span className='font-semibold'>Cancelled By:</span> {cancelledBy}</div>
+                                            <div><span className='font-semibold'>Time:</span> {cancelledTime}</div>
+                                            <div><span className='font-semibold'>Detail:</span> {cancelledDetail}</div>
+                                        </div>
+                                    </div>
+                                )
+                                return (
                                 <tr key={ele?.id ?? index} className="hover:bg-gray-50">
                                     <td className="border border-gray-300 px-4 py-2">
-                                        <Typography variant="small">
-                                            {ele.increment ?? ele.amount ?? ele.calculated_value ?? '—'}
+                                        <Typography variant="small" className={isCancelled ? 'line-through' : ''}>
+                                            {ele.increment ?? ele.increment_amount ?? ele.amount ?? ele.calculated_value ?? '—'}
+                                        </Typography>
+                                    </td>
+                                    <td className="border border-gray-300 px-4 py-2">
+                                        <Typography variant="small" className={isCancelled ? 'line-through' : ''}>
+                                            {getAmountDisplay(index)}
                                         </Typography>
                                     </td>
                                     <td className="border border-gray-300 px-4 py-2">
                                         <Typography variant="small">
-                                            {(ele.salary_after ?? ele.calculated_value ?? ele.amount ?? 0).toLocaleString?.() ?? String(ele.amount ?? ele.calculated_value ?? '—')}
-                                        </Typography>
-                                    </td>
-                                    <td className="border border-gray-300 px-4 py-2">
-                                        <Typography variant="small">
-                                            {ele.effective_from_date ?? ele.effective_from ?? '—'}
+                                            {ele.effective_from ?? ele.effective_from_date ?? '—'}
                                         </Typography>
                                     </td>
                                     <td className="border border-gray-300 px-4 py-2">
@@ -106,11 +139,7 @@ const SalaryDetails = (props) => {
                                         </Typography>
                                     </td>
                                     <td className="border border-gray-300 px-4 py-2">
-                                        {ele.status === "0" ? (
-                                            <div className='text-[12px]'>
-                                                <span className='text-red-500 text-[12px]'>Cancelled</span>
-                                            </div>
-                                        ) : (
+                                        {isCancelled ? cancelBlock : (
                                             <Button
                                                 size="sm"
                                                 color="red"
@@ -122,7 +151,8 @@ const SalaryDetails = (props) => {
                                         )}
                                     </td>
                                 </tr>
-                            ))}
+                                )
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -154,9 +184,8 @@ const SalaryDetails = (props) => {
                             {recurringIncentives.map((inc, i) => (
                                 <tr key={inc?.id ?? i} className="hover:bg-gray-50">
                                     <td className="border border-gray-300 px-4 py-2"><Typography variant="small">{inc.title ?? '—'}</Typography></td>
-                                    <td className="border border-gray-300 px-4 py-2"><Typography variant="small">{(inc.amount ?? 0).toLocaleString?.() ?? inc.amount}</Typography></td>
-                                    <td className="border border-gray-300 px-4 py-2"><Typography variant="small">{inc.start_date_formatted ?? '—'}</Typography></td>
-                                    {/* <td className="border border-gray-300 px-4 py-2"><Typography variant="small">{inc.end_date_formatted ?? '—'}</Typography></td> */}
+                                    <td className="border border-gray-300 px-4 py-2"><Typography variant="small">{typeof (inc.amount ?? inc.amount_value) === 'number' ? Number(inc.amount ?? inc.amount_value).toLocaleString() : (inc.amount ?? inc.amount_value ?? '—')}</Typography></td>
+                                    <td className="border border-gray-300 px-4 py-2"><Typography variant="small">{inc.start_date_formatted ?? inc.start_date ?? '—'}</Typography></td>
                                     <td className="border border-gray-300 px-4 py-2"><Typography variant="small">{inc.description ?? '—'}</Typography></td>
                                 </tr>
                             ))}

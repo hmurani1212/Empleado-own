@@ -7,8 +7,11 @@ import notesPoolApi from "../Model/Data/NotesPool/NotesPool"
 import payrollApi from "../Model/Data/Payroll/Payroll"
 
 export const gettingDepartmentsServices = async(id)=>{
-    const data = {parent_id: 0,branch_id:id,getAll:true}
-    
+    const data = { parent_id: 0, branch_id: id, getAll: true }
+    if (id === 0 || id === '0') {
+        data.branch_id = 0
+        data.get_all_departments = true
+    }
     try{
         const response = await employeesApi.gettingSubDepts(data)
         const resData = await response.data;
