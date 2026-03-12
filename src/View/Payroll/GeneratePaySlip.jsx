@@ -235,83 +235,90 @@ const GeneratePaySlip = () => {
       <div className="font-medium text-[18px] text-[#474747] font-Poppins">
         Generate Payslip
       </div>
-      <div className="flex lg:flex-row md:flex-row flex-col items-center gap-4">
-        <div className="lg:w-64 md:w-64 w-full">
-          <label className="text-[#474747] text-[12px] font-medium px-2">
-            Branch
-          </label>
-          <CustomSelect
-            placeHolderTitle="All Branch"
-            value={managePaySlipState?.branch_id}
-            options={[
-              { value: "all", label: "All Branch" },
-              ...(branches_payroll?.map((type) => ({
-                value: type.id,
-                label: type.branch_name,
-              })) || []),
-            ]}
-            onChangeHandler={(selectedOption) =>
-              handleSelectManagePaySlip(selectedOption, "branch_id")
-            }
-            customStyles={false}
-          />
-        </div>
-        <div className="lg:w-64 md:w-64 w-full">
-          <label className="text-[#474747] text-[12px] font-medium px-2">
-            Department
-          </label>
-          <CustomSelect
-            placeHolderTitle="All Department"
-            value={managePaySlipState?.department_id}
-            options={[
-              { value: "all", label: "All Department" },
-              ...(managePaySlipState.departments || []),
-            ]}
-            onChangeHandler={(selectedOption) => {
-              handleSelectManagePaySlip(selectedOption, "department_id");
-            }}
-            cStyle={true}
-            disabled={!managePaySlipState?.branch_id || managePaySlipState?.branch_id?.value === "all"}
-          />
-        </div>
-        {managePaySlipState.showFilter && (
-          <>
-            <div className="lg:w-64 md:w-64 w-full">
-              <label className="text-[#474747] text-[12px] font-medium px-2">
-                Filter by Type
-              </label>
-              <CustomSelect
-                placeHolderTitle="Select Type"
-                value={typeFilter}
-                options={customSelectData?.map((type) => ({
+      
+      {/* Filters Section */}
+      <div className="bg-white p-4 rounded-[15px] shadow-sm border border-gray-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+          <div className="w-full">
+            <label className="text-[#474747] text-[12px] font-medium px-2 mb-1 block">
+              Branch
+            </label>
+            <CustomSelect
+              placeHolderTitle="All Branch"
+              value={managePaySlipState?.branch_id}
+              options={[
+                { value: "all", label: "All Branch" },
+                ...(branches_payroll?.map((type) => ({
                   value: type.id,
-                  label: type.title,
-                }))}
-                onChangeHandler={handleTypeFilterChange}
-                customStyles={false}
-              />
-            </div>
-            <div className="lg:w-64 md:w-64 w-full flex flex-col items-start justify-start">
-              <label className="text-[#474747] text-[12px] font-medium px-2">
-                Search Employee
-              </label>
-              <div className="relative w-full min-w-[200px] h-8">
-                <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-2/4 right-3 -translate-y-2/4">
-                  <span>
-                    <BiSearch />
-                  </span>
-                </div>
-                <input
-                  className="w-full h-[39px] px-3 text-black shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)] py-2 text-[12px] border-none outline-none rounded-[10px] bg-white text-left"
-                  type="text"
-                  onChange={handleSearchChange}
-                  value={searchTerm}
-                  placeholder="Search by name or ID"
+                  label: type.branch_name,
+                })) || []),
+              ]}
+              onChangeHandler={(selectedOption) =>
+                handleSelectManagePaySlip(selectedOption, "branch_id")
+              }
+              customStyles={false}
+              menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+            />
+          </div>
+          <div className="w-full">
+            <label className="text-[#474747] text-[12px] font-medium px-2 mb-1 block">
+              Department
+            </label>
+            <CustomSelect
+              placeHolderTitle="All Department"
+              value={managePaySlipState?.department_id}
+              options={[
+                { value: "all", label: "All Department" },
+                ...(managePaySlipState.departments || []),
+              ]}
+              onChangeHandler={(selectedOption) => {
+                handleSelectManagePaySlip(selectedOption, "department_id");
+              }}
+              cStyle={true}
+              disabled={!managePaySlipState?.branch_id || managePaySlipState?.branch_id?.value === "all"}
+              menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+            />
+          </div>
+          {managePaySlipState.showFilter && (
+            <>
+              <div className="w-full">
+                <label className="text-[#474747] text-[12px] font-medium px-2 mb-1 block">
+                  Filter by Type
+                </label>
+                <CustomSelect
+                  placeHolderTitle="Select Type"
+                  value={typeFilter}
+                  options={customSelectData?.map((type) => ({
+                    value: type.id,
+                    label: type.title,
+                  }))}
+                  onChangeHandler={handleTypeFilterChange}
+                  customStyles={false}
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
                 />
               </div>
-            </div>
-          </>
-        )}
+              <div className="w-full">
+                <label className="text-[#474747] text-[12px] font-medium px-2 mb-1 block">
+                  Search Employee
+                </label>
+                <div className="relative w-full h-[38px]">
+                  <div className="absolute grid w-5 h-5 place-items-center text-blue-gray-500 top-2/4 right-3 -translate-y-2/4 z-10">
+                    <span>
+                      <BiSearch />
+                    </span>
+                  </div>
+                  <input
+                    className="w-full h-full px-3 text-black shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)] py-2 text-[12px] border-none outline-none rounded-[10px] bg-white text-left"
+                    type="text"
+                    onChange={handleSearchChange}
+                    value={searchTerm}
+                    placeholder="Search by name or ID"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-[10px] p-2 drop-shadow-md">
