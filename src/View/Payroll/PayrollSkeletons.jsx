@@ -391,6 +391,37 @@ export const MakingPaymentsSkeleton = () => {
   );
 };
 /**
+ * Skeleton for Report Results - mirrors the report table.
+ */
+export const ReportResultsSkeleton = () => {
+  return (
+    <div className="mt-4 overflow-x-auto bg-white p-2 rounded-[10px] drop-shadow-md animate-pulse">
+      <table className="w-full text-center h-full text-[12px]">
+        <thead className="rounded-[8px] bg-[#F8F9FA]">
+          <tr>
+            {["S.No", "Name", "Father Name", "Designation", "Amount"].map((head, i) => (
+              <th key={i} className="px-4 py-3">
+                <div className="h-4 bg-gray-200 rounded w-20 mx-auto" />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {[1, 2, 3, 4, 5].map((row) => (
+            <tr key={row}>
+              {[1, 2, 3, 4, 5].map((col) => (
+                <td key={col} className="px-4 py-2">
+                  <div className="h-4 bg-gray-100 rounded w-full mx-auto" />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+/**
  * Skeleton for Generate Payslip - mirrors dropdowns, table.
  */
 export const GeneratePayslipSkeleton = () => {

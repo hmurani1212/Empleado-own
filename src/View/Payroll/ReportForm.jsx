@@ -6,6 +6,7 @@ import { gettingDepartmentsServices } from "../../services/__frequentApiServices
 import { showToast } from "../../Components/Toaster/Toaster";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import employeesApi from "../../Model/Data/Employees/Employees";
+import { ReportResultsSkeleton } from "./PayrollSkeletons";
 
 const ALL_BRANCHES_OPTION = { value: 0, label: "All Branches" };
 const ALL_DEPARTMENTS_OPTION = { value: 0, label: "All Departments" };
@@ -855,7 +856,10 @@ const ReportForm = ({ reportType, onClose }) => {
               )}
 
               {/* Results Section */}
-              {!isSearching && hasRecords !== null && (
+              {isLoadingReport ? (
+                <ReportResultsSkeleton />
+              ) : (
+                !isSearching && hasRecords !== null && (
                 <div className="mt-4">
                   {(
                     payslipData.employeeSearch &&
@@ -939,6 +943,7 @@ const ReportForm = ({ reportType, onClose }) => {
                     </div>
                   )}
                 </div>
+                )
               )}
             </div>
 

@@ -1633,154 +1633,106 @@ const MakingPayments = () => {
 
   return (
     <div className="flex flex-col gap-4 lg:px-2 md:px-2 px-0">
-      {/* Filter and Action Bar - Added top margin for spacing */}
-      <div className="mt-10 space-y-4">
-        {/* Top Row: Action Buttons on the Right */}
-        <div className="flex justify-end">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              className="bg-[#FF4979] capitalize py-2 px-4 font-medium text-sm text-white rounded-[8px] text-[12px] font-Urbanist hover:drop-shadow-sm opacity-[70%]"
-              onClick={handleDeleteMarked}
-              disabled={loading}
-              loading={loading}
-            >
-              Delete Marked
-            </Button>
-            <Button
-              className="bg-[#0ACF97] capitalize py-2 px-4 font-medium text-sm text-white rounded-[8px] text-[12px] font-Urbanist hover:drop-shadow-sm opacity-[70%]"
-              onClick={handleMarkPaid}
-              disabled={isMarkingPaid}
-              loading={isMarkingPaid}
-            >
-              Mark Paid
-            </Button>
-            <Button
-              className="bg-bgBlue capitalize py-2 px-4 font-medium text-sm text-white rounded-[8px] text-[12px] font-Urbanist hover:drop-shadow-sm opacity-[70%]"
-              onClick={handleExportClick}
-            >
-              Export
-            </Button>
-            <Button
-              className="bg-[#FDA006] capitalize py-2 px-4 font-medium text-sm text-white rounded-[8px] text-[12px] font-Urbanist hover:drop-shadow-sm opacity-[70%]"
-              onClick={handlePrintAllClick}
-            >
-              Print All
-            </Button>
-          </div>
-        </div>
-
-        {/* Bottom Row: All Select Elements on the Left */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Filter by Branch Dropdown - Match dropdown list width */}
-          <div className="lg:w-[200px] md:w-[200px] w-full">
-            <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-              Filter by branch
-            </label>
-            <CustomSelect
-              placeHolderTitle="Filter by branch"
-              value={selectedBranch}
-              options={branchOptions}
-              onChangeHandler={handleBranchChange}
-              customStyles={false}
-            />
-          </div>
-
-          {/* Department Dropdown - Match dropdown list width */}
-          <div className="lg:w-[200px] md:w-[200px] w-full">
-            <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-              Filter by department
-            </label>
-            <CustomSelect
-              placeHolderTitle="Select department"
-              value={selectedDepartment}
-              options={departments}
-              onChangeHandler={handleDepartmentChange}
-              customStyles={false}
-              // disabled={!selectedBranch}
-            />
-          </div>
-
-          {/* Filter Dropdown - Increased Width */}
-          <div className="lg:w-[200px] md:w-[200px] w-full">
-            <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-              Filter by
-            </label>
-            <CustomSelect
-              placeHolderTitle="Filter"
-              value={mainFilter}
-              options={mainFilterOptions}
-              onChangeHandler={handleMainFilterChange}
-              customStyles={false}
-              isSearchable={false}
-            />
-          </div>
-
-          {/* Status Dropdown - Inline with other selects */}
-          {mainFilter?.value === "status" && (
-            <div className="lg:w-[200px] md:w-[200px] w-full">
-              <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-                Select Status
-              </label>
+      {/* Filter and Action Bar - Modern Toolbar Design */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-2">
+        {/* Top Section: Filters */}
+        <div className="p-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+            {/* Section Label */}
+            <div className="flex items-center gap-2 text-gray-500 min-w-fit">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <span className="text-xs font-medium uppercase tracking-wider">Filters</span>
+            </div>
+            
+            {/* Filters Grid */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
+              {/* Branch */}
               <CustomSelect
-                placeHolderTitle="Select Status"
-                value={mainStatus}
-                options={mainStatusOptions}
-                onChangeHandler={handleMainStatusChange}
+                placeHolderTitle="All Branches"
+                value={selectedBranch}
+                options={branchOptions}
+                onChangeHandler={handleBranchChange}
+                customStyles={false}
+                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+              />
+
+              {/* Department */}
+              <CustomSelect
+                placeHolderTitle="All Departments"
+                value={selectedDepartment}
+                options={departments}
+                onChangeHandler={handleDepartmentChange}
+                customStyles={false}
+                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+              />
+
+              {/* Main Filter */}
+              <CustomSelect
+                placeHolderTitle="Filter by..."
+                value={mainFilter}
+                options={mainFilterOptions}
+                onChangeHandler={handleMainFilterChange}
                 customStyles={false}
                 isSearchable={false}
+                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
               />
-            </div>
-          )}
 
-          {/* Month-Year Date Picker - Inline with other selects */}
-          {mainFilter?.value === "specific_month" && (
-            <div className="lg:w-[200px] md:w-[200px] w-full">
-              <div className="">
-                <label className="text-[#474747] text-[12px] font-medium font-Urbanist">
-                  Select Month & Year
-                </label>
+              {/* Status (Conditional) */}
+              {mainFilter?.value === "status" && (
+                <CustomSelect
+                  placeHolderTitle="Status"
+                  value={mainStatus}
+                  options={mainStatusOptions}
+                  onChangeHandler={handleMainStatusChange}
+                  customStyles={false}
+                  isSearchable={false}
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                />
+              )}
+
+              {/* Month/Year (Conditional) */}
+              {mainFilter?.value === "specific_month" && (
                 <Popover
-                  placement="center"
+                  placement="bottom-start"
                   open={isDatePickerOpen}
                   handler={setIsDatePickerOpen}
                 >
                   <PopoverHandler>
-                    <Input
-                      label="Select Month & Year"
-                      color="#474747"
-                      value={
-                        selectedMonth && selectedYear
-                          ? `${new Date(
-                              selectedYear,
-                              selectedMonth - 1
-                            ).toLocaleDateString("en-US", {
-                              month: "long",
-                            })} ${selectedYear}`
-                          : ""
-                      }
-                      placeholder="Click to select month & year"
-                      readOnly
-                      className="cursor-pointer bg-white text-[#474747] text-[10px]"
-                    />
+                    <div className="relative cursor-pointer">
+                      <Input
+                        label="Month & Year"
+                        color="blue"
+                        value={
+                          selectedMonth && selectedYear
+                            ? `${new Date(selectedYear, selectedMonth - 1).toLocaleDateString("en-US", { month: "short" })} ${selectedYear}`
+                            : ""
+                        }
+                        placeholder="Select..."
+                        readOnly
+                        className="cursor-pointer bg-white text-customBlack-100 text-[13px] h-[38px]! pr-8"
+                        containerProps={{ className: "h-[38px]! min-w-[unset]!" }}
+                        labelProps={{ className: "hidden" }}
+                      />
+                      <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
                   </PopoverHandler>
-                  <PopoverContent className="p-4 lg:w-[200px] md:w-[200px] w-full">
-                    <div className="flex flex-col gap-4">
-                      {/* Year Selection - Scrollable */}
-                      <div className="border-b pb-3">
-                        <div className="text-sm font-medium text-gray-700 mb-2">
-                          Year
-                        </div>
-                        <div className="max-h-32 overflow-y-auto border rounded-md">
+                  <PopoverContent className="p-4 w-[260px] z-9999">
+                    <div className="flex flex-col gap-3">
+                      <div className="border-b pb-2">
+                        <div className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Year</div>
+                        <div className="max-h-28 overflow-y-auto border rounded-md customScroll">
                           {Array.from({ length: 10 }, (_, i) => {
                             const year = new Date().getFullYear() - i;
                             return (
                               <button
                                 key={year}
                                 onClick={() => handleYearChange(year)}
-                                className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50 transition-colors ${
-                                  selectedYear === year
-                                    ? "bg-blue-100 text-blue-800 font-medium"
-                                    : "text-gray-700"
+                                className={`w-full px-3 py-1.5 text-left text-sm hover:bg-blue-50 transition-colors ${
+                                  selectedYear === year ? "bg-blue-100 text-blue-700 font-medium" : "text-gray-700"
                                 }`}
                               >
                                 {year}
@@ -1789,83 +1741,110 @@ const MakingPayments = () => {
                           })}
                         </div>
                       </div>
-
-                      {/* Month Selection - Grid */}
                       <div>
-                        <div className="text-sm font-medium text-gray-700 mb-2">
-                          Month
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[
-                            "January",
-                            "February",
-                            "March",
-                            "April",
-                            "May",
-                            "June",
-                            "July",
-                            "August",
-                            "September",
-                            "October",
-                            "November",
-                            "December",
-                          ].map((month, index) => (
+                        <div className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Month</div>
+                        <div className="grid grid-cols-4 gap-1">
+                          {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((month, index) => (
                             <button
                               key={month}
                               onClick={() => handleMonthChange(index + 1)}
-                              className={`px-3 py-2 text-xs font-medium rounded-md transition-colors hover:bg-blue-50 ${
-                                selectedMonth === index + 1 &&
-                                selectedYear === new Date().getFullYear()
-                                  ? "bg-blue-500 text-white hover:bg-blue-600"
-                                  : selectedMonth === index + 1
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "text-gray-700 hover:text-blue-800"
+                              className={`px-1 py-1.5 text-xs font-medium rounded transition-colors ${
+                                selectedMonth === index + 1
+                                  ? "bg-blue-500 text-white"
+                                  : "text-gray-600 hover:bg-blue-50"
                               }`}
                             >
-                              {month.substring(0, 3)}
+                              {month}
                             </button>
                           ))}
                         </div>
                       </div>
-
-                      {/* Action Buttons */}
                       <div className="flex justify-between pt-2 border-t">
-                        <button
-                          onClick={handleClearMonthYear}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
-                          Clear
-                        </button>
-                        <button
-                          onClick={handleThisMonth}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
-                          This month
-                        </button>
+                        <button onClick={handleClearMonthYear} className="text-xs text-gray-500 hover:text-gray-700">Clear</button>
+                        <button onClick={handleThisMonth} className="text-xs text-blue-600 hover:text-blue-800 font-medium">This Month</button>
                       </div>
                     </div>
                   </PopoverContent>
                 </Popover>
-              </div>
-            </div>
-          )}
-          {/* Employee ID/Name Search - Inline with other selects */}
-          {mainFilter?.value === "employee_id" && (
-            <div className="lg:w-[200px] md:w-[200px] w-full">
-              <label className="text-[#474747] text-[12px] font-medium font-Urbanist px-2">
-                Search by ID or Name
-              </label>
-              <Input
-                label="Search by ID or Name"
-                color="blue"
-                value={mainEmployeeIdSearch}
-                onChange={(e) => setMainEmployeeIdSearch(e.target.value)}
-                placeholder="Enter employee ID or name"
-                className="w-full h-[39px] px-3 text-black shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)] py-2 text-[12px] border-none outline-none rounded-[10px] bg-white text-left"
-              />
-            </div>
-          )}
+              )}
 
+              {/* Employee Search (Conditional) */}
+              {mainFilter?.value === "employee_id" && (
+                <div className="relative">
+                  <Input
+                    color="blue"
+                    value={mainEmployeeIdSearch}
+                    onChange={(e) => setMainEmployeeIdSearch(e.target.value)}
+                    placeholder="Search employee..."
+                    className="w-full h-[38px]! pl-9 text-[13px] border border-gray-200 rounded-lg focus:border-blue-500"
+                    containerProps={{ className: "h-[38px]! min-w-[unset]!" }}
+                    labelProps={{ className: "hidden" }}
+                  />
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section: Actions */}
+        <div className="bg-gray-50/60 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="font-medium text-gray-700">{employees.length}</span>
+            <span>records found</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* Secondary Actions */}
+            <Button
+              variant="outlined"
+              size="sm"
+              className="normal-case text-gray-600 border-gray-300 hover:bg-white hover:border-gray-400 px-3 py-2 text-[12px] flex items-center gap-1.5"
+              onClick={handleExportClick}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export
+            </Button>
+            <Button
+              variant="outlined"
+              size="sm"
+              className="normal-case text-gray-600 border-gray-300 hover:bg-white hover:border-gray-400 px-3 py-2 text-[12px] flex items-center gap-1.5"
+              onClick={handlePrintAllClick}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Print
+            </Button>
+            
+            <div className="w-px h-6 bg-gray-300 mx-1"></div>
+            
+            {/* Primary Actions */}
+            <Button
+              size="sm"
+              className="normal-case bg-[#FF4979] hover:bg-[#e63e6b] text-white px-3 py-2 text-[12px] flex items-center gap-1.5 shadow-sm hover:shadow transition-all"
+              onClick={handleDeleteMarked}
+              disabled={loading || selectedEmployees.length === 0}
+              loading={loading}
+            >
+              <FaTrash className="w-3 h-3" />
+              Delete ({selectedEmployees.length})
+            </Button>
+            <Button
+              size="sm"
+              className="normal-case bg-[#0ACF97] hover:bg-[#09b989] text-white px-3 py-2 text-[12px] flex items-center gap-1.5 shadow-sm hover:shadow transition-all"
+              onClick={handleMarkPaid}
+              disabled={isMarkingPaid || selectedEmployees.length === 0}
+              loading={isMarkingPaid}
+            >
+              <FaCheck className="w-3 h-3" />
+              Mark Paid
+            </Button>
+          </div>
         </div>
       </div>
 
