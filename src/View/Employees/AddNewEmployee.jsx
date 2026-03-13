@@ -200,20 +200,19 @@ const AddNewEmployee = () => {
           setLastEnrolledEmployeeIdFallback(empId != null && empId !== "" ? String(empId) : "N/A");
         } else {
           setLastEnrolledEmployeeIdFallback("N/A");
+          // OLD (incoming branch):
+          // if (data?.STATUS === 'SUCCESSFUL') {
+          //   const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
+          //   const empId = lastEnrolled?.emp_id;
+          //   if (empId != null && empId !== '') {
+          //     setLastEnrolledEmployeeId(String(empId));
+          //   } else {
+          //     setLastEnrolledEmployeeId('N/A');
+          //   }
+          // } else {
+          //   setLastEnrolledEmployeeId('N/A');
+          // }
         }
-
-        // OLD (incoming branch): used setLastEnrolledEmployeeId — invalid; last enrolled uses adminDashboardData + lastEnrolledEmployeeIdFallback (see state above).
-        // if (data?.STATUS === 'SUCCESSFUL') {
-        //   const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
-        //   const empId = lastEnrolled?.emp_id;
-        //   if (empId != null && empId !== '') {
-        //     setLastEnrolledEmployeeId(String(empId));
-        //   } else {
-        //     setLastEnrolledEmployeeId('N/A');
-        //   }
-        // } else {
-        //   setLastEnrolledEmployeeId('N/A');
-        // }
       } catch {
         if (!cancelled) setLastEnrolledEmployeeIdFallback("N/A");
       }

@@ -1603,6 +1603,9 @@ const SettingPayroll = () => {
                   </div>
                 )}
               {renderFormContent()}
+              {/* OLD (incoming):
+                  <div className="max-w-2xl mx-auto mb-8 relative"> ... </div>
+              */}
             </div>
 
             {/* Action Buttons - Only for form sections */}

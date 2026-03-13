@@ -221,6 +221,14 @@ const GeneratePaySlip = () => {
         currentlySelected.filter((selected) => selected.id !== employee.id)
       );
     }
+    // OLD duplicate from merge:
+    // if (checked && !isSelected) {
+    //   setSelectedEmployees([...currentlySelected, employee]);
+    // } else if (!checked && isSelected) {
+    //   setSelectedEmployees(
+    //     currentlySelected.filter((selected) => selected.id !== employee.id)
+    //   );
+    // }
   };
 
   return (

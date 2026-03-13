@@ -296,6 +296,8 @@ const PoliciesList = (props) => {
                 </li>
                 <div className="h-px bg-gray-100 my-1 mx-2" />
                 {isHrPolicyInactive(policy.status) ? (
+                  // OLD (incoming branch):
+                  // {policy.status === '0' ? (
                   <li className="px-1">
                     <button type="button" className="w-full text-left px-3 py-2 text-xs font-medium text-green-600 hover:bg-green-50 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(3, policy.id, 1)}>
                       Activate

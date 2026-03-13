@@ -27,6 +27,19 @@ const GridManageSalary = (props) => {
 
   return (
     <>
+      {/* OLD (incoming branch):
+          <div className='grid grid-cols-3 gap-4'>
+            {!allSalaryTemp?.length ? (
+              <div className="col-span-3 flex justify-center items-center py-12 text-[#666] text-[14px]">
+                No data found
+              </div>
+            ) : allSalaryTemp?.map((data, index) => (
+              <Card className="border border-[#3DA5F4] bg-[#F8F9FF] shadow-none" key={index}>
+                <CardBody className='p-4'>...
+              </Card>
+            ))}
+          </div>
+      */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
         {!allSalaryTemp?.length ? (
           <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-100 bg-gradient-to-b from-slate-50/80 to-white px-6 py-16 text-center">

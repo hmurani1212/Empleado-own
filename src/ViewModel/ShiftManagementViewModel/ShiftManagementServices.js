@@ -374,6 +374,7 @@ const useShiftManagement = () => {
     console.log('Add Memeber', team.id, teamId)
     emptyEmpList()
     openDrawer()
+    fetchingAllBranchesPlanner()
     settingDrawerSize(620)
     settingDrawerTitle('Add New Member')
     settingComponent(<AddMemberForm 
