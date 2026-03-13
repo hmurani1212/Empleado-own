@@ -21,8 +21,6 @@ import { GrFormClose } from "react-icons/gr";
 import { MdDone, MdUpload } from "react-icons/md";
 import { GrPowerReset } from "react-icons/gr";
 import defaultUserAvatar from '../../../constants/avatar';
-import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../../utils/imageUrlUtils";
-// import { getImageUrlFromEmployeeData } from "../../";
 const EmpDashboard = () => {
   const { empDashboardData, handlePolicyView, gettingEmpDashboardData } = useEmpDashboard();
 
