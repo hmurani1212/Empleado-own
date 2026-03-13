@@ -1060,7 +1060,7 @@ const useEmployees = () => {
             } else {
                 applyEmptyBranchContext()
             }
-            // OLD (incoming merge): had a second dangling `else` block and extra clearing/logs; removed for correctness.
+            // OLD (incoming): alternate else cleared departments + console.log; skipped setDesignations([]) — HEAD clears designations in success path and uses applyEmptyBranchContext on failure.
         } catch (err) {
             console.error('Error fetching branch dropdown data:', err)
             setDept_subDept({ departments: [] })
@@ -1107,6 +1107,7 @@ const useEmployees = () => {
                 // Handle different response structures (DB_DATA or top-level DESIGNATIONS)
                 let rawList = [];
 
+                // OLD (incoming): used designationsData before declaration + duplicate rawList — see branches below.
                 // API can return DESIGNATIONS at top level (e.g. /api/v1/designations?dept_id=...)
                 if (Array.isArray(resData?.DESIGNATIONS)) {
                     rawList = resData.DESIGNATIONS;
@@ -1117,6 +1118,7 @@ const useEmployees = () => {
                 } else if (Array.isArray(resData?.DB_DATA?.departments)) {
                     rawList = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
                 }
+                // OLD (incoming): truthy checks on designations/departments without Array.isArray — prefer guards above.
 
                 const designationsData = rawList.map(normalizeDesignationItem).filter(Boolean);
                 setDesignations(designationsData);

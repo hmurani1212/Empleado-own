@@ -56,6 +56,9 @@ const enrichPayslipsWithBulkDetails = async (listPayslips) => {
   return listPayslips.map((p) => mergedById.get(p.id) || p)
 }
 
+// OLD (incoming branch): import { useDebounce } from '../../services/__debounceServices'
+// Component uses useDebouncedValue for employee search (see below).
+
 /** Format seconds to "X hrs Y min" for expected/earned. */
 const formatSecondsToHrsMin = (seconds) => {
   if (seconds == null || Number(seconds) === 0) return '0 hrs 0 min'
@@ -89,33 +92,35 @@ const PAYSLIP_MAIN_COLUMNS = [
   { key: 'absentDays', header: 'Absent Days', pdfHeader: 'Abs. Days', width: 12, hideWhenAllZero: false },
   { key: 'overtimeMinutes', header: 'OT (mins)', pdfHeader: 'OT min', width: 11, hideWhenAllZero: true },
   { key: 'status', header: 'Status', pdfHeader: 'Status', width: 12, hideWhenAllZero: false },
-  /* OLD alternative PAYSLIP_COLUMNS (incoming merge): no med/incentives/increments/status; had `absenties`
-  { key: 'sNo', header: 'S.No', pdfHeader: 'S.No', width: 6, hideWhenAllZero: false },
-  { key: 'employmentNumber', header: 'Employment #', pdfHeader: 'Emp #', width: 14, hideWhenAllZero: false },
-  { key: 'name', header: 'Name', pdfHeader: 'Name', width: 40, hideWhenAllZero: false },
-  { key: 'department', header: 'Department', pdfHeader: 'Department', width: 32, hideWhenAllZero: false },
-  { key: 'designation', header: 'Designation', pdfHeader: 'Designation', width: 36, hideWhenAllZero: false },
-  { key: 'empSalary', header: 'Emp Salary', pdfHeader: 'Salary', width: 14, hideWhenAllZero: true },
-  { key: 'expected', header: 'Expected', pdfHeader: 'Expected', width: 10, hideWhenAllZero: false },
-  { key: 'earned', header: 'Earned', pdfHeader: 'Earned', width: 10, hideWhenAllZero: false },
-  { key: 'totalDays', header: 'Total Days', pdfHeader: 'Days', width: 12, hideWhenAllZero: false },
-  { key: 'presentDays', header: 'Present Days', pdfHeader: 'Present', width: 16, hideWhenAllZero: false },
-  { key: 'leaveDays', header: 'Leave Days', pdfHeader: 'Leave', width: 12, hideWhenAllZero: false },
-  { key: 'absentDays', header: 'Absent Days', pdfHeader: 'Absent', width: 12, hideWhenAllZero: false },
-  { key: 'overTime', header: 'Over Time', pdfHeader: 'OT', width: 12, hideWhenAllZero: true },
-  { key: 'fuel', header: 'Fuel', pdfHeader: 'Fuel', width: 10, hideWhenAllZero: true },
-  { key: 'lateMins', header: 'Late Mins', pdfHeader: 'Late', width: 10, hideWhenAllZero: true },
-  { key: 'absenties', header: 'Absenties', pdfHeader: 'Abs', width: 10, hideWhenAllZero: true },
-  { key: 'incomeTax', header: 'Income Tax', pdfHeader: 'Tax', width: 12, hideWhenAllZero: true },
-  { key: 'eobi', header: 'EOBI', pdfHeader: 'EOBI', width: 10, hideWhenAllZero: true },
-  { key: 'provident', header: 'Provident', pdfHeader: 'Provident', width: 12, hideWhenAllZero: true },
-  { key: 'testing', header: 'Testing', pdfHeader: 'Testing', width: 10, hideWhenAllZero: true },
-  { key: 'bikeLoan', header: 'Bike Loan', pdfHeader: 'Bike Loan', width: 12, hideWhenAllZero: true },
-  { key: 'loan', header: 'Loan', pdfHeader: 'Loan', width: 12, hideWhenAllZero: true },
-  { key: 'deduction', header: 'Deduction', pdfHeader: 'Deduct', width: 12, hideWhenAllZero: true },
-  { key: 'totalPayableSalary', header: 'Total Payable', pdfHeader: 'Net Pay', width: 16, hideWhenAllZero: true },
-  */
 ]
+
+// OLD: single flat PAYSLIP_COLUMNS (incoming branch) — replaced by grouped columns + dynamic incentive/deduction cols.
+// const PAYSLIP_COLUMNS = [
+//   { key: 'sNo', header: 'S.No', pdfHeader: 'S.No', width: 6, hideWhenAllZero: false },
+//   { key: 'employmentNumber', header: 'Employment #', pdfHeader: 'Emp #', width: 14, hideWhenAllZero: false },
+//   { key: 'name', header: 'Name', pdfHeader: 'Name', width: 40, hideWhenAllZero: false },
+//   { key: 'department', header: 'Department', pdfHeader: 'Department', width: 32, hideWhenAllZero: false },
+//   { key: 'designation', header: 'Designation', pdfHeader: 'Designation', width: 36, hideWhenAllZero: false },
+//   { key: 'empSalary', header: 'Emp Salary', pdfHeader: 'Salary', width: 14, hideWhenAllZero: true },
+//   { key: 'expected', header: 'Expected', pdfHeader: 'Expected', width: 10, hideWhenAllZero: false },
+//   { key: 'earned', header: 'Earned', pdfHeader: 'Earned', width: 10, hideWhenAllZero: false },
+//   { key: 'totalDays', header: 'Total Days', pdfHeader: 'Days', width: 12, hideWhenAllZero: false },
+//   { key: 'presentDays', header: 'Present Days', pdfHeader: 'Present', width: 16, hideWhenAllZero: false },
+//   { key: 'leaveDays', header: 'Leave Days', pdfHeader: 'Leave', width: 12, hideWhenAllZero: false },
+//   { key: 'absentDays', header: 'Absent Days', pdfHeader: 'Absent', width: 12, hideWhenAllZero: false },
+//   { key: 'overTime', header: 'Over Time', pdfHeader: 'OT', width: 12, hideWhenAllZero: true },
+//   { key: 'fuel', header: 'Fuel', pdfHeader: 'Fuel', width: 10, hideWhenAllZero: true },
+//   { key: 'lateMins', header: 'Late Mins', pdfHeader: 'Late', width: 10, hideWhenAllZero: true },
+//   { key: 'absenties', header: 'Absenties', pdfHeader: 'Abs', width: 10, hideWhenAllZero: true },
+//   { key: 'incomeTax', header: 'Income Tax', pdfHeader: 'Tax', width: 12, hideWhenAllZero: true },
+//   { key: 'eobi', header: 'EOBI', pdfHeader: 'EOBI', width: 10, hideWhenAllZero: true },
+//   { key: 'provident', header: 'Provident', pdfHeader: 'Provident', width: 12, hideWhenAllZero: true },
+//   { key: 'testing', header: 'Testing', pdfHeader: 'Testing', width: 10, hideWhenAllZero: true },
+//   { key: 'bikeLoan', header: 'Bike Loan', pdfHeader: 'Bike Loan', width: 12, hideWhenAllZero: true },
+//   { key: 'loan', header: 'Loan', pdfHeader: 'Loan', width: 12, hideWhenAllZero: true },
+//   { key: 'deduction', header: 'Deduction', pdfHeader: 'Deduct', width: 12, hideWhenAllZero: true },
+//   { key: 'totalPayableSalary', header: 'Total Payable', pdfHeader: 'Net Pay', width: 16, hideWhenAllZero: true },
+// ]
 
 /** Earnings — parent group (after main). Incentive line items from `incentive_deduction_details` are added dynamically before these. */
 const PAYSLIP_EARNINGS_COLUMNS = [
@@ -149,6 +154,16 @@ const filterColumnsByZero = (columns, data) => {
     return hasAnyPositive
   })
 }
+
+// OLD (incoming branch): flat PAYSLIP_COLUMNS + getVisiblePayslipColumns(data) only.
+// const getVisiblePayslipColumns = (data) => {
+//   if (!data || data.length === 0) return PAYSLIP_COLUMNS
+//   return PAYSLIP_COLUMNS.filter((col) => {
+//     if (!col.hideWhenAllZero) return true
+//     const hasAnyPositive = data.some((row) => (parseFloat(row[col.key]) || 0) > 0)
+//     return hasAnyPositive
+//   })
+// }
 
 const slugifyIncentiveTitle = (title) => {
   const s = String(title || 'item')
@@ -646,6 +661,10 @@ const ExportPayslip = () => {
         const transformedData = currentPayslips.map((payslip, index) =>
           mapPayslipToExportRow(payslip, index, columnMeta)
         )
+
+        // OLD (incoming branch): inline row mapping + flat PAYSLIP_COLUMNS keys (overTime, absenties, …).
+        // const transformedData = currentPayslips.map((payslip, index) => { ... })
+
         setExportData(transformedData)
         if (hasData) {
           setShowExportOptions(true)
@@ -682,6 +701,7 @@ const ExportPayslip = () => {
       return formatOptionalNum(val)
     }
     if (col.key === 'name' || col.key === 'branch' || col.key === 'department' || col.key === 'designation' || col.key === 'employmentNumber' || col.key === 'status') {
+      // OLD (incoming): formatOptionalNum for ['overTime', 'fuel', … 'deduction']; text cols without branch/status.
       return val || '—'
     }
     return val
@@ -708,7 +728,7 @@ const ExportPayslip = () => {
         views: [{ rightToLeft: false }],
         properties: { defaultRowHeight: 28 },
       })
-      // OLD: const sheet = workbook.addWorksheet('Payslips', { views: [{ rightToLeft: false }] })
+      // OLD (incoming): const visibleCols = getVisiblePayslipColumns(exportData); title row used `Payslips Export — ${reportDate}`
 
       sheet.columns = visibleCols.map((col) => ({ width: col.width }))
 
@@ -853,6 +873,8 @@ const ExportPayslip = () => {
         }
       }
 
+      // OLD (incoming): single header row via headerLabels + for-loop styling (no grouped Earnings/Deductions).
+
       if (exportData.length > 0) {
         exportData.forEach((row) => {
           const cellValues = visibleCols.map((col) => getCellDisplayValue(row, col))
@@ -873,10 +895,7 @@ const ExportPayslip = () => {
               wrapText: wrap,
               indent: !isNumCol && !wrap ? 1 : 0,
             }
-            /* OLD: dataRow.height = 20; isNumCol via list incl. absenties
-            const isNumCol = ['sNo', 'empSalary', ...].includes(col.key)
-            cell.alignment = { horizontal: isNumCol ? 'center' : 'left', vertical: 'middle', wrapText: false }
-            */
+            // OLD (incoming): dataRow.height = 20; isNumCol = flat keys incl. overTime, absenties, …
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ROW_FILL_WHITE } }
             cell.border = {
               top: { style: 'thin', color: { argb: GRID_COLOR } },
@@ -947,6 +966,7 @@ const ExportPayslip = () => {
         numHeaderKeys.includes(key) || key.startsWith('earn_dyn_') || key.startsWith('ded_dyn_')
 
       const orgName = getOrganizationData()?.orgName || getUserData()?.org_name || 'Organization Name'
+      // OLD (incoming): getVisiblePayslipColumns(exportData); flat numHeaderKeys; reportDate in title row.
       const tableRows =
         exportData.length > 0
           ? exportData.map(
@@ -954,6 +974,7 @@ const ExportPayslip = () => {
                 const tds = visibleCols.map((col) => {
                   const val = getCellDisplayValue(row, col)
                   const display = typeof val === 'number' ? Number(val).toLocaleString() : val
+                  // OLD: isNum = numHeaderKeys.includes(col.key); td class only td-num when numeric
                   const isNum = isPdfNumericCol(col.key)
                   return `<td class="${isNum ? 'td-num' : 'td-text'}">${display}</td>`
                 }).join('')
@@ -989,6 +1010,7 @@ const ExportPayslip = () => {
       const colgroupCols = visibleCols
         .map((col) => `<col class="col-dyn" style="min-width:${Math.max(48, Math.min(col.width * 7, 220))}px" />`)
         .join('')
+      // OLD (incoming): const pdfHeaders = visibleCols.map(...); single <tr>${pdfHeaders}</tr>; plain col tags.
 
       const printContent = `
         <!DOCTYPE html>
@@ -1127,6 +1149,7 @@ const ExportPayslip = () => {
               border: 1px solid #d1d5db;
               background: #fff;
             }
+            /* OLD (incoming): simpler PDF CSS — single header row, th text-align left, td-num right */
           </style>
         </head>
         <body>
@@ -1138,6 +1161,7 @@ const ExportPayslip = () => {
               <thead>
                 ${pdfHeadInner}
               </thead>
+              <!-- OLD (incoming): header-date with reportDate; plain table; single pdfHeaders header row -->
               <tbody>${tableRows}</tbody>
             </table>
           </div>
