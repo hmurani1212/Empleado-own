@@ -104,7 +104,7 @@ const CalendarView = (props) => {
               { key: 'manual_changed', colorClass: '!bg-[#FF9800]' },
               { key: 'signout_missed', colorClass: '!bg-[#000]' },        // Black for missed logout
               { key: 'late', colorClass: '!bg-[#FF0000]' },              // Red for late
-              { key: 'early_leave', colorClass: '!bg-[#FFA500]' },
+              { key: 'early_leave', colorClass: '!bg-[#1e00ff]' },
             ];
 
             // const testData = handleSingleDayDate(day, searchingEmpValue.month.value - 1, searchingEmpValue.year.value)

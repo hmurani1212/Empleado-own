@@ -7,6 +7,61 @@ import { showToast } from '../../Components/Toaster/Toaster'
 import Calendar from 'react-calendar'
 import { FaFileExcel, FaFilePdf, FaPrint } from 'react-icons/fa'
 import { useDebounce } from '../../services/__debounceServices'
+import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
+
+/** Format seconds to "X hrs Y min" for expected/earned. */
+const formatSecondsToHrsMin = (seconds) => {
+  if (seconds == null || Number(seconds) === 0) return '0 hrs 0 min'
+  const total = Math.max(0, Math.floor(Number(seconds)))
+  const hrs = Math.floor(total / 3600)
+  const min = Math.floor((total % 3600) / 60)
+  return `${hrs} hrs ${min} min`
+}
+
+/** Display value only when > 0; otherwise "—". */
+const formatOptionalNum = (val) => {
+  const n = parseFloat(val)
+  if (Number.isNaN(n) || n <= 0) return '—'
+  return Number(n).toLocaleString()
+}
+
+/** Payslip column definition: key, Excel header, PDF header, width, hide column when all values are 0 */
+const PAYSLIP_COLUMNS = [
+  { key: 'sNo', header: 'S.No', pdfHeader: 'S.No', width: 6, hideWhenAllZero: false },
+  { key: 'employmentNumber', header: 'Employment #', pdfHeader: 'Emp #', width: 14, hideWhenAllZero: false },
+  { key: 'name', header: 'Name', pdfHeader: 'Name', width: 40, hideWhenAllZero: false },
+  { key: 'department', header: 'Department', pdfHeader: 'Department', width: 32, hideWhenAllZero: false },
+  { key: 'designation', header: 'Designation', pdfHeader: 'Designation', width: 36, hideWhenAllZero: false },
+  { key: 'empSalary', header: 'Emp Salary', pdfHeader: 'Salary', width: 14, hideWhenAllZero: true },
+  { key: 'expected', header: 'Expected', pdfHeader: 'Expected', width: 10, hideWhenAllZero: false },
+  { key: 'earned', header: 'Earned', pdfHeader: 'Earned', width: 10, hideWhenAllZero: false },
+  { key: 'totalDays', header: 'Total Days', pdfHeader: 'Days', width: 12, hideWhenAllZero: false },
+  { key: 'presentDays', header: 'Present Days', pdfHeader: 'Present', width: 16, hideWhenAllZero: false },
+  { key: 'leaveDays', header: 'Leave Days', pdfHeader: 'Leave', width: 12, hideWhenAllZero: false },
+  { key: 'absentDays', header: 'Absent Days', pdfHeader: 'Absent', width: 12, hideWhenAllZero: false },
+  { key: 'overTime', header: 'Over Time', pdfHeader: 'OT', width: 12, hideWhenAllZero: true },
+  { key: 'fuel', header: 'Fuel', pdfHeader: 'Fuel', width: 10, hideWhenAllZero: true },
+  { key: 'lateMins', header: 'Late Mins', pdfHeader: 'Late', width: 10, hideWhenAllZero: true },
+  { key: 'absenties', header: 'Absenties', pdfHeader: 'Abs', width: 10, hideWhenAllZero: true },
+  { key: 'incomeTax', header: 'Income Tax', pdfHeader: 'Tax', width: 12, hideWhenAllZero: true },
+  { key: 'eobi', header: 'EOBI', pdfHeader: 'EOBI', width: 10, hideWhenAllZero: true },
+  { key: 'provident', header: 'Provident', pdfHeader: 'Provident', width: 12, hideWhenAllZero: true },
+  { key: 'testing', header: 'Testing', pdfHeader: 'Testing', width: 10, hideWhenAllZero: true },
+  { key: 'bikeLoan', header: 'Bike Loan', pdfHeader: 'Bike Loan', width: 12, hideWhenAllZero: true },
+  { key: 'loan', header: 'Loan', pdfHeader: 'Loan', width: 12, hideWhenAllZero: true },
+  { key: 'deduction', header: 'Deduction', pdfHeader: 'Deduct', width: 12, hideWhenAllZero: true },
+  { key: 'totalPayableSalary', header: 'Total Payable', pdfHeader: 'Net Pay', width: 16, hideWhenAllZero: true },
+]
+
+/** Get columns to display: hide columns where hideWhenAllZero and every row value is <= 0 */
+const getVisiblePayslipColumns = (data) => {
+  if (!data || data.length === 0) return PAYSLIP_COLUMNS
+  return PAYSLIP_COLUMNS.filter((col) => {
+    if (!col.hideWhenAllZero) return true
+    const hasAnyPositive = data.some((row) => (parseFloat(row[col.key]) || 0) > 0)
+    return hasAnyPositive
+  })
+}
 
 const ExportPayslip = () => {
   const [loading, setLoading] = useState(false)
@@ -213,32 +268,43 @@ const ExportPayslip = () => {
       const hasData = currentPayslips && Array.isArray(currentPayslips) && currentPayslips.length > 0
       if (currentPayslips && Array.isArray(currentPayslips)) {
         setAllPayslipsData(currentPayslips)
-        const transformedData = currentPayslips.map((payslip, index) => ({
-          sNo: index + 1,
-          employmentNumber: payslip.emp_id || 'N/A',
-          name: payslip.wf_employee?.name || 'N/A',
-          department: payslip.wf_employee?.department?.name || payslip.wf_depts?.name || 'N/A',
-          designation: payslip.wf_employee?.designation?.title || 'N/A',
-          empSalary: parseFloat(payslip.salary_amount || 0),
-          expected: '8',
-          earned: '8',
-          totalDays: '30',
-          presentDays: '25',
-          leaveDays: '2',
-          absentDays: '3',
-          overTime: parseFloat(payslip.overtime_amount || 0),
-          fuel: parseFloat(payslip.fuel_allowance || 0),
-          lateMins: parseFloat(payslip.late_minutes || 0),
-          absenties: parseFloat(payslip.absent_days || 0),
-          incomeTax: parseFloat(payslip.income_tax || 0),
-          eobi: parseFloat(payslip.eobi || 0),
-          provident: parseFloat(payslip.provident_fund || 0),
-          testing: parseFloat(payslip.testing_allowance || 0),
-          bikeLoan: parseFloat(payslip.bike_loan || 0),
-          loan: parseFloat(payslip.loan_deduction || 0),
-          deduction: parseFloat(payslip.total_deductions || 0),
-          totalPayableSalary: parseFloat(payslip.paid_amount || 0)
-        }))
+        const transformedData = currentPayslips.map((payslip, index) => {
+          const totalWorkingSec = payslip.total_working != null ? Number(payslip.total_working) : 0
+          const totalPresentSec = payslip.total_present != null ? Number(payslip.total_present) : 0
+          const totalWorkingHours = totalWorkingSec / 3600
+          const totalDays = payslip.payslip_config?.total_days != null
+            ? parseInt(payslip.payslip_config.total_days, 10)
+            : Math.round(totalWorkingHours / 8)
+          const presentDays = Math.round(totalPresentSec / 3600 / 8)
+          const absentDays = Math.max(0, totalDays - presentDays)
+          const leaveDays = payslip.leave_days != null ? parseInt(payslip.leave_days, 10) : 0
+          return {
+            sNo: index + 1,
+            employmentNumber: payslip.emp_id || '',
+            name: payslip.wf_employee?.name || payslip.name || '',
+            department: payslip.wf_employee?.department?.name || payslip.wf_employee?.department_name || payslip.wf_depts?.name || payslip.department_name || '',
+            designation: payslip.wf_employee?.designation?.title || payslip.wf_employee?.designation || payslip.designation || '',
+            empSalary: parseFloat(payslip.salary_amount || 0),
+            expected: formatSecondsToHrsMin(payslip.total_working),
+            earned: formatSecondsToHrsMin(payslip.total_present),
+            totalDays: totalDays || '',
+            presentDays: presentDays ?? '',
+            leaveDays: leaveDays ?? '',
+            absentDays: absentDays ?? '',
+            overTime: parseFloat(payslip.overtime_amount || 0),
+            fuel: parseFloat(payslip.fuel_allowance || 0),
+            lateMins: parseFloat(payslip.late_minutes || 0),
+            absenties: parseFloat(payslip.absent_days || 0),
+            incomeTax: parseFloat(payslip.income_tax?.amount ?? payslip.income_tax ?? 0),
+            eobi: parseFloat(payslip.eobi_record?.emp_contribution ?? payslip.eobi ?? 0),
+            provident: parseFloat(payslip.provident_fund || 0),
+            testing: parseFloat(payslip.testing_allowance || 0),
+            bikeLoan: parseFloat(payslip.bike_loan || 0),
+            loan: parseFloat(payslip.loan_deduction || 0),
+            deduction: parseFloat(payslip.total_deductions || 0),
+            totalPayableSalary: parseFloat(payslip.paid_amount || 0)
+          }
+        })
         setExportData(transformedData)
         if (hasData) {
           setShowExportOptions(true)
@@ -260,64 +326,97 @@ const ExportPayslip = () => {
     }
   }
 
-  const escapeCsv = (val) => {
-    const s = String(val ?? '')
-    if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`
-    return s
+  const getCellDisplayValue = (row, col) => {
+    const val = row[col.key]
+    if (col.hideWhenAllZero && (parseFloat(val) || 0) <= 0) return '—'
+    if (col.key === 'empSalary' || col.key === 'totalPayableSalary') {
+      return (parseFloat(val) || 0) > 0 ? Number(val) : '—'
+    }
+    if (['overTime', 'fuel', 'lateMins', 'absenties', 'incomeTax', 'eobi', 'provident', 'testing', 'bikeLoan', 'loan', 'deduction'].includes(col.key)) {
+      return formatOptionalNum(val)
+    }
+    if (col.key === 'name' || col.key === 'department' || col.key === 'designation' || col.key === 'employmentNumber') {
+      return val || '—'
+    }
+    return val
   }
 
-  const handleExcelExport = () => {
+  const handleExcelExport = async () => {
     try {
-      const headers = [
-        'S.No', 'Employment #', 'Name', 'Department', 'Designation', 'Emp Salary', 'Expected', 'Earned',
-        'Total Days', 'Present Days', 'Leave Days', 'Absent Days', 'Over Time', 'Fuel', 'Late Mins',
-        'Absenties', 'Income Tax', 'EOBI', 'Provident', 'Testing', 'Bike Loan', 'Loan', 'Deduction', 'Total Payable'
-      ]
-      const title = 'Payslips Export'
-      const exportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-      const summaryLine = exportData.length === 0 ? 'No records' : `${exportData.length} record(s)`
-      const csvRows = [
-        [title, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-        ['Exported on', exportDate, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-        [summaryLine, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-        [],
-        headers.map(h => escapeCsv(h)).join(',')
-      ]
-      exportData.forEach((row, idx) => {
-        csvRows.push([
-          idx + 1,
-          escapeCsv(row.employmentNumber),
-          escapeCsv(row.name),
-          escapeCsv(row.department),
-          escapeCsv(row.designation),
-          Number(row.empSalary).toLocaleString(),
-          row.expected,
-          row.earned,
-          row.totalDays,
-          row.presentDays,
-          row.leaveDays,
-          row.absentDays,
-          Number(row.overTime).toLocaleString(),
-          Number(row.fuel).toLocaleString(),
-          Number(row.lateMins).toLocaleString(),
-          Number(row.absenties).toLocaleString(),
-          Number(row.incomeTax).toLocaleString(),
-          Number(row.eobi).toLocaleString(),
-          Number(row.provident).toLocaleString(),
-          Number(row.testing).toLocaleString(),
-          Number(row.bikeLoan).toLocaleString(),
-          Number(row.loan).toLocaleString(),
-          Number(row.deduction).toLocaleString(),
-          Number(row.totalPayableSalary).toLocaleString()
-        ].join(','))
+      const ExcelJS = (await import('exceljs')).default
+      const visibleCols = getVisiblePayslipColumns(exportData)
+      const colCount = visibleCols.length
+
+      const orgName = getOrganizationData()?.orgName || getUserData()?.org_name || 'Organization Name'
+      const reportDate = new Date().toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
       })
-      const csvContent = csvRows.join('\n')
-      const BOM = '\uFEFF'
-      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
+
+      const workbook = new ExcelJS.Workbook()
+      const sheet = workbook.addWorksheet('Payslips', { views: [{ rightToLeft: false }] })
+
+      sheet.columns = visibleCols.map((col) => ({ width: col.width }))
+
+      const ORG_HEADER_BG = 'FF1F4E79'
+      const DATE_HEADER_BG = 'FF2E75B6'
+      const COLUMN_HEADER_BG = 'FF1F4E79'
+      const GRID_COLOR = 'FFD1D5DB'
+      const ROW_FILL_WHITE = 'FFFFFFFF'
+
+      const orgRow = sheet.addRow([`Organization: ${orgName}`])
+      orgRow.height = 26
+      sheet.mergeCells(1, 1, 1, colCount)
+      orgRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } }
+      orgRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' }
+      orgRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ORG_HEADER_BG } }
+
+      const titleRow = sheet.addRow([`Payslips Export — ${reportDate}`])
+      titleRow.height = 28
+      sheet.mergeCells(2, 1, 2, colCount)
+      titleRow.getCell(1).font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }
+      titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' }
+      titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: DATE_HEADER_BG } }
+
+      const headerLabels = visibleCols.map((c) => c.header)
+      const headerRow = sheet.addRow(headerLabels)
+      headerRow.height = 22
+      for (let c = 1; c <= colCount; c++) {
+        const cell = headerRow.getCell(c)
+        cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLUMN_HEADER_BG } }
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+      }
+
+      if (exportData.length > 0) {
+        exportData.forEach((row) => {
+          const cellValues = visibleCols.map((col) => getCellDisplayValue(row, col))
+          const dataRow = sheet.addRow(cellValues)
+          dataRow.height = 20
+          for (let c = 1; c <= colCount; c++) {
+            const cell = dataRow.getCell(c)
+            const col = visibleCols[c - 1]
+            const isNumCol = ['sNo', 'empSalary', 'totalDays', 'presentDays', 'leaveDays', 'absentDays', 'overTime', 'fuel', 'lateMins', 'absenties', 'incomeTax', 'eobi', 'provident', 'testing', 'bikeLoan', 'loan', 'deduction', 'totalPayableSalary'].includes(col.key)
+            cell.alignment = { horizontal: isNumCol ? 'center' : 'left', vertical: 'middle', wrapText: false }
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ROW_FILL_WHITE } }
+            cell.border = {
+              top: { style: 'thin', color: { argb: GRID_COLOR } },
+              bottom: { style: 'thin', color: { argb: GRID_COLOR } },
+              left: { style: 'thin', color: { argb: GRID_COLOR } },
+              right: { style: 'thin', color: { argb: GRID_COLOR } },
+            }
+          }
+        })
+      }
+
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.setAttribute('href', url)
-      link.setAttribute('download', `payslips_export_${new Date().toISOString().split('T')[0]}.csv`)
+      link.href = url
+      link.download = `payslips_export_${new Date().toISOString().split('T')[0]}.xlsx`
       link.style.visibility = 'hidden'
       document.body.appendChild(link)
       link.click()
@@ -333,34 +432,42 @@ const ExportPayslip = () => {
   
   const handlePdfExport = () => {
     try {
-      const printWindow = window.open('', '_blank', 'width=900,height=700')
+      const printWindow = window.open('', '_blank', 'width=1000,height=700')
       if (!printWindow) {
         showToast('Please allow popups to print PDF', 'warning')
         return
       }
-      const exportDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      const visibleCols = getVisiblePayslipColumns(exportData)
+      const colCount = visibleCols.length
+      const numHeaderKeys = ['sNo', 'empSalary', 'totalDays', 'presentDays', 'leaveDays', 'absentDays', 'overTime', 'fuel', 'lateMins', 'absenties', 'incomeTax', 'eobi', 'provident', 'testing', 'bikeLoan', 'loan', 'deduction', 'totalPayableSalary']
+
+      const orgName = getOrganizationData()?.orgName || getUserData()?.org_name || 'Organization Name'
+      const reportDate = new Date().toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
       const tableRows =
         exportData.length > 0
           ? exportData.map(
-              (row, index) => `
-                <tr class="row-body">
-                  <td>${row.sNo}</td>
-                  <td>${row.employmentNumber}</td>
-                  <td>${row.name}</td>
-                  <td>${row.department}</td>
-                  <td>${row.designation}</td>
-                  <td class="num">${Number(row.empSalary).toLocaleString()}</td>
-                  <td class="num">${Number(row.totalPayableSalary).toLocaleString()}</td>
-                  <td>${row.expected}</td>
-                  <td>${row.earned}</td>
-                  <td class="num">${Number(row.overTime).toLocaleString()}</td>
-                  <td>${row.totalDays}</td>
-                  <td>${row.presentDays}</td>
-                  <td>${row.leaveDays}</td>
-                  <td>${row.absentDays}</td>
-                </tr>`
+              (row) => {
+                const tds = visibleCols.map((col) => {
+                  const val = getCellDisplayValue(row, col)
+                  const display = typeof val === 'number' ? Number(val).toLocaleString() : val
+                  const isNum = numHeaderKeys.includes(col.key)
+                  return `<td class="${isNum ? 'td-num' : ''}">${display}</td>`
+                }).join('')
+                return `<tr class="row-body">${tds}</tr>`
+              }
             ).join('')
-          : '<tr><td colspan="14" class="no-data">No data available for export.</td></tr>'
+          : `<tr><td colspan="${colCount}" class="no-data">No data available for export.</td></tr>`
+
+      const pdfHeaders = visibleCols.map((col) => {
+        const isNum = numHeaderKeys.includes(col.key)
+        return isNum ? `<th class="th-num">${col.pdfHeader}</th>` : `<th>${col.pdfHeader}</th>`
+      }).join('')
+      const colgroupCols = visibleCols.map(() => '<col class="col-dyn">').join('')
 
       const printContent = `
         <!DOCTYPE html>
@@ -369,47 +476,34 @@ const ExportPayslip = () => {
           <meta charset="utf-8">
           <title>Payslips Export</title>
           <style>
-            @page { margin: 1.2cm; size: A4 landscape; }
+            @page { margin: 1cm; size: A4 landscape; }
             * { box-sizing: border-box; }
-            body { margin: 0; padding: 24px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11px; color: #1a1a1a; background: #fff; }
-            .header { margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #2563eb; }
-            .header h1 { margin: 0; font-size: 20px; font-weight: 600; color: #1e40af; }
-            .header .meta { margin-top: 6px; font-size: 12px; color: #64748b; }
-            table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-            th, td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; word-wrap: break-word; }
-            th { background: #1e40af; color: #fff; font-weight: 600; font-size: 10px; }
-            .row-body:nth-child(even) { background: #f8fafc; }
-            .row-body:hover { background: #f1f5f9; }
-            .num { text-align: right; font-variant-numeric: tabular-nums; }
-            .no-data { text-align: center; padding: 32px !important; color: #64748b; font-style: italic; }
+            body { margin: 0; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11px; color: #1e293b; background: #fff; }
+            .header-org { background: #1F4E79; color: #fff; padding: 12px 20px; text-align: left; font-weight: 700; font-size: 15px; letter-spacing: 0.02em; }
+            .header-date { background: #2E75B6; color: #fff; padding: 14px 20px; text-align: left; font-weight: 700; font-size: 17px; letter-spacing: 0.02em; }
+            .table-wrap { overflow-x: auto; margin-top: 0; }
+            table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
+            col.col-dyn { min-width: 50px; }
+            th, td { padding: 10px 8px; border: 1px solid #e2e8f0; }
+            th { background: #1F4E79; color: #fff; font-weight: 600; font-size: 10px; text-align: left; white-space: nowrap; }
+            th.th-num { text-align: right; }
+            .row-body td { background: #fff; color: #334155; }
+            .row-body td.td-num { text-align: right; font-variant-numeric: tabular-nums; }
+            .no-data { text-align: center; padding: 40px; color: #64748b; font-style: italic; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>Payslips Export</h1>
-            <div class="meta">Exported on ${exportDate} &middot; ${exportData.length} record(s)</div>
+          <div class="header-org">Organization: ${orgName}</div>
+          <div class="header-date">Payslips Export — ${reportDate}</div>
+          <div class="table-wrap">
+            <table>
+              <colgroup>${colgroupCols}</colgroup>
+              <thead>
+                <tr>${pdfHeaders}</tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>Employment #</th>
-                <th>Name</th>
-                <th>Department</th>
-                <th>Designation</th>
-                <th>Emp Salary</th>
-                <th>Net Payable</th>
-                <th>Expected</th>
-                <th>Earned</th>
-                <th>Over Time</th>
-                <th>Total Days</th>
-                <th>Present</th>
-                <th>Leave</th>
-                <th>Absent</th>
-              </tr>
-            </thead>
-            <tbody>${tableRows}</tbody>
-          </table>
         </body>
         </html>
       `

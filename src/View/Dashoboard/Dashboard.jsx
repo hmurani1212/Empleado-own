@@ -675,6 +675,11 @@ function Dashboard() {
                   : false
             }
             title={dashboardValues.title}
+            attendanceReportDate={
+              dashboardValues.title === "Today's Attendence"
+                ? selectedDate || new Date().toISOString().split("T")[0]
+                : undefined
+            }
           />
         }
         title={dashboardValues.title}

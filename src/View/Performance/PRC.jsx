@@ -463,6 +463,7 @@ const PRC = () => {
               : null
           }
           widthSize={PRCAddValue.show ? 605 : viewPRC.show ? 750 : null}
+          // widthSize={620}
         />
       )}
 

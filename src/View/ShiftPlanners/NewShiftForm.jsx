@@ -7,7 +7,7 @@ const NewShiftForm = (props) => {
   const {handleBranchShift, handleShiftValues, plannerValues, handleCreatePlanner, isCreatingPlanner} = useShiftManagement()
   
   return (
-    <>
+    <div className="pt-5">
     <form onSubmit={(e) => handleCreatePlanner(e)}>
       <div className='flex flex-col gap-4'> 
         <div className=''>
@@ -38,7 +38,7 @@ const NewShiftForm = (props) => {
       </div>
       
     </form>
-    </>
+    </div>
   )
 }
 

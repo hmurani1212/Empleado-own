@@ -1,5 +1,5 @@
 import { Checkbox, Input, Option, Radio, Select, Button } from '@material-tailwind/react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import useAttendance from '../../ViewModel/AttendanceViewModel/AttendanceServices'
 import CustomButton from '../../Components/CustomButton/CustomButton'
@@ -11,13 +11,24 @@ import useSocket from '../../Components/useSocket/useSocket'
 import { getContentByLabel } from '../../services/getContentService'
 import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer'
 import { FaInfoCircle } from 'react-icons/fa'
+import { getDecodedToken } from '../../Authentication/jwt_decode'
+
+/** Generate a unique request id for this export so socket event can be matched to this user/session. */
+const generateReportRequestId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+  return `att-report-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+}
 
 const ExportAttendance = () => {
-  const { individualExport, handleCheckboxChangeAtt, handleSelectChangeAttendance, excelLayoutOptions, loading } = useAttendance();
+  const { individualExport, handleCheckboxChangeAtt, excelLayoutOptions } = useAttendance();
   const scheduleReport = useStore((state) => state.scheduleReport)
   const closeDrawer = useStore((state) => state.closeDrawer)
   const navigate = useNavigate()
   const { socketIoRef } = useSocket()
+  const pendingReportRequestIdRef = useRef(null)
+  const downloadTimeoutRef = useRef(null)
+
+  const DOWNLOAD_WAIT_MS = 5 * 60 * 1000
   
   // State for API data (same as BranchWiseListReporting)
   const [empBranches, setEmpBranches] = useState([])
@@ -27,6 +38,7 @@ const ExportAttendance = () => {
   const [loadingDepartments, setLoadingDepartments] = useState(false)
   const [loadingEmployees, setLoadingEmployees] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [employeeSuggestions, setEmployeeSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -58,6 +70,12 @@ const ExportAttendance = () => {
     }
   }
 
+  const exportLayoutSelectOptions = [
+    { value: 'list', label: 'List View (Multi Sheet)' },
+    { value: 'calender', label: 'Calendrical View' },
+    { value: 'calender_full', label: 'Calendrical Full View' }
+  ]
+
   // Form state for export
   const [formData, setFormData] = useState({
     reportType: '', // Datewise or Monthly - no default, user must select
@@ -67,6 +85,7 @@ const ExportAttendance = () => {
     employeeId: '',
     employeeType: 'Active', // Active, In-Active, Both Active & In-Active
     exportType: 'Export full attendance', // Radio button selection
+    firstInLastOut: false, // When true, export only first in and last out per day (for Export full attendance)
     excelLayout: 'calender_full', // Default to Calendrical Full view
     complianceReport: false,
     individualExport: false,
@@ -92,51 +111,59 @@ const ExportAttendance = () => {
     }
   }, [searchDebounceTimer])
 
-  // Listen for attendance_report_ready socket event
+  // Cleanup download timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (downloadTimeoutRef.current) {
+        clearTimeout(downloadTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Listen for attendance_report_ready — only handle events meant for this user (prevents cross-org download)
   useEffect(() => {
     if (!socketIoRef.current) return;
 
     const handleAttendanceReportReady = (data) => {
-      // Validate socket data
-      if (!data || !data.file_url) {
-        showToast('Failed to download report: Invalid data received', 'error');
-        return;
+      if (!data || !data.file_url) return;
+
+      const requestIdMatch = data.request_id != null && data.request_id === pendingReportRequestIdRef.current
+      const oneIdMatch = data.one_id != null && getDecodedToken()?.oneid != null && String(data.one_id) === String(getDecodedToken().oneid)
+      const legacyNoId = pendingReportRequestIdRef.current != null && data.request_id == null && data.one_id == null
+
+      if (!requestIdMatch && !oneIdMatch && !legacyNoId) return
+
+      if (pendingReportRequestIdRef.current != null) pendingReportRequestIdRef.current = null
+      if (downloadTimeoutRef.current) {
+        clearTimeout(downloadTimeoutRef.current)
+        downloadTimeoutRef.current = null
       }
 
-      // Show success notification
-      showToast('Your attendance report is ready! Downloading...', 'success');
+      showToast('Your attendance report is ready! Downloading...', 'success')
       setIsDownloading(false)
       setIsExporting(false)
-      
-      // Automatically download the file
+      setIsSendingEmail(false)
+
       try {
-        // Create a temporary link element
-        const link = document.createElement('a');
-        link.href = data.file_url;
-        link.rel = 'noopener noreferrer'; // Security best practice
-        
-        // Use the file_name from socket data or generate a meaningful filename
-        const filename = data.file_name || `${data.report_type}_${data.export_type}_${new Date().toISOString().split('T')[0]}.xlsx`;
-        link.download = filename;
-        
-        // Add to DOM, click, and remove
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const link = document.createElement('a')
+        link.href = data.file_url
+        link.rel = 'noopener noreferrer'
+        const filename = data.file_name || `${data.report_type}_${data.export_type}_${new Date().toISOString().split('T')[0]}.xlsx`
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
       } catch (error) {
-        showToast('Failed to download the report', 'error');
+        showToast('Failed to download the report', 'error')
       }
-    };
+    }
 
-    // Add listener
-    socketIoRef.current.on('attendance_report_ready', handleAttendanceReportReady);
-
-    // Cleanup listener on unmount
+    socketIoRef.current.on('attendance_report_ready', handleAttendanceReportReady)
     return () => {
       if (socketIoRef.current) {
-        socketIoRef.current.off('attendance_report_ready', handleAttendanceReportReady);
+        socketIoRef.current.off('attendance_report_ready', handleAttendanceReportReady)
       }
-    };
+    }
   }, [socketIoRef])
 
   // Fetch branches from API (same as BranchWiseListReporting)
@@ -159,8 +186,7 @@ const ExportAttendance = () => {
   const fetchDepartments = async (branchId) => {
     setLoadingDepartments(true)
     try {
-      const isAllBranches = branchId === '0' || branchId === 0
-      const data = { parent_id: 0, branch_id: branchId, getAll: true, get_all_departments: isAllBranches }
+      const data = { parent_id: 0, branch_id: branchId, getAll: true, get_all_departments: true }
       const response = await employeesApi.gettingSubDepts(data)
       const resData = response.data;
       if (resData.STATUS === "SUCCESSFUL") {
@@ -194,23 +220,23 @@ const ExportAttendance = () => {
     }
   }
 
-  // Handle branch selection (same as BranchWiseListReporting)
+  // Handle branch selection - use only local state and Node API (fetchDepartments).
+  // Do not call handleSelectChangeAttendance here; it would trigger PHP get_data.php.
   const handleBranchSelect = (selectedOption) => {
     if (selectedOption) {
       // Reset department and employee lists
       setDept_subDept([])
       setEmpList([])
-      // Fetch departments for selected branch (including '0' for all branches)
+      // Fetch departments for selected branch (Node API: /api/v1/departments)
       fetchDepartments(selectedOption.value)
     } else {
       // If no branch selected, reset everything
       setDept_subDept([])
       setEmpList([])
     }
-    handleSelectChangeAttendance(selectedOption, 'branch')
   }
 
-  // Handle department selection (same as BranchWiseListReporting)
+  // Handle department selection - use only local state; no need to sync with attendance view model.
   const handleDepartmentSelect = (selectedOption) => {
     if (selectedOption) {
       // Reset employee list
@@ -218,23 +244,18 @@ const ExportAttendance = () => {
       // Fetch employees for selected department (including '0' for all departments)
       fetchEmployees(selectedOption.value)
     }
-    handleSelectChangeAttendance(selectedOption, 'department')
   }
 
-  // Flatten options for departments (same as BranchWiseListReporting)
+  // Flatten options for departments - support both array response and { departments: [] }
   const flattenDeptOptions = (data) => {
-    let flattenedOptions = [];
-    const send_data = data?.departments
-    if (send_data && Array.isArray(send_data)) {
-      send_data?.forEach((dept) => {
-        flattenedOptions.push({
-          label: dept.name,
-          value: dept.id,
-          isParent: true
-        });
-      });
-    }
-    return flattenedOptions;
+    if (!data) return [];
+    const list = Array.isArray(data) ? data : (data?.departments || []);
+    if (!Array.isArray(list)) return [];
+    return list.map((dept) => ({
+      label: dept.name ?? dept.label ?? String(dept.id ?? ''),
+      value: dept.id,
+      isParent: true
+    }));
   };
 
   // Handle form input changes
@@ -316,15 +337,18 @@ const ExportAttendance = () => {
 
   // Handle export submission
   const handleExport = async (e, isSendEmail = false) => {
-    e.preventDefault() // Prevent form submission and page reload
-    
+    e.preventDefault()
+    e.stopPropagation()
+    // Prevent double execution when only one button should run
+    if (isExporting || isSendingEmail || isDownloading) return
+
     // Validate required fields
     if (!formData.reportType) {
       showToast('Please select a report type', 'error')
       return
     }
 
-    if (!formData.branch) {
+    if (!formData.individualExport && !formData.branch) {
       showToast('Please select a branch', 'error')
       return
     }
@@ -344,22 +368,27 @@ const ExportAttendance = () => {
       return
     }
 
-    if (!formData.excelLayout || formData.excelLayout === '') {
-      showToast('Please select an Excel Layout', 'error')
-      return
-    }
+    // if (!formData.excelLayout || formData.excelLayout === '') {
+    //   showToast('Please select an Excel Layout', 'error')
+    //   return
+    // }
 
-    
     try {
-      setIsExporting(true)
-      // Map form data to API payload
+      if (isSendEmail) {
+        setIsSendingEmail(true)
+      } else {
+        setIsExporting(true)
+      }
+      const requestId = generateReportRequestId()
+      pendingReportRequestIdRef.current = requestId
+
       const isAllBranches = formData.branch?.value === '0'
       const payload = {
+        request_id: requestId,
         month: formData.reportType === 'Monthly' ? formData.month : '',
         year: formData.reportType === 'Monthly' ? formData.year : '',
-        branch: isAllBranches ? '0' : (formData.branch?.value ? String(formData.branch.value) : ''),
-        ...(isAllBranches && { branch_id: 0, get_all_departments: true }),
-        dept: formData.department?.value === '0' ? '' : (formData.department?.value ? String(formData.department.value) : ''),
+        branch: formData.individualExport ? '' : (isAllBranches ? '0' : (formData.branch?.value ? String(formData.branch.value) : '')),
+        dept: formData.individualExport ? '' : (formData.department?.value === '0' ? '' : (formData.department?.value ? String(formData.department.value) : '')),
         sub_dep: '', // Not used in current form
         layout: formData.excelLayout || 'calender_full',
         empId: formData.individualExport ? String(formData.employee?.value || formData.employeeId) : '',
@@ -367,10 +396,10 @@ const ExportAttendance = () => {
         exportType: formData.reportType === 'Monthly' ? 'monthly' : 'regular',
         date: formData.reportType === 'Datewise' ? formData.fromDate : '',
         to_date: formData.reportType === 'Datewise' ? formData.toDate : '',
-        emp_type: formData.employeeType,
-        first_in_last_out: '', // Not used in current form
-        select_type: '', // Not used in current form
-        custom_report_type: formData.exportType === 'Export Simple Report' ? 'simple_attendance' : 
+        emp_type: formData.employeeType === 'Active' ? '1' : formData.employeeType === 'In-Active' ? '0' : '2',
+        first_in_last_out: formData.exportType === 'Export full attendance' && formData.firstInLastOut ? '1' : '',
+        select_type: '',
+        custom_report_type: formData.exportType === 'Export Simple Report' ? 'simple_attendance' :
                            formData.exportType === 'Export Comprehensive Report' ? 'comprehensive_attendance' :
                            formData.exportType === 'Export Leave Report only' ? 'leave_report' :
                            formData.exportType === 'Export Absentees only' ? 'absentees_report' : 'attendance',
@@ -378,38 +407,39 @@ const ExportAttendance = () => {
         send_email: isSendEmail ? true : false
       }
 
-      ///console.log('Sending payload:', payload)
-
-      // Call the API
       const result = await scheduleReport(payload)
 
       if (result.success) {
-        // setIsExporting(true)
+        if (downloadTimeoutRef.current) clearTimeout(downloadTimeoutRef.current)
+        downloadTimeoutRef.current = setTimeout(() => {
+          downloadTimeoutRef.current = null
+          pendingReportRequestIdRef.current = null
+          setIsDownloading(false)
+          showToast('Report did not arrive in time. Check Attendance Report Archive or try again.', 'error')
+        }, DOWNLOAD_WAIT_MS)
         setIsDownloading(true)
-        // showToast('Report scheduled successfully! You will be notified when it is ready.', 'success')
-        // setIsExporting(true)
-        
-        // // Close the drawer immediately
-        // closeDrawer()
-        
-        // Wait for socket event 'attendance_report_ready' to get notification
       } else {
+        pendingReportRequestIdRef.current = null
         showToast(result.error || 'Failed to schedule report', 'error')
       }
     } catch (error) {
+      pendingReportRequestIdRef.current = null
       showToast('An error occurred while scheduling the report', 'error')
       setIsDownloading(false)
     } finally {
-      setIsExporting(false)
-      // setIsDownloading(false)
+      if (isSendEmail) {
+        setIsSendingEmail(false)
+      } else {
+        setIsExporting(false)
+      }
     }
   };
   
 
   return (
     <>
-      {/* Export Attendance */}
-      <form onSubmit={handleExport} className='pt-4'>
+      {/* Export Attendance - prevent form submit on Enter; export only on button click */}
+      <form onSubmit={(e) => e.preventDefault()} className='pt-4'>
         <div className='flex flex-col space-y-6'>
           {/* Report Type and Employee Type Row */}
           <div className='flex gap-6'>
@@ -514,48 +544,51 @@ const ExportAttendance = () => {
             </div>
           )}
 
-          {/* Branch and Department Row - Third Position */}
-          <div className='flex gap-6'>
-            <div className='flex-1'>
-              <label className='text-[#698592] text-[12px] mb-1 block'>Select Branch</label>
-              <CustomSelect
-                placeHolderTitle='Branch'
-                value={formData.branch}
-                options={[
-                  { value: '0', label: 'All Branches' },
-                  ...(empBranches?.map((branch) => ({ value: branch.id, label: branch.branch_name })) || [])
-                ]}
-                onChangeHandler={(selectedOption) => {
-                  handleInputChange('branch', selectedOption)
-                  handleBranchSelect(selectedOption)
-                }}
-                customStyles={false}
-              />
-              {loadingBranches && <div className="text-sm text-gray-500 mt-1">Loading branches...</div>}
+          {/* Branch and Department Row - hidden when Export an individual attendance is selected */}
+          {!formData.individualExport && (
+            <div className='flex gap-6'>
+              <div className='flex-1'>
+                <label className='text-[#698592] text-[12px] mb-1 block'>Select Branch</label>
+                <CustomSelect
+                  placeHolderTitle='Branch'
+                  value={formData.branch}
+                  options={[
+                    { value: '0', label: 'All Branches' },
+                    ...(empBranches?.map((branch) => ({ value: branch.id, label: branch.branch_name })) || [])
+                  ]}
+                  onChangeHandler={(selectedOption) => {
+                    handleInputChange('branch', selectedOption)
+                    handleBranchSelect(selectedOption)
+                  }}
+                  customStyles={false}
+                />
+                {loadingBranches && <div className="text-sm text-gray-500 mt-1">Loading branches...</div>}
+              </div>
+              <div className='flex-1'>
+                <label className='text-[#698592] text-[12px] mb-1 block'>Select Department</label>
+                <CustomSelect
+                  placeHolderTitle='Department'
+                  value={formData.department}
+                  options={
+                    formData.branch
+                      ? [
+                          { value: '0', label: 'All Departments' },
+                          ...flattenDeptOptions(dept_subDept)
+                        ]
+                      : []
+                  }
+                  onChangeHandler={(selectedOption) => {
+                    handleInputChange('department', selectedOption)
+                    handleDepartmentSelect(selectedOption)
+                  }}
+                  customStyles={false}
+                  disabled={!formData.branch}
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                />
+                {loadingDepartments && <div className="text-sm text-gray-500 mt-1">Loading departments...</div>}
+              </div>
             </div>
-            <div className='flex-1'>
-              <label className='text-[#698592] text-[12px] mb-1 block'>Select Department</label>
-              <CustomSelect
-                placeHolderTitle='Department'
-                value={formData.department}
-                options={
-                  formData.branch 
-                    ? [
-                        { value: '0', label: 'All Departments' },
-                        ...flattenDeptOptions(dept_subDept)
-                      ]
-                    : flattenDeptOptions(dept_subDept)
-                }
-                onChangeHandler={(selectedOption) => {
-                  handleInputChange('department', selectedOption)
-                  handleDepartmentSelect(selectedOption)
-                }}
-                cStyle={true}
-                isDisabled={!formData.branch || (!dept_subDept.length && !loadingDepartments)}
-              />
-              {loadingDepartments && <div className="text-sm text-gray-500 mt-1">Loading departments...</div>}
-            </div>
-          </div>
+          )}
         </div>
 
         <div className='flex flex-col space-y-4'>
@@ -571,6 +604,17 @@ const ExportAttendance = () => {
               />
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openContentDrawer('ATTENDENCE_REPORT_TYPE'); }} />
             </div>
+            {formData.exportType === 'Export full attendance' && (
+              <div className='pl-6'>
+                <Checkbox 
+                  label='First in last out' 
+                  color='blue' 
+                  style={{ width: '17px', height: '17px' }}
+                  checked={formData.firstInLastOut}
+                  onChange={(e) => handleInputChange('firstInLastOut', e.target.checked)}
+                />
+              </div>
+            )}
 
             <div>
               <Radio 
@@ -583,7 +627,7 @@ const ExportAttendance = () => {
               />
             </div>
 
-            <div>
+            {/* <div>
               <Radio 
                 name='exportType' 
                 label='Export Comprehensive Report' 
@@ -592,7 +636,7 @@ const ExportAttendance = () => {
                 checked={formData.exportType === 'Export Comprehensive Report'}
                 onChange={() => handleInputChange('exportType', 'Export Comprehensive Report')}
               />
-            </div>
+            </div> */}
 
             <div>
               <Radio 
@@ -620,7 +664,7 @@ const ExportAttendance = () => {
           <hr />
 
           <div className='text-[14px]'>
-            <div className='flex items-center gap-1.5'>
+            {/* <div className='flex items-center gap-1.5'>
               <Checkbox 
                 label='Export Compliance Report' 
                 color='blue' 
@@ -629,7 +673,7 @@ const ExportAttendance = () => {
                 onChange={(e) => handleInputChange('complianceReport', e.target.checked)}
               />
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openContentDrawer('COMPLIANCE_AND_INDIVIDUAL_REPORT'); }} />
-            </div>
+            </div> */}
 
             <div>
               <Checkbox 
@@ -665,7 +709,6 @@ const ExportAttendance = () => {
                     {loadingEmployees && <div className="text-sm text-gray-500 mt-1">Loading employees...</div>}
                   </div> */}
                   <div className="relative">
-                    <label className='text-[#698592] text-[12px] mb-1 block'>Employee Name/ID</label>
                     <Input 
                       label='Enter Employee Name/ID' 
                       color='blue' 
@@ -709,38 +752,37 @@ const ExportAttendance = () => {
             }
           </div>
 
-          <div className='w-96 pl-[10px]'>
-            <div className='flex items-center gap-1.5 mb-2'>
+          {/* <div className='flex-1 max-w-[24rem] pl-[10px]'>
+            <div className='flex items-center gap-1.5 mb-1'>
               <label className='text-[#698592] text-[12px]'>Export layout</label>
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('REPORT_EXCEL_LAYOUT')} />
             </div>
-            <Select 
-              label='Excel Layout *' 
-              color='blue'
-              value={formData.excelLayout}
-              onChange={(value) => handleInputChange('excelLayout', value)}
-              labelProps={{ className: 'hidden' }}
-            >
-              <Option value="list">List View (Multi Sheet)</Option>
-              <Option value="calender">Calendrical View</Option>
-              <Option value="calender_full">Calendrical Full View</Option>
-            </Select>
-          </div>
+            <CustomSelect
+              placeHolderTitle='Select Excel Layout'
+              value={formData.excelLayout ? { value: formData.excelLayout, label: exportLayoutSelectOptions.find((o) => o.value === formData.excelLayout)?.label ?? formData.excelLayout } : null}
+              options={exportLayoutSelectOptions}
+              onChangeHandler={(selectedOption) => handleInputChange('excelLayout', selectedOption?.value ?? '')}
+              customStyles={false}
+            />
+          </div> */}
 
           <div className='flex gap-4'>
             <CustomButton 
-              loading={loading}
+              type="button"
+              loading={isExporting}
               title={isExporting || isDownloading ? 'Downloading...' : 'Export'} 
-              onClick={(e) => handleExport(e, false)}
-              disabled={isExporting || isDownloading}
-              className={isExporting || isDownloading ? 'opacity-50 cursor-not-allowed' : ''}
+              onClick={(e) => { e.stopPropagation(); handleExport(e, false); }}
+              disabled={isExporting || isSendingEmail || isDownloading}
+              className={isExporting || isSendingEmail || isDownloading ? 'opacity-50 cursor-not-allowed' : ''}
             />
-            {/* <CustomButton 
-              title={isExporting ? 'Sending...' : 'Send Report via Email'} 
-              onClick={(e) => handleExport(e, true)}
-              disabled={isExporting}
-              className={isExporting ? 'opacity-50 cursor-not-allowed' : ''}
-            /> */}
+            <CustomButton 
+              type="button"
+              loading={isSendingEmail}
+              title={isSendingEmail ? 'Sending...' : 'Send Via Email'} 
+              onClick={(e) => { e.stopPropagation(); handleExport(e, true); }}
+              disabled={isExporting || isSendingEmail || isDownloading}
+              className={isExporting || isSendingEmail || isDownloading ? 'opacity-50 cursor-not-allowed' : ''}
+            />
           </div>
 
         </div>

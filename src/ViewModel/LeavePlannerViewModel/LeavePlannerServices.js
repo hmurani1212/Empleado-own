@@ -711,7 +711,7 @@ const useLeavesPlanner = () => {
 
    
     return { leavesPlannerTitles, allLeavesGroup, getLeavesList, getPaidLeavesConfig, addLeaveGroupDrawer, leavesBranches, getAllDepartmentsLeaves, isLoading, handleMountLeave, mountLeave,
-        addGroupValues, handleLeaveBranch, handleLeave, addNewLeaveGroup, handleLeaveView, allViewLeave, viewLeavesLoading, handleLeavesChange, leavesSearch, openMenu, toggleMenuLeaves,
+        addGroupValues, handleLeaveBranch, handleLeave, addNewLeaveGroup, handleLeaveView, allViewLeave, viewLeavesLoading, getViewLeavesList, handleLeavesChange, leavesSearch, openMenu, toggleMenuLeaves,
         leavesNoticesItems, handleMenuItemsLeaves, openDialogLeaves, handleDeleteLeavesDialog, handleDeleteGroups, handleDeleteLeaves, viewId, handleDeleteSpecificLeaves,
         openDialogSpecific, addDefineLeave, addLeaveTypeValues, handleLeaveTypesValue, handleSelectChangeMonth, addDefineLeaveType, handleLeaveTypeSearch, handleChangeToggle, type,
         policiesList, googleCalenderHolidays, holidayValues, allCountries,setAddGroupValues,getDropdownPosition,triggerRefs,selectBranchHandler,UpdateLeaveGroup, importEmpLeaves, handleSelectChangeBranch, paidLeaveValues, 

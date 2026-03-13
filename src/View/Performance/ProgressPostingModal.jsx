@@ -158,7 +158,7 @@ const ProgressPostingModal = ({ open, onClose, goal, onProgressUpdate }) => {
             open={open}
             closeDrawer={onClose}
             title="Progress Posting"
-            widthSize={520}
+            widthSize={620}
             compo={drawerContent}
         />
     );

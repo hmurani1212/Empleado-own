@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button, Input, Radio, Typography } from "@material-tailwind/react";
 import { FaInfoCircle, FaPlus, FaTimes } from "react-icons/fa";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import useStore from "../../Store/store";
 import { showToast } from "../../Components/Toaster/Toaster";
-import payrollApi from "../../Model/Data/Payroll/Payroll";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { getContentByLabel } from "../../services/getContentService";
 import { SettingsSkeleton } from "./PayrollSkeletons";
+import { getUserData } from "../../Authentication/jwt_decode";
+import payrollApi from "../../Model/Data/Payroll/Payroll";
 
 const SettingPayroll = () => {
   const [activeSection, setActiveSection] = useState("tax_exemptions");
@@ -16,6 +17,7 @@ const SettingPayroll = () => {
     employeeSalaryPercentage: "",
     limitAbovePercentage: "",
     paymentFrequency: "monthly",
+    paymentDuration: "1",
     // EOBI fields
     eobiSalary: "",
     empContribution: "",
@@ -25,7 +27,11 @@ const SettingPayroll = () => {
     minDuration: "",
     empContributionPF: "",
     employerContributionPF: "",
+    limitAbovePercentagePF: "",
+    calculateOn: "gross",
   });
+  const [orgSettingId, setOrgSettingId] = useState(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
   // Income Tax Slabs state (now managed by store)
 
@@ -86,6 +92,8 @@ const SettingPayroll = () => {
   const savingProvidentFundSettings = useStore(
     (state) => state.savingProvidentFundSettings
   );
+  const getOrgSettings = useStore((state) => state.getOrgSettings);
+  const updateOrgSettings = useStore((state) => state.updateOrgSettings);
 
   // Get tax data from store
   const taxExemptions = useStore((state) => state.taxExemptions || []);
@@ -128,12 +136,82 @@ const SettingPayroll = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const fetchOrgSettingsAndFillForm = useCallback(async (branchId, sectionType) => {
+    const userData = getUserData();
+    const org_id = userData?.org_id ?? 0;
+    if (!org_id) return;
+    setSettingsLoading(true);
+    setOrgSettingId(null);
+    try {
+      const result = await getOrgSettings(org_id, branchId, sectionType);
+      if (!result.success) {
+        showToast(result.error || "Failed to load settings", "error");
+        return;
+      }
+      const data = result.data;
+      if (!data) {
+        setFormData((prev) => ({ ...prev, branch: prev.branch }));
+        return;
+      }
+      if (sectionType === "eobi" && data.eobi) {
+        const e = data.eobi;
+        setOrgSettingId(e.id);
+        setFormData((prev) => ({
+          ...prev,
+          eobiSalary: e.considerable_salary ?? "",
+          empContribution: e.emp_contribution ?? "",
+          employerContribution: e.employer_contribution ?? "",
+        }));
+      } else if (sectionType === "provident_fund" && data.provident_fund) {
+        const p = data.provident_fund;
+        setOrgSettingId(p.id);
+        setFormData((prev) => ({
+          ...prev,
+          minDuration: p.min_employment ?? "",
+          fundEligibility: (p.eligibility && String(p.eligibility).toUpperCase() === "INDIVIDUAL") ? "individual" : "all",
+          empContributionPF: p.emp_contribution ?? "",
+          employerContributionPF: p.employer_contribution ?? "",
+          limitAbovePercentagePF: p.max_salary_limit ?? "",
+          calculateOn: (p.calculation_type && String(p.calculation_type).toLowerCase() === "gross_pay") ? "gross" : "basic",
+        }));
+      } else if (sectionType === "medical_allowance" && data.medical_allowance) {
+        const m = data.medical_allowance;
+        setOrgSettingId(m.id);
+        setFormData((prev) => ({
+          ...prev,
+          employeeSalaryPercentage: m.percentage ?? "",
+          limitAbovePercentage: m.max_salary_limit ?? "",
+          paymentFrequency: (m.duration_unit && String(m.duration_unit).toLowerCase() === "month") ? "monthly" : "yearly",
+        }));
+      } else if (sectionType === "social_security" && data.social_security) {
+        const s = data.social_security;
+        setOrgSettingId(s.id);
+        setFormData((prev) => ({
+          ...prev,
+          employeeSalaryPercentage: s.percentage ?? "",
+          limitAbovePercentage: s.max_salary_limit ?? "",
+          paymentFrequency: (s.payment_duration_unit && String(s.payment_duration_unit).toLowerCase() === "month") ? "monthly" : "yearly",
+          paymentDuration: s.payment_duration ?? "1",
+        }));
+      }
+    } catch (err) {
+      showToast(err?.message || "Failed to load settings", "error");
+    } finally {
+      setSettingsLoading(false);
+    }
+  }, [getOrgSettings]);
+
   // Fetch data when navigating to specific sections
   useEffect(() => {
     if (activeSection === "income_tax_slabs") {
       getIncomeTaxSlabs();
     } else if (activeSection === "tax_exemptions") {
       getTaxExemptions();
+    } else if (["social_security", "medical_allowance", "eobi", "provident_fund"].includes(activeSection)) {
+      setOrgSettingId(null);
+      if (formData.branch?.value !== undefined && formData.branch?.value !== null) {
+        fetchOrgSettingsAndFillForm(formData.branch.value, activeSection);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection]);
@@ -167,6 +245,14 @@ const SettingPayroll = () => {
       ...prev,
       [field]: value,
     }));
+    if (field === "branch" && value?.value !== undefined && value?.value !== null) {
+      const section = activeSection;
+      if (["social_security", "medical_allowance", "eobi", "provident_fund"].includes(section)) {
+        fetchOrgSettingsAndFillForm(value.value, section);
+      } else {
+        setOrgSettingId(null);
+      }
+    }
   };
 
   // Save and Reset functions for form sections
@@ -194,7 +280,6 @@ const SettingPayroll = () => {
         return;
       }
 
-      // Validate percentage range
       const percentage = parseFloat(formData.employeeSalaryPercentage);
       if (isNaN(percentage) || percentage < 1 || percentage > 100) {
         showToast(
@@ -205,27 +290,36 @@ const SettingPayroll = () => {
       }
 
       setIsSaving(true);
-
       try {
-        const result = await savingSocialSecuritySettings({
-          branch_id: formData.branch.value === 0 ? 0 : formData.branch.value,
-          social_security_percentage: formData.employeeSalaryPercentage,
-          med_allowance_percentage: 0,
-          max_salary_limit: formData.limitAbovePercentage || 0,
-          ss_payment_duration:
-            formData.paymentFrequency === "monthly" ? "month" : "year",
-          medallowance_duration: "year",
-        });
-
-        if (result.success) {
-          showToast("Social security settings saved successfully", "success");
+        if (orgSettingId) {
+          const result = await updateOrgSettings("social_security", orgSettingId, {
+            percentage: parseFloat(formData.employeeSalaryPercentage),
+            max_salary_limit: parseFloat(formData.limitAbovePercentage) || 0,
+            payment_duration_unit: formData.paymentFrequency === "monthly" ? "month" : "year",
+            payment_duration: parseInt(formData.paymentDuration, 10) || 1,
+          });
+          if (result.success) {
+            showToast("Social security settings updated successfully", "success");
+          } else {
+            showToast(result.error || "Failed to update settings", "error");
+          }
         } else {
-          showToast(result.error || "Failed to save settings", "error");
+          const result = await savingSocialSecuritySettings({
+            branch_id: formData.branch.value === 0 ? 0 : formData.branch.value,
+            social_security_percentage: formData.employeeSalaryPercentage,
+            med_allowance_percentage: 0,
+            max_salary_limit: formData.limitAbovePercentage || 0,
+            ss_payment_duration: formData.paymentFrequency === "monthly" ? "month" : "year",
+            medallowance_duration: "year",
+          });
+          if (result.success) {
+            showToast("Social security settings saved successfully", "success");
+            fetchOrgSettingsAndFillForm(formData.branch.value, "social_security");
+          } else {
+            showToast(result.error || "Failed to save settings", "error");
+          }
         }
       } catch (error) {
-        console.error("Error saving social security settings:", error);
-        console.error("Error response:", error.response);
-        console.error("Error response data:", error.response?.data);
         showToast("An error occurred while saving settings", "error");
       } finally {
         setIsSaving(false);
@@ -247,26 +341,35 @@ const SettingPayroll = () => {
       }
 
       setIsSaving(true);
-
       try {
-        const result = await savingMedicalAllowanceSettings({
-          branch_id: formData.branch.value === 0 ? 0 : formData.branch.value,
-          social_security_percentage: 0,
-          med_allowance_percentage: formData.employeeSalaryPercentage,
-          max_salary_limit: formData.limitAbovePercentage || 0,
-          ss_payment_duration: "year",
-          medallowance_duration:
-            formData.paymentFrequency === "monthly" ? "month" : "year",
-        });
-
-        console.log("Medical allowance result:", result);
-        if (result.success) {
-          showToast("Medical allowance settings saved successfully", "success");
+        if (orgSettingId) {
+          const result = await updateOrgSettings("medical_allowance", orgSettingId, {
+            percentage: parseFloat(formData.employeeSalaryPercentage),
+            max_salary_limit: parseFloat(formData.limitAbovePercentage) || 0,
+            duration_unit: formData.paymentFrequency === "monthly" ? "month" : "year",
+          });
+          if (result.success) {
+            showToast("Medical allowance settings updated successfully", "success");
+          } else {
+            showToast(result.error || "Failed to update settings", "error");
+          }
         } else {
-          showToast(result.error || "Failed to save settings", "error");
+          const result = await savingMedicalAllowanceSettings({
+            branch_id: formData.branch.value === 0 ? 0 : formData.branch.value,
+            social_security_percentage: 0,
+            med_allowance_percentage: formData.employeeSalaryPercentage,
+            max_salary_limit: formData.limitAbovePercentage || 0,
+            ss_payment_duration: "year",
+            medallowance_duration: formData.paymentFrequency === "monthly" ? "month" : "year",
+          });
+          if (result.success) {
+            showToast("Medical allowance settings saved successfully", "success");
+            fetchOrgSettingsAndFillForm(formData.branch.value, "medical_allowance");
+          } else {
+            showToast(result.error || "Failed to save settings", "error");
+          }
         }
       } catch (error) {
-        console.error("Error saving settings:", error);
         showToast("An error occurred while saving settings", "error");
       } finally {
         setIsSaving(false);
@@ -288,24 +391,34 @@ const SettingPayroll = () => {
       }
 
       setIsSaving(true);
-
       try {
-        const result = await savingEOBISettings({
-          branch_id: formData.branch.value === 0 ? 0 : formData.branch.value,
-          eobi_percentage: formData.empContribution,
-          max_salary_limit: formData.eobiSalary || 0,
-          eobi_payment_duration:
-            formData.paymentFrequency === "monthly" ? "month" : "year",
-          employer_contribution: formData.employerContribution || 0,
-        });
-
-        if (result.success) {
-          showToast("EOBI settings saved successfully", "success");
+        if (orgSettingId) {
+          const result = await updateOrgSettings("eobi", orgSettingId, {
+            considerable_salary: formData.eobiSalary || "0",
+            emp_contribution: formData.empContribution || "0",
+            employer_contribution: formData.employerContribution || "0",
+          });
+          if (result.success) {
+            showToast("EOBI settings updated successfully", "success");
+          } else {
+            showToast(result.error || "Failed to update settings", "error");
+          }
         } else {
-          showToast(result.error || "Failed to save settings", "error");
+          const result = await savingEOBISettings({
+            branch_id: formData.branch.value === 0 ? 0 : formData.branch.value,
+            eobi_percentage: formData.empContribution,
+            max_salary_limit: formData.eobiSalary || 0,
+            eobi_payment_duration: formData.paymentFrequency === "monthly" ? "month" : "year",
+            employer_contribution: formData.employerContribution || 0,
+          });
+          if (result.success) {
+            showToast("EOBI settings saved successfully", "success");
+            fetchOrgSettingsAndFillForm(formData.branch.value, "eobi");
+          } else {
+            showToast(result.error || "Failed to save settings", "error");
+          }
         }
       } catch (error) {
-        console.error("Error saving settings:", error);
         showToast("An error occurred while saving settings", "error");
       } finally {
         setIsSaving(false);
@@ -330,27 +443,40 @@ const SettingPayroll = () => {
       }
 
       setIsSaving(true);
-
       try {
-        const result = await savingProvidentFundSettings({
-          branch_id: formData.branch.value === 0 ? 0 : formData.branch.value,
-          provident_fund_percentage: formData.empContributionPF,
-          max_salary_limit: formData.limitAbovePercentage || 0,
-          provident_fund_payment_duration:
-            formData.paymentFrequency === "monthly" ? "month" : "year",
-          employer_contribution: formData.employerContributionPF || 0,
-          p_fund_eligibility: formData.fundEligibility || "all",
-          min_duration: formData.minDuration || 1,
-          pf_calculation_type: formData.calculateOn === "basic" ? "basic_pay" : "gross_pay",
-        });
-
-        if (result.success) {
-          showToast("Provident Fund settings saved successfully", "success");
+        if (orgSettingId) {
+          const result = await updateOrgSettings("provident_fund", orgSettingId, {
+            min_employment: parseInt(formData.minDuration, 10) || 1,
+            eligibility: formData.fundEligibility === "individual" ? "INDIVIDUAL" : "ALL",
+            emp_contribution: formData.empContributionPF || "0",
+            employer_contribution: formData.employerContributionPF || "0",
+            max_salary_limit: formData.limitAbovePercentagePF || "0",
+            calculation_type: formData.calculateOn === "basic" ? "basic_pay" : "gross_pay",
+          });
+          if (result.success) {
+            showToast("Provident Fund settings updated successfully", "success");
+          } else {
+            showToast(result.error || "Failed to update settings", "error");
+          }
         } else {
-          showToast(result.error || "Failed to save settings", "error");
+          const result = await savingProvidentFundSettings({
+            branch_id: formData.branch.value === 0 ? 0 : formData.branch.value,
+            provident_fund_percentage: formData.empContributionPF,
+            max_salary_limit: formData.limitAbovePercentagePF || formData.limitAbovePercentage || 0,
+            provident_fund_payment_duration: formData.paymentFrequency === "monthly" ? "month" : "year",
+            employer_contribution: formData.employerContributionPF || 0,
+            p_fund_eligibility: formData.fundEligibility || "all",
+            min_duration: formData.minDuration || 1,
+            pf_calculation_type: formData.calculateOn === "basic" ? "basic_pay" : "gross_pay",
+          });
+          if (result.success) {
+            showToast("Provident Fund settings saved successfully", "success");
+            fetchOrgSettingsAndFillForm(formData.branch.value, "provident_fund");
+          } else {
+            showToast(result.error || "Failed to save settings", "error");
+          }
         }
       } catch (error) {
-        console.error("Error saving settings:", error);
         showToast("An error occurred while saving settings", "error");
       } finally {
         setIsSaving(false);
@@ -361,20 +487,22 @@ const SettingPayroll = () => {
   };
 
   const handleReset = () => {
+    setOrgSettingId(null);
     setFormData({
-      branch: null,
+      branch: formData.branch,
       employeeSalaryPercentage: "",
       limitAbovePercentage: "",
       paymentFrequency: "monthly",
-      // EOBI fields
+      paymentDuration: "1",
       eobiSalary: "",
       empContribution: "",
       employerContribution: "",
-      // Provident Fund fields
       fundEligibility: "all",
       minDuration: "",
       empContributionPF: "",
       employerContributionPF: "",
+      limitAbovePercentagePF: "",
+      calculateOn: "gross",
     });
   };
 
@@ -1185,7 +1313,7 @@ const SettingPayroll = () => {
           <div className="space-y-4">
             {/* Select Branch */}
             <div>
-              <label className="text-[#698592] text-[12px] font-semiboldblock">
+              <label className="text-[#698592] text-[12px] font-semibold block">
                 Select Branch
               </label>
               <div className="w-full max-w-md">
@@ -1325,6 +1453,26 @@ const SettingPayroll = () => {
               </div>
             </div>
 
+            {/* Max salary limit */}
+            <div>
+              <label className="text-[#698592] text-[12px] font-semibold block">
+                Max salary limit
+              </label>
+              <div className="w-full max-w-md">
+                <Input
+                  label="Enter max salary limit (0 = no limit)"
+                  color="blue"
+                  type="number"
+                  min="0"
+                  value={formData.limitAbovePercentagePF}
+                  onChange={(e) =>
+                    handleInputChange("limitAbovePercentagePF", e.target.value)
+                  }
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
             {/* Calculate Provident Fund On - Radio buttons */}
             <div>
               <label className="text-[#698592] text-[12px] font-semibold block">
@@ -1442,7 +1590,14 @@ const SettingPayroll = () => {
           </div>
 
           {/* Form Content */}
-          <div className="max-w-2xl mx-auto mb-8">{renderFormContent()}</div>
+          <div className="max-w-2xl mx-auto mb-8 relative">
+            {settingsLoading && (activeSection === "social_security" || activeSection === "medical_allowance" || activeSection === "eobi" || activeSection === "provident_fund") && (
+              <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-lg">
+                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            {renderFormContent()}
+          </div>
 
           {/* Action Buttons - Only for form sections */}
           {(activeSection === "social_security" ||

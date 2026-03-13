@@ -9,6 +9,7 @@ import useEmployeeActionService from "../../ViewModel/EmployeeViewModel/Employee
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import SalaryDetails from "./SalaryDetails";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import useStore from "../../Store/store";
 
 const EmployeesList = (props) => {
   const {
@@ -24,6 +25,8 @@ const EmployeesList = (props) => {
     onGoToPage,
     currentStatus,
   } = props;
+
+  const drawerOpen = useStore((state) => state.drawerOpen);
 
   const isLoading = loadingProp !== undefined ? loadingProp : !empListData?.employees;
 
@@ -102,6 +105,13 @@ const EmployeesList = (props) => {
       window.removeEventListener("scroll", onScroll, true);
     };
   }, [portalState.openIndex, updatePortalPosition]);
+
+  // Close action dropdown when any side model/drawer opens so menu does not appear on top of it
+  useEffect(() => {
+    if (drawerOpen || salaryDetailsValue?.show) {
+      Object.keys(openMenuValue || {}).forEach((i) => toggleMenuValue(Number(i), false));
+    }
+  }, [drawerOpen, salaryDetailsValue?.show]);
 
   // Filter action list based on current status
   const getFilteredActionList = () => {
@@ -343,7 +353,7 @@ const EmployeesList = (props) => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.15 }}
-            className="fixed  w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[9999]"
+            className="fixed w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[9990]"
             style={{
               left: portalState.left,
               top: portalState.top,
@@ -390,6 +400,7 @@ const EmployeesList = (props) => {
           title="Salary Details"
           closeDrawer={handleToggleSalaryDetails}
         // widthSize={620}
+          widthSize={620}
         />
       )}
     </div>

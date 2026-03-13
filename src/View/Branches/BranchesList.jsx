@@ -1,16 +1,17 @@
-import React from "react";
-import { Button, MenuItem, Typography } from "@material-tailwind/react";
+import React, { useState, useCallback, useLayoutEffect, useRef, useEffect } from "react";
+import ReactDOM from "react-dom";
+import { Button, Typography } from "@material-tailwind/react";
 import { formatTimestamp } from "./utils";
 import { FaChevronDown } from "react-icons/fa";
 import { HiOutlineOfficeBuilding } from "react-icons/hi"; // New icons
 
-import useBranches from "../../ViewModel/BranchesViewModel/BranchesServices";
 import useBranches2 from "../../ViewModel/Brach2ViewModel/BranchesServices2";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import CustomDrawer from "../../Components/CustomDrawer/CustomDrawer";
 import EditBranchForm from "./EditBranchForm";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import useStore from "../../Store/store";
 import branchImage from "../../assets/images/departement 1.png"; // Reusing the same image or a generic empty state image if available
 
 /** Skeleton row mirroring table columns: Branch ID, Branch Name (left), Branch Admin, Currency, Phone, Email, Creation Time, Actions */
@@ -71,10 +72,66 @@ const BranchesList = (props) => {
     goToPage,
   } = useBranches2();
 
+  const drawerOpen = useStore((state) => state.drawerOpen);
+  const displayBranches = branchesAll?.branches || [];
+  const scrollContainerRef = useRef(null);
+
+  const [portalState, setPortalState] = useState({
+    openIndex: -1,
+    top: 0,
+    left: 0,
+    bottom: undefined,
+    openAbove: false,
+  });
+
+  const updatePortalPosition = useCallback(() => {
+    const openIndex = displayBranches.findIndex((_, i) => openMenu[i]);
+    if (openIndex < 0) {
+      setPortalState((s) => (s.openIndex < 0 ? s : { ...s, openIndex: -1 }));
+      return;
+    }
+    const triggerEl = triggerRefs.current?.[openIndex];
+    if (!triggerEl) return;
+    const rect = triggerEl.getBoundingClientRect();
+    const openAbove = openIndex >= displayBranches.length - 3;
+    const dropdownWidth = 192;
+    const left = Math.max(4, Math.min(rect.right - dropdownWidth, window.innerWidth - dropdownWidth - 4));
+    setPortalState({
+      openIndex,
+      left,
+      top: openAbove ? undefined : rect.bottom + 0,
+      bottom: openAbove ? window.innerHeight - rect.top + 0 : undefined,
+      openAbove,
+    });
+  }, [openMenu, displayBranches]);
+
+  useLayoutEffect(() => {
+    updatePortalPosition();
+  }, [openMenu, updatePortalPosition]);
+
+  useEffect(() => {
+    if (portalState.openIndex < 0) return;
+    const scrollEl = scrollContainerRef.current;
+    const onScroll = () => updatePortalPosition();
+    scrollEl?.addEventListener("scroll", onScroll, true);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      scrollEl?.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [portalState.openIndex, updatePortalPosition]);
+
+  // Close action dropdown when any side model/drawer opens so menu does not appear on top of it
+  useEffect(() => {
+    if (showDrawer || drawerOpen) {
+      Object.keys(openMenu || {}).forEach((i) => toggleMenu(Number(i), false));
+    }
+  }, [showDrawer, drawerOpen]);
+
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="relative w-full min-h-[calc(100vh-250px)] overflow-auto customScroll">
+        <div ref={scrollContainerRef} className="relative w-full min-h-[calc(100vh-250px)] overflow-auto customScroll">
           <table className="min-w-full table-auto text-center">
             <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
               <tr>
@@ -180,16 +237,16 @@ const BranchesList = (props) => {
                         </Typography>
                       </td>
 
-                      {/* Actions */}
-                      <td className="p-4 last:pr-6 relative">
+                      {/* Actions - dropdown rendered via portal so it stays below drawer */}
+                      <td className={`p-4 last:pr-6 relative ${openMenu[index] ? "z-[30]" : ""}`}>
                         <div
                           ref={(el) => (triggerRefs.current[index] = el)}
                           onMouseEnter={() => toggleMenu(index, true)}
                           onMouseLeave={() => toggleMenu(index, false)}
-                          className="relative inline-block"
+                          className="relative flex justify-center"
                         >
                           <Button
-                            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
+                            className="flex items-center gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
                             variant="text"
                           >
                             Action
@@ -200,99 +257,6 @@ const BranchesList = (props) => {
                               }`}
                             />
                           </Button>
-
-                          <AnimatePresence>
-                          {openMenu[index] && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                              animate={{ opacity: 1, y: 0, scale: 1 }}
-                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                              transition={{ duration: 0.15, ease: "easeOut" }}
-                              className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-48 right-0 ${
-                                getDropdownPosition(index) === "top" ? "bottom-full mb-2" : "top-full mt-2"
-                              }`}
-                            >
-                                <ul className="flex flex-col py-1">
-                                  {/* For inactive branches (status == 0): Show Activate and Edit */}
-                                  {branch.status == 0 ? (
-                                    <>
-                                      <li className="px-1">
-                                        <button
-                                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
-                                          onClick={() =>
-                                            handleMenuItems(1, branch.id, branch)
-                                          }
-                                        >
-                                          Edit
-                                          <span className="text-gray-400">{menuItems.find(item => item.title === 'Edit')?.icon}</span>
-                                        </button>
-                                      </li>
-                                      <li className="px-1">
-                                        <button
-                                          className="w-full text-left px-3 py-2 text-xs font-medium text-green-600 hover:bg-green-50 flex items-center justify-between rounded-lg transition-colors"
-                                          onClick={() =>
-                                            handleMenuItems(3, branch.id, 1) // 3 is Activate
-                                          }
-                                        >
-                                          Activate
-                                          <span>{menuItems.find(item => item.title === 'Activate')?.icon}</span>
-                                        </button>
-                                      </li>
-                                    </>
-                                  ) : (
-                                    /* For active branches (status == 1): Show Edit, Premises, Branch Admin, Deactivate in order */
-                                    <>
-                                      <li className="px-1">
-                                        <button
-                                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
-                                          onClick={() =>
-                                            handleMenuItems(1, branch.id, branch)
-                                          }
-                                        >
-                                          Edit
-                                          <span className="text-gray-400">{menuItems.find(item => item.title === 'Edit')?.icon}</span>
-                                        </button>
-                                      </li>
-                                      <li className="px-1">
-                                        <button
-                                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
-                                          onClick={() =>
-                                            handleMenuItems(4, branch.id, branch)
-                                          }
-                                        >
-                                          Premises
-                                          <span className="text-gray-400">{menuItems.find(item => item.title === 'Premises')?.icon}</span>
-                                        </button>
-                                      </li>
-                                      <li className="px-1">
-                                        <button
-                                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
-                                          onClick={() =>
-                                            handleMenuItems(5, branch.id, branch)
-                                          }
-                                        >
-                                          Branch Admin
-                                          <span className="text-gray-400">{menuItems.find(item => item.title === 'Branch Admin')?.icon}</span>
-                                        </button>
-                                      </li>
-                                      <div className="h-px bg-gray-100 my-1 mx-2"></div>
-                                      <li className="px-1">
-                                        <button
-                                          className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center justify-between rounded-lg transition-colors"
-                                          onClick={() =>
-                                            handleMenuItems(2, branch.id, 0)
-                                          }
-                                        >
-                                          Deactivate
-                                          <span>{menuItems.find(item => item.title === 'Deactivate')?.icon}</span>
-                                        </button>
-                                      </li>
-                                    </>
-                                  )}
-                                </ul>
-                            </motion.div>
-                          )}
-                          </AnimatePresence>
                         </div>
                       </td>
                     </motion.tr>
@@ -318,6 +282,100 @@ const BranchesList = (props) => {
             </tbody>
           </table>
         </div>
+
+        {/* Portaled action dropdown so it does not appear on top of side drawers (z-[9990] < drawer overlay) */}
+        {portalState.openIndex >= 0 &&
+          (() => {
+            const branch = displayBranches[portalState.openIndex];
+            if (!branch) return null;
+            return ReactDOM.createPortal(
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.15 }}
+                className="fixed w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[9990]"
+                style={{
+                  left: portalState.left,
+                  top: portalState.top,
+                  bottom: portalState.bottom,
+                }}
+                onMouseEnter={() => toggleMenu(portalState.openIndex, true)}
+                onMouseLeave={() => toggleMenu(portalState.openIndex, false)}
+              >
+                <ul className="flex flex-col py-1">
+                  {branch.status == 0 ? (
+                    <>
+                      <li className="px-1">
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                          onClick={() => handleMenuItems(1, branch.id, branch)}
+                        >
+                          Edit
+                          <span className="text-gray-400">{menuItems.find((item) => item.title === "Edit")?.icon}</span>
+                        </button>
+                      </li>
+                      <li className="px-1">
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-xs font-medium text-green-600 hover:bg-green-50 flex items-center justify-between rounded-lg transition-colors"
+                          onClick={() => handleMenuItems(3, branch.id, 1)}
+                        >
+                          Activate
+                          <span>{menuItems.find((item) => item.title === "Activate")?.icon}</span>
+                        </button>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="px-1">
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                          onClick={() => handleMenuItems(1, branch.id, branch)}
+                        >
+                          Edit
+                          <span className="text-gray-400">{menuItems.find((item) => item.title === "Edit")?.icon}</span>
+                        </button>
+                      </li>
+                      <li className="px-1">
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                          onClick={() => handleMenuItems(4, branch.id, branch)}
+                        >
+                          Premises
+                          <span className="text-gray-400">{menuItems.find((item) => item.title === "Premises")?.icon}</span>
+                        </button>
+                      </li>
+                      <li className="px-1">
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                          onClick={() => handleMenuItems(5, branch.id, branch)}
+                        >
+                          Branch Admin
+                          <span className="text-gray-400">{menuItems.find((item) => item.title === "Branch Admin")?.icon}</span>
+                        </button>
+                      </li>
+                      <div className="h-px bg-gray-100 my-1 mx-2" />
+                      <li className="px-1">
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center justify-between rounded-lg transition-colors"
+                          onClick={() => handleMenuItems(2, branch.id, 0)}
+                        >
+                          Deactivate
+                          <span>{menuItems.find((item) => item.title === "Deactivate")?.icon}</span>
+                        </button>
+                      </li>
+                    </>
+                  )}
+                </ul>
+              </motion.div>,
+              document.body
+            );
+          })()}
 
         <ConfirmationDialog
           openDialog={openDialog}

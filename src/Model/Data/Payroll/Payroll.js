@@ -419,6 +419,27 @@ const payrollApi = {
         })
     },
 
+    /** GET org settings by type (eobi | provident_fund | medical_allowance | social_security) */
+    getOrgSettings: function(org_id, branch_id, type) {
+        const params = new URLSearchParams();
+        if (org_id != null && org_id !== '') params.append('org_id', org_id);
+        if (branch_id != null && branch_id !== '') params.append('branch_id', branch_id);
+        if (type != null && type !== '') params.append('type', type);
+        return payRollinstancemodule.request({
+            method: 'GET',
+            url: `/manage_payslip/org-settings?${params.toString()}`
+        });
+    },
+
+    /** PUT update org settings - type and id from existing record */
+    updateOrgSettings: function(type, id, data) {
+        return payRollinstancemodule.request({
+            method: 'PUT',
+            url: `/manage_payslip/org-settings/${type}/${id}`,
+            data
+        });
+    },
+
     saveTaxSlabSettings: function(data) {
         return payRollinstancemodule.request({
             method: 'POST',

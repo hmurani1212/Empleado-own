@@ -103,7 +103,7 @@ const GoalCommentsDrawer = ({ open, onClose, goal }) => {
       open={open}
       closeDrawer={onClose}
       title={`Comments • ${drawerTitle}`}
-      widthSize={520}
+      widthSize={620}
       compo={drawerContent}
     />
   );

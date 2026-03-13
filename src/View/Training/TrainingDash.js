@@ -85,7 +85,7 @@ const TrainingDash = () => {
             return
           }
           openDrawer()
-          settingDrawerSize(930)
+          settingDrawerSize(620)
           settingDrawerTitle('Edit Course')
           settingComponent(<EditCourse courseId={course._id} closeDrawer={closeDrawer} />)
         } catch (error) {
@@ -95,7 +95,7 @@ const TrainingDash = () => {
         break
       case 2: // Assign course
         openDrawer()
-        settingDrawerSize(558)
+        settingDrawerSize(620)
         settingDrawerTitle('Assign Course')
         settingComponent(<AssignCourse courseId={course._id} courseName={course.course_name} closeDrawer={closeDrawer} />)
         break
@@ -107,7 +107,7 @@ const TrainingDash = () => {
             return
           }
           openDrawer()
-          settingDrawerSize(900)
+          settingDrawerSize(620)
           settingDrawerTitle('Create Question using AI')
           settingComponent(<CreateQuestion courseId={course._id} courseName={course.course_name} closeDrawer={closeDrawer} />)
         } catch (error) {
@@ -259,7 +259,7 @@ const TrainingDash = () => {
 
   const handleAddCourse = () => {
     openDrawer()
-    settingDrawerSize(930)
+    settingDrawerSize(620)
     settingDrawerTitle('Add New Course')
     settingComponent(<AddCourse closeDrawer={closeDrawer} />)
   }
@@ -367,7 +367,7 @@ const TrainingDash = () => {
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             openDrawer()
-                                                            settingDrawerSize(500)
+                                                            settingDrawerSize(620)
                                                             settingDrawerTitle('Course Employees')
                                                             settingComponent(
                                                                 <CourseEmployeesList

@@ -1199,7 +1199,7 @@ const EmpPerformance = () => {
         closeDrawer={handleDrawerClose}
         title={isEditMode ? "Edit Goal" : "Add Goal"}
         direction="right"
-        widthSize={600}
+        widthSize={620}
         compo={
           <AddGoalForm
             onSubmit={handleGoalSubmit}

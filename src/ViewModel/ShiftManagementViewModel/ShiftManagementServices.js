@@ -94,7 +94,7 @@ const useShiftManagement = () => {
       await getAllBranchesShift()
       const freshBranches = useStore.getState().branchesShift
       openDrawer()
-      settingDrawerSize(500)
+      settingDrawerSize(620)
       settingDrawerTitle('Create New Shift Planner')
       settingComponent(<NewShiftForm
         branchesShift={freshBranches}
@@ -262,7 +262,7 @@ const useShiftManagement = () => {
     // console.log('for shift id', shiftId)
     settingShiftId(shiftId.id)
     openDrawer()
-    settingDrawerSize(500)
+    settingDrawerSize(620)
     settingDrawerTitle('Add Team')
     settingComponent(<AddTeamForm  
 
@@ -370,7 +370,7 @@ const useShiftManagement = () => {
     emptyEmpList()
     openDrawer()
     fetchingAllBranchesPlanner()
-    settingDrawerSize(500)
+    settingDrawerSize(620)
     settingDrawerTitle('Add New Member')
     settingComponent(<AddMemberForm 
       teamId = {teamId}
@@ -560,7 +560,7 @@ const gettingSubBranchesPlanner = async(id)=>{
     
     // settingPlannerId(id)
     openDrawer()
-    settingDrawerSize(500)
+    settingDrawerSize(620)
     settingDrawerTitle('Create New Shift')
     settingComponent(<CreateNewShiftForm 
       plannerId = {String(plannerId)}
@@ -913,7 +913,7 @@ const gettingSubBranchesPlanner = async(id)=>{
     })
     gettingAvailableTeams(member?.emp_id)
     openDrawer()
-    settingDrawerSize(500)
+    settingDrawerSize(620)
     settingDrawerTitle('Change Employee Team')
     settingComponent(<EditMemberForm />)
   }

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useLayoutEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import deptImage from "../../assets/images/departement 1.png";
 import {
   Card,
@@ -18,6 +19,7 @@ import useSubDept from "../../ViewModel/DepartmentsViewModel/SubDeptServices";
 import { Outlet, useLocation, useParams } from "react-router";
 import useDropdownService from "../../services/__dropDownHoverService";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import useStore from "../../Store/store";
 
 /** Skeleton row mirroring table columns: Dept Name (left), Description, Employees, Head of Dept, Sub Depts, Designations, Actions */
 const SkeletonRow = () => (
@@ -76,6 +78,7 @@ const Departments = () => {
   } = useDepartments();
   const { triggerRefs, getDropdownPosition } = useDropdownService();
   const { handleSubDept } = useSubDept();
+  const drawerOpen = useStore((state) => state.drawerOpen);
   
   const deptData = [
     "Dept Name",
@@ -141,6 +144,61 @@ const Departments = () => {
   // Server returns one page; render allDeptDetails as-is (no client-side slice)
   const displayDeptDetails = allDeptDetails || [];
 
+  const scrollContainerRef = useRef(null);
+  const [portalState, setPortalState] = useState({
+    openIndex: -1,
+    top: 0,
+    left: 0,
+    bottom: undefined,
+    openAbove: false,
+  });
+
+  const updatePortalPosition = useCallback(() => {
+    const openIndex = displayDeptDetails.findIndex((_, i) => openMenuDept[i]);
+    if (openIndex < 0) {
+      setPortalState((s) => (s.openIndex < 0 ? s : { ...s, openIndex: -1 }));
+      return;
+    }
+    const triggerEl = triggerRefs.current?.[openIndex];
+    if (!triggerEl) return;
+    const rect = triggerEl.getBoundingClientRect();
+    const openAbove = openIndex >= displayDeptDetails.length - 3;
+    const dropdownWidth = 192;
+    const left = Math.max(4, Math.min(rect.right - dropdownWidth, window.innerWidth - dropdownWidth - 4));
+    setPortalState({
+      openIndex,
+      left,
+      top: openAbove ? undefined : rect.bottom + 0,
+      bottom: openAbove ? window.innerHeight - rect.top + 0 : undefined,
+      openAbove,
+    });
+  }, [openMenuDept, displayDeptDetails]);
+
+  useLayoutEffect(() => {
+    updatePortalPosition();
+  }, [openMenuDept, updatePortalPosition]);
+
+  useEffect(() => {
+    if (portalState.openIndex < 0) return;
+    const scrollEl = scrollContainerRef.current;
+    const onScroll = () => updatePortalPosition();
+    scrollEl?.addEventListener("scroll", onScroll, true);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      scrollEl?.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [portalState.openIndex, updatePortalPosition]);
+
+  const isAnyActionMenuOpen = Object.values(openMenuDept || {}).some(Boolean);
+
+  // Close action dropdown when any side model/drawer opens so menu does not appear on top of it
+  useEffect(() => {
+    if (showDrawer || drawerOpen) {
+      Object.keys(openMenuDept || {}).forEach((i) => toggleMenuDept(Number(i), false));
+    }
+  }, [showDrawer, drawerOpen]);
+
   return (
     <>
       {location.pathname.includes("manage_sub_dep") ? (
@@ -179,10 +237,10 @@ const Departments = () => {
               </div>
 
               {/* Glassy Table Card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div ref={scrollContainerRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative w-full overflow-auto customScroll">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-center min-w-[1000px] table-auto">
-                    <thead>
+                  <table className="w-full text-center min-w-[1000px] table-auto border-collapse">
+                    <thead className="sticky top-0 z-20 bg-gray-50/80 shadow-sm">
                       <tr className="bg-gray-50/80 border-b border-gray-100">
                         {deptData?.map((head, i) => (
                           <th key={i} className={`p-4 first:pl-6 last:pr-6 ${i === 0 ? 'text-left' : 'text-center'}`}>
@@ -194,7 +252,7 @@ const Departments = () => {
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className={`divide-y divide-gray-50 bg-white ${isAnyActionMenuOpen ? "relative z-[25]" : ""}`}>
                       {isLoadingDeptPage ? (
                          [...Array(6)].map((_, i) => <SkeletonRow key={i} />)
                       ) : (
@@ -204,7 +262,7 @@ const Departments = () => {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className="hover:bg-blue-50/30 transition-colors group"
+                            className={`hover:bg-blue-50/30 transition-colors group ${openMenuDept[index] ? "relative z-[40] isolate" : ""}`}
                           >
                             {/* Dept Name */}
                             <td className="p-4 first:pl-6 text-left">
@@ -274,58 +332,22 @@ const Departments = () => {
                               </div>
                             </td>
 
-                            {/* Actions */}
-                            <td className="p-4 last:pr-6 relative">
+                            {/* Actions - dropdown rendered via portal so it stays on top */}
+                            <td className={`p-4 last:pr-6 relative ${openMenuDept[index] ? "z-[30]" : ""}`}>
                                 <div
                                   ref={(el) => (triggerRefs.current[index] = el)}
                                   onMouseEnter={() => toggleMenuDept(index, true)}
                                   onMouseLeave={() => toggleMenuDept(index, false)}
-                                  className="relative inline-block"
+                                  className="relative flex justify-center"
                                 >
                                   <Button
-                                    className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
-                                    variant="text"
+                                    className="flex items-center gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
                                   >
                                     Action
                                     <FaChevronDown
-                                      size={10}
-                                      className={`transition-transform duration-200 ${openMenuDept[index] ? "rotate-180" : ""}`}
+                                      className={`w-3 h-3 transition-transform duration-200 ${openMenuDept[index] ? "rotate-180" : ""}`}
                                     />
                                   </Button>
-
-                                  <AnimatePresence>
-                                    {openMenuDept[index] && (() => {
-                                       const isFirstRow = index === 0;
-                                       const isLastRow = index === displayDeptDetails.length - 1;
-                                       const isOpenUp = isFirstRow ? false : isLastRow ? true : getDropdownPosition(index) === "top";
-                                      
-                                      return (
-                                        <motion.div
-                                          initial={{ opacity: 0, y: isOpenUp ? 10 : -10, scale: 0.95 }}
-                                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                                          exit={{ opacity: 0, y: isOpenUp ? 10 : -10, scale: 0.95 }}
-                                          transition={{ duration: 0.15, ease: "easeOut" }}
-                                          className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-40 right-0 ${
-                                            isOpenUp ? "bottom-full mb-2" : "top-full mt-2"
-                                          }`}
-                                        >
-                                          <ul className="flex flex-col py-1">
-                                            {deptActionTitle.map((menuItem) => (
-                                              <li key={menuItem.id}>
-                                                <button
-                                                  className="w-full text-left px-4 py-2.5 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between transition-colors"
-                                                  onClick={() => handleMenuDept(menuItem.id, t_data)}
-                                                >
-                                                  {menuItem.title}
-                                                  <span style={{ color: menuItem.color }}>{menuItem.icon}</span>
-                                                </button>
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </motion.div>
-                                      );
-                                    })()}
-                                  </AnimatePresence>
                                 </div>
                             </td>
                           </motion.tr>
@@ -421,6 +443,44 @@ const Departments = () => {
                   })()
                 }
               </div>
+
+              {portalState.openIndex >= 0 &&
+                ReactDOM.createPortal(
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.15 }}
+                    className="fixed w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[9990]"
+                    style={{
+                      left: portalState.left,
+                      top: portalState.top,
+                      bottom: portalState.bottom,
+                    }}
+                    onMouseEnter={() => toggleMenuDept(portalState.openIndex, true)}
+                    onMouseLeave={() => toggleMenuDept(portalState.openIndex, false)}
+                  >
+                    <ul className="flex w-full flex-col py-1">
+                      {deptActionTitle.map((menuItem) => (
+                        <li
+                          className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors text-gray-700 hover:text-brand-600"
+                          key={menuItem.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMenuDept(menuItem.id, displayDeptDetails[portalState.openIndex]);
+                          }}
+                        >
+                          <Typography variant="small" className="text-xs font-medium font-poppins">
+                            {menuItem.title}
+                          </Typography>
+                          <span style={{ color: menuItem.color }} className="text-sm opacity-80">
+                            {menuItem.icon}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>,
+                  document.body
+                )}
 
               <ConfirmationDialog
                 openDialog={openDialogDept}

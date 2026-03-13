@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useLayoutEffect, useRef, useMemo } from "react";
+import ReactDOM from "react-dom";
 import useNotice from "../../ViewModel/NoticeViewModel/NoticeServices";
 import { Typography, Button } from "@material-tailwind/react";
 import EditNoticeForm from "./EditNoticeForm";
@@ -7,12 +8,14 @@ import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import NoticesView from "./NoticesView";
 import { formatTimestamp } from "../Branches/utils";
 import { FaChevronDown } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { hexToRGBA, titleNameAlpha } from "../../services/appServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { getAllYears } from "../../services/__appServicesData";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
+import useDropdownService from "../../services/__dropDownHoverService";
+import useStore from "../../Store/store";
 
 const SkeletonRow = () => (
   <tr className="animate-pulse border-b border-gray-100">
@@ -67,9 +70,74 @@ const ListNotices = () => {
     getFilterNotice,
   } = useNotice();
 
+  const { triggerRefs } = useDropdownService();
+  const drawerOpen = useStore((state) => state.drawerOpen);
+
   const [currentPageId, setCurrentPageId] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  const displayNotices = useMemo(
+    () =>
+      allNoticesList && allNoticesList.length > 0
+        ? allNoticesList
+            .filter((n) => n && n.timestamp)
+            .sort((a, b) => b.timestamp - a.timestamp)
+        : [],
+    [allNoticesList]
+  );
+
+  const scrollContainerRef = useRef(null);
+  const [portalState, setPortalState] = useState({
+    openIndex: -1,
+    top: 0,
+    left: 0,
+    bottom: undefined,
+    openAbove: false,
+  });
+
+  const updatePortalPosition = useCallback(() => {
+    const openIndex = displayNotices.findIndex((_, i) => openMenu[i]);
+    if (openIndex < 0) {
+      setPortalState((s) => (s.openIndex < 0 ? s : { ...s, openIndex: -1 }));
+      return;
+    }
+    const triggerEl = triggerRefs.current?.[openIndex];
+    if (!triggerEl) return;
+    const rect = triggerEl.getBoundingClientRect();
+    const openAbove = openIndex >= displayNotices.length - 3;
+    const dropdownWidth = 192;
+    const left = Math.max(4, Math.min(rect.right - dropdownWidth, window.innerWidth - dropdownWidth - 4));
+    setPortalState({
+      openIndex,
+      left,
+      top: openAbove ? undefined : rect.bottom + 0,
+      bottom: openAbove ? window.innerHeight - rect.top + 0 : undefined,
+      openAbove,
+    });
+  }, [openMenu, displayNotices]);
+
+  useLayoutEffect(() => {
+    updatePortalPosition();
+  }, [openMenu, updatePortalPosition]);
+
+  useEffect(() => {
+    if (portalState.openIndex < 0) return;
+    const scrollEl = scrollContainerRef.current;
+    const onScroll = () => updatePortalPosition();
+    scrollEl?.addEventListener("scroll", onScroll, true);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      scrollEl?.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [portalState.openIndex, updatePortalPosition]);
+
+  useEffect(() => {
+    if (drawerOpen || addNoticeValue?.show) {
+      Object.keys(openMenu || {}).forEach((i) => toggleMenuNotices(Number(i), false));
+    }
+  }, [drawerOpen, addNoticeValue?.show]);
 
   const tableHeads = [
     "Month",
@@ -202,7 +270,7 @@ const ListNotices = () => {
 
         {/* Notices Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="relative w-full min-h-[calc(100vh-250px)] overflow-auto customScroll">
+          <div ref={scrollContainerRef} className="relative w-full min-h-[calc(100vh-250px)] overflow-auto customScroll">
             <table className="min-w-full table-auto text-center">
               <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
                 <tr>
@@ -226,12 +294,8 @@ const ListNotices = () => {
                   Array.from({ length: 8 }).map((_, idx) => (
                     <SkeletonRow key={idx} />
                   ))
-                ) : (allNoticesList && allNoticesList.length > 0) ? (
-                // ) : allNoticesList && allNoticesList.length > 0 ? (
-                  allNoticesList
-                    .filter((n) => n && n.timestamp)
-                    .sort((a, b) => b.timestamp - a.timestamp)
-                    .map((ele, index) => {
+                ) : displayNotices.length > 0 ? (
+                  displayNotices.map((ele, index) => {
                       const currentMonth = new Date(
                         ele?.timestamp ? ele.timestamp * 1000 : 0
                       ).toLocaleString("en-US", { month: "short" });
@@ -239,13 +303,13 @@ const ListNotices = () => {
                       const previousMonth =
                         index > 0
                           ? new Date(
-                              allNoticesList[index - 1].timestamp * 1000
+                              displayNotices[index - 1].timestamp * 1000
                             ).toLocaleString("en-US", { month: "short" })
                           : null;
 
                       const isFirstRowOfMonth = currentMonth !== previousMonth;
 
-                      const rowSpan = allNoticesList.filter(
+                      const rowSpan = displayNotices.filter(
                         (item) =>
                           item?.timestamp &&
                           new Date(item.timestamp * 1000).toLocaleString(
@@ -330,60 +394,24 @@ const ListNotices = () => {
                             </Typography>
                           </td>
 
-                          {/* Actions */}
-                          <td className="p-4 last:pr-6 relative">
+                          {/* Actions - dropdown rendered via portal so it stays below side drawers */}
+                          <td className={`p-4 last:pr-6 relative ${openMenu[index] ? "z-[30]" : ""}`}>
                             <div
+                              ref={(el) => (triggerRefs.current[index] = el)}
                               onMouseEnter={() => toggleMenuNotices(index, true)}
                               onMouseLeave={() => toggleMenuNotices(index, false)}
-                              className="relative inline-block"
+                              className="relative flex justify-center"
                             >
                               <Button
-                                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
+                                className="flex items-center gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
                                 variant="text"
                               >
                                 Action
                                 <FaChevronDown
                                   size={10}
-                                  className={`transition-transform duration-200 ${
-                                    openMenu[index] ? "rotate-180" : ""
-                                  }`}
+                                  className={`w-3 h-3 transition-transform duration-200 ${openMenu[index] ? "rotate-180" : ""}`}
                                 />
                               </Button>
-
-                              <AnimatePresence>
-                                {openMenu[index] && (
-                                  <motion.div
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    transition={{ duration: 0.15, ease: "easeOut" }}
-                                    className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-40 right-0 ${
-                                      index >= allNoticesList.length - 3
-                                        ? "bottom-full mb-2"
-                                        : "top-full mt-2"
-                                    }`}
-                                  >
-                                    <ul className="flex flex-col py-1">
-                                      {noticesMenuItems.map((menuItem) => (
-                                        <li className="px-1" key={menuItem.id}>
-                                          <button
-                                            type="button"
-                                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
-                                            onClick={() =>
-                                              handleMenuItemsNotices(menuItem.id, ele)
-                                            }
-                                          >
-                                            {menuItem.title}
-                                            <span className="text-gray-400">
-                                              {menuItem.icon}
-                                            </span>
-                                          </button>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
                             </div>
                           </td>
                         </motion.tr>
@@ -412,8 +440,46 @@ const ListNotices = () => {
               </tbody>
             </table>
 
+            {/* Portaled action dropdown so it does not appear on top of side drawers (z-[9990] < drawer overlay) */}
+            {portalState.openIndex >= 0 &&
+              (() => {
+                const ele = displayNotices[portalState.openIndex];
+                if (!ele) return null;
+                return ReactDOM.createPortal(
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.15 }}
+                    className="fixed w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[9990]"
+                    style={{
+                      left: portalState.left,
+                      top: portalState.top,
+                      bottom: portalState.bottom,
+                    }}
+                    onMouseEnter={() => toggleMenuNotices(portalState.openIndex, true)}
+                    onMouseLeave={() => toggleMenuNotices(portalState.openIndex, false)}
+                  >
+                    <ul className="flex flex-col py-1">
+                      {noticesMenuItems.map((menuItem) => (
+                        <li className="px-1" key={menuItem.id}>
+                          <button
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                            onClick={() => handleMenuItemsNotices(menuItem.id, ele)}
+                          >
+                            {menuItem.title}
+                            <span className="text-gray-400">{menuItem.icon}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>,
+                  document.body
+                );
+              })()}
+
             {/* Load More */}
-            {allNoticesList?.length > 0 && noticesPagination?.hasMore && (
+            {displayNotices.length > 0 && noticesPagination?.hasMore && (
               <div className="flex justify-center mt-6 pb-6">
                 <Button
                   onClick={handleLoadMore}
@@ -454,7 +520,7 @@ const ListNotices = () => {
           open={addNoticeValue.show}
           addNoticeValue={addNoticeValue}
           closeDrawer={handleEditNoticeToggle}
-          widthSize="500px"
+          widthSize={620}
           title="Update Notice"
           compo={
             <EditNoticeForm

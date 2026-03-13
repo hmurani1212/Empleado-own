@@ -178,10 +178,16 @@ const AddNewEmployee = () => {
       try {
         const response = await employeesApi.getEmployeesWithFilters({ page: 1, status: 1, limit: 20 });
         const data = response?.data;
-        if (data?.STATUS === 'SUCCESSFUL' && Array.isArray(data?.DB_DATA?.employees) && data.DB_DATA.employees.length > 0) {
-          const ids = data.DB_DATA.employees.map((emp) => emp.id ?? emp.emp_id ?? 0).filter(Boolean);
-          const maxId = ids.length ? String(Math.max(...ids)) : 'N/A';
-          setLastEnrolledEmployeeId(maxId);
+        if (data?.STATUS === 'SUCCESSFUL') {
+          const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
+          const empId = lastEnrolled?.emp_id;
+          if (empId != null && empId !== '') {
+            setLastEnrolledEmployeeId(String(empId));
+          } else {
+            setLastEnrolledEmployeeId('N/A');
+          }
+        } else {
+          setLastEnrolledEmployeeId('N/A');
         }
       } catch {
         setLastEnrolledEmployeeId('N/A');
@@ -849,9 +855,9 @@ const AddNewEmployee = () => {
                     placeHolderTitle="Designation"
                     value={newEmpValues?.designation}
                     options={designations?.map((ele) => ({
-                      value: ele.id,
-                      label: ele.title,
-                    }))}
+                      value: ele.id ?? ele.designation_id ?? ele.d_id,
+                      label: ele.title ?? ele.name ?? ele.designation ?? ele.d_title ?? '',
+                    })) ?? []}
                     onChangeHandler={(selectedOption) =>
                       handleSelectChange(selectedOption, "designation")
                     }

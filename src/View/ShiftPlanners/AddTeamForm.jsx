@@ -6,7 +6,7 @@ import useShiftManagement from '../../ViewModel/ShiftManagementViewModel/ShiftMa
 const AddTeamForm = () => {
   const {handleAddNewTeam, handleChangeTeam, newTeamValues, handleCheckboxChange, isAddingTeam} = useShiftManagement()
   return (
-    <>
+    <div className="pt-5">
     <form onSubmit={(e) => handleAddNewTeam(e)}>
         <div className='flex flex-col gap-4'>
             <div>
@@ -32,7 +32,7 @@ const AddTeamForm = () => {
             
         </div>
     </form>
-    </>
+    </div>
   )
 }
 

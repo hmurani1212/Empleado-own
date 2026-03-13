@@ -497,7 +497,7 @@ const AddCompetency = (props) => {
       open={contentDrawerOpen}
       closeDrawer={() => setContentDrawerOpen(false)}
       direction='right'
-      widthSize='45vw'
+      widthSize={620}
       title={contentData?.contents?.find((c) => c.lang === contentLang)?.main_heading ?? ''}
       compo={
         <div className='flex flex-col gap-4'>
