@@ -89,10 +89,12 @@ const useEmpAttendanceServices = ()=>{
             const response = await empDashboardApi.mobileBaseAttendance(data)
             const responseData = response.data 
             if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
-                console.log("+++++++++++++++", responseData)
+                return { ok: true, data: responseData }
             }
+            return { ok: false, data: responseData }
         }catch(err){
             console.log('err', err)
+            return { ok: false, error: err }
         }
     };
 

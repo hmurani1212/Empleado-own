@@ -1574,6 +1574,7 @@ const SettingPayroll = () => {
             })}
           </div>
         </div>
+        {/* OLD (incoming merge): sidebar mistakenly contained form content overlay + renderFormContent() */}
 
         {/* Right Column - Content Area */}
         <div className="flex flex-col bg-[#FCFDFE]">

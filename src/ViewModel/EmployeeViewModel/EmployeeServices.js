@@ -1024,6 +1024,8 @@ const useEmployees = () => {
                     : []
                 setDept_subDept({ departments })
                 useStore.setState({ get_all_department: departments })
+
+                // Branch change: clear designations; reload only after department selection.
                 setDesignations([])
 
                 const rawEmp = db.EMPLOYEEE || db.EMPLOYEE || []
@@ -1048,7 +1050,7 @@ const useEmployees = () => {
             } else {
                 applyEmptyBranchContext()
             }
-            // Do not clear designations here - designations are loaded after department select.
+            // OLD (incoming merge): had a second dangling `else` block and extra clearing/logs; removed for correctness.
         } catch (err) {
             console.error('Error fetching branch dropdown data:', err)
             setDept_subDept({ departments: [] })
@@ -1100,9 +1102,9 @@ const useEmployees = () => {
                     rawList = resData.DESIGNATIONS;
                 } else if (Array.isArray(resData?.DB_DATA)) {
                     rawList = resData.DB_DATA;
-                } else if (resData?.DB_DATA?.designations) {
+                } else if (Array.isArray(resData?.DB_DATA?.designations)) {
                     rawList = resData.DB_DATA.designations;
-                } else if (resData?.DB_DATA?.departments) {
+                } else if (Array.isArray(resData?.DB_DATA?.departments)) {
                     rawList = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
                 }
 
