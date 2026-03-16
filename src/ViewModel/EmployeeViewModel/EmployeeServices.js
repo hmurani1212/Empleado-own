@@ -1008,21 +1008,10 @@ const useEmployees = () => {
                     designationsData = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
                 } else if (Array.isArray(resData.DESIGNATIONS)) {
                     designationsData = resData.DESIGNATIONS;
-                let rawList = [];
-
-                // API can return DESIGNATIONS at top level (e.g. /api/v1/designations?dept_id=...)
-                if (Array.isArray(resData?.DESIGNATIONS)) {
-                    rawList = resData.DESIGNATIONS;
-                } else if (Array.isArray(resData?.DB_DATA)) {
-                    rawList = resData.DB_DATA;
-                } else if (resData?.DB_DATA?.designations) {
-                    rawList = resData.DB_DATA.designations;
-                } else if (resData?.DB_DATA?.departments) {
-                    rawList = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
                 }
 
-                const designationsData = rawList.map(normalizeDesignationItem).filter(Boolean);
-                setDesignations(designationsData);
+                const normalized = (designationsData || []).map(normalizeDesignationItem).filter(Boolean);
+                setDesignations(normalized);
             } else {
                 setDesignations([])
             }

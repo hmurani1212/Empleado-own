@@ -468,13 +468,16 @@ const usePayroll = () => {
             gettingSalaryTemp(0, currentSearchValue, 0, 10, true) // Force reload with All Branches
           }
         } else {
-          showToast(data.ERROR_DESCRIPTION || 'Failed to delete salary template', 'error')
+          // Show API error message (supports both "message" and legacy "ERROR_DESCRIPTION")
+          showToast(data.message || data.ERROR_DESCRIPTION || 'Failed to delete salary template', 'error')
           setOpenDialogDelTemp(false)
         }
       }
     }catch(error){
       console.log(error)
-      showToast('An error occurred while deleting salary template', 'error')
+      // Show API error message from response if present (e.g. template in use)
+      const apiMessage = error?.response?.data?.message || error?.response?.data?.ERROR_DESCRIPTION
+      showToast(apiMessage || 'An error occurred while deleting salary template', 'error')
       setOpenDialogDelTemp(false)
     }finally {
       setLoading(false)
