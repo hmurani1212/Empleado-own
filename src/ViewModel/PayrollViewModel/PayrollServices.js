@@ -54,26 +54,12 @@ const usePayroll = () => {
   const lastBranchId  = useStore ((state) => state.lastBranchId )
   const branchesLoaded = useStore((state) => state.branchesLoaded)
   
-  // Track if initial data load has been done
-  const initialLoadRef = React.useRef(false)
+  const branchFilterRef = React.useRef({ branch_id: { value: 0, label: 'All Branches' } })
   const [loading, setLoading] = useState(false)
   
-  // Initialize with "All Branches" (value 0) on mount - only once when branches are first loaded
-  React.useEffect(() => {
-    // Only run once when branches are first loaded and branch filter is "All Branches"
-    // Also check if data is already loaded to prevent duplicate calls
-    if (copyBranchesData && copyBranchesData.length > 0 && 
-        branchFilter.branch_id?.value === 0 && 
-        !initialLoadRef.current &&
-        !(salaryTemplatesLoaded && lastBranchId === 0)) {
-      initialLoadRef.current = true
-      // Fetch all branches when "All Branches" is selected (only on initial load)
-      // Initial load with page 0, limit 10
-      gettingSalaryTemp(0, '', 0, 10, false, false)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [copyBranchesData]) // Only depend on copyBranchesData, check store state in condition
-  
+  // No automatic initial load here - ManageSalaryTemplate runs initial load once on mount.
+  // This avoids multiple usePayroll() instances (Payroll.jsx, etc.) re-running with branch_id 0
+  // when copyBranchesData changes and overwriting the user's branch filter.
   
   const payrollNavTitles = [
     {id:1, title: 'Payroll Overview', link:'/payroll/payroll_overview'},
@@ -138,14 +124,13 @@ const usePayroll = () => {
 
   const [salaryTemplateSearch, setSalaryTemplateSearch] = useState([])
   
-  // Create debounced search function
+  // Debounced search uses ref so it always has latest branch (avoids second call with branch_id 0)
   const debouncedSearch = useDebounce(async (searchValue) => {
-    if (branchFilter?.branch_id?.value !== undefined && branchFilter?.branch_id?.value !== null) {
-      console.log('Debounced search triggered:', searchValue)
-      // Reset to page 0 when search changes
-      gettingSalaryTemp(branchFilter.branch_id.value, searchValue, 0, 10, true, false)
+    const currentBranch = branchFilterRef.current?.branch_id?.value
+    if (currentBranch !== undefined && currentBranch !== null) {
+      gettingSalaryTemp(currentBranch, searchValue, 0, 10, true, false)
     }
-  }, 500) // 500ms delay
+  }, 500)
   
   const handleSalaryTempSearch = (e) => {
     const {name, value}  = e.target
@@ -483,13 +468,16 @@ const usePayroll = () => {
             gettingSalaryTemp(0, currentSearchValue, 0, 10, true) // Force reload with All Branches
           }
         } else {
-          showToast(data.ERROR_DESCRIPTION || 'Failed to delete salary template', 'error')
+          // Show API error message (supports both "message" and legacy "ERROR_DESCRIPTION")
+          showToast(data.message || data.ERROR_DESCRIPTION || 'Failed to delete salary template', 'error')
           setOpenDialogDelTemp(false)
         }
       }
     }catch(error){
       console.log(error)
-      showToast('An error occurred while deleting salary template', 'error')
+      // Show API error message from response if present (e.g. template in use)
+      const apiMessage = error?.response?.data?.message || error?.response?.data?.ERROR_DESCRIPTION
+      showToast(apiMessage || 'An error occurred while deleting salary template', 'error')
       setOpenDialogDelTemp(false)
     }finally {
       setLoading(false)
@@ -601,12 +589,15 @@ const usePayroll = () => {
   const [branchFilter, setBranchFilter] = useState({
     branch_id: { value: 0, label: 'All Branches' },
   })
+
+  React.useEffect(() => {
+    branchFilterRef.current = branchFilter
+  }, [branchFilter])
   
   // Store the branch ID of the template being deleted
   const [deletingTemplateBranchId, setDeletingTemplateBranchId] = useState(null)
 
   const handleBranchFilterPayroll = (selectedOption, field) => {
-    console.log('Filter change',selectedOption, field)
     setBranchFilter((prevState) => ({
       ...prevState,
       [field] : selectedOption

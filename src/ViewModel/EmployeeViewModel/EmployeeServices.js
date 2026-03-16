@@ -964,11 +964,10 @@ const useEmployees = () => {
                 const departments = Array.isArray(rawDepts) ? rawDepts.map((d) => ({ id: d.id ?? d.dept_id, name: d.name ?? d.dept_name ?? '' })) : []
                 setDept_subDept(resData.DB_DATA)
                 useStore.setState({ get_all_department: departments })
-                setDesignations([])
+                // Do not clear designations here - gettingDesignation(branch_id) runs in parallel and will set them
             } else {
                 setDept_subDept({ departments: [] })
                 useStore.setState({ get_all_department: [] })
-                setDesignations([])
                 console.log('Departments set in store:', departments);
             } 
             // else {
@@ -1002,15 +1001,21 @@ const useEmployees = () => {
             setPolicies([])
         }
     }
+    // Normalize designation item to { id, title } for UI (API may return id/designation_id and title/name/designation)
+    const normalizeDesignationItem = (item) => {
+        if (!item || typeof item !== 'object') return null;
+        const id = item.id ?? item.designation_id ?? item.d_id;
+        const title = item.title ?? item.name ?? item.designation ?? item.d_title ?? '';
+        if (id == null || title === '') return null;
+        return { id, title };
+    };
+
     const gettingDesignation = async (id, isBranch = false) => {
-        ////console.log('gettingDesignation called with id:', id, 'isBranch:', isBranch);
         const data = isBranch ? { branch_id: id } : { d_id: id };
-        // console.log('***********', isBranch)
 
         try {
             const response = await employeesApi.getDesignations(data)
             const resData = response.data
-            ///console.log('Designations API response:', resData);
             if (response.status === 200 && resData.STATUS === "SUCCESSFUL") {
                 // Handle different response structures (DB_DATA or top-level DESIGNATIONS)
                 let designationsData = [];
@@ -1023,8 +1028,8 @@ const useEmployees = () => {
                     designationsData = resData.DESIGNATIONS;
                 }
 
-                setDesignations(designationsData);
-                ///console.log('Designations set:', designationsData);
+                const normalized = (designationsData || []).map(normalizeDesignationItem).filter(Boolean);
+                setDesignations(normalized);
             } else {
                 setDesignations([])
             }
@@ -1812,6 +1817,6 @@ const useEmployees = () => {
 
     }
 
-}
+};
 
 export default useEmployees

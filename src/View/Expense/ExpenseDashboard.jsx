@@ -695,7 +695,7 @@ const ExpenseDashboard = () => {
             />
           }
           title="Pending Approvals"
-          widthSize={800}
+          widthSize={620}
         />
       )}
 
@@ -708,7 +708,7 @@ const ExpenseDashboard = () => {
             <SettlementAcceptanceModal closeModal={closeSettlementDrawer} />
           }
           title="Settlement Acceptance"
-          widthSize={800}
+          widthSize={620}
         />
       )}
 
@@ -717,7 +717,7 @@ const ExpenseDashboard = () => {
         open={showExpenseDetailModal}
         closeDrawer={handleCloseExpenseDetailModal}
         title="Expense Details"
-        widthSize={800}
+        widthSize={620}
         compo={
           isLoadingExpenseDetail ? (
             <div className="flex justify-center items-center py-20">
@@ -808,7 +808,7 @@ const ExpenseDashboard = () => {
         open={showInvoiceDetailModal}
         closeDrawer={handleCloseInvoiceDetailModal}
         title="Invoice Details"
-        widthSize={800}
+        widthSize={620}
         compo={
           selectedInvoice ? (
             <div className="p-6 space-y-8 font-poppins">

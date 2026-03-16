@@ -284,7 +284,10 @@ function Header() {
                 {/* Machines & Live Status - Unified Sleek Pill */}
                 <div 
                   className="flex items-center bg-gray-50/50 hover:bg-gray-50 transition-all duration-300 rounded-full px-4 py-1.5 border border-gray-200/60 shadow-sm group/stats cursor-pointer"
-                  onClick={() => setShowLiveBiometricDevices(true)}
+                  onClick={() => {
+                    getLiveBiometricDevices();
+                    setShowLiveBiometricDevices(true);
+                  }}
                 >
                    {/* Machines */}
                    <div className="flex items-center gap-2">

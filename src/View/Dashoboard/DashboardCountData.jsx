@@ -5,11 +5,44 @@ import { IoSearch   } from 'react-icons/io5'
 import { IoIosSend   } from 'react-icons/io'
 import { CiClock2 } from 'react-icons/ci'
 import { FaUser, FaBuilding, FaCalendarAlt, FaClock, FaUserTie } from 'react-icons/fa'
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx'
 import { showToast } from '../../Components/Toaster/Toaster'
+import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
+
+/** In/out pair key names per index (1-based). API may use in_time/out_time or in1/out1 style. */
+const TODAY_ATTENDANCE_IN_OUT_PAIRS = [
+  { in: ['in_time', 'in1'], out: ['out_time', 'out1'] },
+  { in: ['in_time_2', 'in2'], out: ['out_time_2', 'out2'] },
+  { in: ['in_time_3', 'in3'], out: ['out_time_3', 'out3'] },
+  { in: ['in_time_4', 'in4'], out: ['out_time_4', 'out4'] },
+  { in: ['in_time_5', 'in5'], out: ['out_time_5', 'out5'] },
+]
+
+const getInOutValue = (row, keys) => {
+  for (const k of keys) {
+    const v = row[k]
+    if (v != null && String(v).trim() !== '') return String(v).trim()
+  }
+  return ''
+}
+
+/** Returns which in/out pair indices (1-based) have at least one value in the dataset. */
+const getActiveInOutPairIndices = (data) => {
+  if (!data || !Array.isArray(data) || data.length === 0) return []
+  const active = []
+  TODAY_ATTENDANCE_IN_OUT_PAIRS.forEach((pair, index) => {
+    const hasValue = data.some((row) => {
+      const inVal = getInOutValue(row, pair.in)
+      const outVal = getInOutValue(row, pair.out)
+      return inVal !== '' || outVal !== ''
+    })
+    if (hasValue) active.push(index + 1)
+  })
+  return active
+}
 
 const DashboardCountData = (props) => {
-    const { data , exportData, sendSms, loading, title} = props
+    const { data, exportData, sendSms, loading, title, attendanceReportDate } = props
 
     useEffect(() => {
       console.log('DashboardCountData - data:', data);
@@ -139,43 +172,172 @@ const DashboardCountData = (props) => {
         setSearchTerm(e.target.value)
     }
 
-    const handleExport = () => {
-      // Use filteredData if available, otherwise use data
-      const exportDataToUse = filteredData && filteredData.length > 0 ? filteredData : (data || []);
-      
+    const handleExport = async () => {
+      const exportDataToUse = filteredData && filteredData.length > 0 ? filteredData : (data || [])
+
       if (!exportDataToUse || exportDataToUse.length === 0) {
-        showToast('No data available to export', 'error');
-        return;
+        showToast('No data available to export', 'error')
+        return
       }
 
-      const work_sheet = XLSX.utils.json_to_sheet(exportDataToUse);
+      if (isTodayAttendance) {
+        await exportTodayAttendanceExcel(exportDataToUse)
+        return
+      }
 
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, work_sheet, "Data");
-
-      const excel_buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
-
-      const blob = new Blob([excel_buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-      const url = URL.createObjectURL(blob);
-
-      const link = document.createElement('a');
-      const date = new Date().toISOString().split('T')[0];
-      link.href = url;
-      link.download = `export_${date}.xlsx`;
-      link.style.display = 'none';
-      
-      // Append to body before clicking
-      document.body.appendChild(link);
-      link.click();
-
-      // Remove after a short delay to ensure download starts
+      // Late Comers / other: use XLSX as before
+      const work_sheet = XLSX.utils.json_to_sheet(exportDataToUse)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, work_sheet, 'Data')
+      const excel_buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' })
+      const blob = new Blob([excel_buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const date = new Date().toISOString().split('T')[0]
+      link.href = url
+      link.download = `export_${date}.xlsx`
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
       setTimeout(() => {
-        if (link.parentNode) {
-          document.body.removeChild(link);
+        if (link.parentNode) document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+      }, 100)
+    }
+
+    /** Export Today's Attendance as a clean, styled Excel with only active in/out columns. */
+    const exportTodayAttendanceExcel = async (rows) => {
+      try {
+        const ExcelJS = (await import('exceljs')).default
+        const activePairs = getActiveInOutPairIndices(rows)
+
+        const headerLabels = ['Employee Name', 'Department', 'Designation', 'Status', 'Late Minutes']
+        activePairs.forEach((n) => {
+          headerLabels.push(`In ${n}`, `Out ${n}`)
+        })
+
+        const workbook = new ExcelJS.Workbook()
+        const sheet = workbook.addWorksheet("Today's Attendance", {
+          views: [{ rightToLeft: false }],
+        })
+
+        const colCount = headerLabels.length
+        // Column widths: Employee Name, Department, Designation wide enough to fit content without wrapping
+        const columnWidths = [
+          40,  // Employee Name - long names on one line
+          24,  // Department
+          36,  // Designation - e.g. "Jr. Web Engineer (DUD)"
+          14,  // Status
+          14,  // Late Minutes
+          ...headerLabels.slice(5).map(() => 14), // In/Out columns
+        ]
+        sheet.columns = columnWidths.map((w) => ({ width: w }))
+
+        const orgName = getOrganizationData()?.orgName || getUserData()?.org_name || 'Organization Name'
+
+        const dateForTitle = attendanceReportDate || new Date().toISOString().split('T')[0]
+        const reportDate = new Date(dateForTitle + 'T12:00:00').toLocaleDateString('en-US', {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        })
+
+        const ORG_HEADER_BG = 'FF1F4E79'
+        const DATE_HEADER_BG = 'FF2E75B6'
+        const COLUMN_HEADER_BG = 'FF1F4E79'
+
+        const orgRow = sheet.addRow([`Organization: ${orgName}`])
+        orgRow.height = 26
+        sheet.mergeCells(1, 1, 1, colCount)
+        orgRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } }
+        orgRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' }
+        orgRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ORG_HEADER_BG } }
+
+        const titleRow = sheet.addRow([`Today's Attendance — ${reportDate}`])
+        titleRow.height = 28
+        sheet.mergeCells(2, 1, 2, colCount)
+        titleRow.getCell(1).font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }
+        titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' }
+        titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: DATE_HEADER_BG } }
+
+        const headerRow = sheet.addRow(headerLabels)
+        headerRow.height = 22
+        for (let c = 1; c <= colCount; c++) {
+          const cell = headerRow.getCell(c)
+          cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } }
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLUMN_HEADER_BG } }
+          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
         }
-        URL.revokeObjectURL(url);
-      }, 100);
+
+        const GRID_COLOR = 'FFD1D5DB'
+        const ROW_FILL_WHITE = 'FFFFFFFF'
+        const STATUS_ABSENT_COLOR = 'FFDC2626'
+        const STATUS_OFF_COLOR = 'FFCA8A04'
+        const STATUS_PRESENT_COLOR = 'FF16A34A'
+
+        rows.forEach((row) => {
+          const inTimeRaw = row.in_time
+          const isAbsent = inTimeRaw === 'Absent'
+          const isOff = inTimeRaw === 'Off'
+          const isLeave = inTimeRaw === 'Leave' || (typeof inTimeRaw === 'string' && inTimeRaw.toLowerCase().includes('leave'))
+          const isNotLoggedIn = isAbsent || isOff || isLeave
+          const status = isAbsent ? 'Absent' : isOff ? 'Off' : isLeave ? 'Leave' : 'Present'
+
+          const lateMinutes = row.late_minutes ?? row.late_minute ?? ''
+          const lateMinutesDisplay = (lateMinutes !== '' && lateMinutes != null) ? String(lateMinutes) : '—'
+
+          const cellValues = [
+            row.name ?? '—',
+            row.department ?? '—',
+            row.designation ?? '—',
+            status,
+            lateMinutesDisplay,
+          ]
+          activePairs.forEach((n) => {
+            const p = TODAY_ATTENDANCE_IN_OUT_PAIRS[n - 1]
+            const inVal = isNotLoggedIn ? '—' : (getInOutValue(row, p.in) || '—')
+            const outVal = isNotLoggedIn ? '—' : (getInOutValue(row, p.out) || '—')
+            cellValues.push(inVal, outVal)
+          })
+
+          const dataRow = sheet.addRow(cellValues)
+          dataRow.height = 20
+          const statusFontColor = isAbsent ? STATUS_ABSENT_COLOR : isOff ? STATUS_OFF_COLOR : isLeave ? STATUS_OFF_COLOR : STATUS_PRESENT_COLOR
+
+          for (let c = 1; c <= colCount; c++) {
+            const cell = dataRow.getCell(c)
+            cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: false }
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ROW_FILL_WHITE } }
+            cell.border = {
+              top: { style: 'thin', color: { argb: GRID_COLOR } },
+              bottom: { style: 'thin', color: { argb: GRID_COLOR } },
+              left: { style: 'thin', color: { argb: GRID_COLOR } },
+              right: { style: 'thin', color: { argb: GRID_COLOR } },
+            }
+            if (c === 4 || c >= 6) cell.font = { color: { argb: statusFontColor } }
+          }
+        })
+
+        const buffer = await workbook.xlsx.writeBuffer()
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = URL.createObjectURL(blob)
+        const date = new Date().toISOString().split('T')[0]
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `todays_attendance_${date}.xlsx`
+        link.style.display = 'none'
+        document.body.appendChild(link)
+        link.click()
+        setTimeout(() => {
+          if (link.parentNode) document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+        }, 100)
+        showToast('Export downloaded successfully', 'success')
+      } catch (err) {
+        console.error('Today\'s attendance export error:', err)
+        showToast('Failed to export attendance', 'error')
+      }
     }
 
   return (
@@ -551,7 +713,7 @@ const DashboardCountData = (props) => {
           </div>
         )}
       </div>
-      {exportData && (
+      {exportData && title !== "Late Comers Last 7 days" && (
         <div className='flex justify-end items-center'>
           <Button 
             className="flex items-center gap-3 px-4 border border-[#0ACF97] py-2 text-[#0ACF97] rounded-full bg-[#EDFFF0] hover:shadow-[#EDFFF0]/20 focus:shadow-[#EDFFF0]/20 active:shadow-[#EDFFF0]/10"

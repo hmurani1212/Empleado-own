@@ -315,7 +315,7 @@ const Goals = () => {
             }
             title={addGoalValue.show ? "Add Goal" : ""}
             closeDrawer={addGoalValue.show ? toggleAddGoal : () => {}}
-            widthSize={550}
+            widthSize={620}
           />
         </div>
       )}

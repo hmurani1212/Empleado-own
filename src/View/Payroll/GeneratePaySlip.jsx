@@ -224,7 +224,20 @@ const GeneratePaySlip = () => {
     }
   };
 
-  // Handle row select logic ...
+  // Handle single row select: add or remove employee from selection
+  const handleRowSelect = (employee, e) => {
+    const checked = e?.target?.checked;
+    const currentlySelected = managePaySlipGeneration.selectedEmployees;
+    const isSelected = currentlySelected.some((selected) => selected.id === employee.id);
+
+    if (checked && !isSelected) {
+      setSelectedEmployees([...currentlySelected, employee]);
+    } else if (!checked && isSelected) {
+      setSelectedEmployees(
+        currentlySelected.filter((selected) => selected.id !== employee.id)
+      );
+    }
+  };
 
   if (managePaySlipState.loading) {
     return <GeneratePayslipSkeleton />;

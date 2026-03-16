@@ -28,7 +28,7 @@ const useEmployeeCheckList = ()=>{
     }) 
 
 
-    const handleEmpCheckList = async()=>{
+    const handleEmpCheckList = async(branchId)=>{
         setEmployeeCheckListValue((prevState)=>({
             ...prevState,
             show:true,
@@ -37,8 +37,9 @@ const useEmployeeCheckList = ()=>{
         }))
 
         // Load departments directly with branch_id=0
-        const response = await departmentsApi.manageDepartments(0)
+        const response = await departmentsApi.manageDepartments(branchId,1,10,true)
         const responseData = response.data
+
 
         if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
             setEmployeeCheckListValue((prevState)=>({
@@ -51,6 +52,8 @@ const useEmployeeCheckList = ()=>{
 
     const handleEditCheckList = async(checklistData)=>{
         // Map the API response data to form state
+
+        console.log("checklistData", checklistData)
         const mappedData = {
             show: true,
             isEdit: true,

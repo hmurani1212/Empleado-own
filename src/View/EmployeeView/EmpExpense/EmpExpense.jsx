@@ -352,7 +352,7 @@ const EmpExpense = () => {
                 closeDrawer={handleCloseDrawer}
                 title="New Expense Claim"
                 direction="right"
-                widthSize={800}
+                widthSize={620}
                 compo={
                     <AddExpenseForm
                         onSubmit={handleExpenseSubmit}

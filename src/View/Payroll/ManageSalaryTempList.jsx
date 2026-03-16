@@ -120,7 +120,13 @@ const ManageSalaryTempList = (props) => {
             </thead>
 
             <tbody>
-              {allSalaryTemp?.map((data, index) => {
+              {!allSalaryTemp?.length ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-[#666] text-[14px] font-Urbanist">
+                    No data found
+                  </td>
+                </tr>
+              ) : allSalaryTemp?.map((data, index) => {
                 const isLast = index === allSalaryTemp.length - 1;
                 const classes = isLast
                   ?  "px-[clamp(4px,0.8vw,12px)] py-4" : "px-[clamp(4px,0.8vw,12px)] py-4 border-b border-[#F2F2F9]"

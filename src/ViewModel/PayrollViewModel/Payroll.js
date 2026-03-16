@@ -130,20 +130,16 @@ const payrollViewModel = (set, get) => ({
             const response = await payrollApi.getSalaryTemp(branch_id, search, page, limit)
             const data = response.data
             
-            // Handle the new response structure with success field
-            if(data && data.success === true && data.data?.salary_data){
-                const salaryData = data.data.salary_data;
-                
-                // Extract pagination from API response (if available)
-                const pagination = data.data.pagination || {};
+            // Handle the new response structure (empty salary_data still counts as loaded so UI shows "No data")
+            if (data && data.success === true) {
+                const salaryData = Array.isArray(data.data?.salary_data) ? data.data.salary_data : [];
+                const pagination = data.data?.pagination || {};
                 const currentPage = pagination.page !== undefined ? pagination.page : page;
                 const totalPages = pagination.pages !== undefined ? pagination.pages : 0;
-                // If pagination info exists, use it; otherwise assume more if we got full limit
-                const hasMore = pagination.page !== undefined && pagination.pages !== undefined 
-                    ? pagination.page < pagination.pages 
+                const hasMore = pagination.page !== undefined && pagination.pages !== undefined
+                    ? pagination.page < pagination.pages
                     : salaryData.length === limit;
-                
-                // If loading more, append to existing list
+
                 if (loadMore && currentState.allSalaryTemp && Array.isArray(currentState.allSalaryTemp)) {
                     set({
                         allSalaryTemp: [...currentState.allSalaryTemp, ...salaryData],
@@ -158,7 +154,6 @@ const payrollViewModel = (set, get) => ({
                         }
                     })
                 } else {
-                    // Otherwise, set new list
                     set({
                         allSalaryTemp: salaryData,
                         copyAllSalaryTemp: salaryData,
@@ -172,12 +167,11 @@ const payrollViewModel = (set, get) => ({
                         }
                     })
                 }
-
-            } else if(response.status === 200 && data.success === false){
+            } else if (response.status === 200 && data.success === false) {
                 set({
                     allSalaryTemp: loadMore ? currentState.allSalaryTemp : [],
                     copyAllSalaryTemp: loadMore ? currentState.copyAllSalaryTemp : [],
-                    salaryTemplatesLoaded: false,
+                    salaryTemplatesLoaded: true,
                     salaryTemplatesPagination: {
                         currentPage: 0,
                         totalPages: 0,
@@ -185,11 +179,10 @@ const payrollViewModel = (set, get) => ({
                     }
                 })
             } else {
-                // Fallback for other response structures
                 set({
                     allSalaryTemp: loadMore ? currentState.allSalaryTemp : [],
                     copyAllSalaryTemp: loadMore ? currentState.copyAllSalaryTemp : [],
-                    salaryTemplatesLoaded: false,
+                    salaryTemplatesLoaded: true,
                     salaryTemplatesPagination: {
                         currentPage: 0,
                         totalPages: 0,
@@ -197,9 +190,9 @@ const payrollViewModel = (set, get) => ({
                     }
                 })
             }
-        } catch(error) {
+        } catch (error) {
             set({
-                salaryTemplatesLoaded: false,
+                salaryTemplatesLoaded: true,
                 allSalaryTemp: loadMore ? currentState.allSalaryTemp : [],
                 copyAllSalaryTemp: loadMore ? currentState.copyAllSalaryTemp : [],
                 salaryTemplatesPagination: {
@@ -235,12 +228,13 @@ const payrollViewModel = (set, get) => ({
             console.log('response gettingManageEmpSalary:', response);
             const data = response.data
 
-            // Handle the new response structure with STATUS field
-            if(data && data.STATUS === 'SUCCESSFUL' && data.DATA?.data){
+            // Handle the new response structure (empty data still counts as loaded so UI shows "No data")
+            if (data && data.STATUS === 'SUCCESSFUL') {
+                const empData = Array.isArray(data.DATA?.data) ? data.DATA.data : [];
                 set({
-                    allEmpSalary : data.DATA.data,
-                    copyAllEmpSalary: data.DATA.data,
-                    empSalaryTemplate: data.DATA.salary_templates || [],
+                    allEmpSalary: empData,
+                    copyAllEmpSalary: empData,
+                    empSalaryTemplate: data.DATA?.salary_templates || [],
                     empSalaryLoaded: true,
                     lastEmpBranchId: branch_id,
                     lastEmpSearchTerm: search,
@@ -248,14 +242,13 @@ const payrollViewModel = (set, get) => ({
                     lastEmpTemplateId: template_id,
                     lastGetAll: get_all
                 })
-            } else if(data && data.STATUS === 'ERROR'){
-                set({allEmpSalary : [], empSalaryLoaded: false})
+            } else if (data && data.STATUS === 'ERROR') {
+                set({ allEmpSalary: [], copyAllEmpSalary: [], empSalaryLoaded: true })
             } else {
-                // Fallback for other response structures
-                set({allEmpSalary : [], empSalaryLoaded: false})
+                set({ allEmpSalary: [], copyAllEmpSalary: [], empSalaryLoaded: true })
             }
-        } catch(error) {
-            set({empSalaryLoaded: false, allEmpSalary: []})
+        } catch (error) {
+            set({ empSalaryLoaded: true, allEmpSalary: [], copyAllEmpSalary: [] })
         }
     },
 
@@ -1250,6 +1243,34 @@ const payrollViewModel = (set, get) => ({
             }
             
             return { success: false, error: error.message || 'Failed to save Provident Fund settings' }
+        }
+    },
+
+    /** GET org settings - type: eobi | provident_fund | medical_allowance | social_security */
+    getOrgSettings: async(org_id, branch_id, type) => {
+        try {
+            const response = await payrollApi.getOrgSettings(org_id, branch_id, type)
+            const data = response?.data
+            if (data && data.STATUS === 'SUCCESSFUL' && data.DB_DATA) {
+                return { success: true, data: data.DB_DATA }
+            }
+            return { success: true, data: null }
+        } catch (err) {
+            return { success: false, error: err?.response?.data?.ERROR_DESCRIPTION || err?.message || 'Failed to fetch settings' }
+        }
+    },
+
+    /** PUT update org settings - type and id from existing record */
+    updateOrgSettings: async(type, id, payload) => {
+        try {
+            const response = await payrollApi.updateOrgSettings(type, id, payload)
+            const data = response?.data
+            if (data && (data.STATUS === 'SUCCESSFUL' || data.success)) {
+                return { success: true, data: data.DB_DATA || data.data }
+            }
+            return { success: false, error: data?.ERROR_DESCRIPTION || 'Failed to update settings' }
+        } catch (err) {
+            return { success: false, error: err?.response?.data?.ERROR_DESCRIPTION || err?.message || 'Failed to update settings' }
         }
     },
 

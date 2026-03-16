@@ -179,7 +179,7 @@ const QuestionBank = () => {
     const questionNames = selectedQuestions.map(q => q.name)
 
     openDrawer()
-    settingDrawerSize(558)
+    settingDrawerSize(620)
     settingDrawerTitle('Assign Questions')
     settingComponent(
       <AssignQuestion

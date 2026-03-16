@@ -13,7 +13,11 @@ const GridManageSalary = (props) => {
   return (
     <>
     <div className='grid grid-cols-3 gap-4'>
-        {allSalaryTemp?.map((data, index) => (
+        {!allSalaryTemp?.length ? (
+          <div className="col-span-3 flex justify-center items-center py-12 text-[#666] text-[14px]">
+            No data found
+          </div>
+        ) : allSalaryTemp?.map((data, index) => (
     <Card className="border border-[#3DA5F4] bg-[#F8F9FF] shadow-none" key={index}>
     <CardBody className='p-4'>
         <div className='flex justify-between'>

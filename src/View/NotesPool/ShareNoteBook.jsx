@@ -173,15 +173,19 @@ const EmployeeView = (props) => {
   
     useEffect(() => {
       fetchingAllBranches();
-      handleEmpCheckList();
-    }, []);
+      handleEmpCheckList(selectedBranch?.value);
+    }, [selectedBranch?.value]);
   
     // 🔹 Filter departments by selected branch
     const filteredDepartments = selectedBranch
-      ? employeeCheckListValue?.departmentList?.departments?.filter(
-          (dept) => dept.branch_id === selectedBranch.value
-        )
-      : [];
+    ? employeeCheckListValue?.departmentList?.departments?.filter(
+        (dept) =>
+          Number(dept.branch_id) === Number(selectedBranch.value)
+      )
+    : [];
+
+    console.log("filteredDepartments", filteredDepartments)
+
   
     // 🔹 Employees in selected department
     const filteredEmployees = selectedDept

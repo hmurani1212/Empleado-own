@@ -10,8 +10,9 @@ const EditMemberForm = () => {
     const {editMemberValues, availableTeams, handleUpdateMember, handleEditSelectChange, handleEditCheckboxChange, isUpdatingMember} = useShiftManagement()
     
     return (
+        <div className="pt-5">
         <form onSubmit={handleUpdateMember} >
-            <div className='flex flex-col space-y-2 pt-3'>
+            <div className='flex flex-col space-y-2'>
                 <div className='space-y-2'>
                     <label className='text-[#698592] font-light text-[12px]  font-light text-[12px]'>Select a new Team</label>
                     <CustomSelect 
@@ -100,6 +101,7 @@ const EditMemberForm = () => {
                 </div>
             </div>
         </form>
+        </div>
     )
 }
 

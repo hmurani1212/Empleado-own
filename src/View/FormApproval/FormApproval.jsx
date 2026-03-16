@@ -98,7 +98,7 @@ const FormApproval = () => {
             }
             closeDrawer={toggleDefApprovalFlow}
             title="Define Approval Flow"
-            widthSize={600}
+            widthSize={620}
           />
         )}
       </AnimatePresence>

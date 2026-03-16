@@ -250,7 +250,7 @@ const useHRPolicies = () => {
 
     const handlePolicyUsers = async () => {
         openDrawer()
-        settingDrawerSize(500)
+        settingDrawerSize(620)
         settingDrawerTitle('Policy Users')
         settingComponent(<PolicyUsers
         />)
@@ -259,7 +259,7 @@ const useHRPolicies = () => {
 
     const handlePolicyView = async () => {
         openDrawer()
-        settingDrawerSize(600)
+        settingDrawerSize(620)
         settingDrawerTitle('View Policy')
         settingComponent(<ViewPolicy
         />)
@@ -281,7 +281,7 @@ const useHRPolicies = () => {
             const respData = response.data
             if (response.status === 200 && response.data.STATUS === 'SUCCESSFUL') {
                 openDrawer()
-                settingDrawerSize(500)
+                settingDrawerSize(620)
                 settingDrawerTitle('Edit Policy')
                 settingComponent(<EditPolicy
                     data={policy}

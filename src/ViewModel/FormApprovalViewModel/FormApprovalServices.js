@@ -36,7 +36,7 @@ const useFormApproval = () => {
         
         // Then open the drawer
         openDrawer()
-        settingDrawerSize(500)
+        settingDrawerSize(620)
         settingDrawerTitle(data.title)
         settingComponent(<ViewApprovalFlow />)
     }

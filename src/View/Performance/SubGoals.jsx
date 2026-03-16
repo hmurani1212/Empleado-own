@@ -458,7 +458,7 @@ const SubGoals = () => {
                     }
                     title='Edit Goal'
                     closeDrawer={toggleAddGoal}
-                    widthSize={550}
+                    widthSize={620}
                 />
             }
         </>

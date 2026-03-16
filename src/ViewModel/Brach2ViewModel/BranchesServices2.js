@@ -172,7 +172,7 @@ const useBranches2 = () => {
     const creatingNewBranch = () => {
         openDrawer()
         gettingCountries()
-        settingDrawerSize(500)
+        settingDrawerSize(620)
         settingDrawerTitle('Create New Branch')
         settingComponent(<CreateNewBranch
         />)
@@ -352,7 +352,7 @@ const useBranches2 = () => {
                 settingBranchAdminData(null);
                 gettingCountries();
                 openDrawer();
-                settingDrawerSize(500);
+                settingDrawerSize(620);
                 settingDrawerTitle('Edit Branch');
                 settingComponent(
                     <EditBranchForm
@@ -715,7 +715,7 @@ const useBranches2 = () => {
                 // Use the SAME drawer system as Edit Branch
                 gettingCountries();
                 openDrawer();
-                settingDrawerSize(500);
+                settingDrawerSize(620);
                 settingDrawerTitle('Branch Admin');
                 settingComponent(
                     <MarkBranchAdmin />

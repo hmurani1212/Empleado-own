@@ -324,7 +324,7 @@ const Competency = () => {
             }
             title={addCompetencyValue.show ? "Add Competency" : ""}
             closeDrawer={addCompetencyValue.show ? handleToggleAddCompetency : () => {}}
-            widthSize={600}
+            widthSize={620}
           />
         </div>
       )}

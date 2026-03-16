@@ -76,7 +76,7 @@ const employeesApi = {
         }
         return axiosInstancecoremodule.request({
             method: 'GET',
-            url: `/api/v1/departments?${params.toString()}`,
+            url: `/api/v1/departments?${params.toString()}&get_all_departments=true`,
         })
     },
     getDesignations: function (data) {

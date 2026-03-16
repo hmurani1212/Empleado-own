@@ -235,7 +235,7 @@ const CustomForm = () => {
               handlesSelectAAF={handlesSelectAAF}
             />
           }
-          widthSize={500}
+          widthSize={620}
           title="Assign Approval Flow"
         />
       )}
@@ -321,7 +321,7 @@ const CustomForm = () => {
               )}
             </div>
           }
-          widthSize={600}
+          widthSize={620}
           title="View Form"
         />
       )}

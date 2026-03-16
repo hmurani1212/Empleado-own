@@ -6,7 +6,7 @@ import useShiftManagement from '../../ViewModel/ShiftManagementViewModel/ShiftMa
 const CreateNewShiftForm = () => {
     const {createNewShift, shiftNewValues, handleChangeShift, isCreatingShift} = useShiftManagement()
   return (
-    <>
+    <div className="pt-5">
     <form onSubmit={(e) => createNewShift(e)}>
         <div className='flex flex-col space-y-3' >
             <div>
@@ -28,7 +28,7 @@ const CreateNewShiftForm = () => {
             </div>
         </div>   
     </form>
-    </>
+    </div>
   )
 }
 

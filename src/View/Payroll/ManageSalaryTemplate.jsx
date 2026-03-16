@@ -28,17 +28,22 @@ const ManageSalaryTemplate = () => {
     branchesLoaded,
   } = usePayroll();
 
-  // Handle data loading for direct navigation/page reload
+  const initialSalaryTempLoadRef = React.useRef(false);
+
   useEffect(() => {
-    // Only load data if no branches are available (handles direct navigation/page reload)
-    if (
-      !copyBranchesData ||
-      !Array.isArray(copyBranchesData) ||
-      copyBranchesData.length === 0
-    ) {
+    if (!copyBranchesData?.length) {
       getAllBranchesPayroll();
     }
-  }, []); // Empty dependency array to run only once on mount
+  }, []);
+
+  // Initial load: fetch salary templates for "All Branches" (0) once when this page mounts.
+  // This is the only place we trigger branch_id=0 so no other usePayroll instance can overwrite the user's branch filter.
+  useEffect(() => {
+    if (initialSalaryTempLoadRef.current) return;
+    initialSalaryTempLoadRef.current = true;
+    gettingSalaryTemp(0, "", 0, 10, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

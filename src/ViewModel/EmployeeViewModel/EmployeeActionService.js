@@ -9,6 +9,7 @@ import {
     Option,
     Textarea,
     Button,
+    Checkbox,
 } from "@material-tailwind/react";
 import { gettingEmployeeFrequentSalaryDetails } from "../../services/__frequentApiServices"
 import usePayroll from "../PayrollViewModel/PayrollServices"
@@ -192,39 +193,205 @@ const useEmployeeActionService = () => {
         }
     }
 
-    // SMS Drawer Content Component
+    // SMS text character limit
+    const SMS_TEXT_LIMIT = 450;
+
+    // SMS Drawer Content Component - New UI
     const SmsDrawerContent = ({ employeeData }) => {
+        const [smsText, setSmsText] = useState('');
+        const [selectedContactIds, setSelectedContactIds] = useState([]);
+        const [scheduleType, setScheduleType] = useState('now');
+        const [scheduleDate, setScheduleDate] = useState('');
+        const [scheduleTime, setScheduleTime] = useState('');
+        const [contacts, setContacts] = useState([]);
+        const [loadingContacts, setLoadingContacts] = useState(false);
+        const [sendingSms, setSendingSms] = useState(false);
+
+        const contactList = contacts || [];
+        const smsLength = (smsText || '').length;
+        const isOverLimit = smsLength >= SMS_TEXT_LIMIT;
+
+        const toggleContact = (contactIdOrIndex) => {
+            setSelectedContactIds((prev) =>
+                prev.includes(contactIdOrIndex)
+                    ? prev.filter((id) => id !== contactIdOrIndex)
+                    : [...prev, contactIdOrIndex]
+            );
+        };
+
+        const handleSmsTextChange = (e) => {
+            const value = e.target.value;
+            if (value.length <= SMS_TEXT_LIMIT) setSmsText(value);
+            else setSmsText(value.slice(0, SMS_TEXT_LIMIT));
+        };
+
+        const handleSendSms = async (e) => {
+            e.preventDefault();
+            if (!smsText.trim()) {
+                showToast('Please enter SMS text', 'error');
+                return;
+            }
+            if (selectedContactIds.length === 0) {
+                showToast('Please select at least one contact', 'error');
+                return;
+            }
+            if (scheduleType === 'later' && (!scheduleDate || !scheduleTime)) {
+                showToast('Please select date and time for scheduled SMS', 'error');
+                return;
+            }
+            setSendingSms(true);
+            try {
+                // TODO: integrate with SMS API when available
+                showToast('SMS feature will be available soon', 'info');
+                // closeDrawer();
+            } catch (err) {
+                showToast('Failed to send SMS', 'error');
+            } finally {
+                setSendingSms(false);
+            }
+        };
+
+        const isCellNumber = (c) => {
+            if (!c?.contact_type) return true;
+            const t = String(c.contact_type).toLowerCase();
+            if (t === 'email') return false;
+            return /mobile|phone|contact number|cell|number/i.test(t);
+        };
+
+        useEffect(() => {
+            const rawContacts = employeeData?.Official_Info?.contacts || employeeData?.contacts || [];
+            if (Array.isArray(rawContacts) && rawContacts.length > 0) {
+                setContacts(rawContacts.filter(isCellNumber));
+                return;
+            }
+            const userId = employeeData?.user_id ?? employeeData?.id ?? employeeData?.emp_id ?? employeeData?.employee_id;
+            if (!userId) {
+                setContacts([]);
+                return;
+            }
+            setLoadingContacts(true);
+            employeesApi
+                .getEmployeeProfileV2(userId)
+                .then((res) => {
+                    const data = res?.data;
+                    if (data?.STATUS === 'SUCCESSFUL' && data?.DB_DATA) {
+                        const official = data.DB_DATA?.Official_Info;
+                        const list = official?.contacts || data.DB_DATA?.contacts || [];
+                        const all = Array.isArray(list) ? list : [];
+                        setContacts(all.filter(isCellNumber));
+                    } else {
+                        setContacts([]);
+                    }
+                })
+                .catch(() => setContacts([]))
+                .finally(() => setLoadingContacts(false));
+        }, [employeeData]);
+
         return (
-            <div className="flex flex-col items-center justify-center px-4">
-                <div className="mb-6">
-                    <svg className="w-[100px] h-[100px] text-[#0ACF97]" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                    </svg>
+            <form onSubmit={handleSendSms} className="flex flex-col gap-6 px-4 pt-4 pb-6">
+                {/* SMS Text */}
+                <div>
+                    <label className="text-[#698592] text-[12px] mb-1 block font-medium">SMS Text</label>
+                    <Textarea
+                        color="blue"
+                        label=""
+                        placeholder="Type your message..."
+                        value={smsText}
+                        onChange={handleSmsTextChange}
+                        maxLength={SMS_TEXT_LIMIT}
+                        className="min-h-[100px] text-sm text-gray-700"
+                        rows={4}
+                    />
+                    <div className={`text-right text-[12px] mt-1 ${isOverLimit ? 'text-red-500 font-semibold' : 'text-[#698592]'}`}>
+                        {smsLength}/{SMS_TEXT_LIMIT}
+                    </div>
                 </div>
 
-                <div className="text-center">
-                    <h3 className="text-[1.38vw] font-semibold text-gray-800 mb-4">
-                        SMS Functionality
-                    </h3>
+                {/* Contact */}
+                <div>
+                    <label className="text-[#698592] text-[12px] mb-2 block font-medium">Contact</label>
+                    {loadingContacts ? (
+                        <div className="text-sm text-gray-500 py-2">Loading contacts...</div>
+                    ) : contactList.length === 0 ? (
+                        <div className="text-sm text-gray-500 py-2">No contacts found for this employee.</div>
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            {contactList.map((contact, index) => {
+                                const id = contact.id ?? `contact-${index}`;
+                                const label = contact.contact || `Contact ${index + 1}`;
+                                return (
+                                    <div key={id} className="flex items-center gap-0">
+                                        <Checkbox
+                                            color="blue"
+                                            checked={selectedContactIds.includes(id)}
+                                            onChange={() => toggleContact(id)}
+                                            className="border-gray-300 shrink-0 !w-4 !h-4 !p-0 !m-0"
+                                        />
+                                        <span className="text-sm text-gray-700 ml-0.5">{label}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
 
-                    <p className="text-gray-600 mb-6 text-[1.10vw]">
-                        SMS functionality will be launched soon!
-                    </p>
-
-                    {employeeData && (
-                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                            <h4 className="text-[0.90vw] font-medium text-gray-700 mb-2">
-                                Employee Details:
-                            </h4>
-                            <div className="text-gray-600 text-left">
-                                <p className="text-[0.90vw]"><strong>Name:</strong> {employeeData?.name || 'N/A'}</p>
-                                <p className="text-[0.90vw]"><strong>ID:</strong> {employeeData?.id || employeeData?.emp_id || 'N/A'}</p>
-                                <p className="text-[0.90vw]"><strong>Mobile:</strong> {employeeData?.contacts?.id || 'No contact info'}</p>
+                {/* Scheduling */}
+                <div>
+                    <label className="text-[#698592] text-[12px] mb-2 block font-medium">Scheduling</label>
+                    <div className="flex gap-6">
+                        <Radio
+                            name="scheduleType"
+                            label="Send Now"
+                            color="blue"
+                            checked={scheduleType === 'now'}
+                            onChange={() => setScheduleType('now')}
+                        />
+                        <Radio
+                            name="scheduleType"
+                            label="Schedule for Later"
+                            color="blue"
+                            checked={scheduleType === 'later'}
+                            onChange={() => setScheduleType('later')}
+                        />
+                    </div>
+                    {scheduleType === 'later' && (
+                        <div className="flex gap-4 mt-4">
+                            <div className="flex-1">
+                                <Input
+                                    type="date"
+                                    color="blue"
+                                    label="Date"
+                                    value={scheduleDate}
+                                    onChange={(e) => setScheduleDate(e.target.value)}
+                                    className="text-sm"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <Input
+                                    type="time"
+                                    color="blue"
+                                    label="Time"
+                                    value={scheduleTime}
+                                    onChange={(e) => setScheduleTime(e.target.value)}
+                                    className="text-sm"
+                                />
                             </div>
                         </div>
                     )}
                 </div>
-            </div>
+
+                {/* Send SMS Button */}
+                <div className="pt-2">
+                    <Button
+                        type="submit"
+                        color="blue"
+                        disabled={sendingSms || loadingContacts}
+                        className="bg-[#3DA5F4] text-white font-medium normal-case"
+                    >
+                        {sendingSms ? 'Sending...' : 'Send SMS'}
+                    </Button>
+                </div>
+            </form>
         );
     };
 

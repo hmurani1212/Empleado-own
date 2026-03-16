@@ -16,7 +16,7 @@ const AddMemberForm = (props) => {
         setCurrentPage(1)
     }, [newMemberValues?.department])
   return (
-    <>
+    <div className="pt-5">
     <form onSubmit = {(e) => handleAddMemberPlanner(e)}>
     <div className='flex flex-col space-y-4'>
       <div className=''>
@@ -115,7 +115,7 @@ const AddMemberForm = (props) => {
     </div>
       
     </form>
-    </>
+    </div>
   )
 }
 

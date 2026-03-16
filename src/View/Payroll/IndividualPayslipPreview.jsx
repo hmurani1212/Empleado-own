@@ -43,7 +43,7 @@ const normalizePayslipConfig = (config) => {
   }
 }
 const normalizeAttendanceSummary = (summary) => {
-  if (!summary || typeof summary !== 'object') return { total_adjusted_late_min: 0, total_late_minutes_used: 0, calculated_absentee_deduction: 0, calculated_late_deduction: 0, att_deductions_from_payslip: 0, early_leave_downtime: 0, calculation_method: '0', formula: 0, daily_req_hrs: 0, total_days: 0, present_days: 0, absent_days: 0, leaves: 0 }
+  if (!summary || typeof summary !== 'object') return { total_adjusted_late_min: 0, total_late_minutes_used: 0, calculated_absentee_deduction: 0, calculated_late_deduction: 0, att_deductions_from_payslip: 0, early_leave_downtime: 0, calculation_method: '0', formula: 0, daily_req_hrs: 0, total_days: 0, present_days: 0, absent_days: 0, leaves: 0, payroll_type: '' }
   return {
     total_adjusted_late_min: formatNumber(summary.total_adjusted_late_min),
     total_late_minutes_used: formatNumber(summary.total_late_minutes_used),
@@ -58,7 +58,17 @@ const normalizeAttendanceSummary = (summary) => {
     present_days: formatNumber(summary.present_days),
     absent_days: formatNumber(summary.absent_days),
     leaves: formatNumber(summary.leaves),
+    payroll_type: summary.payroll_type != null && summary.payroll_type !== '' ? String(summary.payroll_type) : '',
   }
+}
+
+// Format payroll_type from API (e.g. "time_based") for display (e.g. "Time based")
+const formatPayrollTypeLabel = (payrollType) => {
+  if (!payrollType || String(payrollType).trim() === '') return 'Attendance base'
+  return String(payrollType)
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
 }
 
 // Helper function to format seconds to hours and minutes
@@ -954,7 +964,7 @@ const IndividualPayslipPreview = () => {
                {/* First Row */}
                <div className="flex justify-between items-center w-full text-left">
                  <span className="text-xs text-gray-600 font-bold">Payroll</span>
-                 <span className="text-xs text-gray-600">Attendance base</span>
+                 <span className="text-xs text-gray-600">{formatPayrollTypeLabel(payslipData.attendance_summary?.payroll_type)}</span>
                  <span className="text-xs text-gray-600 font-bold">Required</span>
                  <span className="text-xs text-gray-600">{formatHoursMinutes(payslipData.total_working || 0)} +Holidays: 0</span>
                  <span className="text-xs text-gray-600 font-bold">Earned</span>
