@@ -21,9 +21,18 @@ import { GrFormClose } from "react-icons/gr";
 import { MdDone, MdUpload } from "react-icons/md";
 import { GrPowerReset } from "react-icons/gr";
 import defaultUserAvatar from '../../../constants/avatar';
+import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../../utils/imageUrlUtils";
 // import { getImageUrlFromEmployeeData } from "../../";
 const EmpDashboard = () => {
-  const { empDashboardData, handlePolicyView } = useEmpDashboard();
+  const { empDashboardData, handlePolicyView, gettingEmpDashboardData } = useEmpDashboard();
+
+  // Single initial fetch for dashboard data (avoids duplicate calls from useEmpDashboard in children)
+  useEffect(() => {
+    const d = new Date();
+    gettingEmpDashboardData(d.getMonth() + 1, d.getFullYear());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [showTooltip, setShowTooltip] = useState(false);
   const [showTooltipTwo, setShowTooltipTwo] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -359,19 +368,27 @@ const EmpDashboard = () => {
   const attendanceData = empDashboardData?.attendance
   const leaveBalance = empDashboardData?.leave_balance
 
-  const today = new Date();
+  const [duration, setDuration] = useState('');
 
-  function getDuration(from, to) {
-    if (!from || !to) return '';
 
-    let years = to.getFullYear() - from.getFullYear();
-    let months = to.getMonth() - from.getMonth();
-    let days = to.getDate() - from.getDate();
+  const [imageDp, setImageDp] = useState(null);
+
+  async function getDuration() {
+    // console.log('from and to', pInfo?.join_date)
+    const past_date = await pInfo?.join_date; // unix timestamp (seconds)
+    const now = Math.floor(Date.now() / 1000);
+
+    const past = new Date(past_date * 1000);
+    const current = new Date(now * 1000);
+
+    let years = current.getFullYear() - past.getFullYear();
+    let months = current.getMonth() - past.getMonth();
+    let days = current.getDate() - past.getDate();
 
     if (days < 0) {
       months--;
-      const prevMonth = new Date(to.getFullYear(), to.getMonth(), 0);
-      days += prevMonth.getDate();
+      const lastMonth = new Date(current.getFullYear(), current.getMonth(), 0);
+      days += lastMonth.getDate();
     }
 
     if (months < 0) {
@@ -379,17 +396,37 @@ const EmpDashboard = () => {
       months += 12;
     }
 
-    return `${years} year${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''
-      } ${days} day${days !== 1 ? 's' : ''}`;
+    const employeeData =  {...pInfo}
+
+    setImageDp(getImageUrlFromEmployeeData(employeeData))
+
+    setDuration(`${years} years ${months} months ${days} days`);
+
+    return `${years} years ${months} months ${days} days`;
+
+    ////console.log(`${years} years ${months} months ${days} days`);
   }
 
-  const workingFrom = pInfo?.working_from
-    ? (() => {
-      const [day, month, year] = pInfo.working_from.split("/").map(Number);
-      return new Date(year, month - 1, day);
-    })()
-    : null;
-  const workingSince = workingFrom ? getDuration(workingFrom, today) : '';
+  ////console.log('is dp exist', pInfo?.dp)
+
+  useEffect(() => {
+    getDuration();
+  }, [pInfo?.join_date]);
+
+  //  const result =  getDuration();
+  //  console.log('duration result', result)
+
+  // console.log('what is the state date', duration)
+
+
+
+  // console.log('this is the image dp', imageDp) 
+  // ? (() => {
+  //   const [day, month, year] = pInfo.joing_date.split("/").map(Number);
+  //   return new Date(year, month - 1, day);
+  // })()
+  // : null;
+  // const workingSince = workingFrom ? getDuration(workingFrom, today) : '';
 
   // Check if data is loading
   // const isLoading = !empDashboardData || !pInfo;
@@ -483,7 +520,7 @@ const EmpDashboard = () => {
         >
           <img
             className='w-full h-[170px] object-cover rounded-tl-lg rounded-bl-lg transition-transform duration-300 ease-in-out'
-            src={pInfo?.dp ? pInfo?.dp : 'https://emp-beta.veevotech.com/images/icons/empm.jpg'}
+            src={pInfo?.dp  ? imageDp : 'https://emp-beta.veevotech.com/images/icons/empm.jpg'}
             alt='profile'
           />
           {showCamera && (
@@ -561,7 +598,7 @@ const EmpDashboard = () => {
                   icon={<PiOfficeChairLight />}
                   label="Working Since"
                   value={pInfo?.working_from || "--"}
-                  extra={`Experience: ${workingSince}`}
+                  extra={`Experience: ${duration}`}
                   showTooltip={showTooltipTwo}
                   setShowTooltip={setShowTooltipTwo}
                 />

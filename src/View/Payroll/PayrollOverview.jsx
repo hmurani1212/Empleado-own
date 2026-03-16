@@ -1,5 +1,5 @@
 import { Card, CardBody, Typography } from "@material-tailwind/react";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import usePayroll from "../../ViewModel/PayrollViewModel/PayrollServices";
 import { PayrollOverviewSkeleton } from "./PayrollSkeletons";
 import BarChart from "./BarChart";
@@ -32,11 +32,14 @@ const PayrollOverview = () => {
     handleChangeYear,
     payrollOverviewLoading,
   } = usePayroll();
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     const currentYear = new Date().getFullYear();
     getDashboardData(currentYear);
-  }, []);
+  }, [getDashboardData]);
   const years = getAllYears();
 
   if (payrollOverviewLoading) {

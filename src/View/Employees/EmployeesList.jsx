@@ -216,8 +216,8 @@ const EmployeesList = (props) => {
                   </td>
                   <td className="px-4 py-4">
                     <Typography className="text-sm font-normal text-gray-600 font-poppins">
-                      {ele?.contacts != null
-                        ? ele?.contacts[0]?.contact
+                      {ele?.contacts != null && Array.isArray(ele.contacts)
+                        ? (ele.contacts.find((c) => c?.contact_type === "mobile")?.contact ?? "-")
                         : "-"}
                     </Typography>
                   </td>

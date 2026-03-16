@@ -80,10 +80,11 @@ const ListNotices = () => {
     "Actions",
   ];
 
-  // Fetch notices list on mount (page 1)
-  // Fetch notices list on mount (page 1). Use cache when returning (forceReload: false).
-  // API is skipped in store when cache exists; refetch only after add/edit/delete (forceReload: true).
+  // Fetch notices list once on mount (page 1). Ref guard avoids duplicate call from Strict Mode or double mount.
+  const hasFetchedRef = React.useRef(false);
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     const fetchFirstPage = async () => {
       setInitialLoading(true);
       try {
@@ -94,8 +95,7 @@ const ListNotices = () => {
       }
     };
     fetchFirstPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [getAllNoticesList]);
 
   // Reset pagination when filters change (wrap original handler)
   const handleFilterChange = async (selectedOption, field) => {

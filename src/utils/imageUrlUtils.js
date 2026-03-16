@@ -235,6 +235,9 @@ export function extractImageDataFromEmployee(employeeData) {
 export function getImageUrlFromEmployeeData(employeeData, thumbnail = false) {
   const { dp, dp_folder, gender, dpIsFullUrl } = extractImageDataFromEmployee(employeeData);
 
+  // console.log('Extracted image data:', { dp, dp_folder, gender, dpIsFullUrl });
+
+
   // If API returned a full image URL, use it directly
   if (dpIsFullUrl && typeof dp === 'string') {
     return dp;

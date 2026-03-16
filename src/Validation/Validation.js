@@ -154,7 +154,9 @@ const validateMultipleEmployeePRC = object().shape({
         assigned_to: array()
                 .of(string().required('Employee name is required'))
                 .min(1, 'At least one employee name is required'),
-        review_day: string().required('Review day is required')
+        review_day: string().required('Review day is required'),
+        competency_Manage_by: string().oneOf(['Admin', 'Custom employee', 'reporting manager', 'self'], 'Competency Manage by must be one of: Admin, Custom employee, reporting manager, self'),
+        Goal_Manage_by: string().oneOf(['Admin', 'Custom employee', 'reporting manager', 'self'], 'Goal Manage by must be one of: Admin, Custom employee, reporting manager, self'),
 });
 
 const validateSingleEmployeePRCUpdate = object().shape({
@@ -183,7 +185,9 @@ const validateSingleEmployeePRCUpdate = object().shape({
         department: string().required('Department is required'),
         employee: string().required('Employee is required'),
         assigned_to: string().required('Assigned to is required'),
-        review_day: string().required('Review day is required')
+        review_day: string().required('Review day is required'),
+        competency_Manage_by: string().oneOf(['Admin', 'Custom employee', 'reporting manager', 'self'], 'Competency Manage by must be one of: Admin, Custom employee, reporting manager, self'),
+        Goal_Manage_by: string().oneOf(['Admin', 'Custom employee', 'reporting manager', 'self'], 'Goal Manage by must be one of: Admin, Custom employee, reporting manager, self'),
 });
 
 const validateAddSubDepartment = object().shape({

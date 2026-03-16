@@ -34,11 +34,8 @@ const useEmpDashboard = ()=>{
         currentDate:getCurrentMonthObject(new Date(currentYearIndex, currentMonthIndex)),
     })
 
-
-    useEffect(()=>{
-        // Initial API call with current month and year
-        gettingEmpDashboardData(updateMonth.id, currentYearIndex);
-    },[gettingEmpDashboardData, updateMonth.id, currentYearIndex])
+    // Initial dashboard API call is made once from EmpDashboard.jsx on mount to avoid duplicate
+    // calls when useEmpDashboard is used in multiple children (EmpLazinees, EmpDuties, etc.)
 
     // Filter attendance data for specific month from the main API response
     const filterAttendanceForMonth = useCallback((month, year) => {

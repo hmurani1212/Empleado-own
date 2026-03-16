@@ -18,12 +18,14 @@ const EmpAttendance = () => {
   const { gettingEmpAttendanceData, empAttendancData, selectedValue, handleSelectAttendance, handleMobileBaseAttendance } = useEmpAttendanceServices();
   const { empDashboardData } = useEmpDashboard();
   
-  useEffect(()=>{
-    gettingEmpAttendanceData({
-      month: selectedValue.month.value,
-      year: selectedValue.year.value
-    })
-  },[selectedValue.month.value, selectedValue.year.value])
+  // Single fetch on mount and when month/year change; guard against empty params
+  useEffect(() => {
+    const month = selectedValue.month?.value;
+    const year = selectedValue.year?.value;
+    if (month != null && year != null) {
+      gettingEmpAttendanceData({ month, year });
+    }
+  }, [selectedValue.month?.value, selectedValue.year?.value]);
 
 
   const months = getAllMonths()

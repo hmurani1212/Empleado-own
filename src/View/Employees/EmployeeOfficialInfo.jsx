@@ -14,7 +14,8 @@ const EmployeeOfficialInfo = ({
     setOpenOfficialInfoDrawer,
     isUpdating,
     setIsUpdating,
-    setEmployeeData
+    setEmployeeData,
+    onRefreshProfile
 }) => {
     // Use the same hook as AddEditPRC
     const {
@@ -33,6 +34,7 @@ const EmployeeOfficialInfo = ({
         department: null,
         designation: null,
         tag: null,
+        tag_other: '',
         join_date: '',
         eobi: '0',
         eobi_number: '',
@@ -115,13 +117,15 @@ const EmployeeOfficialInfo = ({
             const branchId = officialInfo.branch?.id || employeeData?.employee?.branch?.id || null;
             const deptId = officialInfo.department?.id || employeeData?.employee?.department?.id || null;
 
+            const tagId = officialInfo.tage?.[0]?.id || null;
             setOfficialInfoForm({
                 emp_id: officialInfo.emp_id || employeeData?.emp_id?.id || '',
                 employment_status: officialInfo.employment_status || 'Permanent',
                 branch: branchId,
                 department: deptId,
                 designation: officialInfo.designation || employeeData?.designationObj?.id || null,
-                tag: officialInfo.tage?.[0]?.id || null,
+                tag: tagId,
+                tag_other: tagId === 'other' ? (officialInfo.tage?.[0]?.tag_name || '') : '',
                 join_date: officialInfo.join_date ? formatTimestampToDate(officialInfo.join_date) : '',
                 eobi: officialInfo.eobi || '0',
                 eobi_number: officialInfo.eobi_number || '',
@@ -217,10 +221,13 @@ const EmployeeOfficialInfo = ({
     };
 
     const handleFormChange = async (field, value) => {
-        setOfficialInfoForm(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        setOfficialInfoForm(prev => {
+            const next = { ...prev, [field]: value };
+            if (field === 'tag' && value !== 'other') {
+                next.tag_other = '';
+            }
+            return next;
+        });
 
         // When branch changes, fetch departments and reset department/designation
         if (field === 'branch') {
@@ -262,6 +269,18 @@ const EmployeeOfficialInfo = ({
         return value;
     };
 
+    /** Return designation id for API (backend expects id, not name). */
+    const getDesignationIdForApi = () => {
+        const d = officialInfoForm.designation;
+        if (d === null || d === undefined || d === '') return '';
+        const idFromForm = getValue(d);
+        const foundById = designationOptions.find(opt => opt.value === idFromForm || String(opt.value) === String(idFromForm));
+        if (foundById) return foundById.value;
+        const foundByLabel = designationOptions.find(opt => (opt.label && String(opt.label) === String(idFromForm)));
+        if (foundByLabel) return foundByLabel.value;
+        return idFromForm;
+    };
+
     const handleSubmit = async (id) => {
         try {
             setIsUpdating(true);
@@ -275,8 +294,9 @@ const EmployeeOfficialInfo = ({
                 employment_status: getValue(officialInfoForm.employment_status),
                 emp_branch: getValue(officialInfoForm.branch),
                 emp_deptt: getValue(officialInfoForm.department),
-                designation: getValue(officialInfoForm.designation),
-                emp_tag: getValue(officialInfoForm.tag),
+                designation: getDesignationIdForApi(),
+                emp_tag: officialInfoForm.tag === 'other' ? (officialInfoForm.tag_other || '').trim() : getValue(officialInfoForm.tag),
+                new_emp_tag: officialInfoForm.tag === 'other' ? (officialInfoForm.tag_other || '').trim() : '',
                 join_date: officialInfoForm.join_date || '',
                 eobi: officialInfoForm.eobi,
                 eobi_number: officialInfoForm.eobi === '1' ? officialInfoForm.eobi_number : '',
@@ -294,15 +314,26 @@ const EmployeeOfficialInfo = ({
             if (response.status === 200 && (responseData.STATUS === 'SUCCESSFUL' || responseData.status === 'success')) {
                 showToast('Official information updated successfully', 'success');
 
-                // Refresh employee profile data
-                if (setEmployeeData) {
-                    // Update local state optimistically
+                // Fetch updated profile from API so tag (e.g. "Other" custom name) and all fields are in sync
+                if (onRefreshProfile && typeof onRefreshProfile === 'function') {
+                    try {
+                        const refreshedData = await onRefreshProfile();
+                        if (refreshedData?.DB_DATA && setEmployeeData) {
+                            setEmployeeData(refreshedData.DB_DATA);
+                        }
+                    } catch (refreshError) {
+                        console.error('Error refreshing employee profile after update:', refreshError);
+                        if (setEmployeeData) {
+                            setEmployeeData(prevData => ({
+                                ...prevData,
+                                Official_Info: { ...prevData.Official_Info, ...apiData }
+                            }));
+                        }
+                    }
+                } else if (setEmployeeData) {
                     setEmployeeData(prevData => ({
                         ...prevData,
-                        Official_Info: {
-                            ...prevData.Official_Info,
-                            ...apiData
-                        }
+                        Official_Info: { ...prevData.Official_Info, ...apiData }
                     }));
                 }
 
@@ -378,7 +409,7 @@ const EmployeeOfficialInfo = ({
                                     }}
                                     customStyles={false}
                                     isSearchable={true}
-                                    isClearable={true}
+                                    isClearable={false}
                                 />
                             </div>
                             <div>
@@ -391,7 +422,7 @@ const EmployeeOfficialInfo = ({
                                     }}
                                     customStyles={true}
                                     isSearchable={true}
-                                    isClearable={true}
+                                    isClearable={false}
                                 />
                             </div>
                             <div>
@@ -404,24 +435,9 @@ const EmployeeOfficialInfo = ({
                                     }}
                                     customStyles={false}
                                     isSearchable={true}
-                                    isClearable={true}
+                                    isClearable={false}
                                 />
                             </div>
-                        </div>
-
-                        {/* Tag */}
-                        <div>
-                            <CustomSelect
-                                placeHolderTitle="Tag"
-                                value={getSelectedTagValue()}
-                                options={tagOptions}
-                                onChangeHandler={(selected) => {
-                                    handleFormChange('tag', selected?.value || null);
-                                }}
-                                customStyles={false}
-                                isSearchable={true}
-                                isClearable={true}
-                            />
                         </div>
 
                         {/* EOBI */}
@@ -580,6 +596,31 @@ const EmployeeOfficialInfo = ({
                                 onChange={(e) => handleFormChange('job_description', e.target.value)}
                                 rows={4}
                             />
+                        </div>
+
+                        {/* Tag */}
+                        <div className="space-y-2">
+                            <CustomSelect
+                                placeHolderTitle="Tag"
+                                value={getSelectedTagValue()}
+                                options={tagOptions}
+                                onChangeHandler={(selected) => {
+                                    handleFormChange('tag', selected?.value ?? null);
+                                }}
+                                customStyles={false}
+                                isSearchable={true}
+                                isClearable={false}
+                            />
+                            {officialInfoForm.tag === 'other' && (
+                                <Input
+                                    className="!h-11 !rounded-6"
+                                    color="blue"
+                                    label="Specify other (enter your tag)"
+                                    placeholder="Enter your tag"
+                                    value={officialInfoForm.tag_other}
+                                    onChange={(e) => handleFormChange('tag_other', e.target.value)}
+                                />
+                            )}
                         </div>
 
                         {/* Submit Button */}

@@ -6,7 +6,6 @@ const useSideMenu = ()=>{
     // Removed unused dashboardDataFunc and getEmployeesList - these are now handled by individual components
     const handleEmpMount = useStore((state)=> state.handleEmpMount)
     const getAllDepartments = useStore((state)=> state.getAllDepartments)
-    const getBranchEmployeeList = useStore((state)=> state.getBranchEmployeeList)
     const mobilevToggleFalse = useStore((state)=> state.mobilevToggleFalse)
     const gettingAllBranches = useStore((state)=> state.gettingAllBranches)
     const handleMountBranch = useStore((state)=> state.handleMountBranch)
@@ -19,7 +18,6 @@ const useSideMenu = ()=>{
     // const getPoliciesList = useStore ((state) => state.getPoliciesList)
     const getAllHrPolicies = useStore((state)=>state.getAllHrPolicies)
     const handleMountPolicies = useStore((state) => state.handleMountPolicies)
-    const getAllBranchesHrPolicy = useStore((state) => state.getAllBranchesHrPolicy)
     const gettingAllVacanciesList = useStore((state) => state.gettingAllVacanciesList)
     const handleMountHire = useStore((state) => state.handleMountHire)
     // const gettingDashboardRecuirment = useStore((state) => state.gettingDashboardRecuirment)
@@ -40,8 +38,7 @@ const useSideMenu = ()=>{
     
     
     // Removed unused gettingEmpDashboardData - dashboard API is now handled by individual components
-    const gettingEmpAttendanceData = useStore((state) => state.gettingEmpAttendanceData)
-    
+    // Removed gettingEmpAttendanceData - EmpAttendance.jsx fetches once on mount with correct month/year
 
     const [activeTab, setActiveTab] = useState(1)
 
@@ -62,43 +59,34 @@ const useSideMenu = ()=>{
                     // Employee Attendance (for Employee role)
                     break;
                 case 3:
-                    // Employees (id: 3)
-                    handleEmpMount()
+                    // Employees (id: 3) - no extra API; list page uses getEmployeesWithFilters only
                     break;
                 case 4:
-                    // Departments (id: 4) - Call getBranchEmployeeList
-                    // This calls get_branch_employee API (not get_branches)
+                    // Departments (id: 4) - don't call getBranchEmployeeList here; DepartmentsMain.jsx fetches on mount (avoids duplicate get_branch_employee)
                     handleMountDept()
-                    getBranchEmployeeList()
                     break;
                 case 5:
-                    // Branches (id: 5) - Call gettingAllBranches
-                    const data = {status: 1}
-                    gettingAllBranches(data)
+                    // Branches (id: 5) - don't call gettingAllBranches here; Branches.jsx fetches via gettingAllBranchesNew on mount (avoids duplicate get_branches)
                     handleMountBranch()
                     break;
 
-                case 5:
+                case 6:
+                    // HR Policies (id: 6) - don't call getAllBranchesHrPolicy here; ManagePolicies.jsx fetches branches via fetchingAllBranches on mount (avoids duplicate get_branch_employee)
                     const branch_id = 0
                     const status = 1
-                    
                     handleMountPolicies()
                     getAllHrPolicies(branch_id, status)
-                    getAllBranchesHrPolicy()
-                    
                     break;
-                
-                case 6:
-                    getAnnualGrossSalary()
-                    getDataGrossNet()
-                    getGrossSalary()
-                break;
-                
+
                 case 7:
+                    // Payroll (id: 7) - don't call dashboard-data here; PayrollOverview fetches on mount (avoids 3 duplicate API calls)
+                    break;
+
+                case 8:
+                    // Notices (id: 8) - don't call getAllNoticesList here; ListNotices.jsx fetches on mount (avoids duplicate notices API)
                     handleNoticeMount()
                     getAllDepartments()
-                    getAllNoticesList()
-                break;
+                    break;
 
                 case 9:
                     gettingLateComers()
@@ -107,9 +95,8 @@ const useSideMenu = ()=>{
                 break;
 
                 case 10:
-                    handleMountShift()
-                    gettingAllShift()
-                break;
+                    // Attendance (Admin) – no shift planners API; only Shift Planners page (case 11) needs it
+                    break;
 
                 case 11:
                     handleMountShift()
@@ -137,9 +124,13 @@ const useSideMenu = ()=>{
                 break;
 
                 case 16:
+                    // Performance (id: 16) – no get_dynamic_Form here; Performance page uses get_performance_review only
+                    break;
+
+                case 17:
+                    // Form & Approval (id: 17) – don't call gettingCustomForm here; CustomForm.jsx fetches on mount (avoids duplicate get_dynamic_Form)
                     handleMountCustomForm()
-                    gettingCustomForm()
-                break;
+                    break;
 
                 default:
                     break;
@@ -151,7 +142,8 @@ const useSideMenu = ()=>{
                     // Removed duplicate gettingEmpDashboardData call
                     break;
                 case 2:
-                    gettingEmpAttendanceData()
+                    // Attendance: do not call gettingEmpAttendanceData() here (no args = empty month/year).
+                    // EmpAttendance.jsx fetches once on mount with correct month/year.
                     break;
                 default:
                     break

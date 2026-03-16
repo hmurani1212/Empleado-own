@@ -2,7 +2,8 @@ import { FaBuilding, FaCalendarAlt, FaHotel, FaUserCheck, FaUserTie, FaUsers } f
 import { CiClock2 } from "react-icons/ci";
 import { MdBlock } from "react-icons/md";
 import useStore from '../../Store/store'
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import dashboardApi from '../../Model/Data/Dashboard/Dashboard';
 import EmpProfile from '../../View/Dashoboard/EmpProfile';
 import employeesApi from '../../Model/Data/Employees/Employees';
@@ -12,9 +13,13 @@ import { getUserData } from '../../Authentication/jwt_decode';
 import { IoTime } from "react-icons/io5";
 import axios from 'axios';
 
+// React Query cache for admin dashboard – 5 minutes to avoid repeated API calls
+const ADMIN_DASHBOARD_QUERY_KEY = 'admin_dashboard';
+const ADMIN_DASHBOARD_CACHE_MS = 5 * 60 * 1000;
 
 const useDashboard = () => {
 
+    const queryClient = useQueryClient();
     const dashboardDataFunc = useStore((state) => state.dashboardDataFunc)
     const dashboardData = useStore((state) => state.dashboardData)
 
@@ -24,12 +29,10 @@ const useDashboard = () => {
     const loading = useStore((state) => state.loading)
     const fetchRoleBasedData = useStore((state) => state.fetchRoleBasedData)
 
-    // Admin Dashboard API from store
+    // Admin Dashboard API from store (state only; fetch is cached below)
     const adminDashboardData = useStore((state) => state.adminDashboardData)
     const adminDashboardLoading = useStore((state) => state.adminDashboardLoading)
-    const getAdminDashboardData = useStore((state) => state.getAdminDashboardData)
     const selectedDate = useStore((state) => state.selectedDate)
-    const applyDateFilter = useStore((state) => state.applyDateFilter)
 
     // Late Comers API from store
     const lateComersData = useStore((state) => state.lateComersData)
@@ -40,6 +43,39 @@ const useDashboard = () => {
     const todayAttendanceData = useStore((state) => state.todayAttendanceData)
     const todayAttendanceLoading = useStore((state) => state.todayAttendanceLoading)
     const getTodayAttendanceData = useStore((state) => state.getTodayAttendanceData)
+
+    // Cached admin dashboard fetch – 5 min React Query cache so API is not called repeatedly
+    const getAdminDashboardData = useCallback(async (date = null) => {
+        useStore.setState({ adminDashboardLoading: true });
+        const dateToUse = date || new Date().toISOString().split('T')[0];
+        try {
+            const data = await queryClient.fetchQuery({
+                queryKey: [ADMIN_DASHBOARD_QUERY_KEY, dateToUse],
+                queryFn: async () => {
+                    const res = await dashboardApi.getAdminDashboardData({ date: dateToUse });
+                    const d = res.data;
+                    if (d.STATUS === 'SUCCESS') return d;
+                    throw new Error(d.ERROR_DESCRIPTION || 'Failed to load dashboard');
+                },
+                staleTime: ADMIN_DASHBOARD_CACHE_MS,
+                gcTime: ADMIN_DASHBOARD_CACHE_MS,
+            });
+            useStore.setState({
+                adminDashboardData: data.DB_DATA,
+                selectedDate: date ?? null,
+                adminDashboardLoading: false,
+            });
+            return data.DB_DATA;
+        } catch (err) {
+            console.log('Error fetching admin dashboard data:', err);
+            useStore.setState({ adminDashboardLoading: false });
+            return null;
+        }
+    }, [queryClient]);
+
+    const applyDateFilter = useCallback(async (date) => {
+        return await getAdminDashboardData(date);
+    }, [getAdminDashboardData]);
 
     const sideMenuToggleState = useStore((state) => state.sideMenuToggleState)
     const newStaticDataHandle = useStore((state) => state.newStaticDataHandle)

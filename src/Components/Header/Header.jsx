@@ -12,7 +12,7 @@ import {
 import empLogo from "../../assets/images/empleado-logo.png";
 import defaultUserAvatar from "../../constants/avatar";
 import useStore from "../../Store/store";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Avatar,
   Badge,
@@ -32,6 +32,7 @@ import { showToast } from "../Toaster/Toaster";
 import useAttendance from "../../ViewModel/AttendanceViewModel/AttendanceServices";
 import { formatTimestamp } from "../../View/Branches/utils";
 import ReportForm from "../ReportForm/ReportForm";
+import { useLiveBiometricDevices } from "../../hooks/useLiveBiometricDevices";
 
 function Header() {
   const toggleState = useStore((state) => state.sideMenuToggleState);
@@ -41,7 +42,7 @@ function Header() {
   const empDashboardData = useStore((state) => state.empDashboardData);
   const { toggleMenuHeader, openMenuHeader, switchAccessMenu, handleInbox, handleSwitchAccessClick, fetchSwitchAccessInstances, loading } =
     useHeader();
-  const { getLiveBiometricDevices, liveBiometricDevices, updateLiveBiometricDevice } = useAttendance();
+  const { updateLiveBiometricDevice } = useAttendance();
   const [openNav, setOpenNav] = useState(false);
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
   const [showLiveBiometricDevices, setShowLiveBiometricDevices] = useState(false);
@@ -94,6 +95,33 @@ function Header() {
 
   // Navigation hook
   const navigate = useNavigate();
+  const location = useLocation();
+  const isEmployeesRoute = location.pathname.startsWith("/employees");
+  const isDashboardRoute = location.pathname === "/" || location.pathname === "/dashboard";
+  const isDepartmentsRoute = location.pathname.startsWith("/departments");
+  const isBranchesRoute = location.pathname.startsWith("/branches");
+  const isHrPoliciesRoute = location.pathname.startsWith("/hrpolicies");
+  const isPayrollRoute = location.pathname.startsWith("/payroll");
+  const isPayslipRoute = location.pathname === "/payslip";
+  const isNoticesRoute = location.pathname.startsWith("/notices");
+  const isNotesPoolRoute = location.pathname.startsWith("/notespool");
+  const isApplicationRoute = location.pathname.startsWith("/application");
+  const isLeavesPlannerRoute = location.pathname.startsWith("/leavesPlanner");
+  const isPerformanceRoute = location.pathname.startsWith("/performance");
+  const isFormApprovalRoute = location.pathname.startsWith("/formApproval");
+  const isExpenseRoute = location.pathname.startsWith("/expense");
+  const isAttendanceRoute = location.pathname === "/attendance";
+  const isTimeAdjustmentRoute = location.pathname === "/time-adjustment";
+  const isProfileRoute = location.pathname === "/profile";
+  const isEmployeeTrainingRoute = location.pathname.startsWith("/EmployeeTraining");
+  const isTrainingDashRoute = location.pathname === "/trainingDash" || location.pathname.startsWith("/trainingDash");
+  const isHireRoute = location.pathname.startsWith("/hire");
+  const isShiftPlannersRoute = location.pathname.startsWith("/shiftPlanners");
+  const isDutiesRoute = location.pathname === "/duties";
+  // Skip header-wide APIs on these routes so only page-specific APIs run (e.g. avoid get_machiene_data, inbox, live-biometric-devices on employee/training/hire/shift planners pages)
+  const skipHeaderApis = isEmployeesRoute || isDashboardRoute || isDepartmentsRoute || isBranchesRoute || isHrPoliciesRoute || isPayrollRoute || isPayslipRoute || isNoticesRoute || isNotesPoolRoute || isApplicationRoute || isLeavesPlannerRoute || isPerformanceRoute || isFormApprovalRoute || isExpenseRoute || isAttendanceRoute || isTimeAdjustmentRoute || isProfileRoute || isEmployeeTrainingRoute || isTrainingDashRoute || isHireRoute || isShiftPlannersRoute || isDutiesRoute;
+
+  const { liveBiometricDevices } = useLiveBiometricDevices(!skipHeaderApis);
 
   // Get user role from JWT token
   const userData = getUserData();
@@ -175,7 +203,10 @@ function Header() {
       "resize",
       () => window.innerWidth >= 960 && setOpenNav(false)
     );
-    
+
+    // Skip header/inbox APIs on Employees and Dashboard so only page-specific APIs run (e.g. admin_dashboard on Dashboard)
+    if (skipHeaderApis) return;
+
     // Only fetch header data once to prevent duplicate API calls
     if (!hasFetchedHeaderDataRef.current) {
       getHeaderDatafn();
@@ -187,7 +218,7 @@ function Header() {
       hasFetchedInboxRef.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures it only runs once
+  }, [skipHeaderApis]); // Re-run when route changes so we fetch when leaving /employees or /dashboard
 
   // Handle click outside to close profile menu
   useEffect(() => {
@@ -205,10 +236,6 @@ function Header() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [openProfileMenu]);
-
-  useEffect(() => {
-    getLiveBiometricDevices();
-  }, []);
 
   return (
     <Navbar fullWidth className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-md px-4 py-3 shadow-sm transition-all">

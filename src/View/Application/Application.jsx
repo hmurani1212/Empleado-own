@@ -3,19 +3,17 @@ import { Outlet, useLocation, useNavigate } from 'react-router';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion'
 import useApplication from '../../ViewModel/ApplicationViewModel/ApplicationServices';
-import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices"
 
 const Application = () => {
   const { appTitles, GetSubmitted_AppFn } = useApplication();
   const location = useLocation();
   const navigate = useNavigate();
-  const { Get_All_Employeefn } = useEmployees()
 
   const handleNavClick = (e, link) => {
     e.preventDefault();
     navigate(link);
     GetSubmitted_AppFn();
-    Get_All_Employeefn();
+    // Don't call Get_All_Employeefn here; ApplicationsLists loads employees when user opens the employee dropdown
   };
 
   return (

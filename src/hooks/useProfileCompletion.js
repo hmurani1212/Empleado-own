@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import useStore from '../Store/store'
 
+// Module-level guard: survives React Strict Mode unmount/remount so we only ever start one initial fetch per page load
+let profileInitialFetchStarted = false
+
 const useProfileCompletion = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0)
   const [profileData, setProfileData] = useState({
@@ -10,7 +13,7 @@ const useProfileCompletion = () => {
     licenses: { completed: false, count: 0 },
     bankAccount: { completed: false, count: 0 }
   })
-  const { getEmployeeProfileV2 } = useStore()
+  const { getEmployeeProfileV2, employeeProfileV2Data } = useStore()
 
   // Calculate completion for each section
   const calculateSectionCompletion = (data, sectionType) => {
@@ -84,51 +87,45 @@ const useProfileCompletion = () => {
     return Math.round(percentage)
   }
 
-  // Fetch profile data and calculate completion
+  // Trigger single fetch; store is updated and completion is derived in useEffect from employeeProfileV2Data
   const fetchProfileCompletion = async () => {
     try {
       const userId = localStorage.getItem('user_id') || '9119548'
-      const response = await getEmployeeProfileV2(userId)
-      
-      if (response && response.DB_DATA) {
-        const data = response.DB_DATA
-        
-        // Calculate completion for each section
-        const newProfileData = {
-          academic: calculateSectionCompletion(data.employee_documents, 'academic'),
-          experience: calculateSectionCompletion(data.employee_experience, 'experience'),
-          documents: calculateSectionCompletion(data.employee_document, 'documents'),
-          licenses: calculateSectionCompletion(data.employee_License, 'licenses'),
-          bankAccount: calculateSectionCompletion(data.bank_account_detail, 'bankAccount')
-        }
-        
-        setProfileData(newProfileData)
-        
-        // Calculate overall percentage
-        const percentage = calculateCompletionPercentage({
-          academic: data.employee_documents,
-          experience: data.employee_experience,
-          documents: data.employee_document,
-          licenses: data.employee_License,
-          bankAccount: data.bank_account_detail
-        })
-        
-        setCompletionPercentage(percentage)
-        
-        console.log('Profile completion calculated:', {
-          percentage,
-          sections: newProfileData
-        })
-      }
+      await getEmployeeProfileV2(userId)
     } catch (error) {
-      console.error('Error calculating profile completion:', error)
+      console.error('Error fetching profile completion:', error)
     }
   }
 
-  // Fetch completion data on mount
+  // Single fetch on mount (Profile page); module-level guard prevents duplicate when Strict Mode remounts
   useEffect(() => {
+    if (profileInitialFetchStarted) return
+    profileInitialFetchStarted = true
     fetchProfileCompletion()
   }, [])
+
+  // Recalculate completion when store profile data changes (e.g. after a tab refreshes)
+  useEffect(() => {
+    if (employeeProfileV2Data?.DB_DATA) {
+      const data = employeeProfileV2Data.DB_DATA
+      const newProfileData = {
+        academic: calculateSectionCompletion(data.employee_documents, 'academic'),
+        experience: calculateSectionCompletion(data.employee_experience, 'experience'),
+        documents: calculateSectionCompletion(data.employee_document, 'documents'),
+        licenses: calculateSectionCompletion(data.employee_License, 'licenses'),
+        bankAccount: calculateSectionCompletion(data.bank_account_detail, 'bankAccount')
+      }
+      setProfileData(newProfileData)
+      const percentage = calculateCompletionPercentage({
+        academic: data.employee_documents,
+        experience: data.employee_experience,
+        documents: data.employee_document,
+        licenses: data.employee_License,
+        bankAccount: data.bank_account_detail
+      })
+      setCompletionPercentage(percentage)
+    }
+  }, [employeeProfileV2Data])
 
   return {
     completionPercentage,

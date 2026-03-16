@@ -5,7 +5,7 @@ import employeesApi from "../../Model/Data/Employees/Employees"
 import { showToast } from "../../Components/Toaster/Toaster"
 import { format } from "date-fns"
 import { convertToYMD } from "../../services/EmpServices"
-import { useNavigate } from "react-router"
+import { useNavigate, useLocation } from "react-router"
 import { useDebounce } from "../../services/__debounceServices"
 import InactiveEmployeesDetails from "../../View/Employees/InactiveEmployeesDetails"
 import { executeApiCall, createApiKey } from "../../services/__apiManager"
@@ -19,12 +19,30 @@ const EMPLOYEES_QUERY_KEY = 'employees'
 
 const useEmployees = () => {
     const queryClient = useQueryClient()
+    const location = useLocation()
+    const isDashboardRoute = location?.pathname === '/' || location?.pathname === '/dashboard'
+    const isDepartmentsRoute = location?.pathname?.startsWith?.('/departments')
+    const isBranchesRoute = location?.pathname?.startsWith?.('/branches')
+    const isNoticesRoute = location?.pathname?.startsWith?.('/notices')
+    const isHrPoliciesRoute = location?.pathname?.startsWith?.('/hrpolicies')
+    const isApplicationRoute = location?.pathname?.startsWith?.('/application')
+    const isLeavesPlannerRoute = location?.pathname?.startsWith?.('/leavesPlanner')
+    const isPerformanceRoute = location?.pathname?.startsWith?.('/performance')
+    const isProfileRoute = location?.pathname === '/profile'
+    const isAttendanceRoute = location?.pathname === '/attendance'
+    const isExpenseRoute = location?.pathname?.startsWith?.('/expense')
+    const isTimeAdjustmentRoute = location?.pathname === '/time-adjustment'
+    const isEmployeesListPage = location?.pathname === '/employees/all_employess' || location?.pathname === '/employees'
+    const isEmployeesRoute = location?.pathname?.startsWith?.('/employees')
+    const isTrainingDashRoute = location?.pathname === '/trainingDash' || location?.pathname?.startsWith?.('/trainingDash')
+    const isHireRoute = location?.pathname?.startsWith?.('/hire')
 
     const getEmployeesList = useStore((state) => state.getEmployeesList)
     const allEmployees = useStore((state) => state.allEmployees)
     const employeesListLoading = useStore((state) => state.employeesListLoading)
     const empMount = useStore((state) => state.empMount)
     const handleEmpMount = useStore((state) => state.handleEmpMount)
+    const setSkipGetAllEmployeeOnListPage = useStore((state) => state.setSkipGetAllEmployeeOnListPage)
     const allBranches = useStore((state) => state.allBranches)
     const getAllDepartments = useStore((state) => state.getAllDepartments)
     // const filterBranches = useStore((state) => state.filterBranches)
@@ -591,11 +609,11 @@ const useEmployees = () => {
         await centralizedGetBranches();
     };
 
-    // Load branches from get_branch_employee when Add Employee (or any useEmployees consumer) mounts
-    // so "Select Branch" dropdown shows branch_name and sends branch id to backend
+    // Load branches from get_branch_employee when needed; skip on Dashboard, Departments, Branches, Notices, HR Policies, Application, LeavesPlanner, Performance, Profile, Attendance, Expense, Time Adjustment, Training dash, Hire, and all Employees routes (list page lazy-loads; add_emp calls fetchingAllBranches on mount)
     useEffect(() => {
+        if (isDashboardRoute || isDepartmentsRoute || isBranchesRoute || isNoticesRoute || isHrPoliciesRoute || isApplicationRoute || isLeavesPlannerRoute || isPerformanceRoute || isProfileRoute || isAttendanceRoute || isExpenseRoute || isTimeAdjustmentRoute || isEmployeesRoute || isTrainingDashRoute || isHireRoute) return;
         centralizedGetBranches();
-    }, []);
+    }, [isDashboardRoute, isDepartmentsRoute, isBranchesRoute, isNoticesRoute, isHrPoliciesRoute, isApplicationRoute, isLeavesPlannerRoute, isPerformanceRoute, isProfileRoute, isAttendanceRoute, isExpenseRoute, isTimeAdjustmentRoute, isEmployeesRoute, isTrainingDashRoute, isHireRoute]);
 
     const fetchingAllEmployess = async (branch_id) => {
         try {
@@ -1679,7 +1697,7 @@ const useEmployees = () => {
     };
 
     return {
-        empTitles, getEmployeesList, allEmployees, employeesListLoading, empMount, handleEmpMount, allBranches, handleFilterChange, handleFilterDeptChange, filterValues, getAllDepartments, filterDepartments,
+        empTitles, getEmployeesList, allEmployees, employeesListLoading, empMount, handleEmpMount, setSkipGetAllEmployeeOnListPage, allBranches, handleFilterChange, handleFilterDeptChange, filterValues, getAllDepartments, filterDepartments,
         listView, handleListToggle, handleGridToggle, handleChangeEmployees, empStatus, handleStatusFilter, handelAlphabetSearch, alphaIndex, newEmpValues, handleNewEmpChange, getFindEmp,
         handleVerifyUserModalClose, verfiyUser, findingEmp, handleStepActive, activeStep, isFirstStep, isLastStep, handlePrev, handleNext, handleLastStep, handleFirstStep, allCountries,
         handleSelectChange, handleDOB, passwordToggle, validateAge, empBranches, dept_subDept, flattenOptions, customStyles,

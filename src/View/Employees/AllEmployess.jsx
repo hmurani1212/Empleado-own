@@ -17,7 +17,7 @@ import employeesApi from '../../Model/Data/Employees/Employees'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 
 // Custom Branch Select Component with Animations
-const CustomBranchSelect = ({ label, value, options = [], onChange }) => {
+const CustomBranchSelect = ({ label, value, options = [], onChange, onOpen }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -34,6 +34,7 @@ const CustomBranchSelect = ({ label, value, options = [], onChange }) => {
             setTimeout(() => setIsAnimating(false), 200);
         } else {
             setIsOpen(true);
+            if (typeof onOpen === 'function') onOpen();
             setTimeout(() => setIsAnimating(false), 200);
         }
     };
@@ -108,10 +109,10 @@ const CustomBranchSelect = ({ label, value, options = [], onChange }) => {
 };
 
 const AllEmployess = () => {
-    const { allEmployees, employeesListLoading, empMount,  getAllDepartments,  handleFilterChange, handleFilterDeptChange,
-        handleListToggle,handleGridToggle,listView, handleChangeEmployees, empStatus, handleStatusFilter, handelAlphabetSearch, alphaIndex,
-        toggleMenuValue,openMenuValue, getEmployeesWithFilters, paginationData, goToNextPage, goToPreviousPage, goToPage,
-    empBranches, fetchingAllBranches, setInitialStatus, filterValues } = useEmployees()
+    const { allEmployees, employeesListLoading, empMount, getAllDepartments, handleFilterChange, handleFilterDeptChange,
+        handleListToggle, handleGridToggle, listView, handleChangeEmployees, empStatus, handleStatusFilter, handelAlphabetSearch, alphaIndex,
+        toggleMenuValue, openMenuValue, getEmployeesWithFilters, paginationData, goToNextPage, goToPreviousPage, goToPage,
+        empBranches, fetchingAllBranches, setInitialStatus, filterValues, setSkipGetAllEmployeeOnListPage } = useEmployees()
 
     const { getDropdownPosition, triggerRefs } = useDropdownService()
     
@@ -123,14 +124,16 @@ const AllEmployess = () => {
     const [selectedAlphabetLetter, setSelectedAlphabetLetter] = useState('');
 
     useEffect(() => {
-        // Call API only when the component is mounted (initial load or page refresh)
-        if(!empMount){
-            // Only call the 2 required APIs
-            // console.log('Setting default status to Active Employees:', selectedStatus);
+        // Prevent get_all_employee API from being called while on this page (we use getEmployeesWithFilters only)
+        setSkipGetAllEmployeeOnListPage(true);
+        // Call API only when the component is mounted (initial load or page refresh). Branches are lazy-loaded when user opens branch dropdown.
+        if (!empMount) {
             setInitialStatus('1'); // Set initial status to Active Employees
-            getEmployeesWithFilters({ status: '1' }); // Initial fetch with Active Employees filter - calls employees?page=1&status=1
-            fetchingAllBranches(); // calls get_branch_employee
+            getEmployeesWithFilters({ status: '1' }); // Initial fetch - calls employees?page=1&status=1&limit=20
         }
+        return () => {
+            setSkipGetAllEmployeeOnListPage(false);
+        };
     }, []);
 
     // Update filteredEmployees when allEmployees changes
@@ -208,6 +211,9 @@ const AllEmployess = () => {
                             <CustomBranchSelect 
                                 placeHolderTitle='Filter by Branch'
                                 value={filterValues?.branchName || ""}
+                                onOpen={() => {
+                                    if (!empBranches?.length) fetchingAllBranches();
+                                }}
                                 options={[
                                     { value: "", label: "All Branches" },
                                     ...(empBranches?.map((ele) => ({

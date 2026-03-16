@@ -1,5 +1,5 @@
 import { Button, Card, CardBody, Option, Select } from '@material-tailwind/react'
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { BiSearch } from 'react-icons/bi'
 // import useBranches from '../../ViewModel/BranchesViewModel/BranchesServices'
 import useBranches2 from '../../ViewModel/Brach2ViewModel/BranchesServices2';
@@ -15,15 +15,18 @@ import '../../index.css'
 const Branches = () => {
   const { branchStatus, statusBranch, mountBranch, creatingNewBranch, branchesAllnew, handleChangeBranch, showDrawer, formatPhoneNumberTable, OpenAddBranchDrawer, closeBranchDrawer, gettingAllBranchesNew, currentFilterStatus, branchesListLoading } = useBranches2()
   const data = ['Branch ID', 'Branch Name', 'Branch Admin', 'Currency', 'Phone', 'Email', 'Creation Time', 'Actions']
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    // Use persisted filter (1 = active, 0 = inactive) so status is kept when returning to this page
+    // Single fetch on mount; ref avoids duplicate call from React Strict Mode or multiple triggers
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     gettingAllBranchesNew({
       status: currentFilterStatus,
       page: 1,
       limit: 10
     });
-  }, []);
+  }, [currentFilterStatus, gettingAllBranchesNew]);
 
 
   //console.log(" branchesAllnew branchesAllnew", branchesAllnew)

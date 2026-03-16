@@ -9,6 +9,16 @@ import { validateInput } from "../../Validation/CustomValidation"
 import { validateMultipleEmployeePRC, validateSingleEmployeePRCUpdate } from "../../Validation/Validation"
 import { formatDateYMD } from "../../services/__dateTimeServices"
 import { useDebounce } from "../../services/__debounceServices"
+
+// Maps "Who Can Assign" selection to API competency_Manage_by / Goal_Manage_by value
+const mapAllowTypeToManageBy = (allowType) => {
+    if (allowType === 'Admin') return 'Admin'
+    if (allowType === 'reporting manager') return 'reporting manager'
+    if (allowType === 'Self') return 'self'
+    if (allowType === 'custom') return 'Custom employee'
+    return 'Admin'
+}
+
 const usePRCServices = () => {
     const deleteSinglePRC = useStore((state) => state.deleteSinglePRC)
     const addNewRPC = useStore((state) => state.addNewRPC)
@@ -52,6 +62,9 @@ const usePRCServices = () => {
         allow_competency_custom_employees: [],
         permissionEmployeesOptions: [],
         permissionEmployeesLoading: false,
+        // Who manages competency / goal for this cycle (API: competency_Manage_by, Goal_Manage_by)
+        competency_manage_by: 'Admin',
+        goal_manage_by: 'Admin',
     })
 
 
@@ -119,6 +132,8 @@ const usePRCServices = () => {
             allow_competency_custom_employees: [],
             permissionEmployeesOptions: [],
             permissionEmployeesLoading: false,
+            competency_manage_by: 'Admin',
+            goal_manage_by: 'Admin',
         }))
     }
 
@@ -498,7 +513,9 @@ const usePRCServices = () => {
                 isMultipleEmployeeMode: false,
                 branches: [],
                 departments: [],
-                employees: []
+                employees: [],
+                competency_manage_by: dbData.competency_Manage_by || 'Admin',
+                goal_manage_by: dbData.Goal_Manage_by || 'Admin',
             }))
         } catch (err) {
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Error fetching performance review'
@@ -621,6 +638,10 @@ const usePRCServices = () => {
             ? (PRCAddValue.allow_competency_custom_employees ?? []).map((opt) => (typeof opt === 'object' && opt?.value != null ? opt.value : opt))
             : [PRCAddValue.allow_competency_type];
 
+        // competency_Manage_by / Goal_Manage_by derived from "Who Can Assign" selection
+        const competency_Manage_by = mapAllowTypeToManageBy(PRCAddValue.allow_competency_type)
+        const Goal_Manage_by = mapAllowTypeToManageBy(PRCAddValue.allow_goal_type)
+
         const apiData = {
             name: name,
             start_date: start_date,
@@ -634,6 +655,8 @@ const usePRCServices = () => {
             review_day: review_day,
             allow_goal,
             allow_compenetency,
+            competency_Manage_by,
+            Goal_Manage_by,
         };
 
         // Validate with schema
@@ -713,7 +736,9 @@ const usePRCServices = () => {
             department: parseInt(department_id.value),
             employee: selectedEmp.length > 0 ? selectedEmp[0].value.toString() : "",
             assigned_to: selectedEmp.length > 0 ? selectedEmp[0].label : "",
-            review_day: review_day
+            review_day: review_day,
+            competency_Manage_by: PRCAddValue.competency_manage_by,
+            Goal_Manage_by: PRCAddValue.goal_manage_by,
         };
 
         // Validate with update schema

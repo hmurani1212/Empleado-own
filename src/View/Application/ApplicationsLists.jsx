@@ -127,19 +127,32 @@ function ApplicationsLists() {
 
   const showPrintSection = displayedList.some(isLeaveApplication);
 
-  useEffect(() => {
-    getOrgLogo();
-  }, [getOrgLogo]);
+  // Defer org logo fetch until user prints (logo only used in handlePrintAll)
+  const hasFetchedLogoRef = useRef(false);
 
+  const employeeDropdownOpenedRef = useRef(false);
+  const handleEmployeeMenuOpen = () => {
+    if (employeeDropdownOpenedRef.current) return;
+    employeeDropdownOpenedRef.current = true;
+    Get_All_Employeefn();
+  };
+
+  // Fetch applications list and branches once on mount only. Do NOT depend on store functions
+  // (they can change identity after setState and cause an infinite request loop to /api/v1/forms/data/org).
+  const hasFetchedInitialRef = useRef(false);
   useEffect(() => {
+    if (hasFetchedInitialRef.current) return;
+    hasFetchedInitialRef.current = true;
     const fetchData = async () => {
       setInitialLoading(true);
-      await Promise.all([
-        gettingApplicationsList(),
-        fetchingAllBranches(),
-        Get_All_Employeefn()
-      ]);
-      setInitialLoading(false);
+      try {
+        await Promise.all([
+          gettingApplicationsList(),
+          fetchingAllBranches(),
+        ]);
+      } finally {
+        setInitialLoading(false);
+      }
     };
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -314,7 +327,12 @@ function ApplicationsLists() {
       }
 
       const defaultNoteFallback = 'During in my absence I can be contacted (If very Urgent).\n\nTelephone#: 03439902848';
-      const logoUrl = orgLogo?.logo ? orgLogo.logo : '';
+      if (!orgLogo?.logo && !hasFetchedLogoRef.current) {
+        hasFetchedLogoRef.current = true;
+        await getOrgLogo();
+      }
+      const currentLogo = useStore.getState().orgLogo;
+      const logoUrl = currentLogo?.logo ? currentLogo.logo : (orgLogo?.logo ? orgLogo.logo : '');
 
       const emptyStr = (v) => (v != null && String(v).trim() !== '' ? String(v).trim() : '--');
       /** Normalize line endings and collapse multiple newlines to one — used only for Application Detail to remove blank lines (\r\n\r\n etc.) */
@@ -537,6 +555,7 @@ function ApplicationsLists() {
                   value={selectedEmployee}
                   options={employeeOptions}
                   onChangeHandler={handleEmployeeChange}
+                  onMenuOpen={handleEmployeeMenuOpen}
                   isSearchable={true}
                   isClearable={true}
                   customStyles={false}

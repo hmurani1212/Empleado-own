@@ -23,13 +23,12 @@ const DepartmentsMain = () => {
   const { empBranches } = useEmployees();
   const { allBranches, getBranchEmployeeList } = useDepartments();
 
-  // Don't call API on component mount - let SideMenu handle it when user clicks Departments
-  // This prevents calling API on every page reload
-  // useEffect(() => {
-  //   if ((!allBranches || allBranches.length === 0) && (!empBranches || empBranches.length === 0)) {
-  //     getBranchEmployeeList();
-  //   }
-  // }, []);
+  // On /departments we don't run global get_branch_employee; load branches here so Select Branch has data
+  useEffect(() => {
+    if ((!allBranches || allBranches.length === 0) && (!empBranches || empBranches.length === 0)) {
+      getBranchEmployeeList();
+    }
+  }, []);
 
   const location = useLocation();
 

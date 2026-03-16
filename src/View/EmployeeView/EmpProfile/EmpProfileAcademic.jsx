@@ -21,32 +21,42 @@ const EmpProfileAcademic = () => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false) // Show delete confirmation dialog
     const [deleteItem, setDeleteItem] = useState(null) // Item to be deleted
     const [deleteLoading, setDeleteLoading] = useState(false) // Loading state for delete
-    const { getEmployeeProfileV2, openDrawer, settingComponent, closeDrawer, settingDrawerTitle, settingDrawerSize } = useStore()
+    const { getEmployeeProfileV2, employeeProfileV2Data, openDrawer, settingComponent, closeDrawer, settingDrawerTitle, settingDrawerSize } = useStore()
     const { fetchProfileCompletion } = useProfileCompletion()
 
-    // Fetch employee profile data
+    // Sync from store (single fetch by useProfileCompletion on Profile mount; no duplicate fetch on tab mount)
+    useEffect(() => {
+        if (employeeProfileV2Data?.DB_DATA?.employee_documents) {
+            setAcademicData(employeeProfileV2Data.DB_DATA.employee_documents)
+            setLoading(false)
+        } else if (employeeProfileV2Data != null) {
+            setAcademicData([])
+            setLoading(false)
+        }
+    }, [employeeProfileV2Data])
+
+    // Initial loading: store not populated yet
+    useEffect(() => {
+        if (employeeProfileV2Data === null) {
+            setLoading(true)
+        }
+    }, [])
+
+    // Refresh after add/edit (one call; store updates so completion % recalculates)
     const fetchEmployeeProfile = async () => {
         setLoading(true)
         try {
             const userId = localStorage.getItem('user_id') || '9119548'
             const response = await getEmployeeProfileV2(userId)
-            
-            if (response && response.DB_DATA) {
+            if (response?.DB_DATA) {
                 setAcademicData(response.DB_DATA.employee_documents || [])
             }
-            
-            // Refresh profile completion percentage
-            fetchProfileCompletion()
         } catch (error) {
             console.error('Error fetching academic data:', error)
         } finally {
             setLoading(false)
         }
     }
-
-    useEffect(() => {
-        fetchEmployeeProfile()
-    }, [])
 
     // Close dropdown when clicking outside
     useEffect(() => {
