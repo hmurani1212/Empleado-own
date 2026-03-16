@@ -162,6 +162,7 @@ export function buildThumbnailUrl(dp, dp_folder, gender = null) {
  * @returns {Object} Object with dp, dp_folder, and gender
  */
 export function extractImageDataFromEmployee(employeeData) {
+  console.log('Extracting image data from employee:', employeeData);
   if (!employeeData) {
     return { dp: null, dp_folder: 1, gender: null, dpIsFullUrl: false };
   }

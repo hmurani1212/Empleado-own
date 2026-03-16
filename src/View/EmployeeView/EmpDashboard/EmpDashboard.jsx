@@ -8,7 +8,7 @@ import EmpDuties from './EmpDuties'
 import EmpDashboardAttendance from './EmpDashboardAttendance'
 import useEmpDashboard from '../../../ViewModel/EmpViewModel/EmpDashboardViewModel/EmpDashboardServices'
 import { secondsIntoHrs } from '../../../services/__dateTimeServices'
-
+import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../../utils/imageUrlUtils";
 import { CiLocationOn } from "react-icons/ci";
 import { AiOutlineMail } from "react-icons/ai";
 import { IoMdCloudUpload } from "react-icons/io";
@@ -256,7 +256,7 @@ const EmpDashboard = () => {
     const currentCrop = cropToUse || crop;
 
     if (!img.complete || currentCrop.width <= 0 || currentCrop.height <= 0) {
-     /// console.log('Image not ready or invalid crop:', { complete: img.complete, crop: currentCrop });
+      /// console.log('Image not ready or invalid crop:', { complete: img.complete, crop: currentCrop });
       return;
     }
 
@@ -363,33 +363,32 @@ const EmpDashboard = () => {
 
   function getDuration(from, to) {
     if (!from || !to) return '';
-  
+
     let years = to.getFullYear() - from.getFullYear();
     let months = to.getMonth() - from.getMonth();
     let days = to.getDate() - from.getDate();
-  
+
     if (days < 0) {
       months--;
       const prevMonth = new Date(to.getFullYear(), to.getMonth(), 0);
       days += prevMonth.getDate();
     }
-  
+
     if (months < 0) {
       years--;
       months += 12;
     }
-  
-    return `${years} year${years !== 1 ? 's' : ''} ${months} month${
-      months !== 1 ? 's' : ''
-    } ${days} day${days !== 1 ? 's' : ''}`;
+
+    return `${years} year${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''
+      } ${days} day${days !== 1 ? 's' : ''}`;
   }
 
   const workingFrom = pInfo?.working_from
-  ? (() => {
+    ? (() => {
       const [day, month, year] = pInfo.working_from.split("/").map(Number);
       return new Date(year, month - 1, day);
     })()
-  : null;
+    : null;
   const workingSince = workingFrom ? getDuration(workingFrom, today) : '';
 
   // Check if data is loading
@@ -446,18 +445,18 @@ const EmpDashboard = () => {
         <div className="w-[32px] h-[32px] shrink-0 bg-bgBlue rounded-full flex items-center justify-center text-white">
           {icon}
         </div>
-  
+
         {/* Text */}
         <div className="flex flex-col min-w-0">
           <span className="text-[11px] text-[#292929] font-normal">
             {label}
           </span>
-  
+
           <span className="text-[13px] font-medium text-[#292929] truncate">
             {value}
           </span>
         </div>
-  
+
         {/* Tooltip */}
         {extra && showTooltip && (
           <div className="absolute top-full left-8 z-50 rounded-md bg-white px-3 py-1 text-[11px] text-[#474747] shadow-lg p-4 drop-shadow-[0_0_10px_rgba(0,0,0,0.1)] py-2">
@@ -467,6 +466,12 @@ const EmpDashboard = () => {
       </div>
     );
   };
+  
+
+  // console.log('This is image', pInfo)
+  const profileImageUrl = getImageUrlFromEmployeeData(pInfo?.dp || photoUrl);
+  // console.log('this is the profile image url', profileImageUrl)
+
 
   return (
     <div className={`flex flex-col gap-4 p-2`}>
@@ -478,7 +483,7 @@ const EmpDashboard = () => {
         >
           <img
             className='w-full h-[170px] object-cover rounded-tl-lg rounded-bl-lg transition-transform duration-300 ease-in-out'
-            src={pInfo?.dp !== null ? pInfo?.dp : defaultUserAvatar}
+            src={pInfo?.dp ? pInfo?.dp : 'https://emp-beta.veevotech.com/images/icons/empm.jpg'}
             alt='profile'
           />
           {showCamera && (

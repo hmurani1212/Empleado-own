@@ -15,7 +15,7 @@ import axios from 'axios';
 
 const Login = () => {
   const navigate = useNavigate();
-  
+
   // Check if user is already authenticated and redirect to home
   useEffect(() => {
     const token = localStorage.getItem('jwt');
@@ -73,7 +73,7 @@ const Login = () => {
       //develpment_url
       /// window.location.href = `http://172.18.0.44:6199/login?app_id=test250463mb&action=launch_app&username=${signinValue.userEmail}`
 
-      window.location.href= 'http://172.18.0.44:6199/login';
+      window.location.href = 'https://emp.veevotech.com/empleado_app/core/login';
 
     } catch (err) {
       console.log(err)
