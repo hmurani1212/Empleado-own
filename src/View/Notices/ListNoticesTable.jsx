@@ -19,13 +19,7 @@ const ListNoticesTable = () => {
 
   console.log('addNoticeValue', addNoticeValue)
 
-  useEffect(() => {
-   
-    if(!noticeMount){
-
-        getAllNoticesList()
-    }
-}, []);
+  // Notices list is fetched once by parent ListNotices.jsx on mount; no duplicate fetch here
 
   return (
     <table className="w-full min-w-max text-left h-full">

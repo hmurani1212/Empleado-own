@@ -126,27 +126,14 @@ const EmpPerformance = () => {
     return allGoals;
   }, [perfData?.Goal]);
 
+  // Timeline: initially show first performance review dates; when a performance is selected show that cycle's start/end date
   const { startText, endText } = useMemo(() => {
-    // First, try to get dates from goals
-    const dates = goalsForCycle
-      .map((g) => ({
-        start: g?.start_period || (g?.startDate ? new Date(g.startDate * 1000).toISOString() : null),
-        end: g?.end_period || (g?.endDate ? new Date(g.endDate * 1000).toISOString() : null),
-      }))
-      .filter((d) => d.start || d.end);
+    const performances = perfData?.Performence || [];
+    if (!performances.length) return { startText: "N/A", endText: "N/A" };
 
-    // If we have dates from goals, use them
-    if (dates.length > 0) {
-      const starts = dates.map((d) => d.start).filter(Boolean).map((s) => new Date(s).getTime());
-      const ends = dates.map((d) => d.end).filter(Boolean).map((e) => new Date(e).getTime());
-      const minStart = starts.length ? new Date(Math.min(...starts)) : null;
-      const maxEnd = ends.length ? new Date(Math.max(...ends)) : null;
-      return { startText: minStart ? minStart.toLocaleDateString() : "N/A", endText: maxEnd ? maxEnd.toLocaleDateString() : "N/A" };
-    }
-
-    // If no goals found, check if a specific performance review cycle is selected
-    if (selectedCycle?.value && perfData?.Performence) {
-      const selectedCycleData = perfData.Performence.find(
+    // When a specific performance review cycle is selected, show that cycle's start and end date
+    if (selectedCycle?.value) {
+      const selectedCycleData = performances.find(
         (cycle) => cycle._id === selectedCycle.value || cycle.name === selectedCycle.value
       );
 
@@ -161,9 +148,16 @@ const EmpPerformance = () => {
       }
     }
 
-    // Default fallback
-    return { startText: "N/A", endText: "N/A" };
-  }, [goalsForCycle, selectedCycle, perfData?.Performence]);
+    // When "All Review Cycles" is selected, show first performance review cycle's start and end date
+    const firstCycle = performances[0];
+    const startDate = firstCycle.startDate
+      ? new Date(firstCycle.startDate * 1000).toLocaleDateString()
+      : "N/A";
+    const endDate = firstCycle.endDate
+      ? new Date(firstCycle.endDate * 1000).toLocaleDateString()
+      : "N/A";
+    return { startText: startDate, endText: endDate };
+  }, [selectedCycle, perfData?.Performence]);
 
   const tabsData = [
     { label: "Goals", value: "goals" },

@@ -7490,6 +7490,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 isUpdating={isUpdating}
                 setIsUpdating={setIsUpdating}
                 setEmployeeData={setEmployeeData}
+                onRefreshProfile={async () => gettingEmployeeProfile && employeeId ? await gettingEmployeeProfile(employeeId) : null}
             />
 
             <ChangeReportingManager

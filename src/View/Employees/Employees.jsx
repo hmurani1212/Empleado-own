@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
 import { Outlet, useNavigate } from "react-router";
 import { NavLink, useLocation } from "react-router-dom";
@@ -6,17 +6,20 @@ import { motion } from "framer-motion";
 import EmployeesBulkWrapper from "./EmployeesBulkWrapper";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import { use } from "react";
+import { employeesListPageRef } from "../../ViewModel/EmployeeViewModel/employeesListPageRef";
 
 const Employees = () => {
-  //handleUpdatingHod
-  const { empTitles } = useEmployees();
-  
+  const { empTitles, setSkipGetAllEmployeeOnListPage } = useEmployees();
   const location = useLocation();
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [targetPath, setTargetPath] = useState("");
   const [bulkService, setBulkService] = useState(null);
-  
+
+  const isListPage = location.pathname === "/employees/all_employess" || location.pathname === "/employees";
+  // Set ref during render so Get_All_Employeefn skips API before useLayoutEffect runs (avoids extra get_all_employee call)
+  employeesListPageRef.current = isListPage;
+
   // Check if we're on the bulk employee page
   const isBulkPage = location.pathname === "/employees/add_bulk_emp";
   const handleNavLinkClick = (e, path) => {
@@ -46,7 +49,14 @@ const Employees = () => {
     setShowConfirmation(false);
   };
 
-
+  // Set skip for get_all_employee before paint so reload/list page never calls that API (runs before other useEffects)
+  useLayoutEffect(() => {
+    setSkipGetAllEmployeeOnListPage(isListPage);
+    return () => {
+      setSkipGetAllEmployeeOnListPage(false);
+      employeesListPageRef.current = false;
+    };
+  }, [isListPage, setSkipGetAllEmployeeOnListPage]);
 
   const content = (
     <div className="flex flex-col gap-4 py-2 lg:px-2 md:px-2 px-0 z-10">

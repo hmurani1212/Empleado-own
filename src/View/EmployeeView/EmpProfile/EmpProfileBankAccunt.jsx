@@ -20,7 +20,7 @@ const EmpProfileBankAccunt = () => {
     const [showAddForm, setShowAddForm] = useState(false)
     const [bankAccounts, setBankAccounts] = useState([])
     const [loading, setLoading] = useState(true)
-    const { openDrawer, settingComponent, closeDrawer, settingDrawerTitle, settingDrawerSize, getEmployeeProfileV2 } = useStore()
+    const { openDrawer, settingComponent, closeDrawer, settingDrawerTitle, settingDrawerSize, getEmployeeProfileV2, employeeProfileV2Data } = useStore()
     const { fetchProfileCompletion } = useProfileCompletion()
 
     const handleAddBankAccount = () => {
@@ -35,31 +35,36 @@ const EmpProfileBankAccunt = () => {
         openDrawer()
     }
 
-    // Fetch employee profile data
+    // Sync from store (single fetch by useProfileCompletion on Profile mount)
+    useEffect(() => {
+        if (employeeProfileV2Data?.DB_DATA?.bank_account_detail) {
+            setBankAccounts(employeeProfileV2Data.DB_DATA.bank_account_detail)
+            setLoading(false)
+        } else if (employeeProfileV2Data != null) {
+            setBankAccounts([])
+            setLoading(false)
+        }
+    }, [employeeProfileV2Data])
+
+    useEffect(() => {
+        if (employeeProfileV2Data === null) setLoading(true)
+    }, [])
+
+    // Refresh after add/edit
     const fetchEmployeeProfile = async () => {
         setLoading(true)
         try {
-            // Get user_id from localStorage or context - adjust as needed
-            const userId = localStorage.getItem('user_id') || '9119548' // fallback for testing
+            const userId = localStorage.getItem('user_id') || '9119548'
             const response = await getEmployeeProfileV2(userId)
-            
-            if (response && response.DB_DATA) {
+            if (response?.DB_DATA) {
                 setBankAccounts(response.DB_DATA.bank_account_detail || [])
             }
-            
-            // Refresh profile completion percentage
-            fetchProfileCompletion()
         } catch (error) {
             console.error('Error fetching employee profile:', error)
         } finally {
             setLoading(false)
         }
     }
-
-    // Load data on component mount
-    useEffect(() => {
-        fetchEmployeeProfile()
-    }, [])
 
     const handleBankAccountAdded = (response) => {
         console.log('Bank account added successfully:', response)

@@ -327,7 +327,7 @@ const EmpLazinees = () => {
   };
 
   useEffect(() => {
-    console.log('what is the attendanceData', attendanceData)
+   ////console.log('what is the attendanceData', attendanceData)
   }, [attendanceData])
 
   return (

@@ -1,5 +1,5 @@
 import { Button, Typography, IconButton } from "@material-tailwind/react";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import useFormApproval from "../../ViewModel/FormApprovalViewModel/FormApprovalServices";
 import { formatTimestamp } from "../../services/__formApprovalServices";
 import { FaEye, FaFileSignature, FaClipboardList, FaUser, FaSpinner } from "react-icons/fa";
@@ -59,10 +59,12 @@ const CustomForm = () => {
     "Action",
   ];
 
+  const hasFetchedRef = useRef(false);
   useEffect(() => {
-    // if(!mountCustomForm){
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     gettingCustomForm();
-    // }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Debug logging for form modal

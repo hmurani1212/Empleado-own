@@ -173,6 +173,12 @@ const AddNewEmployee = () => {
     getAdminDashboardData();
   }, [getAdminDashboardData]);
 
+  // Fetch branches once on mount for branch dropdown (only required API for this page; avoids global get_branch_employee from hook)
+  useEffect(() => {
+    fetchingAllBranches();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const fetchLastEnrolledId = async () => {
       try {

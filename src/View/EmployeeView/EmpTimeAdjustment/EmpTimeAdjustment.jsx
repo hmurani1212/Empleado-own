@@ -17,24 +17,45 @@ const tableHeader = [
 
 const EmpTimeAdjustment = () => {
     const {formValue, handleChangeAdjustRequest, toggleAddNewAdjustRequest, NewAdjustRequest, handleNewTimeRequest} = useNewAdjustRequest()
-    const {getTimeAjustmentData, timeAjustmentData, timeAdjustmentLoading} = useEmpTimeAdjustmentServices()
+    const {
+        getTimeAjustmentData,
+        timeAjustmentData,
+        timeAdjustmentLoading,
+        paginationData,
+        onNextPage,
+        onPreviousPage,
+        onGoToPage,
+    } = useEmpTimeAdjustmentServices()
     
     useEffect(()=>{
         getTimeAjustmentData()
     },[]);
 
-    // Calculate Stats
+    // Calculate Stats: use pagination total when available; count pending/approved/rejected from current page
     const stats = useMemo(() => {
-        if (!timeAjustmentData) return { total: 0, pending: 0, approved: 0, rejected: 0 };
-        
-        return timeAjustmentData.reduce((acc, curr) => {
-            acc.total++;
-            if (curr.status === 0) acc.pending++;
-            if (curr.status === 1) acc.approved++;
-            if (curr.status === 2) acc.rejected++;
-            return acc;
-        }, { total: 0, pending: 0, approved: 0, rejected: 0 });
-    }, [timeAjustmentData]);
+        const fromPagination = paginationData?.total;
+        if (!timeAjustmentData) {
+            return {
+                total: fromPagination ?? 0,
+                pending: 0,
+                approved: 0,
+                rejected: 0,
+            };
+        }
+        const counts = timeAjustmentData.reduce(
+            (acc, curr) => {
+                if (curr.status === 0) acc.pending++;
+                if (curr.status === 1) acc.approved++;
+                if (curr.status === 2) acc.rejected++;
+                return acc;
+            },
+            { pending: 0, approved: 0, rejected: 0 }
+        );
+        return {
+            total: typeof fromPagination === 'number' ? fromPagination : timeAjustmentData.length,
+            ...counts,
+        };
+    }, [timeAjustmentData, paginationData?.total]);
 
     const getStatusChip = (status) => {
         switch (status) {
@@ -207,6 +228,70 @@ const EmpTimeAdjustment = () => {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination - same pattern as Employees list */}
+                        {timeAjustmentData?.length > 0 && paginationData && paginationData.totalPages > 1 && (
+                            <div className="w-full flex justify-center items-center gap-2 py-4 px-6 border-t border-gray-100">
+                                <button
+                                    title="Previous Page"
+                                    disabled={paginationData.currentPage <= 1}
+                                    className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${paginationData.currentPage > 1
+                                        ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                                        : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                                        }`}
+                                    onClick={onPreviousPage}
+                                >
+                                    ‹
+                                </button>
+                                <div className="flex items-center gap-1.5">
+                                    {(() => {
+                                        const currentPage = paginationData.currentPage;
+                                        const totalPages = paginationData.totalPages;
+                                        const renderPageButton = (page) => (
+                                            <button
+                                                key={page}
+                                                onClick={() => onGoToPage(page)}
+                                                className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${page === currentPage
+                                                    ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                                                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                                                    }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        );
+                                        if (totalPages <= 7) {
+                                            return Array.from({ length: totalPages }, (_, i) => i + 1).map(renderPageButton);
+                                        }
+                                        const pages = [];
+                                        pages.push(renderPageButton(1));
+                                        if (currentPage > 3) {
+                                            pages.push(<span key="start-ellipsis" className="text-gray-400 px-1">...</span>);
+                                        }
+                                        const startPage = Math.max(2, currentPage - 1);
+                                        const endPage = Math.min(totalPages - 1, currentPage + 1);
+                                        for (let i = startPage; i <= endPage; i++) {
+                                            pages.push(renderPageButton(i));
+                                        }
+                                        if (currentPage < totalPages - 2) {
+                                            pages.push(<span key="end-ellipsis" className="text-gray-400 px-1">...</span>);
+                                        }
+                                        pages.push(renderPageButton(totalPages));
+                                        return pages;
+                                    })()}
+                                </div>
+                                <button
+                                    title="Next Page"
+                                    disabled={paginationData.currentPage >= paginationData.totalPages}
+                                    className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${paginationData.currentPage < paginationData.totalPages
+                                        ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                                        : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                                        }`}
+                                    onClick={onNextPage}
+                                >
+                                    ›
+                                </button>
+                            </div>
+                        )}
                     </Card>
                 )}
             </motion.div>

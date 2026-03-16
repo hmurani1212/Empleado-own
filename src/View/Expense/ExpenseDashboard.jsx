@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button, Card, CardBody, Typography, IconButton } from "@material-tailwind/react";
 import {
   FaClock,
@@ -88,24 +88,32 @@ const ExpenseDashboard = () => {
   const [selectedExpenseId, setSelectedExpenseId] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
-  // Load expense data on component mount (without filters initially)
+  // Load expense data once on mount; ref avoids duplicate from dependency changes or Strict Mode
+  const hasFetchedInitialRef = useRef(false);
   useEffect(() => {
+    if (hasFetchedInitialRef.current) return;
+    hasFetchedInitialRef.current = true;
     getExpenseDashboardData();
-  }, [getExpenseDashboardData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Apply filters when user selects month or year
+  // Apply filters when user selects month or year (skip first run to avoid duplicate with mount effect)
+  const isFilterMountedRef = useRef(false);
   useEffect(() => {
-    // Only fetch if both month and year are selected, or reset if filters are cleared
+    if (!isFilterMountedRef.current) {
+      isFilterMountedRef.current = true;
+      return;
+    }
     if (selectedMonth && selectedYear) {
       getExpenseDashboardData({
         month: selectedMonth,
         year: selectedYear,
       });
     } else if (!selectedMonth && !selectedYear) {
-      // If both filters are cleared, fetch without filters
       getExpenseDashboardData();
     }
-  }, [selectedMonth, selectedYear, getExpenseDashboardData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMonth, selectedYear]);
 
   // Get card data from API
   const cardData = getCardData();

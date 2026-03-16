@@ -1,6 +1,7 @@
 import employeesApi from "../../Model/Data/Employees/Employees"
 import departmentsApi from "../../Model/Data/Departments/Departments"
 import { showToast } from "../../Components/Toaster/Toaster"
+import { employeesListPageRef } from "./employeesListPageRef"
 
 const employeeViewModel = (set, get) => ({
     allEmployees: [],
@@ -10,6 +11,9 @@ const employeeViewModel = (set, get) => ({
     copyFilterEmployees: [],
     statusEmployess: [],
     empMount: false,
+    /** When true, Get_All_Employeefn returns cached data without calling get_all_employee API (used on Employees list page which uses getEmployeesWithFilters instead). */
+    skipGetAllEmployeeOnListPage: false,
+    setSkipGetAllEmployeeOnListPage: (value) => set({ skipGetAllEmployeeOnListPage: value }),
     showExcelTable: false,
     get_inactive_emp_data: [],
     checkListPageId: '',
@@ -29,6 +33,8 @@ const employeeViewModel = (set, get) => ({
 
     // Employee profile loading state
     isLoadingEmployeeProfile: false,
+    // Cached employee profile v2 (My Profile page) – set by getEmployeeProfileV2 to avoid duplicate API calls from tabs
+    employeeProfileV2Data: null,
     handleEmpMount: () => {
         set({ mount: true })
     },
@@ -365,6 +371,11 @@ const employeeViewModel = (set, get) => ({
     },
 
     Get_All_Employeefn: async (dept_id = null) => {
+        // Skip API on list page: check ref (set during render), store flag (set in useLayoutEffect), and pathname (bulletproof)
+        const isListPagePath = typeof window !== 'undefined' && (window.location.pathname === '/employees' || window.location.pathname === '/employees/all_employess');
+        if (get().skipGetAllEmployeeOnListPage || employeesListPageRef.current || isListPagePath) {
+            return get().Get_All_Employee ?? [];
+        }
         try {
             const response = await employeesApi.get_all_employeee(dept_id);
             const responseData = response.data;
@@ -856,13 +867,13 @@ const employeeViewModel = (set, get) => ({
         }
     },
 
-    // Get employee profile v2 with all details
+    // Get employee profile v2 with all details (stores result so Profile tabs can read without refetching)
     getEmployeeProfileV2: async (userId) => {
         try {
             const response = await employeesApi.getEmployeeProfileV2(userId)
             const responseData = response.data;
-            console.log('Get Employee Profile V2 Response:', responseData)
             if (responseData.STATUS === "SUCCESSFUL") {
+                set({ employeeProfileV2Data: responseData })
                 return responseData
             } else {
                 console.error('Failed to get employee profile v2:', responseData.ERROR_DESCRIPTION)

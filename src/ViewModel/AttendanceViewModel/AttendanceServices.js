@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { FaUserCheck, FaChartBar, FaCheck, FaRegClock } from "react-icons/fa";
 import useStore from '../../Store/store';
+import { LIVE_BIOMETRIC_DEVICES_QUERY_KEY } from '../../hooks/useLiveBiometricDevices';
 import MonthLateComers from '../../View/Attendance/MonthLateComers';
 import { TiThListOutline } from "react-icons/ti";
 import { IoAnalyticsOutline, IoAlarmOutline } from "react-icons/io5";
@@ -14,6 +16,7 @@ import EditTimeAdjustment from '../../View/Attendance/EditTimeAdjustment';
 import CreateNewRequest from '../../View/Attendance/CreateNewRequest';
 
 const useAttendance = () => {
+    const queryClient = useQueryClient()
     const openDrawer = useStore((state) => state.openDrawer)
     const closeDrawer = useStore((state) => state.closeDrawer)
     const settingDrawerTitle = useStore ((state) => state.settingDrawerTitle)
@@ -484,15 +487,14 @@ const useAttendance = () => {
         }
         try {
             const response = await attendanceApi.updateLiveBiometricDevice(updateData)
-            const data = response.data
-            if(response.status === 200 && data.STATUS === 'SUCCESSFUL'){
+            const resData = response.data
+            if(response.status === 200 && resData.STATUS === 'SUCCESSFUL'){
                 showToast('Live biometric device updated successfully', 'success')
-                setLiveBiometricDevices(data.DB_DATA || [])
-                getLiveBiometricDevices();
+                setLiveBiometricDevices(resData.DB_DATA || [])
+                await queryClient.invalidateQueries({ queryKey: [LIVE_BIOMETRIC_DEVICES_QUERY_KEY] })
             } else {
-                showToast(data.ERROR_DESCRIPTION || 'Failed to update live biometric device', 'error')
+                showToast(resData.ERROR_DESCRIPTION || 'Failed to update live biometric device', 'error')
             }
-            console.log('Update Live Biometric Device', data)
         } catch (error) {
             console.error('Error updating live biometric device:', error)
         }
