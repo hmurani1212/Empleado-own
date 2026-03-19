@@ -172,6 +172,7 @@ const empDashboardViewModel = (set, get) => ({
                         mobile_attendance: dbData?.employee_data?.mobile_attendance,
                         web_attendance_status: dbData?.employee_data?.web_attendance_status,
                         designation_name: dbData?.employee_data?.designation_name|| '',
+                        dob: dbData?.employee_data?.dob || '',
                     },
                     section2: {
                         working_status: workingStatusLabel || '',

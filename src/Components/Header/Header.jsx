@@ -34,6 +34,16 @@ import { formatTimestamp } from "../../View/Branches/utils";
 import ReportForm from "../ReportForm/ReportForm";
 import { useLiveBiometricDevices } from "../../hooks/useLiveBiometricDevices";
 
+/** Device is connected if last_live is within 2 minutes of now; otherwise disconnected. */
+const CONNECTED_THRESHOLD_SECONDS = 2 * 60;
+function isDeviceConnected(lastLive) {
+  if (lastLive == null || lastLive === undefined) return false;
+  const nowSec = Math.floor(Date.now() / 1000);
+  const lastSec = typeof lastLive === 'number' ? lastLive : parseInt(lastLive, 10);
+  if (Number.isNaN(lastSec)) return false;
+  return (nowSec - lastSec) <= CONNECTED_THRESHOLD_SECONDS;
+}
+
 function Header() {
   const toggleState = useStore((state) => state.sideMenuToggleState);
   const handleTrueToggleState = useStore((state) => state.sideMenuToggleTrue);
@@ -121,7 +131,7 @@ function Header() {
   // Skip header-wide APIs on these routes so only page-specific APIs run (e.g. avoid get_machiene_data, inbox, live-biometric-devices on employee/training/hire/shift planners pages)
   const skipHeaderApis = isEmployeesRoute || isDashboardRoute || isDepartmentsRoute || isBranchesRoute || isHrPoliciesRoute || isPayrollRoute || isPayslipRoute || isNoticesRoute || isNotesPoolRoute || isApplicationRoute || isLeavesPlannerRoute || isPerformanceRoute || isFormApprovalRoute || isExpenseRoute || isAttendanceRoute || isTimeAdjustmentRoute || isProfileRoute || isEmployeeTrainingRoute || isTrainingDashRoute || isHireRoute || isShiftPlannersRoute || isDutiesRoute;
 
-  const { liveBiometricDevices } = useLiveBiometricDevices(!skipHeaderApis);
+  const { liveBiometricDevices, getLiveBiometricDevices } = useLiveBiometricDevices(!skipHeaderApis);
 
   // Get user role from JWT token
   const userData = getUserData();
@@ -530,10 +540,17 @@ function Header() {
                       </td>
                       <td className="px-6 py-4">{device.device_type_label || 'N/A'}</td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-green-600"></span>
-                          Last Live: {formatTimestamp(device.last_live) || 'N/A'}
-                        </span>
+                        {isDeviceConnected(device.last_live) ? (
+                          <div className="inline-flex flex-col gap-0.5 rounded-lg bg-green-50 px-3 py-1.5 text-xs border border-green-100">
+                            <span className="font-semibold text-green-700">Status: Connected</span>
+                            <span className="text-green-600">Last Live: {formatTimestamp(device.last_live) || 'N/A'}</span>
+                          </div>
+                        ) : (
+                          <div className="inline-flex flex-col gap-0.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs border border-red-100">
+                            <span className="font-semibold text-red-700">Status: Disconnected</span>
+                            <span className="text-red-600">Last Live: {formatTimestamp(device.last_live) || 'N/A'}</span>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -1018,17 +1018,19 @@ const useEmployees = () => {
             const resData = response.data
             if (response.status === 200 && resData.STATUS === "SUCCESSFUL") {
                 // Handle different response structures (DB_DATA or top-level DESIGNATIONS)
-                let designationsData = [];
+                let rawList = [];
 
                 if (resData?.DB_DATA?.designations) {
-                    designationsData = resData.DB_DATA.designations;
+                    rawList = resData.DB_DATA.designations;
                 } else if (resData?.DB_DATA?.departments) {
-                    designationsData = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
-                } else if (Array.isArray(resData.DESIGNATIONS)) {
-                    designationsData = resData.DESIGNATIONS;
+                    rawList = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
+                } else if (Array.isArray(resData?.DESIGNATIONS)) {
+                    rawList = resData.DESIGNATIONS;
+                } else if (Array.isArray(resData?.DB_DATA)) {
+                    rawList = resData.DB_DATA;
                 }
 
-                const normalized = (designationsData || []).map(normalizeDesignationItem).filter(Boolean);
+                const normalized = rawList.map(normalizeDesignationItem).filter(Boolean);
                 setDesignations(normalized);
             } else {
                 setDesignations([])
