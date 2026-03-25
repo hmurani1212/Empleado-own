@@ -1,9 +1,11 @@
-import { Drawer, IconButton, Typography } from '@material-tailwind/react'
+import { Drawer } from '@material-tailwind/react'
 import React, { useEffect, useState } from 'react'
 import { FaTimes } from 'react-icons/fa'
+import { resolveDrawerSizePx } from '../../utils/drawerSizeUtils'
 
 const CustomDrawer = (props) => {
   const { open, closeDrawer, compo, direction="right", title, widthSize='45vw', customImg=false, image} = props
+  const drawerWidthPx = resolveDrawerSizePx(widthSize)
   const [isToastVisible, setIsToastVisible] = useState(false)
 
   // Monitor for toast visibility
@@ -38,8 +40,8 @@ const CustomDrawer = (props) => {
       open={open} 
       onClose={handleDrawerClose} 
       className="flex flex-col overflow-hidden h-full bg-white shadow-2xl border-l border-slate-100" 
-      placement={direction} 
-      size={widthSize}
+      placement={direction}
+      size={drawerWidthPx}
       overlayProps={{
         className: "fixed inset-0 w-full h-full !bg-transparent !backdrop-blur-none z-[9995]",
       }}

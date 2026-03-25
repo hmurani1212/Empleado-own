@@ -1437,18 +1437,85 @@ const employeeViewModel = (set, get) => ({
     },
 
     // Update employee profile image
-    updateEmployeeProfileImage: async (formData) => {
+    // 1) POST file to training `/api/make_url` → FILE_URL
+    // 2) POST JSON to core `/api/v1/employee_v3/update_img_profile` with body: { emp_id, image_url }
+    updateEmployeeProfileImage: async (payload) => {
+        const normalizeEmpId = (id) => {
+            if (id == null || id === '') return id
+            const s = String(id).trim()
+            return /^\d+$/.test(s) ? Number(s) : id
+        }
+
+        const isSuccess = (response) =>
+            response?.status === 200 && response?.data?.STATUS === 'SUCCESSFUL'
+
         try {
-            const response = await employeesApi.updateEmployeeProfileImage(formData)
-            const data = response.data
-            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                return { success: true, message: data.MESSAGE || 'Profile image updated successfully!' }
+            let file = null
+            let empId = null
+
+            if (payload instanceof FormData) {
+                file = payload.get('file') || payload.get('emp_dp') || payload.get('image') || null
+                empId = payload.get('emp_id') || payload.get('empId') || payload.get('user_id') || null
             } else {
-                return { success: false, error: data.ERROR_DESCRIPTION || 'Failed to update profile image' }
+                file = payload?.file || payload?.imageFile || payload?.selectedFile || null
+                empId = payload?.emp_id ?? payload?.empId ?? payload?.user_id ?? null
             }
+
+            if (!file) {
+                return { success: false, error: 'Image file is required' }
+            }
+            if (!empId) {
+                return { success: false, error: 'Employee ID is required' }
+            }
+
+            const normalizedEmpId = normalizeEmpId(empId)
+
+            const uploadFormData = new FormData()
+            uploadFormData.append('file', file)
+            const uploadResponse = await employeesApi.uploadFileToElephant(uploadFormData)
+            const uploadData = uploadResponse?.data || {}
+
+            if (uploadResponse?.status !== 200 || uploadData.STATUS !== 'SUCCESSFUL') {
+                return {
+                    success: false,
+                    error: uploadData.ERROR_DESCRIPTION || 'File upload failed (make_url)'
+                }
+            }
+
+            const fileUrl =
+                uploadData.FILE_URL ||
+                uploadData.file_url ||
+                uploadData.url ||
+                ''
+
+            if (!fileUrl) {
+                return { success: false, error: 'File upload failed (no URL returned)' }
+            }
+
+            const response = await employeesApi.updateEmployeeProfileImage({
+                emp_id: normalizedEmpId,
+                image_url: fileUrl
+            })
+
+            const data = response.data
+            if (isSuccess(response)) {
+                return {
+                    success: true,
+                    message: data.MESSAGE || 'Profile image updated successfully!',
+                    image_url: fileUrl
+                }
+            }
+            return { success: false, error: data.ERROR_DESCRIPTION || 'Failed to update profile image' }
         } catch (error) {
             console.error('Error updating profile image:', error)
-            return { success: false, error: error.response?.data?.ERROR_DESCRIPTION || error.message || 'Failed to update profile image' }
+            return {
+                success: false,
+                error:
+                    error.response?.data?.ERROR_DESCRIPTION ||
+                    error.response?.data?.MESSAGE ||
+                    error.message ||
+                    'Failed to update profile image'
+            }
         }
     }
 

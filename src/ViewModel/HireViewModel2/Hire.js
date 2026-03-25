@@ -18,7 +18,11 @@ const hireViewModel = (set, get) => ({
     gettingAllVacanciesList: async (statusFilter, yearFilter, monthFilter) => {
 
         try {
-            const response = await hireApi.getVacanciesList(statusFilter, yearFilter, monthFilter)
+            const response = await hireApi.getAllVacancies2({
+                status: statusFilter,
+                year_date: yearFilter,
+                month_date: monthFilter
+            })
             const data = response.data
             // console.log('hire', data)
             if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
@@ -27,7 +31,7 @@ const hireViewModel = (set, get) => ({
                 set({ allVacanciesList_data: [] })
             }
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
 
     },
@@ -46,7 +50,7 @@ const hireViewModel = (set, get) => ({
                 showToast('error', data.MESSAGE)
             }
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     },
 
@@ -167,7 +171,7 @@ const hireViewModel = (set, get) => ({
                 return false;
             }
         } catch (error) {
-            console.log(error);
+            console.error(error);
             showToast(error.response?.data?.ERROR_DESCRIPTION || 'Error deleting vacancy');
             return false;
         }
@@ -177,7 +181,6 @@ const hireViewModel = (set, get) => ({
         try {
             const response = await hireApi.createVacancy(data);
             const responseData = response.data;
-            console.log("SUCCESSFULSUCCESSFUL", responseData)
 
             // Handle successful response
             if (responseData.STATUS === 'SUCCESSFUL') {
@@ -228,7 +231,6 @@ const hireViewModel = (set, get) => ({
         try {
             const response = await hireApi.add_mark_def(data)
             const responseData = response.data
-            console.log('Add mark def response:', responseData)
 
             if (response.status === 200 && responseData.STATUS === 'SUCCESSFUL') {
                 showToast('Mark definition added successfully', 'success')

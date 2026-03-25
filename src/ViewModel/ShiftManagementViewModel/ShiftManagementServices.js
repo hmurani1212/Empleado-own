@@ -106,10 +106,7 @@ const useShiftManagement = () => {
         planner_name : ''
       })
 
-      console.log("planner Values ", plannerValues)
-
       const validateCreatePlanner = () => {
-        console.log("planner Values from valodate ", plannerValues)
         if (plannerValues.branch === ''){
           showToast('BranchId is required', 'error')
           return

@@ -68,7 +68,6 @@ const empAttendanceViewModel = (set, get) =>({
 
                 const todayDay = new Date().getDay();
                 let day = '';
-                console.log('todayDay', todayDay);
                 let dutyTimings = null;
                 if(todayDay === 1){
                     day = 'Mon';

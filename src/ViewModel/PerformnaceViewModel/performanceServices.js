@@ -48,7 +48,7 @@ const usePerformanceServices = () => {
     const navigate = useNavigate()
 
     const createReducer = (state, action) => {
-        console.log('Reducer called with action:', action);
+        // console.log('Reducer called with action:', action);
         switch (action.type) {
             case 1:
                 console.log('Navigating to Performance Review Cycle');
@@ -84,7 +84,7 @@ const usePerformanceServices = () => {
 
 
     const handleNavLinkClick = (data) => {
-        console.log('handleNavLinkClick called with:', data);
+        //console.log('handleNavLinkClick called with:', data);
         dispatch({ type: data.id, payload: data.id, value: data.link })
     }
 

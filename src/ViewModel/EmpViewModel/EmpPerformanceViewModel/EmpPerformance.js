@@ -134,13 +134,10 @@ import { showToast } from "../../../Components/Toaster/Toaster"
 
 const gettingEmployeePerformance = async (params = {}) => {
     try {
-        console.log('Fetching employee performance with params:', params)
-        
         const response = await employeePerformanceApi.getEmployeePerformance(params)
         const responseData = response.data
 
         if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-            console.log('Employee performance data received:', responseData)
             return responseData
         } else {
             console.error('Failed to fetch employee performance:', responseData)
@@ -156,13 +153,10 @@ const gettingEmployeePerformance = async (params = {}) => {
 
 const deleteEmployeeGoal = async (goalId) => {
     try {
-        console.log('Deleting goal with ID:', goalId)
-        
         const response = await employeePerformanceApi.deleteGoal(goalId)
         const responseData = response.data
 
         if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-            console.log('Goal deleted successfully:', responseData)
             showToast('Goal deleted successfully', 'success')
             return responseData
         } else {
@@ -179,13 +173,10 @@ const deleteEmployeeGoal = async (goalId) => {
 
 const updateEmployeeGoal = async (data) => {
     try {
-        console.log('Updating goal with data:', data)
-        
         const response = await employeePerformanceApi.updateGoal(data)
         const responseData = response.data
 
         if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-            console.log('Goal updated successfully:', responseData)
             showToast('Goal updated successfully', 'success')
             return responseData
         } else {
@@ -202,7 +193,6 @@ const updateEmployeeGoal = async (data) => {
 
 const toggleEmployeeGoalStatus = async (goalId) => {
     try {
-        console.log('Toggling goal status with ID:', goalId)
         const response = await employeePerformanceApi.toggleGoalStatus(goalId)
         const responseData = response.data
 

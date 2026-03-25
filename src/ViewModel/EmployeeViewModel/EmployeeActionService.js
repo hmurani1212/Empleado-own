@@ -85,7 +85,7 @@ const useEmployeeActionService = () => {
     const navigate = useNavigate();
 
     const handleEmpActionList = (data, list) => {
-        console.log('what is the data here', data);
+        // console.log('what is the data here', data);
 
        //// 
        // 
@@ -121,7 +121,7 @@ const useEmployeeActionService = () => {
             case 2:
                 // Attendance action
                 gettingAtData(data);
-                console.log('what is the data here', data);
+                // console.log('what is the data here', data);
                 break;
             case 3:
                 // Salary Details action

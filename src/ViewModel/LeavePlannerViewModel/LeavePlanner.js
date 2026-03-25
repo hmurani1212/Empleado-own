@@ -40,7 +40,6 @@ const leavesPlannerViewModel = (set, get) => ({
         try {
             const response = await leavesPlannerApi.getLeavesGroup()
             const data = response.data
-            console.log("Leaves", response)
 
             if(response.status === 200 || data.STATUS === "SUCCESSFUL"){
                 // Handle both response structures: data.DB_DATA or data directly
@@ -58,7 +57,7 @@ const leavesPlannerViewModel = (set, get) => ({
                 set({allLeavesGroup: sortedData, copyAllLeavesGroup: sortedData})
             }
         } catch(err){
-            console.log(err)
+            console.error(err)
         }
 
     },
@@ -68,16 +67,14 @@ const leavesPlannerViewModel = (set, get) => ({
         try {
             const response = await leavesPlannerApi.getPaidLeavesConfig()
             const data = response.data
-            console.log("Paid Leaves Config", response)
 
             if(response.status === 200 && data.STATUS === "SUCCESSFUL"){
                 // Set the type based on config_value: 1 = true (on), 0 = false (off)
                 const isPaidLeavesEnabled = data.DB_DATA?.config_value === "1"
                 set({type: isPaidLeavesEnabled})
-                console.log("Paid leaves status set to:", isPaidLeavesEnabled)
             }
         } catch(err){
-            console.log("Error fetching paid leaves config:", err)
+            console.error("Error fetching paid leaves config:", err)
             // Default to false if API fails
             set({type: false})
         }
@@ -88,14 +85,12 @@ const leavesPlannerViewModel = (set, get) => ({
         try {
             const response = await departmentsApi.gettingAllDepartments();
             const data = response.data
-            console.log('getAllDepartmentsLeaves response:', data)
             if(response.status === 200 && data.STATUS === "SUCCESSFUL"){
                 const branches = data.DB_DATA.branches || data.DB_DATA
-                console.log('Branches data:', branches)
                 set({leavesBranches: branches})
             }
         } catch (err) {
-            console.log('Error in getAllDepartmentsLeaves:', err);
+            console.error('Error in getAllDepartmentsLeaves:', err);
         }
 
     },
@@ -104,23 +99,17 @@ const leavesPlannerViewModel = (set, get) => ({
         // Convert creation_time to Unix timestamp in seconds if needed
         let creationTime = data.creation_time;
         
-        console.log('addNewLeaveGroupState - Original data:', data);
-        console.log('addNewLeaveGroupState - Original creation_time:', creationTime, 'Type:', typeof creationTime);
-        
         if (!creationTime) {
             // If no creation_time, use current time
             creationTime = Math.floor(Date.now() / 1000);
-            console.log('addNewLeaveGroupState - No creation_time, using current time:', creationTime);
         } else if (typeof creationTime === 'string') {
             // If it's an ISO string, convert to Unix timestamp in seconds
             const dateObj = new Date(creationTime);
             if (!isNaN(dateObj.getTime())) {
                 creationTime = Math.floor(dateObj.getTime() / 1000);
-                console.log('addNewLeaveGroupState - Converted from ISO string:', creationTime);
             } else {
                 // If string parsing fails, use current time
                 creationTime = Math.floor(Date.now() / 1000);
-                console.log('addNewLeaveGroupState - Failed to parse string, using current time:', creationTime);
             }
         } else if (typeof creationTime === 'number') {
             // Check if it's a valid timestamp
@@ -130,28 +119,17 @@ const leavesPlannerViewModel = (set, get) => ({
             // If timestamp is in milliseconds (13 digits), convert to seconds
             if (timestampStr.length === 13) {
                 creationTime = Math.floor(creationTime / 1000);
-                console.log('addNewLeaveGroupState - Converted from milliseconds:', originalTime, '->', creationTime);
             } else if (timestampStr.length === 10) {
                 // Already in seconds, use as is
                 creationTime = creationTime;
-                console.log('addNewLeaveGroupState - Using as seconds:', creationTime);
             } else {
                 // Invalid format, use current time
                 creationTime = Math.floor(Date.now() / 1000);
-                console.log('addNewLeaveGroupState - Invalid format, using current time. Original:', originalTime);
             }
             
             // Validate the timestamp is reasonable (not in the future by more than 1 year, not before 1970)
             const currentTime = Math.floor(Date.now() / 1000);
             const oneYearFromNow = currentTime + (365 * 24 * 60 * 60);
-            const dateFromTimestamp = new Date(creationTime * 1000);
-            console.log('addNewLeaveGroupState - Validation check:', {
-                creationTime,
-                currentTime,
-                oneYearFromNow,
-                dateFromTimestamp: dateFromTimestamp.toLocaleString(),
-                isValid: creationTime >= 0 && creationTime <= oneYearFromNow
-            });
             
             if (creationTime < 0 || creationTime > oneYearFromNow) {
                 console.warn('addNewLeaveGroupState - Invalid timestamp detected, using current time. Original:', creationTime, 'Current:', currentTime);
@@ -161,11 +139,7 @@ const leavesPlannerViewModel = (set, get) => ({
         } else {
             // Unknown type, use current time
             creationTime = Math.floor(Date.now() / 1000);
-            console.log('addNewLeaveGroupState - Unknown type, using current time:', creationTime);
         }
-        
-        const finalDate = new Date(creationTime * 1000);
-        console.log('addNewLeaveGroupState - Final creation_time:', creationTime, 'Final date:', finalDate.toLocaleString());
         
         const newData = {
             ...data,
@@ -193,7 +167,6 @@ const leavesPlannerViewModel = (set, get) => ({
         try {
             const response = await leavesPlannerApi.getViewLeaves(groupId)
             const data = response.data
-            console.log("Leaves view", response)
 
             if(response.status === 200 || data.STATUS === "SUCCESSFUL"){
                 set({allViewLeave: data, copyAllViewLeave:data})
@@ -204,7 +177,7 @@ const leavesPlannerViewModel = (set, get) => ({
             }
             
         } catch(err){
-            console.log(err)
+            console.error(err)
         } finally {
             set({ viewLeavesLoading: false });
         }
@@ -272,12 +245,10 @@ const leavesPlannerViewModel = (set, get) => ({
     },
 
     getPoliciesList : async(id) => {
-        console.log(id)
         const bid = {branch_id : id}
         try {
             const response = await leavesPlannerApi.hrPoliciesList(bid);
             const respData = response.data;
-            console.log('policies', response)
 
             if(response.status === 200 && respData.STATUS === 'SUCCESSFUL'){
                 // Updated to handle new API response format
@@ -287,7 +258,7 @@ const leavesPlannerViewModel = (set, get) => ({
             }
 
         } catch (error) {
-            console.log('Error getting policies list:', error)
+            console.error('Error getting policies list:', error)
             set({policiesList:[]})
             throw error
         }
@@ -318,7 +289,6 @@ const leavesPlannerViewModel = (set, get) => ({
     },
 
     updatePaidToggle : (newtype) => {
-        console.log(newtype)
         set({
             type : newtype
         })
@@ -329,7 +299,6 @@ const leavesPlannerViewModel = (set, get) => ({
         try {
             const response = await leavesPlannerApi.getGoogleForm()
             const data = response.data
-            console.log("API Response of the google:", response)
 
             if(response.status === 200 && data.STATUS === "SUCCESSFUL"){
                 const countries = data.DB_DATA?.COUNTRIES_LIST || []
@@ -341,7 +310,7 @@ const leavesPlannerViewModel = (set, get) => ({
                 set({branchesGoogleForm: []})
             }
         } catch(err){
-            console.log("Error in gettingGoogleForms:", err)
+            console.error("Error in gettingGoogleForms:", err)
             set({countriesGoogleForm: []})
             set({branchesGoogleForm: []})
         }
@@ -364,7 +333,6 @@ const leavesPlannerViewModel = (set, get) => ({
         try {
             const response = await leavesPlannerApi.getAllLeaveGroups();
             const data = response.data;
-            console.log("All Leave Groups for Policy:", data);
 
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
                 const groups = data.DB_DATA?.groups || [];

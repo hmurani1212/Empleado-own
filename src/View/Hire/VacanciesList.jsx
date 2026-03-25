@@ -259,11 +259,11 @@ const VacanciesList = () => {
                 color="blue"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 name="yearFilter"
-                value={filters.year_date}
+                value={filters.year_date ? String(filters.year_date) : ""}
                 onChange={(val) => handleFilterChange("yearFilter", val)}
               >
                 {years.map((year, i) => (
-                  <Option key={i} value={year}>
+                  <Option key={i} value={String(year)}>
                     {year}
                   </Option>
                 ))}
@@ -282,13 +282,13 @@ const VacanciesList = () => {
                   filters.month_date
                     ? months.find(
                         (m) => getMonthShortName(m.id) === filters.month_date
-                      )?.id
+                      )?.id?.toString()
                     : ""
                 }
                 onChange={(val) => handleFilterChange("monthFilter", val)}
               >
                 {months.map((month) => (
-                  <Option key={month.id} value={month.id}>
+                  <Option key={month.id} value={String(month.id)}>
                     {month.title}
                   </Option>
                 ))}

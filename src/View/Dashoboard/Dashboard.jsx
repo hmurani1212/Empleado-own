@@ -14,8 +14,6 @@ import { Bar, Pie } from "react-chartjs-2";
 import Meeting from "../../assets/images/Meeting.png";
 import Schedule from "../../assets/images/schedule.png";
 import Birthday from "../../assets/images/Birthday.jpeg";
-import Cake from "../../assets/images/cake.png";
-import BirthdayCakeGif from "../../assets/images/birthday_cake_gif.gif";
 import Holiday from "../../assets/images/holiday.png";
 import {
   Chart as ChartJS,
@@ -210,6 +208,18 @@ function Dashboard() {
     return age;
   }
 
+  /** Days until next birthday (0 = today, 1 = tomorrow, etc.) */
+  function getDaysUntilBirthday(dateString) {
+    const bd = new Date(dateString);
+    const today = new Date();
+    const next = new Date(today.getFullYear(), bd.getMonth(), bd.getDate());
+    if (next < today) {
+      next.setFullYear(today.getFullYear() + 1);
+    }
+    const diff = Math.ceil((next - today) / (1000 * 60 * 60 * 24));
+    return Math.max(0, diff);
+  }
+
   // Call admin dashboard API only when authentication is ready
   useAuthReady(() => {
     getAdminDashboardData();
@@ -310,22 +320,26 @@ function Dashboard() {
                   style={{ background: ele.bgColor }}
                 >
                   {/* Background decoration */}
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl"></div>
                   
-                  <CardBody className="flex items-center h-full gap-4 relative z-10 p-0">
+                  <CardBody className="flex items-center h-full gap-3 relative z-10 p-0">
                     <div>
                       <span
-                        className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm text-2xl text-white shadow-inner"
+                        className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm text-xl text-white shadow-inner [&_svg]:w-6 [&_svg]:h-6"
                       >
                         {ele.icon}
                       </span>
                     </div>
                     <div className="flex-1 flex flex-col text-white min-w-0">
-                      <span className="text-2xl md:text-3xl font-bold tracking-tight">
+                      <span className="text-2xl font-bold tracking-tight">
                         {ele.count}
                       </span>
-                      <span className="text-xs md:text-sm font-medium opacity-90 whitespace-nowrap truncate" title={ele.title}>
-                        {ele.title}
+                      <span className="text-xs md:text-sm font-medium opacity-90 leading-tight break-words" title={ele.title}>
+                        {ele.title === 'Total Departments & Sub Departments' ? (
+                          <>Total Departments<br />& Sub Dep</>
+                        ) : (
+                          ele.title
+                        )}
                       </span>
                     </div>
                   </CardBody>
@@ -486,10 +500,14 @@ function Dashboard() {
               </CardBody>
             </Card>
 
-            {/* Birthdays Table */}
-            <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
-              <CardBody className="p-0">
-                <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+            {/* Upcoming Birthdays - Distinctive card with accent and “days until” */}
+            <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden relative">
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-brand-400 via-brand-500 to-brand-600 rounded-l-2xl" aria-hidden />
+              <CardBody className="p-0 pl-1">
+                <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-brand-50/60 to-transparent flex items-center gap-3">
+                  <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-white border border-brand-100 shadow-sm">
+                    <FaBirthdayCake className="w-4 h-4 text-brand-500" />
+                  </span>
                   <span className="text-gray-800 font-bold text-base">Upcoming Birthdays</span>
                 </div>
                 {adminDashboardLoading ? (
@@ -497,36 +515,55 @@ function Dashboard() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
                   </div>
                 ) : upcommingBirthdays && upcommingBirthdays.length > 0 ? (
-                  <div className="h-80 overflow-y-auto customScroll">
-                    <div className="divide-y divide-gray-100">
-                        {upcommingBirthdays.map((ele, index) => {
-                          const { firstLetter } = titleNameAlpha(ele.name);
-                          return (
-                            <div key={index} className="flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors">
-                              <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg font-bold shadow-sm">
-                                  {firstLetter}
-                                </div>
-                                <div>
-                                  <h4 className="text-sm font-bold text-gray-800">{ele.name}</h4>
-                                  <p className="text-xs text-gray-500">{ele.designation || "Employee"}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3 bg-pink-50 px-3 py-2 rounded-lg border border-pink-100">
-                                <img src={BirthdayCakeGif} alt="Cake" className="w-8 h-8" />
-                                <div className="text-right">
-                                  <p className="text-xs font-bold text-pink-500">{formatDob(ele.dob)}</p>
-                                  <p className="text-[10px] text-pink-400 font-medium">Turning {calculateAge(ele.dob)}</p>
-                                </div>
+                  <div className="h-80 overflow-y-auto meet-greet-scrollbar">
+                    <ul className="py-2">
+                      {upcommingBirthdays.map((ele, index) => {
+                        const { firstLetter, bgColor } = titleNameAlpha(ele.name);
+                        const initialBg = bgColor || '#e0f2fe';
+                        const daysUntil = getDaysUntilBirthday(ele.dob);
+                        const isToday = daysUntil === 0;
+                        const isTomorrow = daysUntil === 1;
+                        return (
+                          <motion.li
+                            key={index}
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.25, delay: index * 0.04 }}
+                            className="flex items-center gap-4 px-5 py-3 mx-2 rounded-xl hover:bg-brand-50/40 transition-colors group"
+                          >
+                            <div
+                              className="h-12 w-12 rounded-xl flex items-center justify-center text-lg font-bold text-gray-700 shrink-0 shadow-sm ring-2 ring-white"
+                              style={{ backgroundColor: initialBg }}
+                            >
+                              {firstLetter}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-gray-800 truncate group-hover:text-brand-700 transition-colors">{ele.name}</p>
+                              {(isToday || isTomorrow) && (
+                                <span className={`inline-block mt-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${isToday ? 'bg-brand-500 text-white' : 'bg-brand-100 text-brand-600'}`}>
+                                  {isToday ? 'Today' : 'Tomorrow'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              {!isToday && !isTomorrow && daysUntil <= 7 && (
+                                <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">In {daysUntil} days</span>
+                              )}
+                              <div className="flex items-center gap-2 rounded-xl bg-white border border-gray-200 px-3 py-2 shadow-sm">
+                                <FaBirthdayCake className="w-4 h-4 text-brand-500 shrink-0" />
+                                <p className="text-xs font-semibold text-gray-800 leading-tight">{formatDob(ele.dob)}</p>
                               </div>
                             </div>
-                          );
-                        })}
-                    </div>
+                          </motion.li>
+                        );
+                      })}
+                    </ul>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 p-6 text-center">
-                    <img src={Cake} alt="No Birthdays" className="w-24 h-24 mb-4 opacity-60" />
+                    <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+                      <FaBirthdayCake className="w-10 h-10 text-gray-300" />
+                    </div>
                     <p className="text-gray-500 font-medium">No upcoming birthdays soon.</p>
                   </div>
                 )}

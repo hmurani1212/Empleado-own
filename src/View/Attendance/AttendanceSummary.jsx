@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Typography } from "@material-tailwind/react";
 import { secondsToHoursMinutes } from "../../services/__attendanceDataFormatter";
 import AttendanceLoading from "./AttendanceLoading";
@@ -37,9 +37,6 @@ const AttendanceSummary = ({ attendanceData }) => {
   const summary = attendanceAttr?.summary || defaultValues.summary;
 
   const data = attendanceAttr?.attendance || [];
-  useEffect(() => {
-    console.log("attendanceData in AttendanceSummary:", attendanceAttr);
-  });
 
   const summary_late_minut = data.reduce(
     (acc, d) => {

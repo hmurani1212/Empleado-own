@@ -162,7 +162,7 @@ const hireViewModel = (set, get) => ({
 
             }
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     },
 
@@ -206,7 +206,7 @@ const hireViewModel = (set, get) => ({
 
             }
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     },
 
@@ -224,7 +224,7 @@ const hireViewModel = (set, get) => ({
                 set({ allStarredApp: [] })
             }
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     },
 
@@ -285,8 +285,6 @@ const hireViewModel = (set, get) => ({
 
     gettingRounds: async (vacancyId) => {
         const roundData = { vacancyId: vacancyId };
-
-        console.log("roundDataroundData", roundData)
 
         try {
             const response = await hireApi.getRounds(roundData)
@@ -425,13 +423,12 @@ const hireViewModel = (set, get) => ({
         try {
             const response = await hireApi.getRecuirmegetVacRoundsntDashboard()
             const data = response.data
-            console.log('Vacancy rounds', data)
 
             if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
                 set({ vacRounds: data.DB_DATA })
             }
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     },
     //   const record_data = useStore((state) => state.get_count_app_data);
@@ -450,7 +447,7 @@ const hireViewModel = (set, get) => ({
                 set({ record_data: data.DB_DATA })
             }
         } catch (error) {
-            console.log(error)
+            console.error(error)
         }
     },
 
@@ -459,7 +456,6 @@ const hireViewModel = (set, get) => ({
         try {
             const response = await hireApi2.Re_Interview(data)
             const responseData = response.data;
-            console.log("Re-interview API response:", responseData)
 
             if (response.status === 200 && responseData.STATUS === 'SUCCESSFUL') {
                 set({ Re_Interview_data: responseData.DB_DATA })

@@ -21,18 +21,11 @@ const useSocket = () => {
         });
 
         socketRef.current.on('connect', () => {
-            console.log('✅ Connected to main socket server:', socketRef.current.id);
-            
             // Join organization room on connection
             const userData = getUserData();
             if (userData?.org_oneid) {
                 socketRef.current.emit('join_org', userData.org_oneid);
-                console.log('📡 Joined organization room:', userData.org_oneid);
             }
-        });
-
-        socketRef.current.on('disconnect', () => {
-            console.log('❌ Disconnected from main socket server');
         });
 
         socketRef.current.on('connect_error', (error) => {
@@ -48,18 +41,11 @@ const useSocket = () => {
         });
 
         socketIoRef.current.on('connect', () => {
-            console.log('✅ Connected to Socket.IO server (8005):', socketIoRef.current.id);
-            
             // Join organization room on connection
             const userData = getUserData();
             if (userData?.org_oneid) {
                 socketIoRef.current.emit('join_org', userData.org_oneid);
-                console.log('📡 Joined organization room on Socket.IO server:', userData.org_oneid);
             }
-        });
-
-        socketIoRef.current.on('disconnect', () => {
-            console.log('❌ Disconnected from Socket.IO server (8005)');
         });
 
         socketIoRef.current.on('connect_error', (error) => {

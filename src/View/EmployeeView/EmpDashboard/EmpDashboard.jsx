@@ -7,6 +7,8 @@ import EmpLazinees from './EmpLazinees'
 import EmpDuties from './EmpDuties'
 import EmpDashboardAttendance from './EmpDashboardAttendance'
 import useEmpDashboard from '../../../ViewModel/EmpViewModel/EmpDashboardViewModel/EmpDashboardServices'
+import useStore from '../../../Store/store'
+import { showToast } from '../../../Components/Toaster/Toaster'
 import { secondsIntoHrs } from '../../../services/__dateTimeServices'
 import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../../utils/imageUrlUtils";
 import { CiLocationOn } from "react-icons/ci";
@@ -18,13 +20,12 @@ import { SiAwsorganizations } from "react-icons/si";
 import { PiOfficeChairLight } from "react-icons/pi";
 import { IoEyeSharp } from "react-icons/io5";
 import { GrFormClose } from "react-icons/gr";
-import { MdDone, MdUpload } from "react-icons/md";
+import { MdDone } from "react-icons/md";
 import { GrPowerReset } from "react-icons/gr";
 import defaultUserAvatar from '../../../constants/avatar';
-import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../../utils/imageUrlUtils";
-// import { getImageUrlFromEmployeeData } from "../../";
 const EmpDashboard = () => {
   const { empDashboardData, handlePolicyView, gettingEmpDashboardData } = useEmpDashboard();
+  const updateEmployeeProfileImage = useStore((state) => state.updateEmployeeProfileImage);
 
   // Single initial fetch for dashboard data (avoids duplicate calls from useEmpDashboard in children)
   useEffect(() => {
@@ -39,8 +40,8 @@ const EmpDashboard = () => {
   const [showCloseTooltip, setShowCloseTooltip] = useState(false);
   const [showReselectTooltip, setShowReselectTooltip] = useState(false);
   const [showDoneTooltip, setShowDoneTooltip] = useState(false);
-  const [showUploadTooltip, setShowUploadTooltip] = useState(false);
   const [showResetTooltip, setShowResetTooltip] = useState(false);
+  const [isUploadingProfilePhoto, setIsUploadingProfilePhoto] = useState(false);
   const [photo, setPhoto] = useState(null);
   const [photoUrl, setPhotoUrl] = useState(null); // Store photo URL
   const [isPreviewMode, setIsPreviewMode] = useState(false); // Track if in preview mode
@@ -253,111 +254,97 @@ const EmpDashboard = () => {
     document.removeEventListener('mouseup', stopMove);
   };
 
-  const getCroppedImage = (cropToUse = null) => {
-    if (!canvasRef.current || !imageRef.current || !originalPhoto) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const img = imageRef.current;
-    const container = containerRef.current;
-
-    // Use provided crop or current state crop
-    const currentCrop = cropToUse || crop;
-
-    if (!img.complete || currentCrop.width <= 0 || currentCrop.height <= 0) {
-      /// console.log('Image not ready or invalid crop:', { complete: img.complete, crop: currentCrop });
-      return;
-    }
-
-    // Get actual displayed image dimensions (accounting for object-contain)
-    const containerRect = container.getBoundingClientRect();
-    const containerWidth = containerRect.width;
-    const containerHeight = containerRect.height;
-
-    // Calculate the actual displayed image size (with object-contain)
-    const imgAspectRatio = img.naturalWidth / img.naturalHeight;
-    const containerAspectRatio = containerWidth / containerHeight;
-
-    let displayedWidth, displayedHeight, offsetX, offsetY;
-
-    if (imgAspectRatio > containerAspectRatio) {
-      // Image is wider - fits to width
-      displayedWidth = containerWidth;
-      displayedHeight = containerWidth / imgAspectRatio;
-      offsetX = 0;
-      offsetY = (containerHeight - displayedHeight) / 2;
-    } else {
-      // Image is taller - fits to height
-      displayedWidth = containerHeight * imgAspectRatio;
-      displayedHeight = containerHeight;
-      offsetX = (containerWidth - displayedWidth) / 2;
-      offsetY = 0;
-    }
-
-    // Calculate scale factor from displayed to natural size
-    const scaleX = img.naturalWidth / displayedWidth;
-    const scaleY = img.naturalHeight / displayedHeight;
-
-    // Adjust crop coordinates to account for image offset
-    const adjustedCropX = currentCrop.x - offsetX;
-    const adjustedCropY = currentCrop.y - offsetY;
-
-    // Calculate actual crop coordinates on the original image
-    const actualX = Math.max(0, adjustedCropX * scaleX);
-    const actualY = Math.max(0, adjustedCropY * scaleY);
-    const actualWidth = Math.min(currentCrop.width * scaleX, img.naturalWidth - actualX);
-    const actualHeight = Math.min(currentCrop.height * scaleY, img.naturalHeight - actualY);
-
-    // Ensure valid crop dimensions
-    if (actualWidth <= 0 || actualHeight <= 0 || actualX >= img.naturalWidth || actualY >= img.naturalHeight) {
-      console.log('Invalid crop coordinates:', { actualX, actualY, actualWidth, actualHeight });
-      return;
-    }
-
-    // Set canvas size to match the cropped image size
-    canvas.width = actualWidth;
-    canvas.height = actualHeight;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw the cropped part of the image onto the canvas
-    ctx.drawImage(
-      img,
-      actualX,
-      actualY,
-      actualWidth,
-      actualHeight,
-      0,
-      0,
-      actualWidth,
-      actualHeight
-    );
-
-    // Get the cropped image as a blob and update immediately
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const croppedFile = new File([blob], originalPhoto.name || 'cropped-image.jpg', {
-          type: originalPhoto.type || 'image/jpeg'
-        });
-        // Create new URL for cropped image
-        const newUrl = URL.createObjectURL(croppedFile);
-        // Revoke old URL if exists
-        if (photoUrl) {
-          URL.revokeObjectURL(photoUrl);
-        }
-        // Update photo and URL to show cropped version immediately
-        setPhoto(croppedFile);
-        setPhotoUrl(newUrl);
-        // Mark as cropped and exit crop mode
-        setIsCropped(true);
-        setIsCropMode(false);
-        setCrop({ x: 0, y: 0, width: 0, height: 0 });
-      } else {
-        console.error('Failed to create blob from canvas');
+  /** Returns a File from the current crop region (used for make_url + update_img_profile). */
+  const cropImageToFile = (cropToUse = null) => {
+    return new Promise((resolve, reject) => {
+      if (!canvasRef.current || !imageRef.current || !originalPhoto) {
+        reject(new Error('Image not ready'));
+        return;
       }
-    }, originalPhoto.type || 'image/jpeg', 0.95);
+
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      const img = imageRef.current;
+      const container = containerRef.current;
+
+      const currentCrop = cropToUse || crop;
+
+      if (!img.complete || currentCrop.width <= 0 || currentCrop.height <= 0) {
+        reject(new Error('Invalid crop'));
+        return;
+      }
+
+      const containerRect = container.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const containerHeight = containerRect.height;
+
+      const imgAspectRatio = img.naturalWidth / img.naturalHeight;
+      const containerAspectRatio = containerWidth / containerHeight;
+
+      let displayedWidth, displayedHeight, offsetX, offsetY;
+
+      if (imgAspectRatio > containerAspectRatio) {
+        displayedWidth = containerWidth;
+        displayedHeight = containerWidth / imgAspectRatio;
+        offsetX = 0;
+        offsetY = (containerHeight - displayedHeight) / 2;
+      } else {
+        displayedWidth = containerHeight * imgAspectRatio;
+        displayedHeight = containerHeight;
+        offsetX = (containerWidth - displayedWidth) / 2;
+        offsetY = 0;
+      }
+
+      const scaleX = img.naturalWidth / displayedWidth;
+      const scaleY = img.naturalHeight / displayedHeight;
+
+      const adjustedCropX = currentCrop.x - offsetX;
+      const adjustedCropY = currentCrop.y - offsetY;
+
+      const actualX = Math.max(0, adjustedCropX * scaleX);
+      const actualY = Math.max(0, adjustedCropY * scaleY);
+      const actualWidth = Math.min(currentCrop.width * scaleX, img.naturalWidth - actualX);
+      const actualHeight = Math.min(currentCrop.height * scaleY, img.naturalHeight - actualY);
+
+      if (actualWidth <= 0 || actualHeight <= 0 || actualX >= img.naturalWidth || actualY >= img.naturalHeight) {
+        reject(new Error('Invalid crop coordinates'));
+        return;
+      }
+
+      canvas.width = actualWidth;
+      canvas.height = actualHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(
+        img,
+        actualX,
+        actualY,
+        actualWidth,
+        actualHeight,
+        0,
+        0,
+        actualWidth,
+        actualHeight
+      );
+
+      const mime = originalPhoto.type || 'image/jpeg';
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(
+              new File([blob], originalPhoto.name || 'profile-crop.jpg', {
+                type: mime
+              })
+            );
+          } else {
+            reject(new Error('Failed to create image file'));
+          }
+        },
+        mime,
+        0.95
+      );
+    });
   };
+
   // console.log('what did you mean by sections', empDashboardData)
 
   const pInfo = empDashboardData?.section1;
@@ -368,10 +355,47 @@ const EmpDashboard = () => {
   const attendanceData = empDashboardData?.attendance
   const leaveBalance = empDashboardData?.leave_balance
 
+  const handleConfirmCropAndUpload = async () => {
+    const empId = pInfo?.emp_id;
+    if (!empId) {
+      showToast('Employee ID not available. Please refresh and try again.', 'error');
+      return;
+    }
+    if (crop.width <= 10 || crop.height <= 10) {
+      showToast('Crop area is too small.', 'error');
+      return;
+    }
+
+    setIsUploadingProfilePhoto(true);
+    try {
+      const file = await cropImageToFile(crop);
+      const result = await updateEmployeeProfileImage({ file, emp_id: empId });
+
+      if (result.success) {
+        showToast(result.message || 'Profile photo updated successfully.', 'success');
+        if (photoUrl) {
+          URL.revokeObjectURL(photoUrl);
+        }
+        setPhoto(null);
+        setPhotoUrl(null);
+        setOriginalPhoto(null);
+        setIsCropMode(false);
+        setIsCropped(false);
+        setCrop({ x: 0, y: 0, width: 0, height: 0 });
+        const d = new Date();
+        await gettingEmpDashboardData(d.getMonth() + 1, d.getFullYear());
+      } else {
+        showToast(result.error || 'Failed to update profile photo.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(err?.message || 'Failed to upload profile photo.', 'error');
+    } finally {
+      setIsUploadingProfilePhoto(false);
+    }
+  };
+
   const [duration, setDuration] = useState('');
-
-
-  const [imageDp, setImageDp] = useState(null);
 
   async function getDuration() {
     // console.log('from and to', pInfo?.join_date)
@@ -396,10 +420,6 @@ const EmpDashboard = () => {
       months += 12;
     }
 
-    const employeeData =  {...pInfo}
-
-    setImageDp(getImageUrlFromEmployeeData(employeeData))
-
     setDuration(`${years} years ${months} months ${days} days`);
 
     return `${years} years ${months} months ${days} days`;
@@ -411,7 +431,7 @@ const EmpDashboard = () => {
 
   useEffect(() => {
     getDuration();
-  }, [pInfo?.join_date]);
+  }, [pInfo?.join_date, pInfo?.dp]);
 
   //  const result =  getDuration();
   //  console.log('duration result', result)
@@ -503,12 +523,11 @@ const EmpDashboard = () => {
       </div>
     );
   };
-  
 
-  // console.log('This is image', pInfo)
-  const profileImageUrl = getImageUrlFromEmployeeData(pInfo?.dp || photoUrl);
-  // console.log('this is the profile image url', profileImageUrl)
 
+  // When `dp` is already https (e.g. elephant.veevotech.com), image utils return it unchanged — no folder/encrypt path.
+  const displayProfileSrc =
+    getImageUrlFromEmployeeData(pInfo) || 'https://emp-beta.veevotech.com/images/icons/empm.jpg';
 
   return (
     <div className={`flex flex-col gap-4 p-2`}>
@@ -520,7 +539,7 @@ const EmpDashboard = () => {
         >
           <img
             className='w-full h-[170px] object-cover rounded-tl-lg rounded-bl-lg transition-transform duration-300 ease-in-out'
-            src={pInfo?.dp  ? imageDp : 'https://emp-beta.veevotech.com/images/icons/empm.jpg'}
+            src={displayProfileSrc}
             alt='profile'
           />
           {showCamera && (
@@ -702,7 +721,7 @@ const EmpDashboard = () => {
             >
               <img
                 ref={imageRef}
-                src={isPreviewMode ? (pInfo?.dp || defaultUserAvatar) : (photoUrl || (photo && photo !== 'preview' ? URL.createObjectURL(photo) : ''))}
+                src={isPreviewMode ? (getImageUrlFromEmployeeData(pInfo) || defaultUserAvatar) : (photoUrl || (photo && photo !== 'preview' ? URL.createObjectURL(photo) : ''))}
                 alt="profile"
                 className={isCropped ? 'max-w-full max-h-full object-contain' : 'w-full h-full object-contain'}
                 onLoad={() => {
@@ -877,12 +896,10 @@ const EmpDashboard = () => {
                     {isCropMode && !isCropped && (
                       <div className="relative">
                         <button
-                          onClick={() => {
-                            if (crop.width > 10 && crop.height > 10) {
-                              getCroppedImage(crop);
-                            }
-                          }}
-                          className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                          type="button"
+                          onClick={handleConfirmCropAndUpload}
+                          disabled={isUploadingProfilePhoto}
+                          className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed"
                           onMouseEnter={() => setShowDoneTooltip(true)}
                           onMouseLeave={() => setShowDoneTooltip(false)}
                         >
@@ -890,23 +907,7 @@ const EmpDashboard = () => {
                         </button>
                         {showDoneTooltip && (
                           <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-50">
-                            Done
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {!isCropMode && (
-                      <div className="relative px-0">
-                        <button
-                          className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                          onMouseEnter={() => setShowUploadTooltip(true)}
-                          onMouseLeave={() => setShowUploadTooltip(false)}
-                        >
-                          <MdUpload className="text-white text-[18px] font-bold" />
-                        </button>
-                        {showUploadTooltip && (
-                          <div className="absolute top-full right-0 mt-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-50">
-                            Upload
+                            {isUploadingProfilePhoto ? 'Uploading…' : 'Save & upload'}
                           </div>
                         )}
                       </div>

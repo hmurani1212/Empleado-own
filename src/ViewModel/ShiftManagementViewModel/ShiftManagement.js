@@ -27,7 +27,6 @@ const shiftManagementViewModel = (set, get) => ({
         try{
             const response = await shiftApi.getShiftPlanner()
             const data = response.data
-            console.log('Shift', data)
 
             if(response.status === 200 && data.STATUS === 'SUCCESSFUL'){
                 set({allShiftData : data.DB_DATA.planners})
@@ -35,7 +34,7 @@ const shiftManagementViewModel = (set, get) => ({
                 set({allShiftData : []})
             }
         } catch(error) {
-            console.log(error)
+            console.error(error)
         }
     },
 
@@ -43,7 +42,6 @@ const shiftManagementViewModel = (set, get) => ({
         try {
             const response = await departmentsApi.gettingAllDepartments();
             const data = response.data
-            console.log('Branches', data)
             if(response.status === 200 && data.STATUS === "SUCCESSFUL"){
                 const branches = data.DB_DATA.branches
                 const ownObjectBranches = {id: '1', branch_name: 'All Branches'}
@@ -51,9 +49,8 @@ const shiftManagementViewModel = (set, get) => ({
 
                 set({branchesShift: updatedBranches})
             }
-            console.log(response);
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
 
     },
@@ -65,7 +62,6 @@ const shiftManagementViewModel = (set, get) => ({
     },
 
     gettingShifts : async(shift) => {
-        console.log("shift getting shifts", shift.id)
         // Clear previous shifts data immediately when selecting new planner
         set({shiftPlannersData: []})
         
@@ -73,36 +69,30 @@ const shiftManagementViewModel = (set, get) => ({
         try {
             const response = await shiftApi.getPlannerShift(shiftData)
             const data = response.data
-
-            console.log('shifts response:', data)
-            console.log('shifts data:', data.DB_DATA?.shifts)
             if(response.status === 200 && data.STATUS === 'SUCCESSFUL'){
                 set({shiftPlannersData:data.DB_DATA.shifts})
             } else if (response.status === 200 && data.STATUS === 'ERROR'){
                 set({shiftPlannersData:[]})
             }
         } catch(error) {
-            console.log('Error fetching shifts:', error)
+            console.error('Error fetching shifts:', error)
             // Handle 400 error by keeping shiftPlannersData empty
             set({shiftPlannersData:[]})
         }
     },
 
     gettingShiftTeams : async(dataShift) => {
-        console.log(dataShift)
         const teamData = {shift : dataShift.id}
         try {
             const response = await shiftApi.getShiftTeam(teamData)
             const data = response.data
-
-            console.log('teams', data)
             if(response.status === 200 && data.STATUS === 'SUCCESSFUL'){
                 set({allShiftTeams:data.DB_DATA})
             } else if (response.status === 200 && data.STATUS === 'ERROR'){
                 set({allShiftTeams:[]})
             }
         } catch(error) {
-            console.log(error)
+            console.error(error)
         }
     },
 

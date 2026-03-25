@@ -103,10 +103,11 @@ const AddEditPRC = (props) => {
       setSelectedDepartment(null);
     }
     
-    // Reset employee selection when branch or department changes
+    // Only clear employee dropdown when branch or department is cleared (not when they change)
     if (!PRCAddValue.branch_id || !PRCAddValue.department_id) {
       setSelectedEmployee(null);
     }
+    // Selected employees (selectedEmp) are preserved when branch/department change - see PRCServices handleSelectAddPRC
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [PRCAddValue.branch_id, PRCAddValue.department_id]);
 

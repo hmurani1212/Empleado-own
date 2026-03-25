@@ -1,10 +1,12 @@
-import { Drawer, IconButton, Typography } from '@material-tailwind/react';
+import { Drawer, Typography } from '@material-tailwind/react';
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { FaTimes } from 'react-icons/fa';
+import { resolveDrawerSizePx } from '../../utils/drawerSizeUtils';
 
 const PortalDrawer = (props) => {
   const { open, closeDrawer, compo, direction = "right", title, widthSize = '45vw', customImg = false, image, zIndex } = props;
+  const drawerWidthPx = resolveDrawerSizePx(widthSize);
   const [isToastVisible, setIsToastVisible] = useState(false)
   
   // Track toast presence to avoid accidental drawer close while interacting with toasts
@@ -57,7 +59,7 @@ const PortalDrawer = (props) => {
       onClose={handleDrawerClose}
       className="px-4 py-2 customDrwerScroll overflow-auto h-full max-w-[620px]"
       placement={direction}
-      size={widthSize}
+      size={drawerWidthPx}
       style={drawerStyle}
     >
       <div className="flex flex-col">

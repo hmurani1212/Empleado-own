@@ -38,7 +38,7 @@ const EmployeeDuties = ({
         { value: 'year', label: 'Year' }
     ];
 
-    console.log("EditingRecords", editingRecord)
+    // console.log("EditingRecords", editingRecord)
 
     // Reset form when drawer closes or populate when editing
     useEffect(() => {

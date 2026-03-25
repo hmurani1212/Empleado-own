@@ -6452,7 +6452,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 <span className="text-2xl font-bold text-gray-800 break-words tracking-tight">Employees Management</span>
             </div>
 
-            {console.log("EmplopyeeData", employeeData)}
+            {/* {console.log("EmplopyeeData", employeeData)} */}
             {/* Employee Avatar and Basic Info */}
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-soft min-w-0 max-w-full mb-6">
                 <div className="flex flex-col md:flex-row min-w-0">
@@ -6461,7 +6461,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         {(() => {
                             // Get image URL from full employee data (extracts dp, dp_folder, gender; supports full URL)
                             const profileImageUrl = getImageUrlFromEmployeeData(employeeData);
-                            // console.log("Profile Image URL:", profileImageUrl);
+                            console.log("Profile Image URL:", profileImageUrl);
                             const altText = employeeData?.basic_information?.emp_name || employeeData?.employee?.name || "Profile";
 
                             // Show Avatar whenever we have a URL (custom or default gender icon); placeholder only when none

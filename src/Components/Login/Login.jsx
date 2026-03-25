@@ -75,8 +75,8 @@ const Login = () => {
 
       window.location.href = 'https://emp.veevotech.com/empleado_app/core/login';
 
-    } catch (err) {
-      console.log(err)
+    } catch {
+      // Redirect navigation; no local error surface
     }
   }
 

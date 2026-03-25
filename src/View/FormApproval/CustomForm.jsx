@@ -67,15 +67,6 @@ const CustomForm = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Debug logging for form modal
-  useEffect(() => {
-    if (formModal.show) {
-      console.log("Form modal opened:", formModal.formType, formModal.formData);
-    }
-  }, [formModal.show, formModal.formType, formModal.formData]);
-
-  console.log("Data is coming", allCustomForm);
-
   function formatTimeStamp(unixTimestamp) {
     const months = [
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",

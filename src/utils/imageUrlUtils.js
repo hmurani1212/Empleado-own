@@ -85,6 +85,11 @@ export function simpleDecrypt(hexData) {
  * @returns {string} Complete image URL
  */
 export function buildImageUrl(dp, dp_folder, gender = null) {
+  // API already returns absolute URL (e.g. elephant.veevotech.com) — use as-is
+  if (typeof dp === 'string' && /^https?:\/\//i.test(dp.trim())) {
+    return dp.trim();
+  }
+
   // If no dp, return default image based on gender
   if (!dp || dp.trim() === '') {
     if (gender === '0' || gender === 0) {
@@ -123,6 +128,10 @@ export function buildImageUrl(dp, dp_folder, gender = null) {
  * @returns {string} Complete thumbnail image URL
  */
 export function buildThumbnailUrl(dp, dp_folder, gender = null) {
+  if (typeof dp === 'string' && /^https?:\/\//i.test(dp.trim())) {
+    return dp.trim();
+  }
+
   // If no dp, return default image based on gender
   if (!dp || dp.trim() === '') {
     if (gender === '0' || gender === 0) {
@@ -162,13 +171,14 @@ export function buildThumbnailUrl(dp, dp_folder, gender = null) {
  * @returns {Object} Object with dp, dp_folder, and gender
  */
 export function extractImageDataFromEmployee(employeeData) {
-  console.log('Extracting image data from employee:', employeeData);
   if (!employeeData) {
     return { dp: null, dp_folder: 1, gender: null, dpIsFullUrl: false };
   }
 
   // Try to find dp in various locations (API may return DB_DATA or flat structure)
   let dp =
+    employeeData?.DB_DATA?.employee_data?.dp ||
+    employeeData?.employee_data?.dp ||
     employeeData?.DB_DATA?.Official_Info?.dp ||
     employeeData?.DB_DATA?.official_info?.dp ||
     employeeData?.DB_DATA?.employee?.dp ||
@@ -233,10 +243,23 @@ export function extractImageDataFromEmployee(employeeData) {
  * @returns {string} Complete image URL
  */
 export function getImageUrlFromEmployeeData(employeeData, thumbnail = false) {
+  // Callers sometimes pass a raw dp string (full URL, blob preview, or filename)
+  if (typeof employeeData === 'string') {
+    const s = employeeData.trim();
+    if (!s) {
+      return 'https://emp-beta.veevotech.com/images/icons/empm.jpg';
+    }
+    if (/^https?:\/\//i.test(s) || s.startsWith('blob:') || s.startsWith('data:')) {
+      return s;
+    }
+    if (s.startsWith('files/') || s.startsWith('/')) {
+      const path = s.startsWith('/') ? s.slice(1) : s;
+      return `${FILE_BASE_URL}${path}`;
+    }
+    return thumbnail ? buildThumbnailUrl(s, 1, null) : buildImageUrl(s, 1, null);
+  }
+
   const { dp, dp_folder, gender, dpIsFullUrl } = extractImageDataFromEmployee(employeeData);
-
-  // console.log('Extracted image data:', { dp, dp_folder, gender, dpIsFullUrl });
-
 
   // If API returned a full image URL, use it directly
   if (dpIsFullUrl && typeof dp === 'string') {
@@ -266,6 +289,9 @@ export function buildEmployeeImageUrl(employee, thumbnail = false) {
   }
   
   const dp = employee.dp || employee.DP || '';
+  if (typeof dp === 'string' && /^https?:\/\//i.test(dp.trim())) {
+    return dp.trim();
+  }
   const dp_folder = employee.dp_folder || employee.dpFolder || employee.dp_folder_id || 1; // Default to 1 if not provided
   const gender = employee.gender || employee.Gender || null;
   
@@ -316,6 +342,9 @@ export function buildImageUrlFromApiResponse(officialInfo, basicInfo = null, thu
   }
   
   const dp = officialInfo.dp;
+  if (typeof dp === 'string' && /^https?:\/\//i.test(dp.trim())) {
+    return dp.trim();
+  }
   // dp_folder is usually 1 for most employees, but check if it exists in response
   const dp_folder = officialInfo.dp_folder || officialInfo.dpFolder || 1;
   const gender = basicInfo?.gender || officialInfo.gender || null;

@@ -29,7 +29,7 @@ const ViewPRC = (props) => {
         if (value == null || value === '') return '—'
         const v = String(value).trim()
         if (v === 'reporting manager') return 'Reporting Manager'
-        if (v === 'Custom employee') return 'Custom Employee'
+        if (v === 'Custom employee' || v === 'Custom Employee') return 'Employee'
         if (v === 'self') return 'Self'
         return v
     }
@@ -132,6 +132,28 @@ const ViewPRC = (props) => {
 
     return (
         <div className="p-2 space-y-2">
+            {/* Row 0: Goal Manage by, Competency Manage by (at top) */}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="flex gap-3 border border-blue-500 rounded-md p-3">
+                    <div className="mt-1">
+                        <span className="text-primary-100"><FaBullseye /></span>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <span className="text-nowrap text-customBlack-100 text-[14px]">Goal Manage by</span>
+                        <span className="text-customBlack-100 text-[12px]">{formatManageBy(data.goal_manage_by)}</span>
+                    </div>
+                </div>
+                <div className="flex gap-3 border border-blue-500 rounded-md p-3">
+                    <div className="mt-1">
+                        <span className="text-primary-100"><LiaTasksSolid /></span>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <span className="text-nowrap text-customBlack-100 text-[14px]">Competency Manage by</span>
+                        <span className="text-customBlack-100 text-[12px]">{formatManageBy(data.competency_manage_by)}</span>
+                    </div>
+                </div>
+            </div>
+
             {/* Row 1: Name, Start Date */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="flex gap-5 border border-blue-500 rounded-md p-3">
@@ -171,28 +193,6 @@ const ViewPRC = (props) => {
                     <div className="flex flex-col gap-2">
                         <span className="text-nowrap text-customBlack-100 text-[14px]">Closing Date</span>
                         <span className="text-customBlack-100 text-[12px]">{formatTimestampToDate(data.closing_date)}</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Row 3: Goal Manage by, Competency Manage by */}
-            <div className="grid grid-cols-2 gap-4">
-                <div className="flex gap-3 border border-blue-500 rounded-md p-3">
-                    <div className="mt-1">
-                        <span className="text-primary-100"><FaBullseye /></span>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-nowrap text-customBlack-100 text-[14px]">Goal Manage by</span>
-                        <span className="text-customBlack-100 text-[12px]">{formatManageBy(data.goal_manage_by)}</span>
-                    </div>
-                </div>
-                <div className="flex gap-3 border border-blue-500 rounded-md p-3">
-                    <div className="mt-1">
-                        <span className="text-primary-100"><LiaTasksSolid /></span>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <span className="text-nowrap text-customBlack-100 text-[14px]">Competency Manage by</span>
-                        <span className="text-customBlack-100 text-[12px]">{formatManageBy(data.competency_manage_by)}</span>
                     </div>
                 </div>
             </div>

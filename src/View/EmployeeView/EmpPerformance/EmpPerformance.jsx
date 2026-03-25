@@ -22,6 +22,7 @@ import CustomDrawer from "../../../Components/CustomDrawer/CustomDrawer"
 import AddGoalForm from "./AddGoalForm"
 import ConfirmationDialog from "../../../Components/ConfirmationDialog/ConfirmationDialog"
 import GoalDescriptionModal from "../../Performance/GoalDescriptionModal"
+import { getImageUrlFromEmployeeData } from "../../../utils/imageUrlUtils"
 
 const EmpPerformance = () => {
   const [activeTab, setActiveTab] = useState("goals");
@@ -108,7 +109,9 @@ const EmpPerformance = () => {
   const employeeName = perfData?.emp_data?.name || "";
   const designation = perfData?.emp_data?.designationObj?.title || "";
   const department = perfData?.emp_data?.department?.name || "";
-  const avatarSrc = perfData?.emp_data?.dp || "https://emp.veevotech.com/images/icons/empf.jpg";
+  const avatarSrc = perfData?.emp_data
+    ? getImageUrlFromEmployeeData(perfData.emp_data)
+    : "https://emp-beta.veevotech.com/images/icons/empm.jpg";
 
   const cycles = useMemo(() => {
     return (perfData?.Performence || [])
@@ -122,7 +125,6 @@ const EmpPerformance = () => {
   // Use all goals directly from API (no frontend filtering)
   const goalsForCycle = useMemo(() => {
     const allGoals = perfData?.Goal || [];
-    console.log('All goals available:', allGoals.length);
     return allGoals;
   }, [perfData?.Goal]);
 
@@ -167,8 +169,7 @@ const EmpPerformance = () => {
   ]
 
   // Handle goal form submission
-  const handleGoalSubmit = (formData) => {
-    console.log('Goal form submitted:', formData);
+  const handleGoalSubmit = () => {
     // Close drawer only after successful API call (handled in AddGoalForm)
     setAddGoalDrawerOpen(false);
     setIsEditMode(false);
@@ -191,7 +192,6 @@ const EmpPerformance = () => {
 
   // Handle cycle selection change - send performance_id to API for filtering
   const handleCycleChange = (cycle) => {
-    console.log('Cycle changed to:', cycle);
     setSelectedCycle(cycle);
 
     // Reset pagination and fetch data with the selected performance_id
@@ -632,9 +632,7 @@ const EmpPerformance = () => {
                           </thead>
                           <tbody>
                             {goalsForCycle && goalsForCycle.length ? (
-                              (() => {
-                                console.log('Rendering goals in table:', goalsForCycle.length);
-                                return goalsForCycle.map((g, idx) => {
+                              goalsForCycle.map((g, idx) => {
                                   const getStatusText = (status) => {
                                     switch (status) {
                                       case '0': return 'Pending';
@@ -753,8 +751,7 @@ const EmpPerformance = () => {
                                       </td>
                                     </tr>
                                   );
-                                });
-                              })()
+                                })
                             ) : (
                               <tr>
                                 <td colSpan={7} className="py-12 text-center text-gray-400">

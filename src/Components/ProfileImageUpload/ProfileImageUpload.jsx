@@ -59,13 +59,8 @@ const ProfileImageUpload = ({ employeeId, onUploadSuccess, onClose }) => {
         setIsUploading(true);
 
         try {
-            // Create FormData
-            const formData = new FormData();
-            formData.append('emp_dp', selectedFile);
-            formData.append('emp_id', employeeId);
-
-            // Call API
-            const result = await updateEmployeeProfileImage(formData);
+            // Call API (uploads to make_url then updates core profile image)
+            const result = await updateEmployeeProfileImage({ file: selectedFile, emp_id: employeeId });
 
             if (result.success) {
                 showToast(result.message || 'Profile image updated successfully!', 'success');
@@ -104,7 +99,7 @@ const ProfileImageUpload = ({ employeeId, onUploadSuccess, onClose }) => {
                         accept="image/jpeg,image/jpg,image/png"
                         onChange={handleFileSelect}
                         ref={fileInputRef}
-                        className="!border-gray-300 !text-gray-700"
+                        className="border-gray-300! text-gray-700!"
                         label="Choose file"
                         containerProps={{
                             className: "min-w-0"

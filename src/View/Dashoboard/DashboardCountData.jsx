@@ -45,9 +45,9 @@ const DashboardCountData = (props) => {
     const { data, exportData, sendSms, loading, title, attendanceReportDate } = props
 
     useEffect(() => {
-      console.log('DashboardCountData - data:', data);
-      console.log('DashboardCountData - exportData:', exportData);
-      console.log('DashboardCountData - title:', title);
+      // onsole.log('DashboardCountData - data:', data);
+      // console.log('DashboardCountData - exportData:', exportData);
+      // console.log('DashcboardCountData - title:', title);
     }, [data, exportData, title])
     
     // Local state for search term

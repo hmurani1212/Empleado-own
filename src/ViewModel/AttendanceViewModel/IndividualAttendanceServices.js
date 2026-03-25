@@ -254,11 +254,10 @@ const useIndividualAttendanceServices = ()=>{
             await empSuggestionListAtt();
             // The empListAtt will be updated via the useEffect above
             
-            console.log('Employee search requested for:', data.search);
             // The empListAtt will be updated via the useEffect above, which will trigger the filtering
 
         }catch(err){
-            console.log(err)
+            console.error(err)
             showToast('Error fetching employees', 'error')
         }
     }
@@ -426,11 +425,15 @@ const useIndividualAttendanceServices = ()=>{
             const userData = getUserData();
             const org_id = userData?.org_id || null;
 
+            const resolvedEmpId = empId || id
             const apiData = {
-                empId: empId || id,
-                month:searchingEmpValue.month.value,
-                year:searchingEmpValue.year.value,
-                filter : "specific_month",
+                // Backend commonly expects user_id / emp_id; keep empId for backward compatibility
+                user_id: resolvedEmpId,
+                emp_id: resolvedEmpId,
+                empId: resolvedEmpId,
+                month: searchingEmpValue.month.value,
+                year: searchingEmpValue.year.value,
+                filter: "specific_month",
                 org_id: org_id
                 // searchBy : "AI",
                 // calendar_json : "true"
@@ -440,7 +443,6 @@ const useIndividualAttendanceServices = ()=>{
             try {
                 const response = await attendanceApi.getIndividualDetail(apiData)
                 const responseData = response.data;
-                console.log('what is the data', response)
                 // console.log('API Response:', response);
                 // console.log('API Response Data:', responseData);
                 // console.log('DB_DATA:', responseData.DB_DATA);
@@ -495,8 +497,6 @@ const useIndividualAttendanceServices = ()=>{
                         }
                     };
 
-                    console.log('transformedData1234567890', transformedData)
-                    
                     // Create chart data format for the chart component
                     setAttendanceData((prevState)=>(
                         {
@@ -689,7 +689,6 @@ const useIndividualAttendanceServices = ()=>{
             try{
                 const response = await attendanceApi.getAttendanceGraph(apiData)
                 const res = response?.data || {}
-                console.log("graph of the day", response)
 
                 // Helper to dedupe 2D chart matrix by label (first column), keeping last occurrence
                 const dedupeMatrixByLabel = (matrix) => {

@@ -958,7 +958,7 @@ const useEmployees = () => {
             const data = { parent_id: 0, branch_id: id, getAll: true, get_all_departments: true }
             const response = await employeesApi.gettingSubDepts(data)
             const resData = response.data
-            console.log('Departments API response:', resData.DB_DATA?.departments);
+            // console.log('Departments API response:', resData.DB_DATA?.departments);
             if (resData.STATUS === "SUCCESSFUL") {
                 const rawDepts = resData.DB_DATA?.departments ?? (Array.isArray(resData.DB_DATA) ? resData.DB_DATA : [])
                 const departments = Array.isArray(rawDepts) ? rawDepts.map((d) => ({ id: d.id ?? d.dept_id, name: d.name ?? d.dept_name ?? '' })) : []

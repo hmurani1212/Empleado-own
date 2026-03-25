@@ -27,7 +27,6 @@ const empTrainingViewModel = (set, get) => ({
         try {
             const response = await empTrainingApi.getEmployeeTraining(params);
             const respData = response.data;
-            console.log('respData', respData)
 
             if (respData.STATUS === 'SUCESSFUL') {
                 const dbData = respData.DB_DATA || {};
@@ -151,8 +150,7 @@ const empTrainingViewModel = (set, get) => ({
             });
             
             const respData = response.data;
-            console.log('Start response:', respData);
-            
+
             if (respData.STATUS === 'SUCESSFUL') {
                 // Refresh training data to get updated status
                 await get().getEmployeeTraining();
@@ -182,8 +180,7 @@ const empTrainingViewModel = (set, get) => ({
                     });
                     
                     const respData = response.data;
-                    console.log('Complete response:', respData);
-                    
+
                     if (respData.STATUS === 'SUCESSFUL') {
                         // Refresh training data to get updated status
                         await get().getEmployeeTraining();
@@ -207,8 +204,7 @@ const empTrainingViewModel = (set, get) => ({
                 try {
                     const response = await empTrainingApi.getAssessment(courseId);
                     const respData = response.data;
-                    console.log('Assessment response:', respData);
-                    
+
                     if (respData.STATUS === 'SUCCESSFUL') {
                         const assessments = respData.DB_DATA?.assessments || [];
                         return { success: true, data: assessments };
@@ -231,7 +227,6 @@ const empTrainingViewModel = (set, get) => ({
         try {
             const response = await empTrainingApi.getEmployeeTrainingCourses(params);
             const respData = response.data;
-            console.log('Employee Training Courses Response:', respData);
 
             if (respData.STATUS === 'SUCCESSFUL') {
                 const courses = respData.DB_DATA || [];
@@ -276,7 +271,6 @@ const empTrainingViewModel = (set, get) => ({
         try {
             const response = await empTrainingApi.submitAssessment(data);
             const respData = response.data;
-            console.log('Submit Assessment Response:', respData);
 
             if (respData.STATUS === 'SUCCESSFUL') {
                 showToast('Assessment submitted successfully', 'success');
@@ -303,7 +297,6 @@ const empTrainingViewModel = (set, get) => ({
         try {
             const response = await empTrainingApi.getAssignedQuestions();
             const respData = response.data;
-            console.log('Assigned Questions Response:', respData);
 
             if (respData.STATUS === 'SUCCESSFUL' || respData.STATUS === 'SUCESSFUL') {
                 set({ assignedQuestions: respData.DB_DATA, loading: false });
@@ -328,7 +321,6 @@ const empTrainingViewModel = (set, get) => ({
         try {
             const response = await empTrainingApi.submitEmployeeAnswers(payload);
             const respData = response.data;
-            console.log('Submit Answers Response:', respData);
 
             if (respData.STATUS === 'SUCCESSFUL' || respData.STATUS === 'SUCESSFUL') {
                 showToast('Assessment submitted successfully!', 'success');
@@ -353,7 +345,6 @@ const empTrainingViewModel = (set, get) => ({
         try {
             const response = await empTrainingApi.completeCourse(courseId);
             const respData = response.data;
-            console.log('Complete Course Response:', respData);
 
             if (respData.STATUS === 'SUCCESSFUL' || respData.STATUS === 'SUCESSFUL') {
                 showToast('Course completed successfully!', 'success');

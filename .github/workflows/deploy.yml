@@ -1,0 +1,98 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - Hassan
+  pull_request:
+    branches:
+      - main
+      - Hassan
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # --- Lint & Build ---
+  build:
+    name: Lint and Build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          # Add build-time env vars here if needed (e.g. VITE_API_URL)
+          NODE_ENV: production
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  # --- Deploy (only on push to main, after build succeeds) ---
+  deploy:
+    name: Deploy
+    runs-on: windows-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production  # optional: use GitHub Environment for secrets
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for production
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      # Option A: Deploy to GitHub Pages (uncomment and set repo settings if needed)
+      # - name: Deploy to GitHub Pages
+      #   uses: peaceiris/actions-gh-pages@v4
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_dir: ./dist
+
+      # Option B: Deploy to Windows server via SSH (add secrets: SSH_PRIVATE_KEY, REMOTE_HOST, REMOTE_USER)
+      # - name: Deploy to Windows server via SSH
+      #   uses: easingthemes/ssh-deploy@v4
+      #   with:
+      #     SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      #     REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+      #     REMOTE_USER: ${{ secrets.REMOTE_USER }}
+      #     SOURCE: dist/
+      #     TARGET: C:\inetpub\wwwroot\empleado
+
+      # Option C: Deploy to Vercel / Netlify (use their official GitHub actions and secrets)
+      # Option D: Just upload artifact (no server deploy) — deploy job already produces build
+      - name: Summary
+        shell: pwsh
+        run: |
+          Write-Host "Build completed. dist/ is ready for deployment."
+          Write-Host "Configure one of the deploy options above or add your own step."

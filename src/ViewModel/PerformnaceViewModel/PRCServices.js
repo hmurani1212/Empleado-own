@@ -359,27 +359,19 @@ const usePRCServices = () => {
         // console.log("This is slecet", select);
         // console.log("This is field", field)
         if (field === 'branch_id') {
-            // Load branches if not already loaded
-            if (PRCAddValue.branches.length === 0) {
-                const branchData = await gettingEmployeeFrequentHit()
-                setPRCAddValue((prevState) => ({
-                    ...prevState,
-                    branches: branchData.DB_DATA || []
-                }))
-            }
-            
-            // If "All Branches" is selected (value is 0), fetch all departments
+            // Do NOT call get_branch_employee or departments here.
+            // Branches are loaded when modal opens (AddEditPRC useEffect).
+            // Departments are loaded when user selects branch via gettingSubBranches in AddEditPRC Branch onChange.
+            // Employees are loaded only when user selects department (see department_id block below).
             const branchValue = select.value === 0 || select.value === '0' ? 0 : select.value;
-            const data = await gettingDepartmentsServices(branchValue);
-            
             setPRCAddValue((prevState) => ({
                 ...prevState,
                 [field]: select,
-                departments: data,
+                departments: [],
                 employees: [],
                 department_id: branchValue === 0 ? { value: 0, label: 'All Departments' } : null,
                 emp_id: null,
-                selectedEmp: [] // Clear selected employees when branch changes
+                selectedEmp: prevState.selectedEmp ?? [] // Keep selected employees when branch changes
             }))
 
         } else if (field === 'department_id') {
@@ -410,7 +402,7 @@ const usePRCServices = () => {
                 [field]: select,
                 employees: employeeOptions,
                 emp_id: deptValue === 0 ? { value: 0, label: 'All Employees' } : null,
-                selectedEmp: [] // Clear selected employees when department changes
+                selectedEmp: prevState.selectedEmp ?? [] // Keep selected employees when department changes
             }))
         } else if (field === 'emp_id') {
             // Handle "All Employees" option
@@ -619,7 +611,7 @@ const usePRCServices = () => {
         }
 
         const { name, start_date, end_date, goal_rate, competancy_rate, branch_id, department_id, selectedEmp, emp_id, review_day, isMultipleEmployeeMode } = PRCAddValue;
-        console.log("PRCAddValue", PRCAddValue)
+        // console.log("PRCAddValue", PRCAddValue)
 
         // Handle "All" options - convert 0 to appropriate values for API
         const branchValue = branch_id.value === 0 || branch_id.value === '0' ? 0 : parseInt(branch_id.value);
@@ -693,7 +685,7 @@ const usePRCServices = () => {
                     new_added_RPC.department = PRC_DATA.department;
                     new_added_RPC.startDate = PRC_DATA.startDate;
                 });
-                console.log("new_added_RPCnew_added_RPC", new_added_RPC)
+                // console.log("new_added_RPCnew_added_RPC", new_added_RPC)
                 addNewRPC(new_added_RPC)
                 showToast('Review Cycle Added successfully', 'success')
                 toggleAddPRC();

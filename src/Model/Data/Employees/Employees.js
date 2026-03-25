@@ -74,9 +74,10 @@ const employeesApi = {
         if (data.get_all_departments) {
             params.append('get_all_departments', 'true')
         }
+        const query = params.toString()
         return axiosInstancecoremodule.request({
             method: 'GET',
-            url: `/api/v1/departments?${params.toString()}&get_all_departments=true`,
+            url: `/api/v1/departments${query ? `?${query}` : ''}`,
         })
     },
     getDesignations: function (data) {
@@ -1365,23 +1366,13 @@ const employeesApi = {
         })
     },
 
-    // Update employee profile image
-    updateEmployeeProfileImage: function (formData) {
-        const jwt = getLocalStorage();
-
-        // Create a new axios instance for file uploads with multipart/form-data
-        const axiosFileInstance = axios.create({
-            baseURL: CORE_BASE_URL,
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                'Authorization': `Bearer ${jwt}`
-            }
-        });
-
-        return axiosFileInstance.request({
+    // Update employee profile image — JSON body: { emp_id, image_url }
+    updateEmployeeProfileImage: function (data) {
+        return axiosInstancecoremodule.request({
             method: 'POST',
             url: `/api/v1/employee_v3/update_img_profile`,
-            data: formData
+            data: data,
+            headers: { 'Content-Type': 'application/json' }
         })
     },
 
