@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useMemo } from 'react'
 import { AiOutlineLogin } from 'react-icons/ai'
 import { BiImage, BiSolidBriefcaseAlt2 } from 'react-icons/bi'
 import { FaUserCheck } from 'react-icons/fa6'
@@ -10,7 +10,7 @@ import useEmpDashboard from '../../../ViewModel/EmpViewModel/EmpDashboardViewMod
 import useStore from '../../../Store/store'
 import { showToast } from '../../../Components/Toaster/Toaster'
 import { secondsIntoHrs } from '../../../services/__dateTimeServices'
-import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../../utils/imageUrlUtils";
+// import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../../utils/imageUrlUtils";
 import { CiLocationOn } from "react-icons/ci";
 import { AiOutlineMail } from "react-icons/ai";
 import { IoMdCloudUpload } from "react-icons/io";
@@ -22,7 +22,29 @@ import { IoEyeSharp } from "react-icons/io5";
 import { GrFormClose } from "react-icons/gr";
 import { MdDone } from "react-icons/md";
 import { GrPowerReset } from "react-icons/gr";
+import { GiCakeSlice, GiPartyPopper, GiPresent, GiBalloons, GiStarFormation } from "react-icons/gi";
+import { IoBalloonOutline } from "react-icons/io5";
+import { MdCake } from "react-icons/md";
 import defaultUserAvatar from '../../../constants/avatar';
+import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../../utils/imageUrlUtils";
+import { motion } from 'framer-motion';
+// import { getImageUrlFromEmployeeData } from "../../";
+
+/** Returns true if today's date (local 12:00 AM - 11:59 PM) matches the user's date of birth (month and day). */
+function isBirthdayToday(dob) {
+  if (!dob) return false;
+  const today = new Date();
+  let dobDate;
+  if (typeof dob === 'number') {
+    dobDate = new Date(dob * 1000);
+  } else if (typeof dob === 'string') {
+    dobDate = new Date(dob.includes('T') ? dob : dob.trim());
+  } else {
+    return false;
+  }
+  if (isNaN(dobDate.getTime())) return false;
+  return today.getMonth() === dobDate.getMonth() && today.getDate() === dobDate.getDate();
+}
 const EmpDashboard = () => {
   const { empDashboardData, handlePolicyView, gettingEmpDashboardData } = useEmpDashboard();
   const updateEmployeeProfileImage = useStore((state) => state.updateEmployeeProfileImage);
@@ -349,7 +371,10 @@ const EmpDashboard = () => {
 
   const pInfo = empDashboardData?.section1;
   ///console.log('what is the data', pInfo)
-  const dutyInfo = empDashboardData?.section2
+  const dutyInfo = empDashboardData?.section2;
+
+  // Show birthday wishing effects for the entire day (12:00 AM - 11:59 PM) when today matches DOB
+  const isBirthday = useMemo(() => isBirthdayToday(pInfo?.dob), [pInfo?.dob]);
 
   const attendanceDetail = empDashboardData?.attendance_detail
   const attendanceData = empDashboardData?.attendance
@@ -530,8 +555,108 @@ const EmpDashboard = () => {
     getImageUrlFromEmployeeData(pInfo) || 'https://emp-beta.veevotech.com/images/icons/empm.jpg';
 
   return (
-    <div className={`flex flex-col gap-4 p-2`}>
-      <div className={`relative z-10 flex flex-wrap lg:flex-nowrap rounded-[10px] bg-white drop-shadow-md min-h-0`}>
+    <div className={`flex flex-col gap-4 p-2 relative ${isBirthday ? 'min-h-[100vh]' : ''}`}>
+      {/* Birthday wishing effects - visible entire day (12:00 AM - 11:59 PM) */}
+      {isBirthday && (
+        <>
+          {/* Full-page falling particles - larger quantity */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-30" aria-hidden="true">
+            {[...Array(58)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-2 h-2 rounded-full opacity-60"
+                style={{
+                  left: `${(i * 1.7 + 0.5) % 100}%`,
+                  top: '-4%',
+                  backgroundColor: ['#3DA5F4', '#FF6B9D', '#FFD93D', '#6BCB77', '#C084FC'][i % 5],
+                }}
+                animate={{
+                  y: ['0vh', '110vh'],
+                  rotate: [0, 360],
+                  opacity: [0.6, 0],
+                }}
+                transition={{
+                  duration: 4 + (i % 3),
+                  repeat: Infinity,
+                  delay: i * 0.15,
+                }}
+              />
+            ))}
+          </div>
+          {/* Birthday banner with falling birthday icons (slow motion, this section only) */}
+          <motion.div
+            className="relative z-20 mb-2 rounded-xl bg-gradient-to-r from-[#3DA5F4] via-[#FF6B9D] to-[#FFD93D] px-4 py-4 shadow-lg overflow-hidden min-h-[88px]"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Falling birthday icons (incl. stars) - inline row at top, then fall; order shuffled for misorder from start */}
+            {(() => {
+              const iconConfigs = [
+                { Icon: GiCakeSlice, size: 20 },
+                { Icon: GiPartyPopper, size: 18 },
+                { Icon: GiPresent, size: 18 },
+                { Icon: IoBalloonOutline, size: 20 },
+                { Icon: GiBalloons, size: 18 },
+                { Icon: MdCake, size: 16 },
+                { Icon: GiStarFormation, size: 20 },
+                { Icon: GiStarFormation, size: 18 },
+                { Icon: GiStarFormation, size: 16 },
+              ].flatMap((cfg) => [...Array(4)].map(() => ({ ...cfg })));
+              // Shuffle for misorder from start (stable per mount; j kept in [0, i] to avoid undefined)
+              const shuffle = (arr) => {
+                const a = [...arr];
+                for (let i = a.length - 1; i > 0; i--) {
+                  const r = Math.abs(Math.sin(i * 12.9898) * 43758.5453);
+                  const j = Math.floor(r % (i + 1));
+                  [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
+              };
+              const shuffled = shuffle(iconConfigs).filter((item) => item && item.Icon);
+              return shuffled.map(({ Icon, size }, i) => {
+                const total = shuffled.length;
+                const left = total > 1 ? 4 + (i / (total - 1)) * 92 : 50;
+                const delay = (i * 0.17 + (i % 5) * 0.4) % 6;
+                const duration = 10 + (i % 4);
+                return (
+                  <motion.div
+                    key={`bday-fall-${i}`}
+                    className="absolute pointer-events-none text-white/80 whitespace-nowrap"
+                    style={{
+                      left: `${left}%`,
+                      top: '-10%',
+                      transform: 'translateX(-50%)',
+                      fontSize: `${size}px`,
+                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))',
+                    }}
+                    animate={{
+                      y: [0, 100],
+                      rotate: [0, 180],
+                      opacity: [0.9, 0.2],
+                    }}
+                    transition={{
+                      duration,
+                      repeat: Infinity,
+                      delay,
+                      ease: 'linear',
+                    }}
+                  >
+                    <Icon />
+                  </motion.div>
+                );
+              });
+            })()}
+            <div className="relative z-10">
+              <p className="text-center text-white font-semibold text-lg font-Urbanist drop-shadow-sm">
+                🎂 Happy Birthday{pInfo?.name ? ` ${pInfo.name}` : ''}, 🎉
+              </p>
+              <p className="text-center text-white/90 text-sm mt-0.5">You've made it to another year—wishing you a good one this year!</p>
+            </div>
+          </motion.div>
+        </>
+      )}
+      <div className="relative z-10 flex flex-wrap lg:flex-nowrap rounded-[10px] bg-white drop-shadow-md min-h-0">
         <div
           className='relative flex items-center justify-center h-[210px] w-[170px] shrink-0 self-stretch overflow-hidden rounded-tl-lg rounded-bl-lg transition-all duration-300'
           onMouseEnter={() => setShowCamera(true)}

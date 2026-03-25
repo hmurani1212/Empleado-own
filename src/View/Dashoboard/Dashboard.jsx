@@ -32,6 +32,7 @@ import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import EmployeesLimit from "./EmployeesLimit";
 import { convertDateToCustom } from "../../services/__dashboardServcies";
 import useAuthReady from "../../hooks/useAuthReady";
+import { useLiveBiometricDevices } from "../../hooks/useLiveBiometricDevices";
 import { showToast } from "../../Components/Toaster/Toaster";
 import { getUserData, getDecodedToken } from "../../Authentication/jwt_decode";
 
@@ -82,6 +83,9 @@ function Dashboard() {
     getTodayAttendanceData,
     sendMeetGreetEmail,
   } = useDashboard();
+
+  // Fetch all biometric devices when admin dashboard is open (cached via React Query)
+  useLiveBiometricDevices(true);
 
   // Debug: Log lateComersData changes
   useEffect(() => {
