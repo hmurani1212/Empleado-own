@@ -18,6 +18,7 @@ const generateReportRequestId = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
   return `att-report-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
+const ATTENDANCE_PENDING_EXPORT_KEY = 'attendance_pending_export'
 
 const ExportAttendance = () => {
   const { individualExport, handleCheckboxChangeAtt, excelLayoutOptions } = useAttendance();
@@ -27,6 +28,8 @@ const ExportAttendance = () => {
   const { socketIoRef } = useSocket()
   const pendingReportRequestIdRef = useRef(null)
   const downloadTimeoutRef = useRef(null)
+  const exportStartedAtRef = useRef(null)
+  const currentExportMetaRef = useRef(null)
 
   const DOWNLOAD_WAIT_MS = 5 * 60 * 1000
   
@@ -139,23 +142,22 @@ const ExportAttendance = () => {
         downloadTimeoutRef.current = null
       }
 
-      showToast('Your attendance report is ready! Downloading...', 'success')
+      const elapsedMs = exportStartedAtRef.current ? Date.now() - exportStartedAtRef.current : null
+      const elapsedSec = elapsedMs != null ? (elapsedMs / 1000).toFixed(1) : null
+      console.log('📥 Attendance report socket response received', {
+        requestId: data.request_id || pendingReportRequestIdRef.current,
+        oneId: data.one_id,
+        reportType: data.report_type,
+        exportType: data.export_type,
+        elapsedMs,
+        elapsedSec
+      })
+
       setIsDownloading(false)
       setIsExporting(false)
       setIsSendingEmail(false)
-
-      try {
-        const link = document.createElement('a')
-        link.href = data.file_url
-        link.rel = 'noopener noreferrer'
-        const filename = data.file_name || `${data.report_type}_${data.export_type}_${new Date().toISOString().split('T')[0]}.xlsx`
-        link.download = filename
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      } catch (error) {
-        showToast('Failed to download the report', 'error')
-      }
+      exportStartedAtRef.current = null
+      currentExportMetaRef.current = null
     }
 
     socketIoRef.current.on('attendance_report_ready', handleAttendanceReportReady)
@@ -410,20 +412,56 @@ const ExportAttendance = () => {
       const result = await scheduleReport(payload)
 
       if (result.success) {
+        exportStartedAtRef.current = Date.now()
+        currentExportMetaRef.current = {
+          requestId,
+          reportType: formData.reportType,
+          exportType: formData.exportType,
+          isSendEmail
+        }
+        console.log('⏳ Attendance report scheduled, waiting for socket response...', currentExportMetaRef.current)
+        showToast('Your report may take some time. Once ready, it will download automatically in your browser.', 'info')
+        localStorage.setItem(
+          ATTENDANCE_PENDING_EXPORT_KEY,
+          JSON.stringify({
+            requestId,
+            startedAt: exportStartedAtRef.current,
+            reportType: formData.reportType,
+            exportType: formData.exportType,
+            oneId: getDecodedToken()?.oneid ?? null
+          })
+        )
+
         if (downloadTimeoutRef.current) clearTimeout(downloadTimeoutRef.current)
         downloadTimeoutRef.current = setTimeout(() => {
           downloadTimeoutRef.current = null
+          const elapsedMs = exportStartedAtRef.current ? Date.now() - exportStartedAtRef.current : null
+          const elapsedSec = elapsedMs != null ? (elapsedMs / 1000).toFixed(1) : null
+          console.log('⌛ Attendance report wait timeout reached', {
+            ...currentExportMetaRef.current,
+            elapsedMs,
+            elapsedSec
+          })
           pendingReportRequestIdRef.current = null
+          exportStartedAtRef.current = null
+          currentExportMetaRef.current = null
+          localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
           setIsDownloading(false)
           showToast('Report did not arrive in time. Check Attendance Report Archive or try again.', 'error')
         }, DOWNLOAD_WAIT_MS)
         setIsDownloading(true)
       } else {
         pendingReportRequestIdRef.current = null
+        exportStartedAtRef.current = null
+        currentExportMetaRef.current = null
+        localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
         showToast(result.error || 'Failed to schedule report', 'error')
       }
     } catch (error) {
       pendingReportRequestIdRef.current = null
+      exportStartedAtRef.current = null
+      currentExportMetaRef.current = null
+      localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
       showToast('An error occurred while scheduling the report', 'error')
       setIsDownloading(false)
     } finally {

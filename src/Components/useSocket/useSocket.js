@@ -2,19 +2,34 @@
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { getUserData } from '../../Authentication/jwt_decode';
+import { inbox_Url, attendance_url } from '../../Model/BaseUri';
 
-const SOCKET_URL = 'http://172.18.0.44:6379'; // Main socket server
-const SOCKET_IO_URL = 'http://172.18.0.34:8005'; // Socket.IO server
-// const attendence_Socket_URL = 'http://172.18.0.44:6379';
+/**
+ * REST bases like https://host/empleado_app/inbox must not be passed alone to io():
+ * the client only uses origin for the connection and defaults path to /socket.io,
+ * which hits wss://host/socket.io (wrong). Use origin + path /prefix/socket.io.
+ */
+function socketOriginAndPath(restApiBaseUrl) {
+    const u = new URL(restApiBaseUrl);
+    const prefix = u.pathname.replace(/\/$/, '');
+    return {
+        url: `${u.protocol}//${u.host}`,
+        path: `${prefix}/socket.io`,
+    };
+}
 
 const useSocket = () => {
     const socketRef = useRef(null);
     const socketIoRef = useRef(null);
 
     useEffect(() => {
-        // Initialize main socket connection
-        socketRef.current = io(SOCKET_URL, {
-            transports: ['websocket'],
+        const inboxSocket = socketOriginAndPath(inbox_Url);
+        const attendanceSocket = socketOriginAndPath(attendance_url);
+
+        // Initialize main socket connection (inbox service)
+        socketRef.current = io(inboxSocket.url, {
+            path: inboxSocket.path,
+            transports: ['polling', 'websocket'],
             auth: {
                 token: localStorage.getItem('jwt')
             }
@@ -32,9 +47,10 @@ const useSocket = () => {
             console.error('🔌 Main socket connection error:', error);
         });
 
-        // Initialize Socket.IO connection on http://172.18.0.34:8005
-        socketIoRef.current = io(SOCKET_IO_URL, {
-            transports: ['websocket', 'polling'],
+        // Attendance Socket.IO (same host, different path prefix)
+        socketIoRef.current = io(attendanceSocket.url, {
+            path: attendanceSocket.path,
+            transports: ['polling', 'websocket'],
             auth: {
                 token: localStorage.getItem('jwt')
             }
