@@ -11,6 +11,7 @@ import CustomDrawer from './Components/CustomDrawer/CustomDrawer';
 import SideMenuMobileView from './Components/SideMenuMobileView/SideMenuMobileView';
 import empLogo from './assets/images/empleado-logo.png'
 import { Toaster } from './Components/Toaster/Toaster';
+import GlobalAttendanceReportListener from './Components/GlobalAttendanceReportListener/GlobalAttendanceReportListener';
 import 'react-calendar/dist/Calendar.css';
 
 const App = () => {
@@ -258,6 +259,7 @@ const App = () => {
 
       <div>
         {showMainLayout && <Toaster />}
+        {!isLogInRoute && <GlobalAttendanceReportListener />}
         <CustomDrawer
 
           open={mobilevViewFalse}
