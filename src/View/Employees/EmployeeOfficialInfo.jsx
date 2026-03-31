@@ -24,7 +24,8 @@ const EmployeeOfficialInfo = ({
         gettingSubBranches,
         dept_subDept,
         designations,
-        gettingDesignation
+        gettingDesignation,
+        clearDesignations
     } = useEmployees();
 
     const [officialInfoForm, setOfficialInfoForm] = useState({
@@ -143,13 +144,10 @@ const EmployeeOfficialInfo = ({
                 gettingSubBranches(branchId);
             }
 
-            // Load designations when department is set
+            // Load designations only when department is set (not by branch alone)
             if (deptId && deptId !== lastFetchedDeptIdRef.current) {
                 lastFetchedDeptIdRef.current = deptId;
                 gettingDesignation(deptId, false); // false = dept_id for designation API
-            } else if (branchId && !deptId) {
-                // If only branch is set, fetch designations by branch
-                gettingDesignation(branchId, true); // true = branch_id for designation API
             }
 
             hasPopulatedFormRef.current = true;
@@ -229,22 +227,20 @@ const EmployeeOfficialInfo = ({
             return next;
         });
 
-        // When branch changes, fetch departments and reset department/designation
+        // When branch changes, fetch departments and reset department/designation (designations load after department is selected)
         if (field === 'branch') {
             const branchValue = value === 0 || value === '0' ? 0 : value;
             if (branchValue !== undefined && branchValue !== null && lastFetchedBranchIdRef.current !== branchValue) {
                 lastFetchedBranchIdRef.current = branchValue;
+                lastFetchedDeptIdRef.current = null;
                 await gettingSubBranches(branchValue);
+                clearDesignations();
                 // Reset department and designation when branch changes
                 setOfficialInfoForm(prev => ({
                     ...prev,
                     department: null,
                     designation: null
                 }));
-                // Fetch designations by branch
-                if (branchValue !== 0) {
-                    gettingDesignation(branchValue, true); // true = branch_id
-                }
             }
         }
 

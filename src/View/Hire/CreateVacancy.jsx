@@ -39,6 +39,13 @@ const CreateVacancy = () => {
     return isNaN(num) ? null : num;
   };
 
+  /** Legacy question_type 4 (Input Field) removed; treat as text area (0). */
+  const normalizeQuestionType = (selectedOption) => {
+    const n = parseInt(selectedOption, 10);
+    if (Number.isNaN(n)) return NaN;
+    return n === 4 ? 0 : n;
+  };
+
   const getCurrentDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -333,7 +340,7 @@ const CreateVacancy = () => {
           const accordion = accordions[i];
           const question =
             newVacValues.questionnaire[accordion.id - 1]?.question;
-          const questionType = parseInt(accordion.selectedOption);
+          const questionType = normalizeQuestionType(accordion.selectedOption);
 
           try {
             await Yup.string()
@@ -348,7 +355,7 @@ const CreateVacancy = () => {
 
           try {
             await Yup.number()
-              .oneOf([0, 1, 2, 3, 4], "Invalid question type")
+              .oneOf([0, 1, 2, 3], "Invalid question type")
               .required("Please select question type")
               .validate(questionType);
           } catch (error) {
@@ -560,9 +567,9 @@ const CreateVacancy = () => {
           .map((accordion) => {
             const question =
               newVacValues.questionnaire[accordion.id - 1]?.question;
-            const questionType = parseInt(accordion.selectedOption);
+            const questionType = normalizeQuestionType(accordion.selectedOption);
 
-            if (!question || questionType === undefined) return null;
+            if (!question || Number.isNaN(questionType)) return null;
 
             const baseQuestion = {
               question,
@@ -590,7 +597,7 @@ const CreateVacancy = () => {
       // Call the API
       const success = await create_vacancy(formattedData);
       if (success) {
-        // navigate("/hire/vacancies_list");
+        navigate("/hire/vacancies_list", { replace: true });
       }
     } catch (error) {
       console.error("Error creating vacancy:", error);
@@ -624,7 +631,7 @@ const CreateVacancy = () => {
       <div className="pl-2 flex flex-col gap-3">
         <div className="flex justify-end mt-[40px] gap-4">
           <Button
-            className="bg-[#8bc9f8]"
+            className="bg-bgBlue text-white font-medium capitalize rounded-lg px-4 py-2 shadow-sm hover:bg-[#2d94e0]"
             onClick={() => navigate("/hire/vacancies_list")}
           >
             Back
@@ -967,14 +974,21 @@ const CreateVacancy = () => {
                                         )
                                       }
                                       className="w-full p-2 border rounded mt-2"
-                                      value={newVacValues.questionnaire[index]?.qType || ""}
+                                      value={
+                                        newVacValues.questionnaire[index]
+                                          ?.qType === "4" ||
+                                        newVacValues.questionnaire[index]
+                                          ?.qType === 4
+                                          ? "0"
+                                          : newVacValues.questionnaire[index]
+                                              ?.qType || ""
+                                      }
                                     >
                                       <option value="">Select an option</option>
                                       <option value="0">Text Area</option>
                                       <option value="1">Check Boxes</option>
                                       <option value="2">Radio Button</option>
                                       <option value="3">Dropdown List</option>
-                                      <option value="4">Input Field</option>
                                     </select>
                                   </div>
                                   <div className="mt-4">
@@ -1002,7 +1016,7 @@ const CreateVacancy = () => {
                         ))}
                         <Button
                           onClick={addAccordion}
-                          className="mt-4 bg-[#8bc9f8] capitalize p-2 font-medium"
+                          className="mt-4 bg-bgBlue text-white capitalize p-2 font-medium rounded-lg shadow-sm hover:bg-[#2d94e0]"
                         >
                           Add More Questions
                         </Button>
@@ -1090,7 +1104,7 @@ const CreateVacancy = () => {
                                   <div className="flex flex-col gap-2">
                                     <div>
                                       <Input
-                                        label="Marks Title"
+                                        label="Enter Marks Title on this page"
                                         color="blue"
                                         placeholder="Behavior Marks"
                                         value={accordion.marks_title || ""}
@@ -1213,7 +1227,7 @@ const CreateVacancy = () => {
                     {!isFirstStep && (
                       <Button
                         onClick={handlePrev}
-                        className="capitalize bg-[#8bc9f8]"
+                        className="capitalize bg-bgBlue text-white rounded-lg shadow-sm hover:bg-[#2d94e0]"
                       >
                         Prev
                       </Button>
@@ -1222,7 +1236,7 @@ const CreateVacancy = () => {
                   <div>
                     <Button
                       onClick={isLastStep ? createNewVacancy : wrappedHandleNext}
-                      className={`capitalize cursor-pointer ${isLastStep ? "bg-[#0acf97]" : "bg-[#8bc9f8]"
+                      className={`capitalize cursor-pointer rounded-lg shadow-sm text-white ${isLastStep ? "bg-[#0acf97] hover:bg-[#09b386]" : "bg-bgBlue hover:bg-[#2d94e0]"
                         }`}
                     >
                       {isLastStep ? "Submit" : "Next"}

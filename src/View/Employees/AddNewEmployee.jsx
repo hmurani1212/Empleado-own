@@ -14,7 +14,6 @@ import { FaUser, FaInfoCircle } from "react-icons/fa";
 import { FaBuildingUser } from "react-icons/fa6";
 import { MdOutlineFindReplace } from "react-icons/md";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
-import employeesApi from "../../Model/Data/Employees/Employees";
 import { DayPicker } from "react-day-picker";
 import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import { GrHide } from "react-icons/gr";
@@ -28,6 +27,7 @@ import useDashboard from "../../ViewModel/DashboardViewModel/DashboardServices";
 import { showToast } from "../../Components/Toaster/Toaster";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import { getContentByLabel } from "../../services/getContentService";
+import { useLocation } from "react-router-dom";
 
 export const UserVerifyComp = (props) => {
   const { findingEmp } = props;
@@ -134,13 +134,19 @@ const AddNewEmployee = () => {
     get_all_department,
     loading,
     isAddingEmployee,
-    isCreatingSalaryTemplate
+    isCreatingSalaryTemplate,
+    prefillFromHiringCandidate
   } = useEmployees();
+
+  const location = useLocation();
 
   const { adminDashboardData, getAdminDashboardData } = useDashboard();
   const activeEmployees = adminDashboardData?.TOTAL_EMPLOYEES ?? 0;
   const employeeLimit = adminDashboardData?.ALLOWED_EMPLOYEES ?? 0;
-  const [lastEnrolledEmployeeId, setLastEnrolledEmployeeId] = useState('N/A');
+  const lastEnrolledEmployeeId =
+    adminDashboardData?.LAST_ENROLLED_EMP_ID ??
+    adminDashboardData?.last_enrolled_emp_id ??
+    "N/A";
 
   // Content drawer (info icon) – right-side panel with ENGLISH/URDU
   const [contentDrawerOpen, setContentDrawerOpen] = useState(false);
@@ -179,27 +185,26 @@ const AddNewEmployee = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Hiring → Add Employee: skip step 0 and prefill from candidate payload
   useEffect(() => {
-    const fetchLastEnrolledId = async () => {
+    const stateCandidate = location?.state?.prefillCandidate
+    const stored = (() => {
       try {
-        const response = await employeesApi.getEmployeesWithFilters({ page: 1, status: 1, limit: 20 });
-        const data = response?.data;
-        if (data?.STATUS === 'SUCCESSFUL') {
-          const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
-          const empId = lastEnrolled?.emp_id;
-          if (empId != null && empId !== '') {
-            setLastEnrolledEmployeeId(String(empId));
-          } else {
-            setLastEnrolledEmployeeId('N/A');
-          }
-        } else {
-          setLastEnrolledEmployeeId('N/A');
-        }
+        return JSON.parse(localStorage.getItem("hire_prefill_candidate") || "null")
       } catch {
-        setLastEnrolledEmployeeId('N/A');
+        return null
       }
-    };
-    fetchLastEnrolledId();
+    })()
+
+    const candidate = stateCandidate || stored
+    if (candidate) {
+      prefillFromHiringCandidate(candidate)
+      try {
+        localStorage.removeItem("hire_prefill_candidate")
+      } catch { }
+    }
+    // Only run on first mount for this route
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // console.log('what is the data here', get_all_department)
@@ -354,48 +359,110 @@ const AddNewEmployee = () => {
     return newEmpValues.mobile; // Email is now optional on first step
   }, [newEmpValues.mobile]);
 
-  const isStep1Valid = useMemo(() => {
-    const isPakistan =
-      newEmpValues.country_code && newEmpValues.country_code.value === "162";
-    const baseValidation =
-      newEmpValues.full_name &&
-      newEmpValues.father_name &&
-      newEmpValues.country_code &&
-      newEmpValues.dob &&
-      newEmpValues.passport &&
-      newEmpValues.password &&
-      newEmpValues.gender;
-    // Only require network if Pakistan is selected
-    const networkValidation = isPakistan ? newEmpValues.network : true;
-    return baseValidation && networkValidation;
-  }, [newEmpValues]);
-
-  const isStep2Valid = useMemo(() => {
-    return (
-      newEmpValues.branch &&
-      newEmpValues.department &&
-      newEmpValues.designation &&
-      newEmpValues.work_policy &&
-      newEmpValues.empStatus &&
-      newEmpValues.salary_template &&
-      newEmpValues.empID &&
-      newEmpValues.joing_date
-    );
-  }, [newEmpValues]);
-
-  // Function to determine if the current step is valid
-  const isCurrentStepValid = useMemo(() => {
-    switch (activeStep) {
-      case 0:
-        return isStep0Valid;
-      case 1:
-        return isStep1Valid;
-      case 2:
-        return isStep2Valid;
-      default:
-        return false;
+  /** Personal Information (step 1): show one toast per missing field; used on Next instead of disabling the button */
+  const validatePersonalInformation = () => {
+    const v = newEmpValues;
+    if (!v.country_code) {
+      showToast("Please select Country", "error");
+      return false;
     }
-  }, [activeStep, isStep0Valid, isStep1Valid, isStep2Valid]);
+    if (!v.full_name || !String(v.full_name).trim()) {
+      showToast("Please enter full name", "error");
+      return false;
+    }
+    if (!v.father_name || !String(v.father_name).trim()) {
+      showToast("Please enter father name", "error");
+      return false;
+    }
+    if (!v.dob) {
+      showToast("Please select date of birth", "error");
+      return false;
+    }
+    if (!v.passport || !String(v.passport).trim()) {
+      showToast("Please enter CNIC / Passport number", "error");
+      return false;
+    }
+    if (!v.password || !String(v.password).trim()) {
+      showToast("Please enter OneID Empleado password", "error");
+      return false;
+    }
+    if (!v.gender) {
+      showToast("Please select gender", "error");
+      return false;
+    }
+    const isPakistan = v.country_code?.value === "162";
+    if (isPakistan && !v.network) {
+      showToast("Please select mobile network", "error");
+      return false;
+    }
+    const ageValidation = validateAge(v.dob);
+    if (!ageValidation.isValid) {
+      showToast(ageValidation.message, "error");
+      return false;
+    }
+    return true;
+  };
+
+  /** Official Information (step 2): show one toast per missing field; used on Submit instead of disabling the button */
+  const validateOfficialInformation = () => {
+    const v = newEmpValues;
+    if (!v.branch) {
+      showToast("Please select branch", "error");
+      return false;
+    }
+    if (!v.department) {
+      showToast("Please select department", "error");
+      return false;
+    }
+    if (!v.designation) {
+      showToast("Please select designation", "error");
+      return false;
+    }
+    if (!v.work_policy) {
+      showToast("Please select work policy", "error");
+      return false;
+    }
+    if (!v.salary_template) {
+      showToast("Please select salary template", "error");
+      return false;
+    }
+    if (!v.empStatus) {
+      showToast("Please select employment status", "error");
+      return false;
+    }
+    if (!v.empID || !String(v.empID).trim()) {
+      showToast("Please enter employee ID", "error");
+      return false;
+    }
+    if (!v.joing_date) {
+      showToast("Please select joining date", "error");
+      return false;
+    }
+    return true;
+  };
+
+  const handleNextClick = () => {
+    if (activeStep === 0) {
+      handleNext();
+      return;
+    }
+    if (activeStep === 1) {
+      if (!validatePersonalInformation()) return;
+      handleNext();
+    }
+  };
+
+  const handleSubmitClick = () => {
+    if (!validateOfficialInformation()) return;
+    addEmpHandler();
+  };
+
+  /** Only step 0 (Find Employee) keeps Next disabled until mobile is present */
+  const isPrimaryActionDisabled =
+    (activeStep === 0 && !isStep0Valid) ||
+    (employee_exicute === 1 && isLastStep) ||
+    loading ||
+    isAddingEmployee;
 
   return (
     <form>
@@ -1195,15 +1262,10 @@ const AddNewEmployee = () => {
               </Button>
             )}
             <Button
-              onClick={isLastStep ? addEmpHandler : handleNext}
+              onClick={isLastStep ? handleSubmitClick : handleNextClick}
               className={`capitalize cursor-pointer bg-[#2196f3] ${isLastStep ? "bg-bgBlue" : ""
-                } ${!isCurrentStepValid ? "" : ""}`}
-              disabled={
-                !isCurrentStepValid || 
-                (employee_exicute === 1 && isLastStep) ||
-                loading ||
-                isAddingEmployee
-              }
+                }`}
+              disabled={isPrimaryActionDisabled}
               loading={isLastStep ? isAddingEmployee : (isFirstStep ? loading : false)}
               >
               {isLastStep ? "Submit" : isFirstStep ? "Find User" : "Next"}

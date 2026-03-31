@@ -66,7 +66,6 @@ const useEmployees = () => {
     const Get_All_Employee = useStore((state) => state.Get_All_Employee);
     const getHeaderDatafn = useStore((state) => state.getHeaderDatafn);
     const getHeaderData = useStore((state) => state.getHeaderData);
-    const fetchHrPolicyDropdown = useStore((state) => state.fetchHrPolicyDropdown);
     const hrPolicyDropdown = useStore((state) => state.hrPolicyDropdown);
     const get_all_department = useStore((state) => state.get_all_department);
     const get_all_department_fn = useStore((state) => state.get_all_department_fn);
@@ -604,6 +603,74 @@ const useEmployees = () => {
         setIsFirstStep(value)
     }
 
+    /**
+     * Hiring → Add Employee fast-path:
+     * - Skip step 0 (Find Employee / credentials screen)
+     * - Start at step 1 (Personal Information)
+     * - Prefill form fields from Hiring candidate payload
+     */
+    const prefillFromHiringCandidate = (candidate) => {
+        if (!candidate || typeof candidate !== 'object') return
+
+        const countryId = candidate.country_id != null ? String(candidate.country_id) : "162"
+        const countryOption = {
+            value: countryId,
+            label: countryId === "162" ? "Pakistan" : (candidate.country_name || "Country")
+        }
+
+        // Candidate DOB comes as ISO string (e.g. "2000-03-20T00:00:00.000Z") in app_accept response
+        let dobYmd = ''
+        if (candidate.dob) {
+            try {
+                const d = new Date(candidate.dob)
+                if (!isNaN(d.getTime())) {
+                    const year = d.getFullYear()
+                    const month = String(d.getMonth() + 1).padStart(2, '0')
+                    const day = String(d.getDate()).padStart(2, '0')
+                    dobYmd = `${year}-${month}-${day}`
+                }
+            } catch (e) {
+                dobYmd = ''
+            }
+        }
+
+        // Hiring API uses numeric gender (0/1/2)
+        const genderValue = candidate.gender != null ? String(candidate.gender) : ''
+
+        // Hiring API uses numeric network id (1..5) where 5 is Telenor in our UI list
+        const networkId = candidate.network != null ? Number(candidate.network) : null
+        const networkLabel =
+            networkId === 1 ? 'Mobilink' :
+                networkId === 2 ? 'Ufone' :
+                    networkId === 3 ? 'Zong' :
+                        networkId === 4 ? 'Warid' :
+                            networkId === 5 ? 'Telenor' :
+                                ''
+        const networkOption = networkLabel ? { value: `${networkLabel}-PK`, label: networkLabel } : null
+
+        setNewEmpValues((prev) => ({
+            ...prev,
+            // Step 0 fields (kept for record; UI will be skipped)
+            mobile: candidate.cellnum || prev.mobile || '',
+            email: candidate.email || prev.email || '',
+
+            // Step 1 fields
+            full_name: candidate.name || prev.full_name || '',
+            father_name: candidate.father_name || prev.father_name || '',
+            country_code: countryOption,
+            network: networkOption,
+            dob: dobYmd || prev.dob || '',
+            passport: candidate.nic || prev.passport || '',
+            gender: genderValue || prev.gender || '',
+            one_id: candidate.oneid != null ? String(candidate.oneid) : (prev.one_id || ''),
+        }))
+
+        // Unlock step 1 and jump directly to it
+        setFindEmployeeCompleted(true)
+        setCompletedSteps((prev) => new Set([...(prev ? Array.from(prev) : []), 0]))
+        setActiveStep(1)
+    }
+
 
     const fetchingAllBranches = async () => {
         await centralizedGetBranches();
@@ -614,23 +681,6 @@ const useEmployees = () => {
         if (isDashboardRoute || isDepartmentsRoute || isBranchesRoute || isNoticesRoute || isHrPoliciesRoute || isApplicationRoute || isLeavesPlannerRoute || isPerformanceRoute || isProfileRoute || isAttendanceRoute || isExpenseRoute || isTimeAdjustmentRoute || isEmployeesRoute || isTrainingDashRoute || isHireRoute) return;
         centralizedGetBranches();
     }, [isDashboardRoute, isDepartmentsRoute, isBranchesRoute, isNoticesRoute, isHrPoliciesRoute, isApplicationRoute, isLeavesPlannerRoute, isPerformanceRoute, isProfileRoute, isAttendanceRoute, isExpenseRoute, isTimeAdjustmentRoute, isEmployeesRoute, isTrainingDashRoute, isHireRoute]);
-
-    const fetchingAllEmployess = async (branch_id) => {
-        try {
-            const response = await employeesApi.getEmpReportManager(branch_id)
-            const data = response.data
-            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                // Updated to handle new API response format - data is in DB_DATA.employees
-                setEmpmanager(data.DB_DATA?.employees || [])
-            } else {
-                setEmpmanager([])
-            }
-
-        } catch (err) {
-            console.log('Error fetching reporting managers:', err)
-            setEmpmanager([])
-        }
-    }
 
 
 
@@ -898,7 +948,7 @@ const useEmployees = () => {
                 [field]: selectedOption
             }));
         } else if (field === 'branch') {
-            // Reset department and designation when branch changes
+            // Reset department and designation when branch changes — designations load only after department is selected
             setNewEmpValues((prevState) => ({
                 ...prevState,
                 [field]: selectedOption,
@@ -906,13 +956,9 @@ const useEmployees = () => {
                 designation: null,
                 reporting_manager: null
             }));
+            clearDesignations()
             gettingSubBranches(selectedOption.value);
-            // gettingPolicies(selectedOption.value);
-            fetchHrPolicyDropdown(selectedOption.value);
-            // get_all_department_fn(selectedOption.value);
             gettingSalayTemplate(selectedOption.value);
-            gettingDesignation(selectedOption.value, true) // true = branch_id for designation API
-            fetchingAllEmployess(selectedOption.value);
         } else if (field === 'department') {
             console.log('Department selected:', selectedOption);
             setNewEmpValues((prevState) => ({
@@ -936,7 +982,15 @@ const useEmployees = () => {
 
 
     const gettingSubBranches = async (id) => {
-        //// console.log('gettingSubBranches called with id:', id);
+        const applyEmptyBranchContext = () => {
+            setDept_subDept({ departments: [] })
+            useStore.setState({ get_all_department: [] })
+            setDesignations([])
+            setEmpmanager([])
+            setPolicies([])
+            useStore.setState({ hrPolicyDropdown: [], hrPolicyDropdownLoading: false })
+        }
+
         try {
             if (id === 0 || id === '0') {
                 const response = await departmentsApi.get_all_Department(0)
@@ -948,39 +1002,59 @@ const useEmployees = () => {
                     setDept_subDept({ departments })
                     useStore.setState({ get_all_department: departments })
                     setDesignations([])
+                    setEmpmanager([])
+                    setPolicies([])
+                    useStore.setState({ hrPolicyDropdown: [], hrPolicyDropdownLoading: false })
                 } else {
-                    setDept_subDept({ departments: [] })
-                    useStore.setState({ get_all_department: [] })
-                    setDesignations([])
+                    applyEmptyBranchContext()
                 }
                 return
             }
-            const data = { parent_id: 0, branch_id: id, getAll: true, get_all_departments: true }
-            const response = await employeesApi.gettingSubDepts(data)
-            const resData = response.data
-            // console.log('Departments API response:', resData.DB_DATA?.departments);
-            if (resData.STATUS === "SUCCESSFUL") {
-                const rawDepts = resData.DB_DATA?.departments ?? (Array.isArray(resData.DB_DATA) ? resData.DB_DATA : [])
-                const departments = Array.isArray(rawDepts) ? rawDepts.map((d) => ({ id: d.id ?? d.dept_id, name: d.name ?? d.dept_name ?? '' })) : []
-                setDept_subDept(resData.DB_DATA)
+
+            useStore.setState({ hrPolicyDropdownLoading: true }) // replaces fetchHrPolicyDropdown loading
+
+            const response = await employeesApi.getBranchDropdownData(id)
+            const resData = response?.data
+
+            if (response?.status === 200 && resData?.STATUS === 'SUCCESSFUL' && resData?.DB_DATA) {
+                const db = resData.DB_DATA
+                const rawDept = db.DEPARTMENT || db.departments || []
+                const departments = Array.isArray(rawDept)
+                    ? rawDept.map((d) => ({ id: d.id ?? d.dept_id, name: d.name ?? d.dept_name ?? '' }))
+                    : []
+                setDept_subDept({ departments })
                 useStore.setState({ get_all_department: departments })
-                // Do not clear designations here - gettingDesignation(branch_id) runs in parallel and will set them
+                setDesignations([])
+
+                const rawEmp = db.EMPLOYEEE || db.EMPLOYEE || []
+                const managers = Array.isArray(rawEmp)
+                    ? rawEmp.map((e) => ({ id: e.id, name: e.name })).filter((e) => e.id != null && e.name != null)
+                    : []
+                setEmpmanager(managers)
+
+                const rawPol = db.HR_POLICY || []
+                const policyRows = Array.isArray(rawPol)
+                    ? rawPol.map((p) => ({
+                        id: p.id,
+                        name: p.name,
+                        policy_name: p.name ?? p.policy_name ?? ''
+                    }))
+                    : []
+                setPolicies(policyRows)
+                useStore.setState({
+                    hrPolicyDropdown: policyRows.map((p) => ({ id: p.id, name: p.name ?? p.policy_name })),
+                    hrPolicyDropdownLoading: false
+                })
             } else {
-                setDept_subDept({ departments: [] })
-                useStore.setState({ get_all_department: [] })
-                console.log('Departments set in store:', departments);
-            } 
-            // else {
-            //     setDept_subDept([])
-            //     useStore.setState({ get_all_department: [] });
-            //     setDesignations([])
-            // }
+                applyEmptyBranchContext()
+            }
         } catch (err) {
-            console.error("Error fetching departments:", err)
+            console.error('Error fetching branch dropdown data:', err)
             setDept_subDept({ departments: [] })
-            setDept_subDept([])
-            useStore.setState({ get_all_department: [] });
+            useStore.setState({ get_all_department: [], hrPolicyDropdown: [], hrPolicyDropdownLoading: false })
             setDesignations([])
+            setEmpmanager([])
+            setPolicies([])
         }
     }
     const gettingPolicies = async (id) => {
@@ -1040,6 +1114,10 @@ const useEmployees = () => {
             setDesignations([])
         }
     }
+
+    /** Clear designation options (e.g. when branch changes — load designations only after department is selected). */
+    const clearDesignations = () => setDesignations([])
+
     const gettingSalayTemplate = async (id) => {
         const data = { bid: id }
         try {
@@ -1492,7 +1570,7 @@ const useEmployees = () => {
             console.log('Update Employee Response:', responseData);
 
             if (responseData.STATUS === "SUCCESSFUL") {
-                showToast('HR Policy has been updated', 'success');
+                showToast('Profile has been updated', 'success');
                 return responseData;
             } else {
                 showToast(responseData.ERROR_DESCRIPTION || 'Failed to update employee', 'error');
@@ -1733,12 +1811,13 @@ const useEmployees = () => {
         gettingPolicies,
         gettingSalayTemplate,
         gettingDesignation,
+        clearDesignations,
         createSalaryTemplateFromEmployee,
         fetchingAllBranches,
         setInitialStatus,
-        fetchingAllEmployess,
         completedSteps,
         findEmployeeCompleted,
+        prefillFromHiringCandidate,
         // Drawer functions
         openDrawer,
         settingDrawerTitle,

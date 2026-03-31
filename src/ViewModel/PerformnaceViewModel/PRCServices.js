@@ -10,13 +10,56 @@ import { validateMultipleEmployeePRC, validateSingleEmployeePRCUpdate } from "..
 import { formatDateYMD } from "../../services/__dateTimeServices"
 import { useDebounce } from "../../services/__debounceServices"
 
-// Maps "Who Can Assign" selection to API competency_Manage_by / Goal_Manage_by value
+// Maps one "Who Can Assign" option to API competency_Manage_by / Goal_Manage_by token
 const mapAllowTypeToManageBy = (allowType) => {
     if (allowType === 'Admin') return 'Admin'
     if (allowType === 'reporting manager') return 'reporting manager'
     if (allowType === 'Self') return 'self'
     if (allowType === 'custom') return 'Custom employee'
     return 'Admin'
+}
+
+/** Build allow_goal / allow_compenetency arrays from multi-select types + optional custom employee ids. */
+const buildAllowArrayFromTypes = (types, customEmployees) => {
+    const out = []
+    for (const t of types || []) {
+        if (t === 'custom') {
+            (customEmployees ?? []).forEach((opt) => {
+                const v = typeof opt === 'object' && opt?.value != null ? opt.value : opt
+                if (v != null && v !== '') out.push(v)
+            })
+        } else {
+            out.push(t)
+        }
+    }
+    return out
+}
+
+/** Comma-separated Goal_Manage_by / competency_Manage_by for multi-select (matches Validation). */
+const buildManageByStringFromTypes = (types, hasCustomEmployeesSelected) => {
+    const parts = []
+    for (const t of types || []) {
+        if (t === 'custom') {
+            if (hasCustomEmployeesSelected) parts.push('Custom employee')
+        } else {
+            parts.push(mapAllowTypeToManageBy(t))
+        }
+    }
+    return [...new Set(parts)].join(',')
+}
+
+/** Parse API manage-by string back into UI checkbox keys. */
+const manageByApiStringToAllowTypes = (str) => {
+    if (str == null || str === '') return ['Admin']
+    const parts = String(str).split(',').map((s) => s.trim()).filter(Boolean)
+    const out = []
+    for (const p of parts) {
+        if (p === 'Admin') out.push('Admin')
+        else if (p === 'reporting manager') out.push('reporting manager')
+        else if (p === 'self') out.push('Self')
+        else if (p === 'Custom employee') out.push('custom')
+    }
+    return out.length ? out : ['Admin']
 }
 
 const usePRCServices = () => {
@@ -56,9 +99,9 @@ const usePRCServices = () => {
         isMultipleEmployeeMode: false, // Flag to distinguish between create and update modes
         // Permissions: Who Can Assign Goals / Competencies
         permissionsSectionOpen: false,
-        allow_goal_type: 'Admin',
+        allow_goal_types: ['Admin'],
         allow_goal_custom_employees: [],
-        allow_competency_type: 'Admin',
+        allow_competency_types: ['Admin'],
         allow_competency_custom_employees: [],
         permissionEmployeesOptions: [],
         permissionEmployeesLoading: false,
@@ -126,9 +169,9 @@ const usePRCServices = () => {
             // Don't load branches initially - load on demand
             branches: [],
             permissionsSectionOpen: false,
-            allow_goal_type: 'Admin',
+            allow_goal_types: ['Admin'],
             allow_goal_custom_employees: [],
-            allow_competency_type: 'Admin',
+            allow_competency_types: ['Admin'],
             allow_competency_custom_employees: [],
             permissionEmployeesOptions: [],
             permissionEmployeesLoading: false,
@@ -435,7 +478,23 @@ const usePRCServices = () => {
         } else if (field === 'allow_goal_custom_employees' || field === 'allow_competency_custom_employees') {
             const arr = Array.isArray(select) ? select : (select ? [select] : [])
             setPRCAddValue((prevState) => ({ ...prevState, [field]: arr }))
-        } else if (field === 'allow_goal_type' || field === 'allow_competency_type' || field === 'permissionsSectionOpen') {
+        } else if (field === 'toggle_allow_goal_type' || field === 'toggle_allow_competency_type') {
+            const opt = select
+            const stateKey = field === 'toggle_allow_goal_type' ? 'allow_goal_types' : 'allow_competency_types'
+            setPRCAddValue((prevState) => {
+                const current = prevState[stateKey] || ['Admin']
+                const has = current.includes(opt)
+                const next = has ? current.filter((x) => x !== opt) : [...current, opt]
+                if (next.length === 0) {
+                    showToast('Select at least one option', 'warning')
+                    return prevState
+                }
+                if (!has && opt === 'custom' && (prevState.permissionEmployeesOptions?.length ?? 0) === 0) {
+                    fetchPermissionEmployees(prevState.department_id?.value ?? null)
+                }
+                return { ...prevState, [stateKey]: next }
+            })
+        } else if (field === 'permissionsSectionOpen') {
             setPRCAddValue((prevState) => ({ ...prevState, [field]: select }))
         } else {
             setPRCAddValue((prevState) => ({
@@ -508,6 +567,8 @@ const usePRCServices = () => {
                 employees: [],
                 competency_manage_by: dbData.competency_Manage_by || 'Admin',
                 goal_manage_by: dbData.Goal_Manage_by || 'Admin',
+                allow_goal_types: manageByApiStringToAllowTypes(dbData.Goal_Manage_by),
+                allow_competency_types: manageByApiStringToAllowTypes(dbData.competency_Manage_by),
             }))
         } catch (err) {
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Error fetching performance review'
@@ -521,7 +582,11 @@ const usePRCServices = () => {
 
 
     const validatePRCForm = () => {
-        const { name, start_date, end_date, branch_id, department_id, selectedEmp, emp_id, review_day, isMultipleEmployeeMode, goal_rate, competancy_rate, modulesType } = PRCAddValue
+        const {
+            name, start_date, end_date, branch_id, department_id, selectedEmp, emp_id, review_day, isMultipleEmployeeMode,
+            goal_rate, competancy_rate, modulesType,
+            allow_goal_types, allow_competency_types, allow_goal_custom_employees, allow_competency_custom_employees
+        } = PRCAddValue
         const nameValidation = validateInput('Name', name)
         if (!nameValidation.isValid) {
             return { isValid: false, message: nameValidation.message }
@@ -552,6 +617,23 @@ const usePRCServices = () => {
 
         if (review_day === '') {
             return { isValid: false, message: "Select Closing Date" }
+        }
+
+        if (modulesType?.includes(1)) {
+            if (!allow_goal_types?.length) {
+                return { isValid: false, message: 'Select who can assign goals' }
+            }
+            if (allow_goal_types.includes('custom') && !(allow_goal_custom_employees?.length > 0)) {
+                return { isValid: false, message: 'Select at least one employee for custom goal assignment' }
+            }
+        }
+        if (modulesType?.includes(2)) {
+            if (!allow_competency_types?.length) {
+                return { isValid: false, message: 'Select who can assign competencies' }
+            }
+            if (allow_competency_types.includes('custom') && !(allow_competency_custom_employees?.length > 0)) {
+                return { isValid: false, message: 'Select at least one employee for custom competency assignment' }
+            }
         }
 
         // Validate closing date must be on or after end date
@@ -620,19 +702,23 @@ const usePRCServices = () => {
         // Check if "All Employees" is selected
         const isAllEmployeesSelected = emp_id && (emp_id.value === 0 || emp_id.value === '0');
 
-        // Build allow_goal: ['Admin'] | ['reporting manager'] | ['Self'] | [empId, ...]
-        const allow_goal = PRCAddValue.allow_goal_type === 'custom'
-            ? (PRCAddValue.allow_goal_custom_employees ?? []).map((opt) => (typeof opt === 'object' && opt?.value != null ? opt.value : opt))
-            : [PRCAddValue.allow_goal_type];
+        const allow_goal = buildAllowArrayFromTypes(
+            PRCAddValue.allow_goal_types,
+            PRCAddValue.allow_goal_custom_employees
+        )
+        const allow_compenetency = buildAllowArrayFromTypes(
+            PRCAddValue.allow_competency_types,
+            PRCAddValue.allow_competency_custom_employees
+        )
 
-        // Build allow_compenetency: ['Admin'] | ['reporting manager'] | [empId, ...]
-        const allow_compenetency = PRCAddValue.allow_competency_type === 'custom'
-            ? (PRCAddValue.allow_competency_custom_employees ?? []).map((opt) => (typeof opt === 'object' && opt?.value != null ? opt.value : opt))
-            : [PRCAddValue.allow_competency_type];
-
-        // competency_Manage_by / Goal_Manage_by derived from "Who Can Assign" selection
-        const competency_Manage_by = mapAllowTypeToManageBy(PRCAddValue.allow_competency_type)
-        const Goal_Manage_by = mapAllowTypeToManageBy(PRCAddValue.allow_goal_type)
+        const competency_Manage_by = buildManageByStringFromTypes(
+            PRCAddValue.allow_competency_types,
+            (PRCAddValue.allow_competency_custom_employees?.length ?? 0) > 0
+        )
+        const Goal_Manage_by = buildManageByStringFromTypes(
+            PRCAddValue.allow_goal_types,
+            (PRCAddValue.allow_goal_custom_employees?.length ?? 0) > 0
+        )
 
         const apiData = {
             name: name,
@@ -729,8 +815,14 @@ const usePRCServices = () => {
             employee: selectedEmp.length > 0 ? selectedEmp[0].value.toString() : "",
             assigned_to: selectedEmp.length > 0 ? selectedEmp[0].label : "",
             review_day: review_day,
-            competency_Manage_by: PRCAddValue.competency_manage_by,
-            Goal_Manage_by: PRCAddValue.goal_manage_by,
+            competency_Manage_by: buildManageByStringFromTypes(
+                PRCAddValue.allow_competency_types,
+                (PRCAddValue.allow_competency_custom_employees?.length ?? 0) > 0
+            ),
+            Goal_Manage_by: buildManageByStringFromTypes(
+                PRCAddValue.allow_goal_types,
+                (PRCAddValue.allow_goal_custom_employees?.length ?? 0) > 0
+            ),
         };
 
         // Validate with update schema

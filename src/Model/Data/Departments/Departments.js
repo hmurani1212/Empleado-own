@@ -71,7 +71,12 @@ const departmentsApi = {
         }
         return axiosInstancecoremodule.request({
             method: 'GET',
-            url: `/api/v1/employees?${params.toString()}`
+            url: `/api/v1/employees?${params.toString()}`,
+            // Avoid 304 Not Modified with empty body (breaks STATUS / DB_DATA parsing in clients)
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
         })
     },
 

@@ -2,14 +2,24 @@ import {axiosInstancecoremodule} from "../../base";
 
 
 const branch2Api = {
-    getBranches: function (params) {
+    getBranches: function (params = {}) {
+        const { text, ...rest } = params
+        const merged = {
+            ...rest,
+            page: params.page || 1,
+            limit: params.limit || 10
+        }
+        const q = text != null ? String(text).trim() : ''
+        if (q !== '') {
+            merged.text = q
+        }
         return axiosInstancecoremodule.request({
             method: 'GET',
             url: '/api/v1/branches/get_branches',
-            params: {
-                ...params,
-                page: params.page || 1,
-                limit: params.limit || 10
+            params: merged,
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
             }
         })
     },

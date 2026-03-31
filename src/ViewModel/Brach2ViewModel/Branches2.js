@@ -17,6 +17,8 @@ const branchesViewModel2 = (set, get) => ({
     /** Persisted filter: 1 = active, 0 = inactive. Used for initial load and pagination. */
     branchFilterStatus: 1,
     setBranchFilterStatus: (status) => set({ branchFilterStatus: status }),
+    /** Last branch search string (server-side `text` param); kept for pagination / filter changes */
+    branchSearchText: '',
     branchEdit: [],
     timeZoneBranches: [],
     empSuggestions: [],
@@ -32,14 +34,33 @@ const branchesViewModel2 = (set, get) => ({
         set({ mountBranch: true })
     },
 
-    gettingAllBranchesNew: async (data) => {
+    gettingAllBranchesNew: async (data = {}) => {
         set({ branchesListLoading: true });
         try {
-            const response = await getBranchesService(data);
-            const respData = response.data;
-            const currentPage = data.page || 1;
+            const st = get()
+            const searchText =
+                'text' in data
+                    ? String(data.text ?? '').trim()
+                    : (st.branchSearchText ?? '')
+            if ('text' in data) {
+                set({ branchSearchText: searchText })
+            }
 
-            if (response.status === 200 && respData.STATUS === 'SUCCESSFUL') {
+            const payload = {
+                status:
+                    data.status !== undefined ? data.status : st.branchFilterStatus,
+                page: data.page !== undefined ? data.page : 1,
+                limit: data.limit !== undefined ? data.limit : 10,
+                text: searchText
+            }
+
+            const response = await getBranchesService(payload);
+            const respData = response.data;
+            const currentPage = payload.page || 1;
+            const httpOk =
+                response.status === 200 || response.status === 304
+
+            if (httpOk && respData && respData.STATUS === 'SUCCESSFUL') {
                 // Always replace data (no more "load more" - use Next/Previous instead)
                 set({
                     branchesAllNew: respData.DB_DATA,
@@ -55,7 +76,7 @@ const branchesViewModel2 = (set, get) => ({
                             pagination: { 
                                 total: 0, 
                                 page: 1, 
-                                limit: data.limit || 10, 
+                                limit: payload.limit || 10, 
                                 pages: 1 
                             } 
                         },
@@ -64,7 +85,7 @@ const branchesViewModel2 = (set, get) => ({
                             pagination: { 
                                 total: 0, 
                                 page: 1, 
-                                limit: data.limit || 10, 
+                                limit: payload.limit || 10, 
                                 pages: 1 
                             } 
                         }
@@ -75,7 +96,7 @@ const branchesViewModel2 = (set, get) => ({
             console.log('Error fetching branches:', err);
             // On network errors or other exceptions, clear state if it's page 1
             // This ensures filter changes work even if there's a network issue
-            const currentPage = data?.page || 1;
+            const currentPage = data?.page !== undefined ? data.page : 1;
             if (currentPage === 1) {
                 set({
                     branchesAllNew: { 

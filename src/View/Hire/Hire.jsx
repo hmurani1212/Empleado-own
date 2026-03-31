@@ -9,7 +9,6 @@ import { motion } from "framer-motion";
 import useHireNewVacancy from "../../ViewModel/HireViewModel/HireNewVacancy";
 import { Link } from "react-router-dom";
 import { getUserData } from "../../Authentication/jwt_decode";
-import { showToast } from "../../Components/Toaster/Toaster";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 const Hire = ({ data }) => {
   // Console log the props data
@@ -19,7 +18,6 @@ const Hire = ({ data }) => {
     hireCardList,
     get_record,
     handleNavCards,
-    openHireEmployeeDrawer,
   } = useHire();
 
   // const { allVacanciesList_data } = useHire_2();
@@ -70,11 +68,14 @@ const Hire = ({ data }) => {
 
   return (
     <>
-      <div className="flex py-2 pb-1 lg:px-2 md:px-2 px-0 text-center">
-        <div className="flex flex-wrap gap-4">
+      {/* Match Dashboard stat grid: fluid columns, consistent gap */}
+      <div className="w-full py-2 pb-1 text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-5">
           {hireCardList.map((item, idx) => (
             <NavLink
               key={item.id}
+              to={item.link || "#"}
+              className="block w-full min-w-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
               onClick={(e) => handleHireNavClickCards(e, item.link, item.id)}
             >
               <CustomCard
@@ -88,9 +89,9 @@ const Hire = ({ data }) => {
         </div>
       </div>
 
-      <div className="flex justify-end mt-[40px] gap-4">
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:items-center mt-8 sm:mt-10 gap-3 sm:gap-4 w-full">
         <CustomButton
-          className="bg-[#8bc9f8] capitalize p-2 font-medium"
+          className="bg-[#8bc9f8] capitalize p-2 font-medium w-full sm:w-auto justify-center"
           onClick={createVacancy}
           title="Announce new Vacancy"
         >
@@ -106,16 +107,16 @@ const Hire = ({ data }) => {
 
         {/* Tooba */}
         {/* Career Page */}
-        <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank">
-          <Button className="bg-[#0ACF97] capitalize p-2 font-medium">
+        <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank" className="w-full sm:w-auto">
+          <Button className="bg-[#0ACF97] capitalize p-2 font-medium w-full sm:w-auto">
             Career Page
           </Button>
         </Link>
       </div>
 
       <div className="flex flex-col gap-2 pb-3 mt-[20px]">
-        <div className="flex justify-between items-center gap-5 px-3 py-5">
-          <div className="flex items-center gap-5">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-5 px-3 py-5">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-5">
             {hireMenu.map((ele) => (
               <NavLink
                 key={ele.id}

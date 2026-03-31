@@ -1,7 +1,8 @@
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback } from "react"
 import useStore from "../../Store/store"
 // import { CiEdit } from 'react-icons/ci'
 import { getBranchesService, getEmployeeSuggestionsService, deleteBranchService } from "../../services/branchServices";
+import { useDebounce } from "../../services/__debounceServices";
 import { showToast } from "../../Components/Toaster/Toaster"
 import { newBranchFormValidation, editBranchFormValidaion } from '../../Validation/Validation';
 import { FaCheck, FaPencil, FaBuilding } from "react-icons/fa6"
@@ -18,7 +19,6 @@ const useBranches2 = () => {
     const gettingAllBranchesNew = useStore((state) => state.gettingAllBranchesNew)
     const branchesAllnew = useStore((state) => state.branchesAllNew)
     const branchesListLoading = useStore((state) => state.branchesListLoading)
-    const filterBranches = useStore((state) => state.FilterBranchesSearch)
     const allCountries = useStore((state) => state.allCountries)
     const gettingCountries = useStore((state) => state.gettingCountries)
     const mountBranch = useStore((state) => state.mountBranch)
@@ -71,6 +71,20 @@ const useBranches2 = () => {
         searchBranch: '',
     })
 
+    const BRANCH_SEARCH_DEBOUNCE_MS = 2000
+
+    const debouncedBranchSearch = useDebounce(
+        useCallback((searchValue) => {
+            return gettingAllBranchesNew({
+                status: branchFilterStatus,
+                page: 1,
+                limit: 10,
+                text: String(searchValue ?? '').trim()
+            })
+        }, [branchFilterStatus, gettingAllBranchesNew]),
+        BRANCH_SEARCH_DEBOUNCE_MS
+    )
+
     const statusBranch = (val) => {
         const statusNum = parseInt(val, 10)
         setBranchFilterStatus(statusNum)
@@ -119,15 +133,16 @@ const useBranches2 = () => {
         }
     };
 
-    const handleChangeBranch = (e) => {
+    const handleChangeBranch = useCallback((e) => {
         const { name, value } = e.target
         setBranchValues((prevState) => ({
             ...prevState,
             [name]: value
         }))
 
-        filterBranches(value)
-    }
+        if (name !== 'searchBranch') return
+        debouncedBranchSearch(value)
+    }, [debouncedBranchSearch])
 
     const triggerRefs = useRef([]);
 

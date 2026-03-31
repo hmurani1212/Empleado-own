@@ -19,6 +19,7 @@ const ShortlistTemplateModal = ({
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   const [formData, setFormData] = useState({
+    candidateName: "",
     position: "",
     interviewDate: "",
     startTime: "",
@@ -47,6 +48,7 @@ const ShortlistTemplateModal = ({
 
       setFormData(prev => ({
         ...prev,
+        candidateName: candidate?.name || "",
         position: vacancy?.title || "",
         interviewDate: applicantData.interviewTime ? formatTimestampToDate(applicantData.interviewTime) : "",
         startTime: applicantData.interviewTime ? formatTimestampToTime(applicantData.interviewTime) : "",

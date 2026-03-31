@@ -287,7 +287,7 @@ const Departments = () => {
                                 </span>
                                 <button
                                   type="button"
-                                  className="text-xs text-blue-500 hover:text-blue-700 font-medium font-poppins transition-colors underline decoration-blue-200 hover:decoration-blue-500 underline-offset-2"
+                                  className="cursor-pointer text-xs text-blue-500 hover:text-blue-700 font-medium font-poppins transition-colors underline decoration-blue-200 hover:decoration-blue-500 underline-offset-2"
                                   onClick={() => handleEmpDetails(t_data.id)}
                                 >
                                   View

@@ -71,7 +71,7 @@ const useSideMenu = ()=>{
                     break;
 
                 case 6:
-                    // HR Policies (id: 6) - don't call getAllBranchesHrPolicy here; ManagePolicies.jsx fetches branches via fetchingAllBranches on mount (avoids duplicate get_branch_employee)
+                    // HR Policies (id: 6) — ManagePolicies.jsx loads branches via getAllBranchesHrPolicy (get_branches), not get_branch_employee
                     const branch_id = 0
                     const status = 1
                     handleMountPolicies()

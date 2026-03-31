@@ -68,6 +68,26 @@ const employeesApi = {
             url: `/api/v1/branches/get_branch_employee`
         })
     },
+
+    /**
+     * Aggregated branch context for add-employee flows: departments, employees (reporting managers),
+     * and HR policies in one call (replaces separate departments + employees pages=all + get_all_policies).
+     * @param {string|number} branchApiId - branch id (query: branch_api)
+     */
+    getBranchDropdownData: function (branchApiId) {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: `/api/v1/branches/get_date`,
+            params: {
+                branch_api: branchApiId
+            },
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        })
+    },
+
     gettingSubDepts: function (data) {
         const params = new URLSearchParams()
         params.append('branch_id', data.branch_id)
@@ -113,6 +133,7 @@ const employeesApi = {
 
         })
     },
+    // Get all employees for reporting manager selection (legacy; prefer getBranchDropdownData + EMPLOYEEE)
     getEmpReportManager: function (branch_id) {
         return axiosInstancecoremodule.request({
             method: 'GET',
@@ -743,6 +764,13 @@ const employeesApi = {
         })
     },
     get_all_employeee: function (dept_id = null) {
+        // Employees list page uses the paginated employees endpoint; avoid an extra get_all_employee call there.
+        if (typeof window !== 'undefined' && window.__SKIP_GET_ALL_EMPLOYEE__ && !dept_id) {
+            return Promise.resolve({
+                status: 200,
+                data: { STATUS: 'SUCCESSFUL', DB_DATA: [] }
+            });
+        }
         const params = dept_id ? { dept_id } : {}
         return axiosInstancecoremodule.request({
             method: 'GET',

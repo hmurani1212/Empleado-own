@@ -38,7 +38,11 @@ const App = () => {
 
   const location = useLocation()
   const navigate = useNavigate()
-  const isLogInRoute = location.pathname === '/login';
+  // Login UI at `/` (or legacy `/login`) only when there is no JWT — avoids hard-depends on `/login` for SPA
+  const jwtInStorage = typeof localStorage !== 'undefined' ? localStorage.getItem('jwt') : null
+  const isLogInRoute =
+    !jwtInStorage &&
+    (location.pathname === '/' || location.pathname === '/login')
   
   // Use refs to prevent infinite loops
   const hasProcessedAuthRef = useRef(false);
@@ -94,9 +98,9 @@ const App = () => {
 
         if (!localStorageItem) {
           setAuthenticationState(false, false)
-          // Only navigate to login if not already on login route
-          if (!isLogInRoute) {
-            navigate('/login')
+          // Full reload to `/` so the app always boots from a URL the static host serves (avoids `/login` 404)
+          if (window.location.pathname !== '/') {
+            window.location.href = '/'
           }
           hasProcessedAuthRef.current = true;
         } else {
@@ -132,9 +136,8 @@ const App = () => {
       } catch (error) {
         console.error('Authentication processing error:', error)
         setAuthenticationState(false, false)
-        // Only navigate to login if not already on login route
-        if (!isLogInRoute) {
-          navigate('/login')
+        if (window.location.pathname !== '/') {
+          window.location.href = '/'
         }
         hasProcessedAuthRef.current = true;
       }

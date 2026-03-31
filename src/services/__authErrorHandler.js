@@ -329,31 +329,26 @@ class AuthErrorHandler {
 
             // CRITICAL: Force immediate redirect - MUST happen synchronously
             // Don't wait for anything, redirect immediately
-            console.log('🚀 Redirecting to login page NOW...');
+            console.log('🚀 Redirecting to app root NOW...');
             console.log('📍 Current URL:', window.location.href);
-            console.log('📍 Target URL: /login');
+            console.log('📍 Target URL: /');
             
-            // Get the base path for the application
             const basePath = window.location.origin;
-            const loginPath = `${basePath}/login`;
+            const homePath = `${basePath}/`;
             
-            // Use window.location.replace for immediate redirect (doesn't add to history)
-            // This is synchronous and will immediately navigate
             try {
                 console.log('🔄 Using window.location.replace...');
-                window.location.replace(loginPath);
+                window.location.replace(homePath);
                 
-                // If we're still here after 100ms, try href as fallback
                 setTimeout(() => {
-                    if (window.location.pathname !== '/login') {
+                    if (window.location.pathname !== '/') {
                         console.warn('⚠️ Replace may have failed, trying href redirect...');
                         try {
-                            window.location.href = loginPath;
+                            window.location.href = homePath;
                         } catch (e) {
                             console.error('❌ Both redirect methods failed:', e);
-                            // Last resort: try relative path
                             try {
-                                window.location.href = '/login';
+                                window.location.href = '/';
                             } catch (e2) {
                                 console.error('❌ All redirect methods failed:', e2);
                             }
@@ -363,11 +358,10 @@ class AuthErrorHandler {
             } catch (e) {
                 console.error('❌ Error with replace, trying href:', e);
                 try {
-                    window.location.href = loginPath;
+                    window.location.href = homePath;
                 } catch (e2) {
-                    // Last resort: try relative path
                     try {
-                        window.location.href = '/login';
+                        window.location.href = '/';
                     } catch (e3) {
                         console.error('❌ All redirect methods failed:', e3);
                     }
@@ -375,12 +369,11 @@ class AuthErrorHandler {
             }
 
         } catch (error) {
-            console.error('❌ Error during redirect to login:', error);
-            // Fallback: immediate redirect
+            console.error('❌ Error during redirect to home:', error);
             try {
-                window.location.replace('/login');
+                window.location.replace('/');
             } catch (e) {
-                window.location.href = '/login';
+                window.location.href = '/';
             }
         }
     }

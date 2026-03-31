@@ -134,7 +134,7 @@ const Accepted = () => {
                               // color="blue-gray"
                               className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                             >
-                              {hire?.city?.city_name}
+                              {hire?.city?.city_name || "Remote"}
                             </Typography>
                           </td>
 

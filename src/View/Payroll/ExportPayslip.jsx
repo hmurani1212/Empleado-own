@@ -6,7 +6,7 @@ import { gettingDepartmentsServices } from '../../services/__frequentApiServices
 import { showToast } from '../../Components/Toaster/Toaster'
 import Calendar from 'react-calendar'
 import { FaFileExcel, FaFilePdf, FaPrint } from 'react-icons/fa'
-import { useDebounce } from '../../services/__debounceServices'
+import { useDebouncedValue } from '../../services/__debounceServices'
 import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
 
 /** Format seconds to "X hrs Y min" for expected/earned. */
@@ -201,7 +201,7 @@ const ExportPayslip = () => {
   }, [])
 
   // Debounced search term
-  const debouncedSearchTerm = useDebounce(employeeIdSearch, 300)
+  const debouncedSearchTerm = useDebouncedValue(employeeIdSearch, 300)
 
   // Derived search results (no useEffect = no setState loop). Used for dropdown list.
   // Filter by employee ID or Name only (not designation)

@@ -8,12 +8,12 @@ const CustomCard = (props) => {
     <motion.div 
       whileHover={{ y: -5 }}
       transition={{ type: "spring", stiffness: 300 }}
-      className='relative group cursor-pointer'
+      className='relative group cursor-pointer w-full min-w-0'
     >
-      <Card className='w-[170px] shadow-card hover:shadow-card-hover transition-shadow duration-300 overflow-visible rounded-xl border border-gray-100'>
+      <Card className='w-full min-w-0 shadow-card hover:shadow-card-hover transition-shadow duration-300 overflow-visible rounded-2xl border border-gray-100'>
           <CardBody className="p-4 flex items-center justify-center">
-            <div className='w-[120px] h-[110px] flex items-center justify-center overflow-hidden' >
-              <img src={image} alt={alt} className="object-contain max-h-full max-w-full drop-shadow-sm group-hover:scale-105 transition-transform duration-300"/>
+            <div className='w-full h-[88px] sm:h-[100px] md:h-[110px] flex items-center justify-center overflow-hidden' >
+              <img src={image} alt={alt || title} className="object-contain max-h-full max-w-full drop-shadow-sm group-hover:scale-105 transition-transform duration-300"/>
             </div>
           </CardBody>
           
@@ -27,8 +27,8 @@ const CustomCard = (props) => {
             </div>
           )}
       </Card>
-      <div className='mt-2 text-center'>
-        <span className='text-[14px] font-semibold text-gray-700 group-hover:text-brand-600 transition-colors'>{title}</span>
+      <div className='mt-2 text-center px-0.5'>
+        <span className='text-sm sm:text-[14px] font-semibold text-gray-700 group-hover:text-brand-600 transition-colors leading-tight line-clamp-2'>{title}</span>
       </div>
     </motion.div>
   )

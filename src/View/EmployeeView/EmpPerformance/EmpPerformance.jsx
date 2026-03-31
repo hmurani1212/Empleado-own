@@ -17,7 +17,8 @@ const SkeletonRow = () => (
   </tr>
 );
 import { gettingEmployeePerformance, deleteEmployeeGoal, toggleEmployeeGoalStatus } from "../../../ViewModel/EmpViewModel/EmpPerformanceViewModel/EmpPerformance"
-import CustomSelect from "../../../Components/CustomSelect/CustomSelect"
+import SearchReactSelect from "../../../Components/CustomSelect/SearchReactSelect"
+import { prcFormSearchSelectStyles } from "../../Performance/prcFormSelectStyles"
 import CustomDrawer from "../../../Components/CustomDrawer/CustomDrawer"
 import AddGoalForm from "./AddGoalForm"
 import ConfirmationDialog from "../../../Components/ConfirmationDialog/ConfirmationDialog"
@@ -351,8 +352,10 @@ const EmpPerformance = () => {
       {/* Employee Info Card */}
       <Card className="w-full">
         <CardBody className="p-6">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-50/50 via-white to-transparent p-6 mb-8 border border-blue-50/50">
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-100/30 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="relative overflow-visible rounded-2xl bg-gradient-to-r from-blue-50/50 via-white to-transparent p-6 mb-8 border border-blue-50/50">
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden>
+              <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-100/30 rounded-full blur-3xl" />
+            </div>
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
               <div className="flex items-center gap-5">
@@ -383,61 +386,20 @@ const EmpPerformance = () => {
               </div>
 
               <div className="flex flex-col md:flex-row items-start md:items-center gap-4 lg:gap-8 bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-white/60 relative z-10">
-                <div className="flex items-center gap-3 relative z-[9999]">
-                  <Typography variant="small" color="blue-gray" className="font-medium text-xs uppercase tracking-wide opacity-70">
+                <div className="w-full sm:w-64 min-w-0 relative z-20">
+                  <label className="text-[#698592] text-[12px] font-medium block mb-1">
                     Review Cycle
-                  </Typography>
-                  <div className="w-48 relative z-[9999]">
-                    <CustomSelect
-                      placeHolderTitle="All Review Cycles"
-                      value={selectedCycle}
-                      options={[{ label: "All Review Cycles", value: "" }, ...cycles]}
-                      onChangeHandler={handleCycleChange}
-                      isSearchable={false}
-                      menuPortalTarget={document.body}
-                      customStyles={{
-                        control: (base) => ({
-                          ...base,
-                          minHeight: '32px',
-                          fontSize: '13px',
-                          border: '1px solid #e5e7eb',
-                          boxShadow: 'none',
-                          backgroundColor: 'white',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          zIndex: 9999,
-                          fontSize: '13px',
-                        }),
-                        menuPortal: (base) => ({
-                          ...base,
-                          zIndex: 9999,
-                        }),
-                        menuList: (base) => ({
-                          ...base,
-                          maxHeight: '200px',
-                          padding: '4px',
-                        }),
-                        option: (base, state) => ({
-                          ...base,
-                          fontSize: '13px',
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                          backgroundColor: state.isSelected
-                            ? '#3DA5F4'
-                            : state.isFocused
-                              ? '#E3F1FF'
-                              : 'white',
-                          color: state.isSelected ? 'white' : '#333',
-                          '&:hover': {
-                            backgroundColor: state.isSelected ? '#2B8FD4' : '#F0F8FF',
-                          },
-                        }),
-                      }}
-                    />
-                  </div>
+                  </label>
+                  <SearchReactSelect
+                    placeHolderTitle="Select Review Cycle"
+                    value={selectedCycle}
+                    options={[{ label: "All Review Cycles", value: "" }, ...cycles]}
+                    onChangeHandler={handleCycleChange}
+                    cStyle={true}
+                    customStyles={prcFormSearchSelectStyles}
+                    isClearable={false}
+                    isSearchable={true}
+                  />
                 </div>
 
                 <div className="h-8 w-px bg-gray-200 hidden md:block"></div>

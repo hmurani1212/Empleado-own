@@ -558,6 +558,9 @@ const useDepartments = () => {
     const getEmployeeDetails = useStore((state) => state.getEmployeeDetails)
     const empDetailDept = useStore((state) => state.empDetailDept)
     const empDetailDeptLoading = useStore((state) => state.empDetailDeptLoading)
+    const empDetailDeptLoadingMore = useStore((state) => state.empDetailDeptLoadingMore)
+    const empDetailDeptPagination = useStore((state) => state.empDetailDeptPagination)
+    const loadMoreEmployeeDetails = useStore((state) => state.loadMoreEmployeeDetails)
     const settingBranchId = useStore((state) => state.settingBranchId)
     const branchIdset = useStore((state) => state.branchIdset)
     const handleDesignationEdit = useStore((state) => state.handleDesignationEdit)
@@ -678,9 +681,8 @@ const useDepartments = () => {
     const handleBranchDept = (value) => {
         setBranchId(value);
         settingBranchId(value);
-        if (value) {
-            getManageDept(value, 1, 10);
-        }
+        // IMPORTANT: Do NOT fetch departments here.
+        // We only load `/api/v1/departments?branch_id=...` when user explicitly clicks "Manage Department".
     }
 
     const handleManageDept = () => {
@@ -689,7 +691,7 @@ const useDepartments = () => {
             showToast('Please select branch', 'error')
         } else {
             navigate(`/departments/manageDept/${branchId}`)
-            getManageDept(branchId, 1, 10)
+            // Fetch happens inside `Departments.jsx` when the manageDept route is active
         }
         setBranchId('')
     }
@@ -700,7 +702,7 @@ const useDepartments = () => {
         }
         else {
             navigate(`/departments/createNewDept/${branchIdset}`)
-            getManageDept(branchIdset, 1, 10)
+            // Avoid fetching manageDept list here; create page should load only what it needs
         }
         setBranchId('')
     }
@@ -1045,6 +1047,9 @@ const useDepartments = () => {
         handleDialogDesig,
         empDetailDept,
         empDetailDeptLoading,
+        empDetailDeptLoadingMore,
+        empDetailDeptPagination,
+        loadMoreEmployeeDetails,
         getEmployeesByDeptId,
         get_all_department,
         get_all_department_fn,

@@ -29,7 +29,6 @@ const AddBulkEmployee = () => {
   const {
     empBranches,
     fetchingAllBranches,
-    fetchingAllEmployess,
     dept_subDept,
     designations,
     empManager,
@@ -37,7 +36,6 @@ const AddBulkEmployee = () => {
     salaryTemplate,
     gettingSubBranches,
     gettingDesignation,
-    gettingPolicies,
     gettingSalayTemplate,
     flattenOptions,
     createSalaryTemplateFromEmployee,
@@ -142,15 +140,9 @@ const AddBulkEmployee = () => {
         return newData;
       });
 
-      // Fetch reporting managers for the selected branch
-      if (branchId) {
-        fetchingAllEmployess(branchId);
-      }
-
-      // Load departments, policies, and salary templates for selected branch
+      // Departments, reporting managers, HR policies (aggregated) + salary templates
       if (branchId) {
         await gettingSubBranches(branchId);
-        await gettingPolicies(branchId);
         await gettingSalayTemplate(branchId);
       }
     } catch (error) {
@@ -194,9 +186,7 @@ const AddBulkEmployee = () => {
 
         // Load data for the branch if needed
         if (branchId) {
-          fetchingAllEmployess(branchId);
           await gettingSubBranches(branchId);
-          await gettingPolicies(branchId);
           await gettingSalayTemplate(branchId);
         }
       }

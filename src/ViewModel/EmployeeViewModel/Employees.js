@@ -371,8 +371,13 @@ const employeeViewModel = (set, get) => ({
     },
 
     Get_All_Employeefn: async (dept_id = null) => {
-        // Skip API on list page: check ref (set during render), store flag (set in useLayoutEffect), and pathname (bulletproof)
-        const isListPagePath = typeof window !== 'undefined' && (window.location.pathname === '/employees' || window.location.pathname === '/employees/all_employess');
+        // Skip API on Employees list routes:
+        // check ref (set during render), store flag (set in useLayoutEffect), and pathname (bulletproof, handles trailing slashes)
+        const isListPagePath = (() => {
+            if (typeof window === 'undefined') return false;
+            const p = String(window.location?.pathname || '').replace(/\/+$/, '');
+            return p === '/employees' || p === '/employees/all_employess';
+        })();
         if (get().skipGetAllEmployeeOnListPage || employeesListPageRef.current || isListPagePath) {
             return get().Get_All_Employee ?? [];
         }

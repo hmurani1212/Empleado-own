@@ -26,6 +26,8 @@ interface ProfileUpdateData {
 
 interface VacancyState {
   allVacanciesList: any[];
+  /** Raw `org_name` from vacancies list API (`DB_DATA.org_name`). */
+  org_name: string | null;
   job_details: any;
   apply_data: any;
   gettingAllVacanciesList: (statusFilter?: string, yearFilter?: string, monthFilter?: string) => Promise<void>;
@@ -37,6 +39,7 @@ interface VacancyState {
 
 const AllVacancyApis = (set: any, get: any): VacancyState => ({
   allVacanciesList: [],
+  org_name: null,
   job_details: null,
   apply_data: null,
   
@@ -47,9 +50,18 @@ const AllVacancyApis = (set: any, get: any): VacancyState => ({
       const data = response.data;
 
       if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
-        set({ allVacanciesList: data.DB_DATA, copyAllVacanciesList: data.DB_DATA });
+        const db = data.DB_DATA || {};
+        const rawOrg =
+          db.org_name !== undefined && db.org_name !== null && String(db.org_name).trim() !== ""
+            ? String(db.org_name).trim()
+            : null;
+        set({
+          allVacanciesList: db,
+          copyAllVacanciesList: db,
+          org_name: rawOrg,
+        });
       } else if (response.status === 200 && data.STATUS === 'ERROR') {
-        set({ allVacanciesList: [], copyAllVacanciesList: [] });
+        set({ allVacanciesList: [], copyAllVacanciesList: [], org_name: null });
       }
     } catch (error) {
       console.error('Error fetching vacancies:', error);

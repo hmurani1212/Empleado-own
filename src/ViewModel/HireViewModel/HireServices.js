@@ -116,7 +116,7 @@ const useHire = () => {
     { id: 3, title: 'Interviewed', imgSrc: interviewedlogo, legendBg: '#2ABFCC', count: record_data.total_interviewed, link: `/hire/vacancies_list/all_applicants/${0}/interviewed` },
     { id: 4, title: 'Accepted', imgSrc: acceptlogo, legendBg: '#0ACF97', count: record_data.total_accepted, link: `/hire/vacancies_list/all_applicants/${0}/accepted` },
     { id: 5, title: 'Rejected', imgSrc: rejectlogo, legendBg: '#FF5E5E', count: record_data.total_rejected, link: `/hire/vacancies_list/all_applicants/${0}/rejected` },
-    { id: 6, title: 'Talent Pool', imgSrc: talentlogo, legendBg: '#97CEF8', count: record_data.talent_pool },
+    { id: 6, title: 'Talent Pool', imgSrc: talentlogo, legendBg: '#97CEF8', count: record_data.talent_pool, link: '/hire/talent_pool' },
   ]
 
   const hireItems = [
@@ -942,19 +942,30 @@ const useHire = () => {
       const data = response.data
 
       if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-        showToast('Hiring message sent successfully', 'success')
         setAcceptanceConfirmationDialog(false)
-
-        // Get candidate_id from the accepted applicant data
-        const candidateId = acceptedApplicantData?.candidate?.id;
 
         setAcceptedApplicantData(null)
 
-        // Open Hire Employee drawer with candidate_id
-        openDrawer();
-        settingDrawerTitle('Hire Employee');
-        settingDrawerSize(600);
-        settingComponent(<HireEmployeeDrawerContent employeeData={formData} candidateId={candidateId} />);
+        // Hire Employee drawer temporarily disabled — enroll via Add Employee instead
+        // openDrawer();
+        // settingDrawerTitle('Hire Employee');
+        // settingDrawerSize(600);
+        // settingComponent(<HireEmployeeDrawerContent ... />);
+
+        showToast(
+          'Congratulations on hiring new vacancy. Please enroll the employee.',
+          'success'
+        )
+        // Pass candidate data to Add Employee and skip credentials screen (step 0)
+        const candidate = formData?.candidateData?.candidate || null
+        if (candidate) {
+          try {
+            localStorage.setItem('hire_prefill_candidate', JSON.stringify(candidate))
+          } catch (e) {
+            // ignore storage failure; navigation state will still carry it
+          }
+        }
+        navigate('/employees/add_emp', { state: { prefillCandidate: candidate, fromHiring: true } })
       } else {
         showToast('Failed to send hiring message', 'error')
       }
@@ -964,20 +975,13 @@ const useHire = () => {
     }
   }
 
-  // Function to open hire employee drawer directly
-  const openHireEmployeeDrawer = async (employeeData = null, candidateId = null) => {
-    try {
-      // Fetch branch data before opening drawer
-      await fetchingAllBranches();
-
-      openDrawer();
-      settingDrawerTitle('Hire Employee');
-      settingDrawerSize(600);
-      settingComponent(<HireEmployeeDrawerContent employeeData={employeeData} candidateId={candidateId} />);
-    } catch (error) {
-      console.error('Error opening hire employee drawer:', error);
-      showToast('Error loading branch data', 'error');
-    }
+  /** Hire Employee side panel disabled for now — same post-hire path as acceptance flow. */
+  const openHireEmployeeDrawer = async () => {
+    showToast(
+      'Congratulations on hiring new vacancy. Please enroll the employee.',
+      'success'
+    )
+    navigate('/employees/add_emp')
   }
 
   const handleCloseAcceptanceConfirmation = () => {
@@ -994,8 +998,15 @@ const useHire = () => {
     try {
       console.log('Sending shortlist template:', templateData)
 
-      // Prepare the API payload
+      // Prepare the API payload (name = greeting "Dear …", from modal form / candidate)
+      const candidateName = (
+        templateData.candidateName ||
+        templateData.candidateData?.candidate?.name ||
+        ''
+      ).trim()
+
       const apiPayload = {
+        name: candidateName,
         position: templateData.position,
         interview_date: templateData.interviewDate,
         start_time: templateData.startTime,
@@ -1635,6 +1646,10 @@ const useHire = () => {
         navigate(`/hire/vacancies_list/all_applicants/${vacancy}/rejected`)
         gettingRejectedApp(vacancy)
         // gettingAllCount(vacancy)
+        break;
+
+      case 6:
+        navigate('/hire/talent_pool')
         break;
 
       default:

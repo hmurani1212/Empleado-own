@@ -3,6 +3,82 @@ import departmentsApi from "../../Model/Data/Departments/Departments"
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { showToast } from "../../Components/Toaster/Toaster";
 
+/** Normalize API STATUS / status (trim, case) for comparisons */
+const normalizeApiStatus = (s) => (s == null ? "" : String(s).trim().toUpperCase())
+
+/**
+ * Normalize axios envelope vs bare API JSON, unwrap nested { data: { STATUS, DB_DATA } }.
+ * Must not rely only on `response.config` — some stacks omit it; STATUS/DB_DATA live on `response.data`.
+ */
+function unwrapCoreApiBody(response) {
+    if (!response) return null
+    const isAxiosLike =
+        typeof response === "object" &&
+        response !== null &&
+        response.data !== undefined &&
+        (response.config != null ||
+            (typeof response.status === "number" &&
+                response.status >= 100 &&
+                response.status < 600))
+    let raw = isAxiosLike ? response.data : response
+    if (raw == null) return null
+    if (typeof raw === "string") {
+        try {
+            raw = JSON.parse(raw)
+        } catch {
+            return null
+        }
+    }
+    // Axios body sometimes left as JSON string on .data — nested unwrap needs an object
+    if (
+        raw &&
+        typeof raw === "object" &&
+        typeof raw.data === "string" &&
+        (raw.config != null || typeof raw.status === "number")
+    ) {
+        try {
+            raw = JSON.parse(raw.data)
+        } catch {
+            return null
+        }
+    }
+    if (
+        raw &&
+        typeof raw === "object" &&
+        raw.data &&
+        typeof raw.data === "object" &&
+        (raw.data.STATUS != null ||
+            raw.data.status != null ||
+            raw.data.DB_DATA != null)
+    ) {
+        raw = raw.data
+    }
+    return raw
+}
+
+function extractEmployeesListFromBody(data) {
+    if (!data || typeof data !== "object") return []
+    const db = data.DB_DATA
+    if (Array.isArray(db)) return db
+    if (db && Array.isArray(db.employees)) return db.employees
+    if (db && Array.isArray(db.EMPLOYEES)) return db.EMPLOYEES
+    if (Array.isArray(data.employees)) return data.employees
+    return []
+}
+
+function extractDeptEmpPaginationFromBody(data, fallbackPage, fallbackLimit) {
+    const db = data?.DB_DATA
+    const pag =
+        (db && typeof db === "object" && db.pagination) ||
+        data?.pagination ||
+        {}
+    return {
+        page: pag.page ?? fallbackPage,
+        pages: pag.pages,
+        limit: pag.limit ?? fallbackLimit,
+        total: pag.total
+    }
+}
 
 const departmentsViewModel = (set, get) => ({
     allDeptDetails: [],
@@ -22,6 +98,15 @@ const departmentsViewModel = (set, get) => ({
     parentID: '',
     empDetailDept: [],
     empDetailDeptLoading: false,
+    empDetailDeptLoadingMore: false,
+    /** Department id for the open Employee Details drawer (load more) */
+    empDetailDeptDeptId: null,
+    empDetailDeptPagination: {
+        page: 1,
+        pages: 1,
+        limit: 10,
+        total: 0
+    },
     allSuggestionsEmp: [],
     empIdHod: {
         emp_Id: null,
@@ -196,42 +281,113 @@ const departmentsViewModel = (set, get) => ({
         }
     },
 
-    getEmployeeDetails: async (id) => {
+    getEmployeeDetails: async (id, page = 1, append = false) => {
+        const limit = 10
         try {
-            // Set loading state and clear previous data
-            set((state) => ({
-                ...state,
-                empDetailDeptLoading: true,
-                empDetailDept: []
-            }))
-
-            const response = await departmentsApi.getDeptEmployees(id)
-            const data = response.data
-            // console.log('emp data11111111', data)
-
-            if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
+            if (!append) {
                 set((state) => ({
                     ...state,
-                    empDetailDept: data?.DB_DATA?.employees || [],
-                    empDetailDeptLoading: false
-                }))
-            } else if (response.status === 200 && data.STATUS === 'ERROR') {
-                set((state) => ({
-                    ...state,
+                    empDetailDeptLoading: true,
+                    empDetailDeptLoadingMore: false,
                     empDetailDept: [],
-                    empDetailDeptLoading: false
+                    empDetailDeptDeptId: id,
+                    empDetailDeptPagination: { page: 1, pages: 1, limit, total: 0 }
+                }))
+            } else {
+                set((state) => ({
+                    ...state,
+                    empDetailDeptLoadingMore: true
+                }))
+            }
+
+            const response = await departmentsApi.getDeptEmployees(id, page, limit)
+            const data = unwrapCoreApiBody(response)
+            // 304 Not Modified is treated as success by some stacks but often has no JSON body — accept 200 + 304 when body is valid
+            const httpOk =
+                response?.status === 200 ||
+                response?.status === 304
+
+            const statusVal = normalizeApiStatus(data?.STATUS ?? data?.status)
+            const isSuccess = statusVal === "SUCCESSFUL"
+            const isError = statusVal === "ERROR"
+            const employeesFromPayload = data ? extractEmployeesListFromBody(data) : []
+            /** HTTP 200 with a list but nonstandard / missing STATUS (not ERROR) */
+            const treatAsListSuccess =
+                httpOk &&
+                data &&
+                !isError &&
+                !isSuccess &&
+                employeesFromPayload.length > 0
+
+            const applyDeptEmployeesSuccess = (payloadData) => {
+                const employees = extractEmployeesListFromBody(payloadData)
+                const pag = extractDeptEmpPaginationFromBody(payloadData, page, limit)
+                const currentPage = pag.page ?? page
+                const perLimit = pag.limit ?? limit
+                const totalPages =
+                    pag.pages != null && pag.pages > 0
+                        ? pag.pages
+                        : Math.max(
+                              1,
+                              Math.ceil(
+                                  (pag.total ?? employees.length) / (perLimit || limit)
+                              )
+                          )
+                const total = pag.total ?? employees.length
+
+                set((state) => ({
+                    ...state,
+                    empDetailDept: append
+                        ? [...(state.empDetailDept || []), ...employees]
+                        : employees,
+                    empDetailDeptPagination: {
+                        page: currentPage,
+                        pages: totalPages,
+                        limit: perLimit,
+                        total: total
+                    },
+                    empDetailDeptLoading: false,
+                    empDetailDeptLoadingMore: false
+                }))
+            }
+
+            if (httpOk && data && isSuccess) {
+                applyDeptEmployeesSuccess(data)
+            } else if (treatAsListSuccess) {
+                applyDeptEmployeesSuccess(data)
+            } else if (httpOk && data && isError) {
+                set((state) => ({
+                    ...state,
+                    empDetailDept: append ? state.empDetailDept : [],
+                    empDetailDeptLoading: false,
+                    empDetailDeptLoadingMore: false
+                }))
+            } else {
+                // 304 with empty body, unexpected status, or missing STATUS — always clear loading so drawer UI can finish
+                set((state) => ({
+                    ...state,
+                    empDetailDept: append ? state.empDetailDept : [],
+                    empDetailDeptLoading: false,
+                    empDetailDeptLoadingMore: false
                 }))
             }
         } catch (error) {
             console.log(error)
-            // Set empty array on error to clear any stale data
             set((state) => ({
                 ...state,
-                empDetailDept: [],
-                empDetailDeptLoading: false
+                empDetailDept: append ? state.empDetailDept : [],
+                empDetailDeptLoading: false,
+                empDetailDeptLoadingMore: false
             }))
         }
+    },
 
+    loadMoreEmployeeDetails: async () => {
+        const { empDetailDeptDeptId, empDetailDeptPagination, getEmployeeDetails } = get()
+        if (empDetailDeptDeptId == null) return
+        const p = empDetailDeptPagination || { page: 1, pages: 1 }
+        if (p.page >= p.pages) return
+        await getEmployeeDetails(empDetailDeptDeptId, p.page + 1, true)
     },
 
     getEmployeeSuggDept: async () => {
@@ -586,18 +742,35 @@ const departmentsViewModel = (set, get) => ({
         settingDrawerTitle('Employee Details')
         settingDrawerSize(800)
 
+        // Ensure drawer opens immediately with a loading state
+        settingComponent(React.createElement(
+            'div',
+            { className: 'flex items-center justify-center py-8 gap-2 text-[#3da5f4]' },
+            React.createElement('div', { className: 'animate-spin rounded-full h-6 w-6 border-b-2 border-[#3da5f4]' }),
+            React.createElement('span', null, 'Loading employees...')
+        ))
+
         // Set loading state
         set((state) => ({
             empDetailDeptLoading: true,
             empDetailDept: []
         }))
 
-        // Fetch employee details
-        await getEmployeeDetails(deptId)
+        try {
+            // Fetch employee details
+            await getEmployeeDetails(deptId)
 
-        // Set the component to show employee details
-        const { default: EmployeeDetails } = await import('../../View/Departments/EmployeeDetails.jsx')
-        settingComponent(React.createElement(EmployeeDetails))
+            // Set the component to show employee details
+            const { default: EmployeeDetails } = await import('../../View/Departments/EmployeeDetails.jsx')
+            settingComponent(React.createElement(EmployeeDetails))
+        } catch (err) {
+            console.error('Failed to load department employees:', err)
+            settingComponent(React.createElement(
+                'div',
+                { className: 'text-center py-8 text-gray-500' },
+                'Failed to load employees.'
+            ))
+        }
     },
 
     // HOD-related functions

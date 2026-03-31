@@ -61,27 +61,7 @@ const authenticationServices = (set, get) => ({
             return null;
         }
     },
-
-    // Logout function
-    logout: () => {
-        localStorage.removeItem('jwt');
-        // Clear all localStorage items related to user session
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key !== 'jwt') {
-                keysToRemove.push(key);
-            }
-        }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        
-        set({ 
-            isAuthenticated: false, 
-            authRole: 'Employee',
-            userData: null 
-        });
-        window.location.href = '/login';
-    }
+    // logout is provided by employeeViewModel (API + storage clear); do not override here
 })
 
 

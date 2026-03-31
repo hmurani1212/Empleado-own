@@ -160,17 +160,14 @@ function Header() {
       const result = await logout();
       if (result.success) {
         showToast('Logged out successfully!', 'success');
-        // Navigate to login page
-        navigate('/login');
+        window.location.href = '/';
       } else {
         showToast(result.error || 'Logout failed', 'error');
-        // Even if logout fails, redirect to login for security
-        navigate('/login');
+        window.location.href = '/';
       }
     } catch (error) {
       showToast('An error occurred during logout', 'error');
-      // Even if logout fails, redirect to login for security
-      navigate('/login');
+      window.location.href = '/';
     }
   };
 

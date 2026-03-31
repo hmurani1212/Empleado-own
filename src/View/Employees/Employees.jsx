@@ -19,6 +19,10 @@ const Employees = () => {
   const isListPage = location.pathname === "/employees/all_employess" || location.pathname === "/employees";
   // Set ref during render so Get_All_Employeefn skips API before useLayoutEffect runs (avoids extra get_all_employee call)
   employeesListPageRef.current = isListPage;
+  // Extra safety: prevent any direct get_all_employee call while on list page
+  if (typeof window !== "undefined") {
+    window.__SKIP_GET_ALL_EMPLOYEE__ = !!isListPage;
+  }
 
   // Check if we're on the bulk employee page
   const isBulkPage = location.pathname === "/employees/add_bulk_emp";
@@ -55,6 +59,9 @@ const Employees = () => {
     return () => {
       setSkipGetAllEmployeeOnListPage(false);
       employeesListPageRef.current = false;
+      if (typeof window !== "undefined") {
+        window.__SKIP_GET_ALL_EMPLOYEE__ = false;
+      }
     };
   }, [isListPage, setSkipGetAllEmployeeOnListPage]);
 

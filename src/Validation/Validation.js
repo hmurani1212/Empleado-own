@@ -123,6 +123,18 @@ const validateCreatePlanner = object().shape({
         planner_name: string().required('Planner Name is reuired')
 })
 
+/** Comma-separated Goal_Manage_by / competency_Manage_by (multi-select permissions). */
+const manageByMultiField = string().test(
+        'manage-by-tokens',
+        'Goal / competency manage-by must be valid permission tokens',
+        (val) => {
+                if (val == null || val === '') return false
+                const allowed = ['Admin', 'Custom employee', 'reporting manager', 'self']
+                const parts = String(val).split(',').map((s) => s.trim()).filter(Boolean)
+                return parts.length > 0 && parts.every((p) => allowed.includes(p))
+        }
+)
+
 // New validation schemas for performance review
 const validateMultipleEmployeePRC = object().shape({
         name: string()
@@ -155,8 +167,8 @@ const validateMultipleEmployeePRC = object().shape({
                 .of(string().required('Employee name is required'))
                 .min(1, 'At least one employee name is required'),
         review_day: string().required('Review day is required'),
-        competency_Manage_by: string().oneOf(['Admin', 'Custom employee', 'reporting manager', 'self'], 'Competency Manage by must be one of: Admin, Custom employee, reporting manager, self'),
-        Goal_Manage_by: string().oneOf(['Admin', 'Custom employee', 'reporting manager', 'self'], 'Goal Manage by must be one of: Admin, Custom employee, reporting manager, self'),
+        competency_Manage_by: manageByMultiField,
+        Goal_Manage_by: manageByMultiField,
 });
 
 const validateSingleEmployeePRCUpdate = object().shape({
@@ -186,8 +198,8 @@ const validateSingleEmployeePRCUpdate = object().shape({
         employee: string().required('Employee is required'),
         assigned_to: string().required('Assigned to is required'),
         review_day: string().required('Review day is required'),
-        competency_Manage_by: string().oneOf(['Admin', 'Custom employee', 'reporting manager', 'self'], 'Competency Manage by must be one of: Admin, Custom employee, reporting manager, self'),
-        Goal_Manage_by: string().oneOf(['Admin', 'Custom employee', 'reporting manager', 'self'], 'Goal Manage by must be one of: Admin, Custom employee, reporting manager, self'),
+        competency_Manage_by: manageByMultiField,
+        Goal_Manage_by: manageByMultiField,
 });
 
 const validateAddSubDepartment = object().shape({

@@ -2,10 +2,10 @@ import { Button } from '@material-tailwind/react'
 import React from 'react'
 
 const CustomButton = (props) => {
-  const { title, onClick, loading = false, type = "submit", icon } = props
+  const { title, onClick, loading = false, type = "submit", icon, className = '' } = props
   return (
     <>
-      <Button className='capitalize py-2 px-4 font-medium text-[12px] bg-bgBlue flex items-center gap-2' loading={loading} onClick={onClick} type={type}>
+      <Button className={`capitalize py-2 px-4 font-medium text-[12px] bg-bgBlue flex items-center gap-2 ${className}`} loading={loading} onClick={onClick} type={type}>
         {icon && <span>{icon}</span>}
         {title}
       </Button>

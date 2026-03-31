@@ -4,6 +4,7 @@ import AllVacancyApis from "../viewModel/VacancyViewModel/Vaccancy";
 
 interface StoreState {
   allVacanciesList: any[];
+  org_name: string | null;
   job_details: any;
   apply_data: any;
   gettingAllVacanciesList: (statusFilter?: string, yearFilter?: string, monthFilter?: string) => Promise<void>;

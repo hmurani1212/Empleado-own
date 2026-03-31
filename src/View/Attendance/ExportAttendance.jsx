@@ -12,6 +12,10 @@ import { getContentByLabel } from '../../services/getContentService'
 import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer'
 import { FaInfoCircle } from 'react-icons/fa'
 import { getDecodedToken } from '../../Authentication/jwt_decode'
+import {
+  scheduleAttendanceLongWaitToast,
+  clearAttendanceLongWaitToast
+} from '../../services/attendanceExportDelayedToast'
 
 /** Generate a unique request id for this export so socket event can be matched to this user/session. */
 const generateReportRequestId = () => {
@@ -130,11 +134,16 @@ const ExportAttendance = () => {
     const handleAttendanceReportReady = (data) => {
       if (!data || !data.file_url) return;
 
-      const requestIdMatch = data.request_id != null && data.request_id === pendingReportRequestIdRef.current
+      const requestIdMatch =
+        data.request_id != null &&
+        pendingReportRequestIdRef.current != null &&
+        String(data.request_id) === String(pendingReportRequestIdRef.current)
       const oneIdMatch = data.one_id != null && getDecodedToken()?.oneid != null && String(data.one_id) === String(getDecodedToken().oneid)
       const legacyNoId = pendingReportRequestIdRef.current != null && data.request_id == null && data.one_id == null
 
       if (!requestIdMatch && !oneIdMatch && !legacyNoId) return
+
+      clearAttendanceLongWaitToast()
 
       if (pendingReportRequestIdRef.current != null) pendingReportRequestIdRef.current = null
       if (downloadTimeoutRef.current) {
@@ -420,7 +429,7 @@ const ExportAttendance = () => {
           isSendEmail
         }
         console.log('⏳ Attendance report scheduled, waiting for socket response...', currentExportMetaRef.current)
-        showToast('Your report may take some time. Once ready, it will download automatically in your browser.', 'info')
+        scheduleAttendanceLongWaitToast()
         localStorage.setItem(
           ATTENDANCE_PENDING_EXPORT_KEY,
           JSON.stringify({
@@ -446,6 +455,7 @@ const ExportAttendance = () => {
           exportStartedAtRef.current = null
           currentExportMetaRef.current = null
           localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
+          clearAttendanceLongWaitToast()
           setIsDownloading(false)
           showToast('Report did not arrive in time. Check Attendance Report Archive or try again.', 'error')
         }, DOWNLOAD_WAIT_MS)
@@ -455,6 +465,7 @@ const ExportAttendance = () => {
         exportStartedAtRef.current = null
         currentExportMetaRef.current = null
         localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
+        clearAttendanceLongWaitToast()
         showToast(result.error || 'Failed to schedule report', 'error')
       }
     } catch (error) {
@@ -462,6 +473,7 @@ const ExportAttendance = () => {
       exportStartedAtRef.current = null
       currentExportMetaRef.current = null
       localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
+      clearAttendanceLongWaitToast()
       showToast('An error occurred while scheduling the report', 'error')
       setIsDownloading(false)
     } finally {

@@ -15,7 +15,7 @@ import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import RejectAppForm from "./RejectAppForm";
 import InterviewScoreComp from "./InterviewScoreComp";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
-import { formatTimestampToDate } from "../../services/__dateTimeServices";
+import { formatTimestampToDate, formatTimestampToTime } from "../../services/__dateTimeServices";
 import { Link } from "react-router-dom";
 const Shortlisted = () => {
   const {
@@ -135,7 +135,7 @@ const Shortlisted = () => {
                               // color="blue-gray"
                               className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                             >
-                              {hire?.city?.city_name}
+                              {hire?.city?.city_name || "Remote"}
                             </Typography>
                           </td>
 
@@ -145,7 +145,7 @@ const Shortlisted = () => {
                               // color="blue-gray"
                               className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                             >
-                              {`${hire?.candidate?.interviews}` || "Not before"}
+                              {hire?.interview_time ? "Scheduled" : "Not scheduled"}
                             </Typography>
                           </td>
 
@@ -170,7 +170,7 @@ const Shortlisted = () => {
                               // color="blue-gray"
                               className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                             >
-                              {hire?.candidate?.cellnum}
+                              {formatTimestampToDate(hire?.interview_time)}
                             </Typography>
                           </td>
 
@@ -180,7 +180,7 @@ const Shortlisted = () => {
                               // color="blue-gray"
                               className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                             >
-                              {formatTimestampToDate(hire?.interview_time)}
+                              {formatTimestampToTime(hire?.interview_time)}
                             </Typography>
                           </td>
 

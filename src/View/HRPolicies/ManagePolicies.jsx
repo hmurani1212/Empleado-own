@@ -6,7 +6,6 @@ import PoliciesList from "./PoliciesList";
 import PoliciesGrid from "./PoliciesGrid";
 import { FaListUl } from "react-icons/fa";
 import { IoGrid } from "react-icons/io5";
-import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -42,14 +41,12 @@ const ManagePolicies = () => {
     getPaginationData,
   } = useHRPolicies();
 
-  const { empBranches, fetchingAllBranches } = useEmployees();
   const [initialLoading, setInitialLoading] = useState(true);
   
   useEffect(() => {
     const fetchData = async () => {
-      // Always fetch branches when component mounts
-      fetchingAllBranches();
-      
+      await getAllBranchesHrPolicy();
+
       if (!mountPolicies) {
         setInitialLoading(true);
         try {
@@ -80,7 +77,13 @@ const ManagePolicies = () => {
                 value={filterValuesHr?.branchName ? { value: filterValuesHr.branchName, label: filterValuesHr.branchName } : null}
                 options={[
                   { value: "", label: "All Branches" },
-                  ...(empBranches?.map((ele) => ({
+                  ...((policyBranches || []).filter(
+                    (b) =>
+                      b &&
+                      String(b.id) !== "0" &&
+                      b.branch_name &&
+                      b.branch_name !== "All Branches"
+                  ).map((ele) => ({
                     value: ele.branch_name,
                     label: ele.branch_name,
                     id: ele.id,
@@ -90,7 +93,7 @@ const ManagePolicies = () => {
                   if (!selectedOption || selectedOption.value === "") {
                     handleFilterChangePolicy("branchName", "");
                   } else {
-                    const selectedBranch = empBranches?.find(
+                    const selectedBranch = (policyBranches || []).find(
                       (branch) => branch.branch_name === selectedOption.value
                     );
                     handleFilterChangePolicy("branchName", selectedBranch);

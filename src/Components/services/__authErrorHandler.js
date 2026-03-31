@@ -209,14 +209,12 @@ class AuthErrorHandler {
 
             // Redirect to login after a short delay
             setTimeout(() => {
-                // Use window.location for a hard redirect to ensure clean state
-                window.location.href = '/login';
+                window.location.href = '/';
             }, 1500);
 
         } catch (error) {
-            console.error('Error during redirect to login:', error);
-            // Fallback: immediate redirect
-            window.location.href = '/login';
+            console.error('Error during redirect to home:', error);
+            window.location.href = '/';
         }
     }
 

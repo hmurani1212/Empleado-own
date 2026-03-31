@@ -5,7 +5,27 @@ import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices';
 
 
 const SearchReactSelect = (props) => {
-  const { value, placeHolderTitle, onChangeHandler, cStyle, options, disabled, isSearchable = true, filterOption, menuIsOpen, onMenuOpen, onMenuClose, onInputChange, hideDropdownIndicator = false, isClearable = false, isMulti = false, customStyles: propCustomStyles} = props
+  const {
+    value,
+    placeHolderTitle,
+    onChangeHandler,
+    cStyle,
+    options,
+    disabled,
+    isSearchable = true,
+    filterOption,
+    menuIsOpen,
+    onMenuOpen,
+    onMenuClose,
+    onInputChange,
+    hideDropdownIndicator = false,
+    isClearable = false,
+    isMulti = false,
+    customStyles: propCustomStyles,
+    menuPortalTarget,
+    menuPosition,
+    menuPlacement,
+  } = props
   const { customStyles: hookCustomStyles } = useEmployees()
     const baseStyles = {
     control: base => ({
@@ -90,6 +110,9 @@ const SearchReactSelect = (props) => {
         styles={styles}
         isClearable={isClearable}
         isMulti={isMulti}
+        menuPortalTarget={menuPortalTarget}
+        menuPosition={menuPosition}
+        menuPlacement={menuPlacement}
       />
     </div>
   )

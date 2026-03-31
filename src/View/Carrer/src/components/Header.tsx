@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import useVacancy from "../viewModel/VacancyViewModel/VacancyService";
 
 interface HeaderProps {
   showBackButton?: boolean;
@@ -13,6 +14,8 @@ interface HeaderProps {
 const Header = ({ showBackButton = false, onBackClick, onProfileClick }: HeaderProps) => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout, isAuthenticated, login } = useAuth();
+  const { careerOrgDisplayName } = useVacancy();
+  const brandInitial = careerOrgDisplayName.charAt(0).toUpperCase() || "V";
 
   const handleLogin = () => {
     // Mock login
@@ -37,14 +40,14 @@ const Header = ({ showBackButton = false, onBackClick, onProfileClick }: HeaderP
             )}
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center animate-glow-pulse">
-                <span className="text-white font-bold text-sm sm:text-lg">V</span>
+                <span className="text-white font-bold text-sm sm:text-lg">{brandInitial}</span>
               </div>
               <div>
                 <h1 className="text-lg sm:text-xl font-bold text-gradient">
-                  <span className="hidden sm:inline">Veevo Tech111111111111111</span>
-                  <span className="sm:hidden">Veevo</span>
+                  <span className="hidden sm:inline">{careerOrgDisplayName}</span>
+                  <span className="sm:hidden">{careerOrgDisplayName.split(/\s+/)[0]}</span>
                 </h1>
-                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Future of Hiring111111111</p>
+                <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Future of Hiring</p>
               </div>
             </div>
           </div>

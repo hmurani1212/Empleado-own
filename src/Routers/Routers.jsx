@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import {
   Application,
   Attendance,
@@ -131,7 +131,14 @@ import RawAttendanceLog from "../View/Attendance/RawAttendanceLog";
 
 const Routers = () => {
   const location = useLocation();
-  const isLoginRoute = location.pathname === "/login";
+  const jwt = typeof localStorage !== "undefined" ? localStorage.getItem("jwt") : null;
+  // Legacy `/login` URL: client-side only to `/` so login always uses root (matches static hosting)
+  if (location.pathname === "/login") {
+    return <Navigate to="/" replace />;
+  }
+
+  // Show login shell only at `/` when unauthenticated; authenticated `/` uses dashboard routes below
+  const isLoginRoute = location.pathname === "/" && !jwt;
 
   // Get role from JWT token directly
   const userData = getUserData();
@@ -141,7 +148,7 @@ const Routers = () => {
   return (
     <Routes>
       {isLoginRoute ? (
-        <Route exact path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
       ) : (
         <>
           {/* Individual Payslip Preview Route */}

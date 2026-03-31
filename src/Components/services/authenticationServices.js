@@ -33,7 +33,7 @@ const authenticationServices = (set, get) => ({
         if (!token) {
             set({ isAuthenticated: false, userData: null, authRole: 'Employee' });
             // If no token, ensure redirect to login if not already there
-            if (window.location.pathname !== '/login') {
+            if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
                 authErrorHandler.handleAuthError({ response: { status: 401, data: { ERROR_FILTER: "USER_NOT_AUTHENTICATED", ERROR_CODE: "VTWE-401002", ERROR_DESCRIPTION: "No token found" } } }, {});
             }
             return false;
@@ -58,7 +58,7 @@ const authenticationServices = (set, get) => ({
         localStorage.clear();
         set({ isAuthenticated: false, userData: null, authRole: 'Employee' });
         authErrorHandler.resetRedirectingFlag(); // Reset the redirect flag
-        window.location.href = '/login'; // Force full page reload
+        window.location.href = '/';
     },
 
     // Function to trigger authentication error for testing

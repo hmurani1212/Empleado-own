@@ -3,6 +3,8 @@ import React from 'react'
 const PersonalInfo = (props) => {
 
   const {viewPending, postAdd, permAdd, regDate} = props
+
+  console.log('viewPending in PersonalInfo:', viewPending)
   return (
     <>
     <div className='grid grid-cols-3 p-[18px]'>
@@ -80,7 +82,7 @@ const PersonalInfo = (props) => {
         </div>
 
         <div className='mt-3'>
-          <span>{viewPending && viewPending.candidate && viewPending.candidate.timestamp ? new Date(viewPending.candidate.timestamp * 1000).toLocaleDateString() : 'N/A'}</span>
+          <span>{viewPending && viewPending.timestamp && viewPending.timestamp ? new Date(viewPending.timestamp * 1000).toLocaleDateString() : 'N/A'}</span>
         </div>
       </div>
 

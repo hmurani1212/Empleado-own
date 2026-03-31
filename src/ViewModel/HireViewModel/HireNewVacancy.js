@@ -398,6 +398,7 @@ const handleNext = () => {
   const renderSelectedComponent = (accordionId, selectedOption, radioButtons, checkBoxes) => {
     switch (selectedOption) {
       case "0": // Textarea
+      case "4": // legacy: same as text area (Input Field removed from UI)
         return (
           <div>
             <span className="text-[12px] text-gray-500">
@@ -591,15 +592,6 @@ const handleNext = () => {
                 Add Option
               </Button>
             </div>
-          </div>
-        );
-
-      case "4": // Input
-        return (
-          <div>
-            <span className="text-[12px] text-gray-500">
-              A text input field will be displayed for user input
-            </span>
           </div>
         );
 

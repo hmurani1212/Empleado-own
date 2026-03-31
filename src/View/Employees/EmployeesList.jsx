@@ -11,6 +11,55 @@ import SalaryDetails from "./SalaryDetails";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import useStore from "../../Store/store";
 
+const EMAIL_LIKE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isEmailContact(value) {
+  const s = String(value ?? "").trim();
+  return s.length > 0 && EMAIL_LIKE.test(s);
+}
+
+/** True if value looks like a phone (digits / +), not an email. */
+function isPhoneLike(value) {
+  const s = String(value ?? "").trim();
+  if (!s || isEmailContact(s)) return false;
+  const compact = s.replace(/[\s\-().]/g, "");
+  return /^\+?\d{7,}$/.test(compact);
+}
+
+/**
+ * Mobile# column: never show emails. Prefer +92, then title hints, then any phone-like contact.
+ */
+function getEmployeeMobile(contacts) {
+  if (contacts == null || !Array.isArray(contacts) || contacts.length === 0) return "-";
+
+  const rows = contacts.filter((c) => c?.contact != null && String(c.contact).trim() !== "");
+  const nonEmail = rows.filter((c) => !isEmailContact(c.contact));
+
+  const pk = nonEmail.find((c) => String(c.contact).trim().startsWith("+92"));
+  if (pk) return String(pk.contact).trim();
+
+  const byTitleExact = nonEmail.find(
+    (c) =>
+      String(c.contact_title ?? "").trim().toLowerCase() === "mobile" && isPhoneLike(c.contact)
+  );
+  if (byTitleExact) return String(byTitleExact.contact).trim();
+
+  const byTitleMobileWord = nonEmail.find(
+    (c) => /mobile/i.test(String(c.contact_title ?? "")) && isPhoneLike(c.contact)
+  );
+  if (byTitleMobileWord) return String(byTitleMobileWord.contact).trim();
+
+  const byTypeMobile = nonEmail.find(
+    (c) => String(c.contact_type ?? "").trim().toLowerCase() === "mobile" && isPhoneLike(c.contact)
+  );
+  if (byTypeMobile) return String(byTypeMobile.contact).trim();
+
+  const anyPhone = nonEmail.find((c) => isPhoneLike(c.contact));
+  if (anyPhone) return String(anyPhone.contact).trim();
+
+  return "-";
+}
+
 const EmployeesList = (props) => {
   const {
     empListData,
@@ -132,7 +181,6 @@ const EmployeesList = (props) => {
 
   const isAnyActionMenuOpen = Object.values(openMenuValue || {}).some(Boolean);
 
-
   // console.log('what is the paginations data', paginationData)
 
   // this is our react js code
@@ -141,14 +189,26 @@ const EmployeesList = (props) => {
       ref={scrollContainerRef}
       className="relative w-full min-h-[calc(100vh-200px)] overflow-auto customScroll"
     >
-      <table className="min-w-full table-fixed text-center border-collapse">
+      <table className="min-w-[960px] w-full table-fixed text-center border-collapse">
         <colgroup>
-          <col span="8" />
+          <col className="w-[7%]" />
+          <col className="w-[7%]" />
+          <col className="w-[10%]" />
+          <col className="w-[14%]" />
+          <col className="w-[12%]" />
+          <col className="w-[14%]" />
+          <col className="w-[18%] min-w-[12rem]" />
+          <col className="w-[10%]" />
         </colgroup>
         <thead className="sticky top-0 z-20 bg-gray-50 shadow-sm">
           <tr>
             {data?.map((head, i) => (
-              <th key={i} className="px-4 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider font-poppins first:rounded-tl-lg last:rounded-tr-lg">
+              <th
+                key={i}
+                className={`px-3.5 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider font-poppins first:rounded-tl-lg last:rounded-tr-lg ${
+                  head === "Mobile#" ? "whitespace-nowrap min-w-[12rem]" : ""
+                }`}
+              >
                 {head}
               </th>
             ))}
@@ -224,11 +284,9 @@ const EmployeesList = (props) => {
                       {ele?.department?.name || "-"}
                     </span>
                   </td>
-                  <td className="px-4 py-4">
-                    <Typography className="text-sm font-normal text-gray-600 font-poppins">
-                      {ele?.contacts != null && Array.isArray(ele.contacts)
-                        ? (ele.contacts.find((c) => c?.contact_type === "mobile")?.contact ?? "-")
-                        : "-"}
+                  <td className="px-4 py-4 min-w-[12rem] align-middle">
+                    <Typography className="text-sm font-normal text-gray-600 font-poppins whitespace-nowrap tabular-nums">
+                      {getEmployeeMobile(ele?.contacts)}
                     </Typography>
                   </td>
 

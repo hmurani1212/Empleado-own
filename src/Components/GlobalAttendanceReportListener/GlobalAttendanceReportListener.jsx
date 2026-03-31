@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import useSocket from '../useSocket/useSocket'
 import { getDecodedToken } from '../../Authentication/jwt_decode'
 import { showToast } from '../Toaster/Toaster'
+import { clearAttendanceLongWaitToast } from '../../services/attendanceExportDelayedToast'
 
 const ATTENDANCE_PENDING_EXPORT_KEY = 'attendance_pending_export'
 
@@ -39,6 +40,8 @@ const GlobalAttendanceReportListener = () => {
       const legacyNoId = data.request_id == null && data.one_id == null
 
       if (!requestIdMatch && !oneIdMatch && !legacyNoId) return
+
+      clearAttendanceLongWaitToast()
 
       const elapsedMs = pending.startedAt ? Date.now() - pending.startedAt : null
       const elapsedSec = elapsedMs != null ? (elapsedMs / 1000).toFixed(1) : null

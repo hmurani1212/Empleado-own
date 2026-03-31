@@ -10,6 +10,7 @@ import { getContentByLabel } from "../../services/getContentService";
 import { showToast } from "../../Components/Toaster/Toaster";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { FaInfoCircle } from "react-icons/fa";
+import { prcFormSearchSelectStyles } from "./prcFormSelectStyles";
 
 const AddEditPRC = (props) => {
   const {
@@ -54,7 +55,13 @@ const AddEditPRC = (props) => {
       setContentLoading(false);
     }
   };
-  
+
+  const formatAllowTypeLabel = (opt) => {
+    if (opt === "custom") return "Custom Employee Selection";
+    if (opt === "reporting manager") return "Reporting Manager";
+    return opt;
+  };
+
   // Use ref to track if data has been fetched to prevent duplicate calls
   const hasFetchedDataRef = useRef(false);
   const previousShowStateRef = useRef(false);
@@ -233,16 +240,9 @@ const AddEditPRC = (props) => {
                   {['Admin', 'reporting manager', 'Self', 'custom'].map((opt) => (
                     <label key={opt} className="flex items-center gap-2 cursor-pointer">
                       <input
-                        type="radio"
-                        name="allow_goal_type"
-                        checked={PRCAddValue.allow_goal_type === opt}
-                        onChange={() => {
-                          handleSelectAddPRC(opt, 'allow_goal_type');
-                          if (opt === 'custom' && PRCAddValue.permissionEmployeesOptions.length === 0) {
-                            const deptId = PRCAddValue.department_id?.value ?? null;
-                            fetchPermissionEmployees(deptId);
-                          }
-                        }}
+                        type="checkbox"
+                        checked={PRCAddValue.allow_goal_types?.includes(opt)}
+                        onChange={() => handleSelectAddPRC(opt, 'toggle_allow_goal_type')}
                         className="rounded border-gray-300 text-[#3DA5F4] focus:ring-[#3DA5F4]"
                       />
                       <span className="text-[12px] text-gray-700 capitalize">
@@ -251,7 +251,7 @@ const AddEditPRC = (props) => {
                     </label>
                   ))}
                 </div>
-                {PRCAddValue.allow_goal_type === 'custom' && (
+                {PRCAddValue.allow_goal_types?.includes('custom') && (
                   <div className="mt-2 space-y-1">
                     <SearchReactSelect
                       placeHolderTitle={PRCAddValue.permissionEmployeesLoading ? "Loading employees..." : "Select employees"}
@@ -274,11 +274,9 @@ const AddEditPRC = (props) => {
                     )}
                   </div>
                 )}
-                {PRCAddValue.allow_goal_type !== 'custom' && (
-                  <p className="text-[11px] text-gray-600">
-                    Selected: {PRCAddValue.allow_goal_type === 'reporting manager' ? 'Reporting Manager' : PRCAddValue.allow_goal_type === 'Self' ? 'Self' : 'Admin'}
-                  </p>
-                )}
+                <p className="text-[11px] text-gray-600">
+                  Selected: {(PRCAddValue.allow_goal_types ?? []).map(formatAllowTypeLabel).join(', ') || '—'}
+                </p>
               </div>
             )}
             {/* Who Can Assign Competencies - show when Competency module is included */}
@@ -286,28 +284,21 @@ const AddEditPRC = (props) => {
               <div className="space-y-2">
                 <label className="text-[#698592] text-[12px] font-medium block">Who Can Assign Competencies</label>
                 <div className="flex flex-wrap gap-3">
-                  {['Admin', 'reporting manager', 'custom'].map((opt) => (
+                  {['Admin', 'reporting manager', 'Self', 'custom'].map((opt) => (
                     <label key={opt} className="flex items-center gap-2 cursor-pointer">
                       <input
-                        type="radio"
-                        name="allow_competency_type"
-                        checked={PRCAddValue.allow_competency_type === opt}
-                        onChange={() => {
-                          handleSelectAddPRC(opt, 'allow_competency_type');
-                          if (opt === 'custom' && PRCAddValue.permissionEmployeesOptions.length === 0) {
-                            const deptId = PRCAddValue.department_id?.value ?? null;
-                            fetchPermissionEmployees(deptId);
-                          }
-                        }}
+                        type="checkbox"
+                        checked={PRCAddValue.allow_competency_types?.includes(opt)}
+                        onChange={() => handleSelectAddPRC(opt, 'toggle_allow_competency_type')}
                         className="rounded border-gray-300 text-[#3DA5F4] focus:ring-[#3DA5F4]"
                       />
                       <span className="text-[12px] text-gray-700 capitalize">
-                        {opt === 'custom' ? 'Custom Selection' : opt === 'reporting manager' ? 'Reporting Manager' : opt}
+                        {opt === 'custom' ? 'Custom Employee Selection' : opt === 'reporting manager' ? 'Reporting Manager' : opt}
                       </span>
                     </label>
                   ))}
                 </div>
-                {PRCAddValue.allow_competency_type === 'custom' && (
+                {PRCAddValue.allow_competency_types?.includes('custom') && (
                   <div className="mt-2 space-y-1">
                     <SearchReactSelect
                       placeHolderTitle={PRCAddValue.permissionEmployeesLoading ? "Loading employees..." : "Select employees"}
@@ -330,11 +321,9 @@ const AddEditPRC = (props) => {
                     )}
                   </div>
                 )}
-                {PRCAddValue.allow_competency_type !== 'custom' && (
-                  <p className="text-[11px] text-gray-600">
-                    Selected: {PRCAddValue.allow_competency_type === 'reporting manager' ? 'Reporting Manager' : 'Admin'}
-                  </p>
-                )}
+                <p className="text-[11px] text-gray-600">
+                  Selected: {(PRCAddValue.allow_competency_types ?? []).map(formatAllowTypeLabel).join(', ') || '—'}
+                </p>
               </div>
             )}
           </div>
@@ -381,56 +370,9 @@ const AddEditPRC = (props) => {
             }
           }}
           cStyle={true}
-          customStyles={{
-            control: (base) => ({
-              ...base,
-              fontSize: '14px',
-              minHeight: '36px',
-              border: 'none',
-              borderRadius: '10px',
-              backgroundColor: 'white',
-              boxShadow: '0px 0px 10px 0px rgba(0,0,0,0.1)',
-              transition: 'all 0.2s ease-in-out',
-              '&:hover': {
-                boxShadow: '0px 0px 12px 0px rgba(61, 165, 244, 0.3)',
-              }
-            }),
-            menu: (base) => ({
-              ...base,
-              zIndex: 9999,
-              borderRadius: '10px',
-              boxShadow: '0px 0px 10px 0px rgba(0,0,0,0.1)',
-              border: 'none'
-            }),
-            menuList: (base) => ({
-              ...base,
-              maxHeight: '200px !important',
-              height: 'auto !important',
-              borderRadius: '10px',
-            }),
-            option: (base, state) => ({
-              ...base,
-              backgroundColor: state.isSelected
-                ? '#3DA5F4'
-                : state.isFocused
-                  ? '#E3F1FF'
-                  : 'transparent',
-              color: state.isSelected ? 'white' : '#333',
-              '&:hover': {
-                backgroundColor: state.isSelected ? '#2B8FD4' : '#F0F8FF',
-              }
-            }),
-            singleValue: (base) => ({
-              ...base,
-              fontSize: '14px',
-              color: '#474747',
-            }),
-            placeholder: (base) => ({
-              ...base,
-              fontSize: '14px',
-              color: '#999',
-            })
-          }}
+          customStyles={prcFormSearchSelectStyles}
+          menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+          menuPosition="fixed"
         />
       </div>
       <div className="space-y-2">
@@ -458,42 +400,9 @@ const AddEditPRC = (props) => {
             await handleSelectAddPRC(selectedOption, "department_id");
           }}
           cStyle={true}
-          customStyles={{
-            control: (base) => ({
-              ...base,
-              fontSize: '14px',
-              minHeight: '36px',
-              border: 'none',
-              borderRadius: '10px',
-              backgroundColor: 'white',
-              boxShadow: '0px 0px 10px 0px rgba(0,0,0,0.1)',
-              transition: 'all 0.2s ease-in-out',
-              '&:hover': {
-                boxShadow: '0px 0px 12px 0px rgba(61, 165, 244, 0.3)',
-              }
-            }),
-            menu: (base) => ({
-              ...base,
-              zIndex: 9999,
-              borderRadius: '10px',
-              boxShadow: '0px 0px 10px 0px rgba(0,0,0,0.1)',
-              border: 'none'
-            }),
-            menuList: (base) => ({
-              ...base,
-              borderRadius: '10px',
-            }),
-            singleValue: (base) => ({
-              ...base,
-              fontSize: '14px',
-              color: '#474747',
-            }),
-            placeholder: (base) => ({
-              ...base,
-              fontSize: '14px',
-              color: '#999',
-            })
-          }}
+          customStyles={prcFormSearchSelectStyles}
+          menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+          menuPosition="fixed"
         />
       </div>
       <div className="space-y-2">
@@ -525,56 +434,9 @@ const AddEditPRC = (props) => {
           }}
           cStyle={true}
           isClearable={true}
-          customStyles={{
-            control: (base) => ({
-              ...base,
-              fontSize: '14px',
-              minHeight: '36px',
-              border: 'none',
-              borderRadius: '10px',
-              backgroundColor: 'white',
-              boxShadow: '0px 0px 10px 0px rgba(0,0,0,0.1)',
-              transition: 'all 0.2s ease-in-out',
-              '&:hover': {
-                boxShadow: '0px 0px 12px 0px rgba(61, 165, 244, 0.3)',
-              }
-            }),
-            menu: (base) => ({
-              ...base,
-              zIndex: 9999,
-              borderRadius: '10px',
-              boxShadow: '0px 0px 10px 0px rgba(0,0,0,0.1)',
-              border: 'none'
-            }),
-            menuList: (base) => ({
-              ...base,
-              maxHeight: '200px !important',
-              height: 'auto !important',
-              borderRadius: '10px',
-            }),
-            option: (base, state) => ({
-              ...base,
-              backgroundColor: state.isSelected
-                ? '#3DA5F4'
-                : state.isFocused
-                  ? '#E3F1FF'
-                  : 'transparent',
-              color: state.isSelected ? 'white' : '#333',
-              '&:hover': {
-                backgroundColor: state.isSelected ? '#2B8FD4' : '#F0F8FF',
-              }
-            }),
-            singleValue: (base) => ({
-              ...base,
-              fontSize: '14px',
-              color: '#474747',
-            }),
-            placeholder: (base) => ({
-              ...base,
-              fontSize: '14px',
-              color: '#999',
-            })
-          }}
+          customStyles={prcFormSearchSelectStyles}
+          menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+          menuPosition="fixed"
         />
         <small className="text-gray-500 text-[10px]">
           {PRCAddValue.isMultipleEmployeeMode 

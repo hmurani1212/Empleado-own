@@ -1,4 +1,4 @@
-import departmentsApi from "../../Model/Data/Departments/Departments"
+import branch2Api from "../../Model/Data/Branches/Branch2"
 import hrPoliciesApi from "../../Model/Data/HRPolicies/HRPolicies"
 
 const debounce = (mainFunction, delay) => {
@@ -51,25 +51,39 @@ const hrPoliciesViewModel = (set, get) => ({
         }
     },
 
+    /** Branch dropdown for HR Policies — uses get_branches (not get_branch_employee). */
     getAllBranchesHrPolicy: async () => {
         try {
-            const response = await departmentsApi.gettingAllDepartments({});
+            const response = await branch2Api.getBranches({
+                status: 1,
+                page: 1,
+                limit: 500
+            })
             const data = response.data
-            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                const branches = data?.DB_DATA?.branches?.DB_DATA || []
-                const departments = data?.DB_DATA?.departments?.DB_DATA || []
+            const httpOk =
+                response.status === 200 || response.status === 304
+            if (httpOk && data?.STATUS === "SUCCESSFUL") {
+                const db = data?.DB_DATA
+                const branchesRaw = Array.isArray(db?.branches)
+                    ? db.branches
+                    : Array.isArray(db)
+                      ? db
+                      : []
                 const ownObjectBranches = { id: '0', branch_name: 'All Branches' }
-                const updatedBranches = [ownObjectBranches, ...branches];
-                const ownObjectDepartments = { id: '0', name: 'All Departments', branch_id: '0' }
-                const updatedDepartments = [ownObjectDepartments, ...departments];
-
-                set({ policyBranches: updatedBranches, policyDepartments: updatedDepartments })
+                const updatedBranches = [ownObjectBranches, ...branchesRaw]
+                const ownObjectDepartments = {
+                    id: '0',
+                    name: 'All Departments',
+                    branch_id: '0'
+                }
+                set({
+                    policyBranches: updatedBranches,
+                    policyDepartments: [ownObjectDepartments]
+                })
             }
-            // console.log(response);
         } catch (err) {
-            console.log(err);
+            console.log(err)
         }
-
     },
 
     getAllHrPolicies: async (branch_id, status, page = 1) => {
