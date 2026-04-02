@@ -6,11 +6,7 @@ import { gettingDepartmentsServices } from '../../services/__frequentApiServices
 import { showToast } from '../../Components/Toaster/Toaster'
 import Calendar from 'react-calendar'
 import { FaFileExcel, FaFilePdf, FaPrint } from 'react-icons/fa'
-<<<<<<< HEAD
 import { useDebouncedValue } from '../../services/__debounceServices'
-import { useDebounce } from '../../services/__debounceServices'
-=======
->>>>>>> eff9b5e (pushing latest code)
 import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
 import payrollApi from '../../Model/Data/Payroll/Payroll'
 
@@ -417,19 +413,8 @@ const ExportPayslip = () => {
     return years
   }, [])
 
-<<<<<<< HEAD
-  // Debounced search term
-  const debouncedSearchTerm = useDebouncedValue(employeeIdSearch, 300)
-=======
   // Debounced search term value for in-memory dropdown filtering
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(employeeIdSearch.trim())
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [employeeIdSearch])
->>>>>>> eff9b5e (pushing latest code)
+  const debouncedSearchTerm = useDebouncedValue(employeeIdSearch.trim(), 300)
 
   // Derived search results (no useEffect = no setState loop). Used for dropdown list.
   // Filter by employee ID or Name only (not designation)
