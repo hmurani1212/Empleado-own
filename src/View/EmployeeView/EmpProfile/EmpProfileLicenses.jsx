@@ -66,18 +66,28 @@ const EmpProfileLicenses = () => {
             console.log('License types response:', response)
             console.log('License types data:', response?.data?.DB_DATA)
 
-            if (response && response?.data?.STATUS === 'SUCCESSFUL') {
+            // Some environments may return 304 (cache revalidation). In that case, keep existing data
+            // and just stop showing the loading placeholder.
+            if (response?.status === 304) {
+                console.log('License types request returned 304; keeping existing licenseTypes')
+                return licenseTypes
+            }
+
+            if (response?.data?.STATUS === 'SUCCESSFUL') {
                 const licenseTypesData = response?.data?.DB_DATA || []
                 console.log('Setting license types:', licenseTypesData)
                 setLicenseTypes(licenseTypesData)
                 console.log('License types set successfully, count:', licenseTypesData.length)
-            } else {
-                console.log('No license types found or error:', response)
-                setLicenseTypes([])
+                return licenseTypesData
             }
+
+            console.log('No license types found or error:', response)
+            setLicenseTypes([])
+            return []
         } catch (error) {
             console.error('Error fetching license types:', error)
             setLicenseTypes([])
+            return []
         } finally {
             console.log('Setting loadingLicenseTypes to false')
             setLoadingLicenseTypes(false)
@@ -114,7 +124,7 @@ const EmpProfileLicenses = () => {
         setOpenDropdown(null) // Close dropdown
         
         // Fetch license types for the dropdown
-        await fetchLicenseTypes()
+        const latestTypes = await fetchLicenseTypes()
         
         // Open drawer with edit form
         settingDrawerTitle('Edit License Details')
@@ -123,6 +133,7 @@ const EmpProfileLicenses = () => {
             <LicenseFormWrapper 
                 editData={license} 
                 isEdit={true}
+                initialLicenseTypes={latestTypes}
                 onSuccess={fetchEmployeeProfile}
             />
         )
@@ -171,7 +182,7 @@ const EmpProfileLicenses = () => {
     }
 
     // Create a wrapper component that manages its own state
-    const LicenseFormWrapper = ({ editData = null, isEdit = false, onSuccess = null }) => {
+    const LicenseFormWrapper = ({ editData = null, isEdit = false, onSuccess = null, initialLicenseTypes = [] }) => {
         const [formData, setFormData] = useState({
             license_type: '',
             license_title: '',
@@ -367,9 +378,9 @@ const EmpProfileLicenses = () => {
 
         // Debug logging
         console.log('LicenseFormWrapper props:', {
-            licenseTypes: licenseTypes,
+            licenseTypes: initialLicenseTypes,
             loadingLicenseTypes: loadingLicenseTypes,
-            licenseTypesLength: licenseTypes.length
+            licenseTypesLength: initialLicenseTypes.length
         })
 
         return (
@@ -385,8 +396,8 @@ const EmpProfileLicenses = () => {
                     issuing_authority: formData.issuing_authority,
                     issue_date: formData.issue_date,
                     expiry_date: formData.expiry_date,
-                    license_type_list: licenseTypes,
-                    loadingLicenseTypes,
+                    license_type_list: initialLicenseTypes,
+                    loadingLicenseTypes: loadingLicenseTypes && initialLicenseTypes.length === 0,
                     validationErrors
                 }}
                 handleSubmitLicense={handleSubmit}
@@ -400,11 +411,11 @@ const EmpProfileLicenses = () => {
 
     const handleAddLicense = async () => {
         // Always fetch license types when opening the form
-        await fetchLicenseTypes()
+        const latestTypes = await fetchLicenseTypes()
 
         settingDrawerTitle("Add License")
         settingDrawerSize(800)
-        settingComponent(<LicenseFormWrapper />)
+        settingComponent(<LicenseFormWrapper initialLicenseTypes={latestTypes} />)
         openDrawer()
     }
 

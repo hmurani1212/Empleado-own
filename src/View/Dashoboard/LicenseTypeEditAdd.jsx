@@ -53,7 +53,7 @@ const LicenseTypeEditAdd = (props) => {
                     </div>
                     <div className='flex-1 px-2 space-y-1'>
                         <label className='text-[#698592] text-[12px]'>License Type</label>
-                        {licenseValue?.loadingLicenseTypes ? (
+                        {(licenseValue?.loadingLicenseTypes && !(licenseValue?.license_type_list?.length > 0)) ? (
                             <div className='w-full text-[#333333] text-[12px] rounded-md py-[8px] px-[17px] border border-gray-500 outline-none bg-gray-100'>
                                 Loading license types...
                             </div>

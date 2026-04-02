@@ -80,21 +80,9 @@ const App = () => {
 
         const localStorageItem = localStorage.getItem('jwt')
 
-        // If user is on login route but has a valid token, redirect to home
-        if (isLogInRoute && localStorageItem) {
-          try {
-            const decode = jwtDecode(localStorageItem);
-            const currentTime = Math.floor(Date.now() / 1000);
-            if (decode.exp > currentTime) {
-              // Token is valid, redirect to home
-              navigate('/', { replace: true });
-              hasProcessedAuthRef.current = true;
-              return;
-            }
-          } catch (e) {
-            // Token is invalid, continue to login page
-          }
-        }
+        // Do NOT return early here: a valid JWT must still run the decode + setAuthenticationState(true)
+        // path below. The previous early navigate+return left isAuthenticated false and caused a white
+        // screen until a full reload (token in URL / post-login callback).
 
         if (!localStorageItem) {
           setAuthenticationState(false, false)
@@ -119,11 +107,15 @@ const App = () => {
           // Set authentication as ready
           setAuthenticationState(true, false)
 
-          // Initialize authentication check
-          if (!isLogInRoute) {
-            checkAuthentication();
-            getUserDataFromToken();
+          // If user landed on /login with a token, move to `/` so the dashboard route mounts
+          if (currentUrl.pathname === '/login') {
+            navigate('/', { replace: true });
           }
+
+          // Always hydrate user/session after a valid JWT is present (do not gate on isLogInRoute —
+          // that flag is stale in this effect closure when the token arrives via ?token= on `/` or `/login`).
+          checkAuthentication();
+          getUserDataFromToken();
 
           // Set up JWT expiration check - clear any existing interval first
           if (intervalRef.current) {
@@ -156,7 +148,6 @@ const App = () => {
   }, []); // Empty dependency array - only run once on mount
 
   // Handle browser back/forward buttons to prevent accessing login when authenticated
-  const role = JSON.parse(localStorage.getItem('role_id'));
   useEffect(() => {
     const handlePopState = () => {
       const token = localStorage.getItem('jwt');
