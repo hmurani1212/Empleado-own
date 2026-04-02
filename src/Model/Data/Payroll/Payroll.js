@@ -541,14 +541,25 @@ const payrollApi = {
             queryParams.append('search', params.salary_month);
         }
         
-        // Pagination - Updated to use page_id
-        const page = params.page !== undefined ? params.page : 0;
-        const limit = params.limit !== undefined ? params.limit : 15;
-        queryParams.append('page_id', page);
-        queryParams.append('limit', limit);
-        
-        // Direction - Default to next
-        queryParams.append('direction', 'next');
+        // Pagination
+        // When pagination=false, backend should return full list (do not send limit).
+        const paginationDisabled =
+            params.pagination === false ||
+            params.pagination === 'false' ||
+            params.pagination === 0 ||
+            params.pagination === '0';
+        if (paginationDisabled) {
+            queryParams.append('pagination', 'false');
+        } else {
+            // Updated to use page_id
+            const page = params.page !== undefined ? params.page : 0;
+            const limit = params.limit !== undefined ? params.limit : 15;
+            queryParams.append('page_id', page);
+            queryParams.append('limit', limit);
+            
+            // Direction - Default to next
+            queryParams.append('direction', 'next');
+        }
         
         const finalUrl = `/manage_payslip/payslips?${queryParams.toString()}`;
         

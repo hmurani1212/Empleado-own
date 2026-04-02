@@ -2,6 +2,7 @@ import { FaBook } from "react-icons/fa6";
 import { BiShare } from "react-icons/bi";
 import { FaTrash  } from "react-icons/fa6";
 import { IoCopy,IoCut   } from 'react-icons/io5'
+import employeesApi from "../Model/Data/Employees/Employees"
 
 export const notbookMenuList =[
     {id:1, name:'Edit', icon:<FaBook className="text-green-500" />},
@@ -63,3 +64,37 @@ export const noteShareData = [
     {id: 2, title :'Add this NoteBook to Shared Pool'},
     {id: 3, title :'Share Publicly'},
 ]
+
+/** Departments for a branch: match branch_id, plus company-wide rows (branch_id 0). */
+export const filterDepartmentsForBranch = (departments, branchId) => {
+    if (branchId === undefined || branchId === null || branchId === '') return []
+    const sel = Number(branchId)
+    return (departments || []).filter(
+        (dept) => Number(dept.branch_id) === sel || Number(dept.branch_id) === 0
+    )
+}
+
+/** Active employees only (`status=1`), for Notes Pool share branch + department pickers. */
+export const fetchActiveEmployeesForBranchDept = async (branchId, deptId) => {
+    if (branchId === undefined || branchId === null || branchId === '' || deptId === undefined || deptId === null || deptId === '') {
+        return []
+    }
+    try {
+        const res = await employeesApi.getEmployeesWithFilters({
+            branch_id: branchId,
+            dept_id: deptId,
+            status: '1',
+            pages: 'all',
+        })
+        const data = res?.data
+        if (data?.STATUS !== 'SUCCESSFUL' || !Array.isArray(data.DB_DATA?.employees)) {
+            return []
+        }
+        return data.DB_DATA.employees.map((e) => ({
+            id: e.id,
+            name: e.name ?? e.emp_name ?? '',
+        }))
+    } catch {
+        return []
+    }
+}

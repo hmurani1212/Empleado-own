@@ -176,6 +176,10 @@ const useIncentDeductServicesForm = (employeeId = null, refreshDataCallback = nu
             setAddIncDecValues((prevState) => ({
                 ...prevState,
                 [name]: value,
+                // Backend expects the selected month in `onetime_month`.
+                // When UI is in "unlimited" mode the month field writes to `unlimited_start_date`,
+                // so keep `onetime_month` in sync with the selected month.
+                ...(name === 'unlimited_start_date' ? { onetime_month: value } : {}),
             }));
         }
     };

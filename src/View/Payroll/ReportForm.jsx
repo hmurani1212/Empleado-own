@@ -7,9 +7,18 @@ import { showToast } from "../../Components/Toaster/Toaster";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { ReportResultsSkeleton } from "./PayrollSkeletons";
+import { getOrganizationData, getUserData } from "../../Authentication/jwt_decode";
 
 const ALL_BRANCHES_OPTION = { value: 0, label: "All Branches" };
 const ALL_DEPARTMENTS_OPTION = { value: 0, label: "All Departments" };
+
+// Excel styling constants — matched to Individual Attendance Report
+const ORG_HEADER_BG = "FF1F4E79";
+const DATE_HEADER_BG = "FF2E75B6";
+const COLUMN_HEADER_BG = "FF1F4E79";
+const GRID_COLOR = "FFD1D5DB";
+const ROW_FILL_WHITE = "FFFFFFFF";
+const REPORT_EXPORT_COL_COUNT = 5;
 
 const ReportForm = ({ reportType, onClose }) => {
   const [formData, setFormData] = useState({
@@ -474,56 +483,179 @@ const ReportForm = ({ reportType, onClose }) => {
     }
   };
 
-  // Handle export action
-  const handleExport = () => {
+  // Handle export action — ExcelJS styling matched to Individual Attendance Report
+  // Overtime Report is excluded from styled export per requirement
+  const handleExport = async () => {
     if (!hasRecords || !reportData || reportData.length === 0) {
       showToast("No records to export", "error");
       return;
     }
 
     try {
-      // Import xlsx dynamically
-      import("xlsx")
-        .then((XLSX) => {
-          // Prepare data for Excel
-          const excelData = reportData.map((item, index) => ({
-            "S.No": index + 1,
-            Name: item.name || item.employee_name || item.full_name || "-",
-            "Father Name":
-              item.f_name || item.father_name || item.fatherName || "-",
-            Designation:
-              item.designation ||
-              item.employee_designation ||
-              item.position ||
-              "-",
-            Amount:
-              item.amount ||
-              item.tax_amount ||
-              item.total_amount ||
-              item.salary ||
-              "0",
-          }));
+      // Overtime Report keeps basic xlsx export
+      if (reportType === "Overtime Report") {
+        const XLSX = await import("xlsx");
+        const excelData = reportData.map((item, index) => ({
+          "S.No": index + 1,
+          Name: item.name || item.employee_name || item.full_name || "-",
+          "Father Name": item.f_name || item.father_name || item.fatherName || "-",
+          Designation: item.designation || item.employee_designation || item.position || "-",
+          Amount: item.amount || item.tax_amount || item.total_amount || item.salary || "0",
+        }));
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        XLSX.utils.book_append_sheet(wb, ws, `${reportType} Report`);
+        const timestamp = new Date().toISOString().split("T")[0];
+        XLSX.writeFile(wb, `${reportType}_Report_${timestamp}.xlsx`);
+        showToast(`${reportType} report exported successfully`, "success");
+        return;
+      }
 
-          // Create workbook and worksheet
-          const wb = XLSX.utils.book_new();
-          const ws = XLSX.utils.json_to_sheet(excelData);
+      // Styled ExcelJS export for Income Tax, EOBI, Social Security, Medical Allowance
+      const ExcelJS = (await import("exceljs")).default;
 
-          // Add worksheet to workbook
-          XLSX.utils.book_append_sheet(wb, ws, `${reportType} Report`);
+      const userData = getUserData();
+      const orgName = getOrganizationData()?.orgName || userData?.org_name || "Organization";
+      const reportDate = new Date().toLocaleDateString("en-US", {
+        weekday: "short", year: "numeric", month: "short", day: "numeric",
+      });
+      const branchLabel = formData.branch_id?.label || "All Branches";
+      const deptLabel = formData.department_id?.label || "All Departments";
 
-          // Generate filename
-          const timestamp = new Date().toISOString().split("T")[0];
-          const filename = `${reportType}_Report_${timestamp}.xlsx`;
+      // Build time range label
+      let timeRangeLabel = "";
+      if (payslipData.timeFilter?.value === "specific_month") {
+        const monthLabel = payslipData.selectedMonth?.label || "";
+        const yearLabel = payslipData.selectedYear?.label || "";
+        timeRangeLabel = `${monthLabel} ${yearLabel}`;
+      } else if (payslipData.timeFilter?.value === "time_frame") {
+        timeRangeLabel = `${payslipData.startDate || ""} to ${payslipData.endDate || ""}`;
+      }
 
-          // Save file
-          XLSX.writeFile(wb, filename);
+      const cCount = REPORT_EXPORT_COL_COUNT;
 
-          showToast(`${reportType} report exported successfully`, "success");
-        })
-        .catch((error) => {
-          console.error("Error exporting Excel file:", error);
-          showToast("Error exporting file", "error");
+      const thinGrid = {
+        top:    { style: "thin", color: { argb: GRID_COLOR } },
+        bottom: { style: "thin", color: { argb: GRID_COLOR } },
+        left:   { style: "thin", color: { argb: GRID_COLOR } },
+        right:  { style: "thin", color: { argb: GRID_COLOR } },
+      };
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet(`${reportType} Report`, {
+        views: [{ rightToLeft: false }],
+      });
+
+      worksheet.columns = [
+        { width: 8 },   // S.No
+        { width: 28 },  // Name
+        { width: 28 },  // Father Name
+        { width: 24 },  // Designation
+        { width: 18 },  // Amount
+      ];
+
+      // --- Row 1: Organization header ---
+      const orgRow = worksheet.addRow([`Organization: ${orgName}`]);
+      orgRow.height = 26;
+      worksheet.mergeCells(1, 1, 1, cCount);
+      orgRow.getCell(1).font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
+      orgRow.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+      orgRow.getCell(1).fill = {
+        type: "pattern", pattern: "solid", fgColor: { argb: ORG_HEADER_BG },
+      };
+
+      // --- Row 2: Report title ---
+      const titleText = timeRangeLabel
+        ? `${reportType} Report — ${timeRangeLabel} (exported ${reportDate})`
+        : `${reportType} Report (exported ${reportDate})`;
+      const titleRow = worksheet.addRow([titleText]);
+      titleRow.height = 28;
+      worksheet.mergeCells(2, 1, 2, cCount);
+      titleRow.getCell(1).font = { bold: true, size: 15, color: { argb: "FFFFFFFF" } };
+      titleRow.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+      titleRow.getCell(1).fill = {
+        type: "pattern", pattern: "solid", fgColor: { argb: DATE_HEADER_BG },
+      };
+
+      // --- Row 3: Filter details ---
+      const detailParts = [
+        `Branch: ${branchLabel}`,
+        `Department: ${deptLabel}`,
+      ];
+      if (timeRangeLabel) {
+        detailParts.push(`Period: ${timeRangeLabel}`);
+      }
+      const detailRow = worksheet.addRow([detailParts.join("   |   ")]);
+      detailRow.height = 24;
+      worksheet.mergeCells(3, 1, 3, cCount);
+      detailRow.getCell(1).font = { bold: true, size: 11, color: { argb: "FF1E293B" } };
+      detailRow.getCell(1).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      detailRow.getCell(1).fill = {
+        type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" },
+      };
+      for (let c = 1; c <= cCount; c++) {
+        detailRow.getCell(c).border = thinGrid;
+      }
+
+      // --- Row 4: Column headers ---
+      const headerRow = worksheet.addRow([
+        "S.No", "Name", "Father Name", "Designation", "Amount",
+      ]);
+      headerRow.height = 22;
+      for (let c = 1; c <= cCount; c++) {
+        const cell = headerRow.getCell(c);
+        cell.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+        cell.fill = {
+          type: "pattern", pattern: "solid", fgColor: { argb: COLUMN_HEADER_BG },
+        };
+        cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+        cell.border = thinGrid;
+      }
+
+      // --- Data rows ---
+      reportData.forEach((item, index) => {
+        const row = worksheet.addRow([
+          index + 1,
+          item.name || item.employee_name || item.full_name || "-",
+          item.f_name || item.father_name || item.fatherName || "-",
+          item.designation || item.employee_designation || item.position || "-",
+          item.amount || item.tax_amount || item.total_amount || item.salary || "0",
+        ]);
+        row.height = 20;
+        row.eachCell((cell, colNumber) => {
+          cell.border = thinGrid;
+          cell.fill = {
+            type: "pattern", pattern: "solid", fgColor: { argb: ROW_FILL_WHITE },
+          };
+          cell.font = { size: 10, color: { argb: "FF334155" } };
+          // S.No and Amount: center aligned
+          if (colNumber === 1 || colNumber === 5) {
+            cell.alignment = { horizontal: "center", vertical: "middle" };
+          } else {
+            cell.alignment = { horizontal: "left", vertical: "middle" };
+          }
         });
+      });
+
+      // --- Download file ---
+      const timestamp = new Date().toISOString().split("T")[0];
+      const fileName = `${reportType}_Report_${timestamp}.xlsx`;
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showToast(`${reportType} report exported successfully`, "success");
     } catch (error) {
       console.error("Error in export function:", error);
       showToast("Error exporting file", "error");

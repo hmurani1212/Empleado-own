@@ -24,6 +24,7 @@ import EditorData from "./EditorData";
 import UpdateNoteData from "./UpdateNoteData";
 import CutNote from "./CutNote";
 import ShareNote from "./ShareNote";
+import { NoteSkeleton } from "./NotesPoolSkeletons";
 
 const Notes = (props) => {
   const { notes: notesFromProps, noteBookTitle, noteBookID, onBack } = props;
@@ -32,6 +33,7 @@ const Notes = (props) => {
   // Get notes directly from store to ensure real-time updates
   const notesFromStore = useStore((state) => state.notes);
   const notes = notesFromStore || notesFromProps;
+  const notebookNotesLoading = useStore((state) => state.notebookNotesLoading);
 
   const { getDropdownPosition, triggerRefs } = useDropdownService();
 
@@ -119,7 +121,9 @@ const Notes = (props) => {
         <div className="flex items-center gap-4">
              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-gray-100 shadow-sm">
                 <span className="text-xs text-gray-500">Total:</span>
-                <span className="text-sm font-bold text-gray-800">{notes?.length || 0}</span>
+                <span className="text-sm font-bold text-gray-800">
+                  {notebookNotesLoading ? "—" : notes?.length || 0}
+                </span>
              </div>
 
             {/* SEARCH */}
@@ -137,6 +141,9 @@ const Notes = (props) => {
         </div>
       </div>
 
+      {notebookNotesLoading ? (
+        <NoteSkeleton />
+      ) : (
       <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-5 w-full">
         {/* ADD NOTE CARD */}
         <motion.div
@@ -258,6 +265,7 @@ const Notes = (props) => {
             );
           })}
       </div>
+      )}
 
       {/* DRAWERS & DIALOGS */}
       {(addNoteValue.show || addNoteValue.cutNote) && (
@@ -359,6 +367,8 @@ const Notes = (props) => {
           handleOpen={toggleNoteShare}
           footer={false}
           outsidePress={false}
+          // Keep scroll so submit button stays reachable; allow select menu to overflow horizontally
+          bodyClassName="!overflow-x-visible !pb-12"
           compo={
             <ShareNote
               handleChangeShareNote={handleChangeShareNote}

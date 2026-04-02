@@ -6,8 +6,19 @@ import { showToast } from '../../Components/Toaster/Toaster'
 import debounce from 'lodash.debounce'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import employeesApi from '../../Model/Data/Employees/Employees'
-import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
+import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
+
+// Excel styling constants — matched to Individual Attendance Report
+const ORG_HEADER_BG = 'FF1F4E79'
+const DATE_HEADER_BG = 'FF2E75B6'
+const COLUMN_HEADER_BG = 'FF1F4E79'
+const GRID_COLOR = 'FFD1D5DB'
+const ROW_FILL_WHITE = 'FFFFFFFF'
+const INCENTIVE_EXPORT_COL_COUNT = 7
+
+const ALL_BRANCHES_OPTION = { value: 0, label: 'All Branches' }
+const ALL_DEPARTMENTS_OPTION = { value: 0, label: 'All Departments' }
 
 const IncentiveDeductionReportForm = () => {
   // Get global drawer close function
@@ -18,7 +29,6 @@ const IncentiveDeductionReportForm = () => {
     toDate: '',
     type: null,
     branch_id: null,
-    category: null,
     department_id: null,
     exportIndividualAttendance: false,
     exportFormat: 'excel', // 'pdf' or 'excel'
@@ -154,18 +164,18 @@ const IncentiveDeductionReportForm = () => {
 
   // Auto-fetch data function
   const handleAutoFetchData = useCallback(async () => {
-    if (!formData.branch_id || !formData.department_id || !formData.type || !formData.category || !formData.fromDate || !formData.toDate) {
+    if (!formData.branch_id || !formData.department_id || !formData.type || !formData.fromDate || !formData.toDate) {
       return
     }
 
     try {
       const requestData = {
-        branch_id: formData.branch_id.value,
-        dept_id: formData.department_id.value,
+        // All Branches / All Departments should send 0
+        branch_id: formData.branch_id?.value ?? 0,
+        dept_id: formData.department_id?.value ?? 0,
         time1: formData.fromDate,
         time2: formData.toDate,
         type: formData.type.value,
-        category: formData.category.value,
         ...(formData.selectedEmployee && { emp_ids: [formData.selectedEmployee.id] })
       }
 
@@ -180,16 +190,16 @@ const IncentiveDeductionReportForm = () => {
       console.error('Error auto-fetching data:', error)
       setReportData([])
     }
-  }, [formData.branch_id, formData.department_id, formData.type, formData.category, formData.fromDate, formData.toDate, formData.selectedEmployee, generateIncentiveDeductionsReport])
+  }, [formData.branch_id, formData.department_id, formData.type, formData.fromDate, formData.toDate, formData.selectedEmployee, generateIncentiveDeductionsReport])
 
-  // Auto-fetch data when branch, department, type, category, and dates are selected
+  // Auto-fetch data when branch, department, type, and dates are selected
   useEffect(() => {
-    if (formData.branch_id && formData.department_id && formData.type && formData.category && formData.fromDate && formData.toDate) {
+    if (formData.branch_id && formData.department_id && formData.type && formData.fromDate && formData.toDate) {
       handleAutoFetchData()
     } else {
       setReportData([])
     }
-  }, [formData.branch_id, formData.department_id, formData.type, formData.category, formData.fromDate, formData.toDate, formData.selectedEmployee, handleAutoFetchData])
+  }, [formData.branch_id, formData.department_id, formData.type, formData.fromDate, formData.toDate, formData.selectedEmployee, handleAutoFetchData])
 
   // Type options
   const typeOptions = [
@@ -198,16 +208,7 @@ const IncentiveDeductionReportForm = () => {
     { value: 'deduction', label: 'Deduction' }
   ]
 
-  // Category options
-  const categoryOptions = [
-    { value: 'all', label: 'Select Category' },
-    { value: 'bonus', label: 'Bonus' },
-    { value: 'overtime', label: 'Overtime' },
-    { value: 'allowance', label: 'Allowance' },
-    { value: 'penalty', label: 'Penalty' },
-    { value: 'advance', label: 'Advance' },
-    { value: 'loan', label: 'Loan' }
-  ]
+  // Category options (disabled per requirement)
 
   // Load branches on component mount
   useEffect(() => {
@@ -230,7 +231,8 @@ const IncentiveDeductionReportForm = () => {
       try {
         setLoading(true)
         const deptData = await gettingDepartmentsServices(selectedBranch.value)
-        setDepartments(deptData || [])
+        const deptOptions = Array.isArray(deptData) ? deptData : []
+        setDepartments([ALL_DEPARTMENTS_OPTION, ...deptOptions])
       } catch (error) {
         console.error('Error fetching departments:', error)
         showToast('Error loading departments', 'error')
@@ -256,13 +258,7 @@ const IncentiveDeductionReportForm = () => {
     }))
   }
 
-  // Handle category selection
-  const handleCategoryChange = (selectedCategory) => {
-    setFormData(prev => ({
-      ...prev,
-      category: selectedCategory
-    }))
-  }
+  // Category selection handler (disabled per requirement)
 
   // Handle date changes
   const handleFromDateChange = (e) => {
@@ -299,12 +295,13 @@ const IncentiveDeductionReportForm = () => {
 
 
 
-  // Export to Excel
-  const exportToExcel = (data, filename) => {
+  // Export to Excel — ExcelJS styling matched to Individual Attendance Report
+  const exportToExcel = async (data, filename) => {
     try {
+      const ExcelJS = (await import('exceljs')).default
+
       // Handle different data structures
       const actualData = Array.isArray(data) ? data : (data?.DATA || data?.data || [])
-      console.log('Exporting to Excel:', { dataLength: actualData.length, filename, originalData: data })
 
       if (!Array.isArray(actualData) || actualData.length === 0) {
         throw new Error('No data available to export')
@@ -316,29 +313,145 @@ const IncentiveDeductionReportForm = () => {
         return index === self.findIndex(t => `${t.emp_id || t.employee_id}_${t.date || t.incentive_date || 'no_date'}` === key)
       })
 
-      console.log('📊 Deduplication:', {
-        originalCount: actualData.length,
-        uniqueCount: uniqueData.length,
-        duplicatesRemoved: actualData.length - uniqueData.length
+      // Gather context info
+      const userData = getUserData()
+      const orgName = getOrganizationData()?.orgName || userData?.org_name || 'Organization'
+      const reportDate = new Date().toLocaleDateString('en-US', {
+        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+      })
+      const branchLabel = formData.branch_id?.label || 'All Branches'
+      const deptLabel = formData.department_id?.label || 'All Departments'
+      const typeLabel = formData.type?.label || 'Both'
+      const dateRange = formData.fromDate && formData.toDate
+        ? `${formData.fromDate} to ${formData.toDate}`
+        : 'N/A'
+
+      const cCount = INCENTIVE_EXPORT_COL_COUNT
+
+      const thinGrid = {
+        top:    { style: 'thin', color: { argb: GRID_COLOR } },
+        bottom: { style: 'thin', color: { argb: GRID_COLOR } },
+        left:   { style: 'thin', color: { argb: GRID_COLOR } },
+        right:  { style: 'thin', color: { argb: GRID_COLOR } },
+      }
+
+      // --- Create workbook & worksheet ---
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet('Incentive Deduction Report', {
+        views: [{ rightToLeft: false }],
       })
 
-      // Prepare data for Excel with proper field mapping
-      const excelData = uniqueData.map((item, index) => ({
-        'S.No': index + 1,
-        'Emp ID': item.emp_id || item.employee_id || '-',
-        'Name': item.name || item.employee_name || '-',
-        'Father Name': item.f_name || item.father_name || '-',
-        'Designation': item.designation || item.employee_designation || '-',
-        'Type': item.type || item.incentive_type || '-',
-        'Amount': item.amount || item.incentive_amount || '0'
-      }))
+      worksheet.columns = [
+        { width: 8 },   // S.No
+        { width: 14 },  // Emp ID
+        { width: 24 },  // Name
+        { width: 24 },  // Father Name
+        { width: 22 },  // Designation
+        { width: 16 },  // Type
+        { width: 18 },  // Amount
+      ]
 
-      const ws = XLSX.utils.json_to_sheet(excelData)
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Incentive Deduction Report')
-      XLSX.writeFile(wb, `${filename}.xlsx`)
+      // --- Row 1: Organization header ---
+      const orgRow = worksheet.addRow([`Organization: ${orgName}`])
+      orgRow.height = 26
+      worksheet.mergeCells(1, 1, 1, cCount)
+      orgRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } }
+      orgRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' }
+      orgRow.getCell(1).fill = {
+        type: 'pattern', pattern: 'solid', fgColor: { argb: ORG_HEADER_BG },
+      }
 
-      console.log('Excel export completed successfully')
+      // --- Row 2: Report title ---
+      const titleRow = worksheet.addRow([
+        `Incentive & Deduction Report — ${dateRange} (exported ${reportDate})`,
+      ])
+      titleRow.height = 28
+      worksheet.mergeCells(2, 1, 2, cCount)
+      titleRow.getCell(1).font = { bold: true, size: 15, color: { argb: 'FFFFFFFF' } }
+      titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' }
+      titleRow.getCell(1).fill = {
+        type: 'pattern', pattern: 'solid', fgColor: { argb: DATE_HEADER_BG },
+      }
+
+      // --- Row 3: Filter details ---
+      const detailParts = [
+        `Branch: ${branchLabel}`,
+        `Department: ${deptLabel}`,
+        `Type: ${typeLabel}`,
+        `Date Range: ${dateRange}`,
+      ]
+      if (formData.selectedEmployee) {
+        detailParts.unshift(`Employee: ${formData.selectedEmployee.name} (ID: ${formData.selectedEmployee.employee_id || formData.selectedEmployee.id})`)
+      }
+      const detailRow = worksheet.addRow([detailParts.join('   |   ')])
+      detailRow.height = 24
+      worksheet.mergeCells(3, 1, 3, cCount)
+      detailRow.getCell(1).font = { bold: true, size: 11, color: { argb: 'FF1E293B' } }
+      detailRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
+      detailRow.getCell(1).fill = {
+        type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' },
+      }
+      for (let c = 1; c <= cCount; c++) {
+        detailRow.getCell(c).border = thinGrid
+      }
+
+      // --- Row 4: Column headers ---
+      const headerRow = worksheet.addRow([
+        'S.No', 'Emp ID', 'Name', 'Father Name', 'Designation', 'Type', 'Amount',
+      ])
+      headerRow.height = 22
+      for (let c = 1; c <= cCount; c++) {
+        const cell = headerRow.getCell(c)
+        cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } }
+        cell.fill = {
+          type: 'pattern', pattern: 'solid', fgColor: { argb: COLUMN_HEADER_BG },
+        }
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+        cell.border = thinGrid
+      }
+
+      // --- Data rows ---
+      uniqueData.forEach((item, index) => {
+        const row = worksheet.addRow([
+          index + 1,
+          item.emp_id || item.employee_id || '-',
+          item.name || item.employee_name || '-',
+          item.f_name || item.father_name || '-',
+          item.designation || item.employee_designation || '-',
+          item.type || item.incentive_type || '-',
+          item.amount || item.incentive_amount || '0',
+        ])
+        row.height = 20
+        row.eachCell((cell, colNumber) => {
+          cell.border = thinGrid
+          cell.fill = {
+            type: 'pattern', pattern: 'solid', fgColor: { argb: ROW_FILL_WHITE },
+          }
+          cell.font = { size: 10, color: { argb: 'FF334155' } }
+          // S.No and Amount: center aligned
+          if (colNumber === 1 || colNumber === 7) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' }
+          } else {
+            cell.alignment = { horizontal: 'left', vertical: 'middle' }
+          }
+        })
+      })
+
+      // --- Download file ---
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${filename}.xlsx`
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
     } catch (error) {
       console.error('Excel export error:', error)
       throw error
@@ -470,10 +583,13 @@ const IncentiveDeductionReportForm = () => {
             <CustomSelect
               placeHolderTitle="Choose branch"
               value={formData.branch_id}
-              options={branches_payroll?.map((branch) => ({ 
-                value: branch.id, 
-                label: branch.branch_name 
-              })) || []}
+              options={[
+                ALL_BRANCHES_OPTION,
+                ...(branches_payroll?.map((branch) => ({
+                  value: branch.id,
+                  label: branch.branch_name
+                })) || [])
+              ]}
               onChangeHandler={handleBranchChange}
               customStyles={false}
               isSearchable={true}
@@ -482,10 +598,10 @@ const IncentiveDeductionReportForm = () => {
           </div>
         </div>
 
-        {/* Third Row - Category and Department */}
+        {/* Third Row - Department (Category disabled) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Category Selection */}
-          <div className="space-y-2">
+          {/* Category Selection (disabled per requirement) */}
+          {/* <div className="space-y-2">
             <label className="text-[#698592] text-[12px] font-medium">Category</label>
             <CustomSelect
               placeHolderTitle="Select Category"
@@ -496,7 +612,7 @@ const IncentiveDeductionReportForm = () => {
               isSearchable={false}
               isClearable={false}
             />
-          </div>
+          </div> */}
 
           {/* Department Selection */}
           <div className="space-y-2">
@@ -504,7 +620,7 @@ const IncentiveDeductionReportForm = () => {
             <CustomSelect
               placeHolderTitle="Filter by dept"
               value={formData.department_id}
-              options={departments || []}
+              options={departments || [ALL_DEPARTMENTS_OPTION]}
               onChangeHandler={handleDepartmentChange}
               customStyles={false}
               isSearchable={true}
@@ -709,11 +825,11 @@ const IncentiveDeductionReportForm = () => {
                     const filename = `Incentive_Deduction_Report_${timestamp}${employeeInfo}`
 
                     if (formData.exportFormat === 'excel') {
-                      exportToExcel(reportData, filename)
+                      await exportToExcel(reportData, filename)
                       showToast('Excel file downloaded successfully', 'success')
                     } else {
                       // Default to Excel if no format selected
-                      exportToExcel(reportData, filename)
+                      await exportToExcel(reportData, filename)
                       showToast('Excel file downloaded successfully', 'success')
                     }
                     setShowExportOptions(false)

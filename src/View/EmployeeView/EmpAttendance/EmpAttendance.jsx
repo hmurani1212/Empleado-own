@@ -16,12 +16,13 @@ const tableHeader = [
 const EmpAttendance = () => {
 
   const { gettingEmpAttendanceData, empAttendancData, selectedValue, handleSelectAttendance, handleMobileBaseAttendance } = useEmpAttendanceServices();
-  const { empDashboardData } = useEmpDashboard();
+  const { empDashboardData, gettingEmpDashboardData } = useEmpDashboard();
   
   // Single fetch on mount and when month/year change; guard against empty params
   useEffect(() => {
     const month = selectedValue.month?.value;
     const year = selectedValue.year?.value;
+    gettingEmpDashboardData();
     if (month != null && year != null) {
       gettingEmpAttendanceData({ month, year });
     }
@@ -36,7 +37,7 @@ const EmpAttendance = () => {
   const lastPolicy = attendanceDetails?.last_policy
   const workingDays = lastPolicy?.working_days || [];
   const personalInfo = empAttendancData?.personal_info
-  const webAttendance = empDashboardData?.section1?.web_attendance_status;
+  const webAttendance = empDashboardData?.section1?.mobile_attendance;
   const workingStatus = empDashboardData?.section2?.working_status;
   const loginTime = empDashboardData?.section2?.login_time;
 

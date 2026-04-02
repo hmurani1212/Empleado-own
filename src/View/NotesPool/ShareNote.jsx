@@ -1,13 +1,39 @@
 import React, { useEffect } from 'react'
-import { noteShareData, sharenotbookPermissionData, sharenotebookShareWithData } from '../../services/__notesPoolServices'
+import { noteShareData, sharenotbookPermissionData, sharenotebookShareWithData, filterDepartmentsForBranch, fetchActiveEmployeesForBranchDept } from '../../services/__notesPoolServices'
 import { Button, Checkbox, Radio, Typography } from '@material-tailwind/react'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import CustomButton from '../../Components/CustomButton/CustomButton'
 import { IoCheckmarkCircleOutline } from 'react-icons/io5'
 import { HiDocumentDuplicate } from 'react-icons/hi2'
-import useDepartments from "../../ViewModel/DepartmentsViewModel/DepartmentsServices";
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices'
 import useEmployeeCheckList from '../../ViewModel/EmployeeViewModel/EmpCheckListServices'
+
+// Share modal: keep dropdown inside dialog with comfortable spacing (match ShareNoteBook)
+const shareSelectStyles = {
+    menu: (base) => ({
+        ...base,
+        marginTop: 6,
+        marginBottom: 14,
+        padding: '10px 12px',
+        borderRadius: 12,
+        boxShadow: '0 10px 40px rgba(15, 23, 42, 0.14)',
+        boxSizing: 'border-box',
+    }),
+    menuList: (base) => ({
+        ...base,
+        padding: '8px 10px',
+    }),
+    option: (base) => ({
+        ...base,
+        padding: '11px 14px',
+        borderRadius: 8,
+    }),
+    control: (base) => ({
+        ...base,
+        paddingLeft: 10,
+        paddingRight: 8,
+    }),
+}
 
 
 
@@ -109,22 +135,40 @@ const EmployeeView = (props)=>{
 
     const [selectedBranch, setSelectedBranch] = React.useState(null);
     const [selectedDept, setSelectedDept] = React.useState(null);
+    const [activeShareEmployees, setActiveShareEmployees] = React.useState([]);
+    const [loadingShareEmployees, setLoadingShareEmployees] = React.useState(false);
 
     useEffect(() => {
         fetchingAllBranches();
-        handleEmpCheckList();
-    }, [])
+    }, []);
 
-    // Filter departments by selected branch
+    useEffect(() => {
+        if (selectedBranch?.value === undefined || selectedBranch?.value === null) return;
+        handleEmpCheckList(selectedBranch.value);
+    }, [selectedBranch?.value]);
+
+    useEffect(() => {
+        if (!selectedDept?.value || selectedBranch?.value === undefined || selectedBranch?.value === null) {
+            setActiveShareEmployees([]);
+            return;
+        }
+        let cancelled = false;
+        setLoadingShareEmployees(true);
+        fetchActiveEmployeesForBranchDept(selectedBranch.value, selectedDept.value).then((rows) => {
+            if (!cancelled) setActiveShareEmployees(rows);
+        }).finally(() => {
+            if (!cancelled) setLoadingShareEmployees(false);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedDept?.value, selectedBranch?.value]);
+
     const filteredDepartments = selectedBranch
-      ? employeeCheckListValue?.departmentList?.departments?.filter(
-          (dept) => dept.branch_id === selectedBranch.value
+      ? filterDepartmentsForBranch(
+          employeeCheckListValue?.departmentList?.departments,
+          selectedBranch.value
         )
-      : [];
-
-    // Employees in selected department - use local data instead of API
-    const filteredEmployees = selectedDept
-      ? filteredDepartments.find((dept) => dept.id === selectedDept.value)?.employees || []
       : [];
 
     return(
@@ -132,7 +176,7 @@ const EmployeeView = (props)=>{
             <div>
                 <span className='text-[#698592] text-[12px]'>Employee</span>
             </div>
-            <div className='flex justify-between items-center'>
+            <div className='flex justify-between items-center gap-4'>
                 <div className='flex flex-col'>
                     <label className='text-[#698592] text-[12px]'>Select Branch</label>
                     <div className='w-96'>
@@ -140,10 +184,13 @@ const EmployeeView = (props)=>{
                             placeHolderTitle = 'Branch'
                             options = {empBranches?.map((ele)=> ({value:ele.id, label:ele.branch_name}))}
                             cStyle = {false}
+                            customStyles={shareSelectStyles}
+                            menuPlacement="auto"
                             value={selectedBranch}
                             onChangeHandler = {(select)=> {
                                 setSelectedBranch(select);
-                                setSelectedDept(null); // reset dept when branch changes
+                                setSelectedDept(null);
+                                setActiveShareEmployees([]);
                                 handleSelectShareNote(select, 'empBranches_id');
                             }}
                         />
@@ -159,6 +206,8 @@ const EmployeeView = (props)=>{
                                 label: ele.name,
                             }))}
                             cStyle = {true}
+                            customStyles={shareSelectStyles}
+                            menuPlacement="auto"
                             value={selectedDept}
                             onChangeHandler = {(select)=> {
                                 setSelectedDept(select);
@@ -170,7 +219,10 @@ const EmployeeView = (props)=>{
                 </div>
             </div>
             <div className='flex items-center gap-1 flex-wrap'>
-                {filteredEmployees.map((ele)=>(
+                {loadingShareEmployees ? (
+                    <Typography className='text-[12px] text-gray-500'>Loading employees…</Typography>
+                ) : (
+                    activeShareEmployees.map((ele) => (
                     <Checkbox 
                         name='emp_id'
                         value={ele.id}
@@ -182,7 +234,8 @@ const EmployeeView = (props)=>{
                         }
                         onChange={handleChangeShareNote}
                     />
-                ))}
+                ))
+                )}
             </div>
         </div>
     )
@@ -195,7 +248,7 @@ const ShareNote = (props) => {
     const { shareNoteValue, handleChangeShareNote, handleSelectShareNote , handleCopytoClipboard, handleCopytoClipboardMouseLeave, copied, handleToggleSubDept, handleShareNoteAdd, mySharedNotebooks} = props
 
     return (
-        <div className='space-y-4'>
+        <div className='space-y-4 pb-10 sm:pb-12'>
             <div className='flex items-center justify-between'>
                 {noteShareData.map((ele)=>(
                     <Radio 
@@ -224,6 +277,8 @@ const ShareNote = (props) => {
                                         placeHolderTitle = 'Choose a shared notebook'
                                         options = {Array.isArray(mySharedNotebooks) ? mySharedNotebooks.map((ele)=> ({value:ele._id, label:ele.notebook_name})) : []}
                                         cStyle = {false}
+                                        customStyles={shareSelectStyles}
+                                        menuPlacement="auto"
                                         value={shareNoteValue?.shared_notebook_id}
                                         onChangeHandler = {(select)=> handleSelectShareNote(select, 'shared_notebook_id')}
                                     />

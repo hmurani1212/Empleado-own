@@ -39,15 +39,18 @@ const CustomDrawer = (props) => {
     <Drawer 
       open={open} 
       onClose={handleDrawerClose} 
-      className="flex flex-col overflow-hidden h-full bg-white shadow-2xl border-l border-slate-100" 
+      // className="flex flex-col overflow-hidden h-full bg-white shadow-2xl border-l border-slate-100" 
       placement={direction}
-      size={drawerWidthPx}
+      // size={drawerWidthPx}
+      className="flex flex-col overflow-hidden h-full bg-white shadow-2xl border-l border-gray-300" 
+      // placement={direction} 
+      size={widthSize}
       overlayProps={{
         className: "fixed inset-0 w-full h-full !bg-transparent !backdrop-blur-none z-[9995]",
       }}
     >
         {/* Sticky header - stays visible when content scrolls */}
-        <div className="shrink-0 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/50 px-4 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
+        <div className="shrink-0 border-b border-gray-200 bg-gradient-to-b from-white to-slate-50/50 px-4 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
           <div className="flex items-center justify-between">
             {customImg ? 
               <img src={image} alt='logo' 

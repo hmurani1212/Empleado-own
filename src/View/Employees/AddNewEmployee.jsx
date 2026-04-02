@@ -143,9 +143,11 @@ const AddNewEmployee = () => {
   const { adminDashboardData, getAdminDashboardData } = useDashboard();
   const activeEmployees = adminDashboardData?.TOTAL_EMPLOYEES ?? 0;
   const employeeLimit = adminDashboardData?.ALLOWED_EMPLOYEES ?? 0;
+  const [lastEnrolledEmployeeIdFallback, setLastEnrolledEmployeeIdFallback] = useState("N/A");
   const lastEnrolledEmployeeId =
     adminDashboardData?.LAST_ENROLLED_EMP_ID ??
     adminDashboardData?.last_enrolled_emp_id ??
+    lastEnrolledEmployeeIdFallback ??
     "N/A";
 
   // Content drawer (info icon) – right-side panel with ENGLISH/URDU
@@ -178,6 +180,34 @@ const AddNewEmployee = () => {
   useEffect(() => {
     getAdminDashboardData();
   }, [getAdminDashboardData]);
+
+  // Fallback: if dashboard didn't provide LAST_ENROLLED_EMP_ID, try a lightweight fetch.
+  useEffect(() => {
+    const hasDashboardValue =
+      adminDashboardData?.LAST_ENROLLED_EMP_ID != null ||
+      adminDashboardData?.last_enrolled_emp_id != null;
+    if (hasDashboardValue) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await employeesApi.getEmployeesWithFilters({ page: 1, status: 1, limit: 1 });
+        const data = response?.data;
+        if (cancelled) return;
+        if (data?.STATUS === "SUCCESSFUL") {
+          const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
+          const empId = lastEnrolled?.emp_id;
+          setLastEnrolledEmployeeIdFallback(empId != null && empId !== "" ? String(empId) : "N/A");
+        }
+      } catch {
+        if (!cancelled) setLastEnrolledEmployeeIdFallback("N/A");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [adminDashboardData?.LAST_ENROLLED_EMP_ID, adminDashboardData?.last_enrolled_emp_id]);
 
   // Fetch branches once on mount for branch dropdown (only required API for this page; avoids global get_branch_employee from hook)
   useEffect(() => {

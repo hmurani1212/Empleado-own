@@ -3,7 +3,7 @@ import Calendar from "../../Components/Calendar/Calendar";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import { motion } from "framer-motion";
-import { getUserData } from "../../Authentication/jwt_decode";
+import { getOrganizationData, getUserData } from "../../Authentication/jwt_decode";
 import useIndividualAttendanceServices from "../../ViewModel/AttendanceViewModel/IndividualAttendanceServices";
 import { getAllMonths, getAllYears } from "../../services/__appServicesData";
 import { secondsIntoHrs } from "../../services/__dateTimeServices";
@@ -24,6 +24,133 @@ import MonthlyWorkingHoursChart from "./MonthlyWorkingHoursChart";
 import { Card, CardBody } from "@material-tailwind/react";
 import { attendanceColorData } from "../../services/__attendanceServices";
 import { BiSearch } from "react-icons/bi";
+
+// Match ExportPayslip / payroll Excel styling
+const ATTENDANCE_EXPORT_COL_COUNT = 14;
+const ORG_HEADER_BG = "FF1F4E79";
+const DATE_HEADER_BG = "FF2E75B6";
+const COLUMN_HEADER_BG = "FF1F4E79";
+const GRID_COLOR = "FFD1D5DB";
+const ROW_FILL_WHITE = "FFFFFFFF";
+
+// MAL uses its own fill (#eb0dbc); not included here
+const LEAVE_ATT_LABELS = new Set([
+  "L", "CL", "AL", "SL", "ML", "EL", "FL", "PL", "LWOP", "HL",
+]);
+
+const MAL_STATUS_FILL = "FFEB0DBC"; // #eb0dbc
+
+/** Normalize API unix timestamp (seconds or ms) to seconds, or null if invalid. */
+const toUnixSeconds = (raw) => {
+  if (raw == null || raw === "" || raw === "0") return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (n > 1e12) return Math.floor(n / 1000);
+  return Math.floor(n);
+};
+
+/** Build 12-hour time with AM/PM for export; supports unix sec/ms and "HH:MM" / "HH:MM:SS" strings. */
+const formatTimeForExcel = (raw) => {
+  if (raw == null || raw === "") return "";
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (/am|pm/i.test(s)) return s;
+    if (/^\d{1,2}:\d{2}/.test(s)) {
+      const [hStr, mPart] = s.split(":");
+      const mStr = (mPart || "0").slice(0, 2);
+      let h = parseInt(hStr, 10);
+      const m = parseInt(mStr, 10) || 0;
+      if (Number.isNaN(h)) return s;
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+    }
+  }
+  const sec = toUnixSeconds(raw);
+  if (sec == null) return "";
+  const d = new Date(sec * 1000);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("en-US", {
+    hour12: true,
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const getFirstInLastOutFromRecord = (record) => {
+  let inTime = "";
+  let outTime = "";
+
+  if (Array.isArray(record.timings) && record.timings.length > 0) {
+    inTime = formatTimeForExcel(record.timings[0]) || "";
+    if (record.timings.length >= 2) {
+      const last = record.timings.length - 1;
+      const secondLast = last - 1;
+      outTime =
+        record.timings.length % 2 === 0
+          ? formatTimeForExcel(record.timings[last]) || ""
+          : formatTimeForExcel(record.timings[secondLast]) || "";
+    }
+  }
+
+  if (!inTime && record.in_1 != null) inTime = formatTimeForExcel(record.in_1);
+  if (!outTime && record.out_1 != null) outTime = formatTimeForExcel(record.out_1);
+  if (!inTime && record.first_in != null) inTime = formatTimeForExcel(record.first_in);
+  if (!outTime && record.last_out != null) outTime = formatTimeForExcel(record.last_out);
+  if (!inTime && record.check_in != null) inTime = formatTimeForExcel(record.check_in);
+  if (!outTime && record.check_out != null) outTime = formatTimeForExcel(record.check_out);
+  if (!inTime && record.in_time != null) inTime = formatTimeForExcel(record.in_time);
+  if (!outTime && record.out_time != null) outTime = formatTimeForExcel(record.out_time);
+
+  return { inTime, outTime };
+};
+
+const getLateMinutesFromRecord = (record) => {
+  const v =
+    record.late_minutes ??
+    record.late_minute ??
+    record.late_mins_adjusted ??
+    record.late_mins ??
+    null;
+  if (v == null || v === "") return "";
+  const n = Number(v);
+  return Number.isFinite(n) ? n : String(v);
+};
+
+const pickEmployeeFromList = (empList, empIdSelect) => {
+  if (!empList?.length || empIdSelect == null || empIdSelect === "") return null;
+  const sel = String(empIdSelect);
+  return (
+    empList.find(
+      (emp) =>
+        String(emp.id) === sel ||
+        String(emp.emp_id) === sel ||
+        String(emp.bio_id) === sel ||
+        String(emp.employee_id) === sel
+    ) || null
+  );
+};
+
+const getDesignationLabel = (emp) => {
+  if (!emp) return "N/A";
+  const d = emp.designation;
+  if (typeof d === "string") return d || "N/A";
+  return d?.title || d?.name || emp.designation_title || emp.designation_name || "N/A";
+};
+
+const getDepartmentLabel = (emp) => {
+  if (!emp) return "N/A";
+  const d = emp.department;
+  if (typeof d === "string") return d || "N/A";
+  return d?.name || emp.department_name || emp.dept_name || "N/A";
+};
+
+const getBranchLabel = (emp) => {
+  if (!emp) return "N/A";
+  const b = emp.branch;
+  if (typeof b === "string") return b || "N/A";
+  return b?.branch_name || emp.branch_name || "N/A";
+};
 
 // Using ExcelJS for styling support (colors, fonts, etc.)
 
@@ -152,7 +279,7 @@ const IndividualAttendanceReport = () => {
     }
   }, [searchingEmpValue?.empId]);
 
-  // Export Attendance to Excel - Using ExcelJS for styling support
+  // Export Attendance to Excel — ExcelJS styling aligned with Payroll ExportPayslip
   const exportAttendanceToExcel = async () => {
     if (
       !searchingEmpValue?.empId ||
@@ -163,253 +290,307 @@ const IndividualAttendanceReport = () => {
       return;
     }
 
-    // Import ExcelJS dynamically
     const ExcelJS = (await import("exceljs")).default;
 
     const userData = getUserData();
-    const selectedEmployee = searchingEmpValue.empList?.find(
-      (emp) => emp.id === searchingEmpValue.empId.value
+    const orgName =
+      getOrganizationData()?.orgName || userData?.org_name || "Organization";
+    const fromList = pickEmployeeFromList(
+      searchingEmpValue.empList,
+      searchingEmpValue.empId?.value
     );
+    const snap = attendanceData?.attendanceAttr?.employeeSnapshot;
+    // List first, then snapshot: attendance API fills designation/department on snapshot;
+    // employee list rows may omit them or set null, which would overwrite if snapshot were spread first.
+    const selectedEmployee = {
+      ...(fromList && typeof fromList === "object" ? fromList : {}),
+      ...(snap && typeof snap === "object" ? snap : {}),
+    };
     const year = searchingEmpValue.year?.label || new Date().getFullYear();
     const month = searchingEmpValue.month?.value || new Date().getMonth() + 1;
+    const monthTitle =
+      searchingEmpValue.month?.label ||
+      new Date(Number(year), Number(month) - 1, 1).toLocaleString("en-US", {
+        month: "long",
+      });
+    const reportDate = new Date().toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
 
-    // Get employee details
-    const employeeName = selectedEmployee?.name || "N/A";
-    const employeeId =
-      selectedEmployee?.id ||
-      selectedEmployee?.emp_id ||
-      selectedEmployee?.employee_id ||
+    const employeeName =
+      selectedEmployee?.name || searchingEmpValue.empId?.label || "N/A";
+    const displayEmpId =
+      selectedEmployee?.emp_id ??
+      selectedEmployee?.bio_id ??
+      selectedEmployee?.id ??
+      searchingEmpValue.empId?.value ??
       "";
-    const branchName =
-      selectedEmployee?.branch?.branch_name ||
-      attendanceData?.branch ||
-      attendanceData?.branch_name ||
-      "N/A";
-    const designation =
-      selectedEmployee?.designation?.title ||
-      selectedEmployee?.designation ||
-      attendanceData?.designation?.title ||
-      attendanceData?.designation ||
-      "N/A";
-    const department =
-      selectedEmployee?.department?.name ||
-      selectedEmployee?.department ||
-      attendanceData?.department?.name ||
-      attendanceData?.department ||
-      "N/A";
+    const branchName = getBranchLabel(selectedEmployee);
+    const designation = getDesignationLabel(selectedEmployee);
+    const department = getDepartmentLabel(selectedEmployee);
 
-    // Helper function to convert seconds to hours and minutes
     const secondsToHoursMinutesObj = (seconds) => {
-      if (!seconds) return { hours: 0, minutes: 0 };
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
+      const s = Number(seconds) || 0;
+      if (!s) return { hours: 0, minutes: 0 };
+      const hours = Math.floor(s / 3600);
+      const minutes = Math.floor((s % 3600) / 60);
       return { hours, minutes };
     };
 
-    // Helper function to convert timestamp to time string
-    const timestampToTime = (timestamp) => {
-      if (!timestamp) return "";
-      const date = new Date(timestamp * 1000);
-      return date.toLocaleTimeString("en-US", {
-        hour12: false,
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    };
-
-    // Helper function to get day name from date string
     const getDayName = (dateString) => {
-      const [day, month, year] = dateString.split("-");
-      const date = new Date(year, month - 1, day);
+      if (!dateString || !String(dateString).includes("-")) return "";
+      const [day, m, y] = dateString.split("-");
+      const date = new Date(Number(y), Number(m) - 1, Number(day));
       return date.toLocaleDateString("en-US", { weekday: "short" });
     };
 
-    // Prepare data for Excel
     const attendanceRecords = (
       attendanceData.attendanceAttr.attendance || []
     ).map((record) => {
       const earned = secondsToHoursMinutesObj(record.earned);
       const expected = secondsToHoursMinutesObj(record.expected);
       const overtime = secondsToHoursMinutesObj(record.overtime);
-      const inTime =
-        record.timings && record.timings[0]
-          ? timestampToTime(record.timings[0])
-          : "";
-      const outTime =
-        record.timings && record.timings[1]
-          ? timestampToTime(record.timings[1])
-          : "";
+      const { inTime, outTime } = getFirstInLastOutFromRecord(record);
 
-      // Map status codes to full words
-      let statusText = record.att_label || "";
-      const statusCode = statusText.toUpperCase().trim();
+      let statusText = record.att_label != null ? String(record.att_label) : "";
+      const statusCodeRaw = statusText.toUpperCase().trim();
 
-      // Convert single letter codes to full words
-      if (statusCode === "P" || statusCode === "PRESENT") {
-        statusText = "Present";
-      } else if (statusCode === "A" || statusCode === "ABSENT") {
-        statusText = "Absent";
-      } else if (
-        statusCode === "H" ||
-        statusCode === "HOLIDAY" ||
+      if (statusCodeRaw === "P" || statusCodeRaw === "PRESENT") statusText = "Present";
+      else if (statusCodeRaw === "A" || statusCodeRaw === "ABSENT") statusText = "Absent";
+      else if (
+        statusCodeRaw === "H" ||
+        statusCodeRaw === "HOLIDAY" ||
         statusText.toLowerCase().includes("holiday")
       ) {
         statusText = "Holiday";
       }
+
+      const originalCode =
+        record.att_label != null ? String(record.att_label).toUpperCase().trim() : statusCodeRaw;
 
       return {
         Date: record.date_string,
         Day: getDayName(record.date_string),
         "In time": inTime,
         "Out time": outTime,
-        "Late min": record.late_minutes || "",
+        "Late min": getLateMinutesFromRecord(record),
         Status: statusText,
-        StatusCode: statusCode,
+        StatusCode: originalCode,
         "Earned Hours": earned.hours,
         "Earned Minutes": earned.minutes,
         "Overtime Hours": overtime.hours,
         "Overtime Minutes": overtime.minutes,
         "Expected Hours": expected.hours,
         "Expected Minutes": expected.minutes,
-        "Policy #": record.policy || "",
-        "Shift #": record.shift || "",
+        "Policy #": record.policy ?? "",
+        "Shift #": record.shift ?? "",
       };
     });
 
-    // Create workbook and worksheet using ExcelJS
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Attendance Report");
+    const worksheet = workbook.addWorksheet("Attendance Report", {
+      views: [{ rightToLeft: false }],
+    });
+    const cCount = ATTENDANCE_EXPORT_COL_COUNT;
 
-    // Set column widths
     worksheet.columns = [
-      { width: 12 }, // A - Date
-      { width: 8 }, // B - Day
-      { width: 10 }, // C - In time
-      { width: 10 }, // D - Out time
-      { width: 10 }, // E - Late min
-      { width: 12 }, // F - Status
-      { width: 8 }, // G - Hours
-      { width: 8 }, // H - Minutes
-      { width: 8 }, // I - Hours
-      { width: 8 }, // J - Minutes
-      { width: 8 }, // K - Hours
-      { width: 8 }, // L - Minutes
-      { width: 10 }, // M - Policy #
-      { width: 10 }, // N - Shift #
+      { width: 12 }, { width: 8 }, { width: 10 }, { width: 10 }, { width: 10 },
+      { width: 14 }, { width: 9 }, { width: 9 }, { width: 9 }, { width: 9 },
+      { width: 9 }, { width: 9 }, { width: 11 }, { width: 10 },
     ];
 
-    // Excel formatting logic here (kept as is from original file)
-    // Row 1: Organization name
-    const row1 = worksheet.addRow([
-      `Organization: ${userData.org_name || "Testing_Hassan"}`, "", "", "", "", "", "", "", "", "", "", "", "", ""
+    const thinGrid = {
+      top: { style: "thin", color: { argb: GRID_COLOR } },
+      bottom: { style: "thin", color: { argb: GRID_COLOR } },
+      left: { style: "thin", color: { argb: GRID_COLOR } },
+      right: { style: "thin", color: { argb: GRID_COLOR } },
+    };
+
+    const orgRow = worksheet.addRow([`Organization: ${orgName}`]);
+    orgRow.height = 26;
+    worksheet.mergeCells(1, 1, 1, cCount);
+    orgRow.getCell(1).font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
+    orgRow.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+    orgRow.getCell(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: ORG_HEADER_BG },
+    };
+
+    const titleRow = worksheet.addRow([
+      `Individual Attendance Report — ${monthTitle} ${year} (exported ${reportDate})`,
     ]);
-    row1.height = 30;
-    worksheet.mergeCells("A1:J1");
-    row1.getCell(1).font = { bold: true, size: 25 };
-    row1.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+    titleRow.height = 28;
+    worksheet.mergeCells(2, 1, 2, cCount);
+    titleRow.getCell(1).font = { bold: true, size: 15, color: { argb: "FFFFFFFF" } };
+    titleRow.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+    titleRow.getCell(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: DATE_HEADER_BG },
+    };
 
-    // Row 2: Branch name
-    const row2 = worksheet.addRow([branchName, "", "", "", "", "", "", "", "", "", "", "", "", ""]);
-    row2.height = 22;
-    worksheet.mergeCells("A2:J2");
-    row2.getCell(1).font = { bold: true, size: 14 };
-    row2.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+    const detailText = [
+      `Employee: ${employeeName}`,
+      `ID: ${displayEmpId}`,
+      `Branch: ${branchName}`,
+      `Designation: ${designation}`,
+      `Department: ${department}`,
+    ].join("   |   ");
+    const detailRow = worksheet.addRow([detailText]);
+    detailRow.height = 24;
+    worksheet.mergeCells(3, 1, 3, cCount);
+    detailRow.getCell(1).font = { bold: true, size: 11, color: { argb: "FF1E293B" } };
+    detailRow.getCell(1).alignment = {
+      horizontal: "left",
+      vertical: "middle",
+      wrapText: true,
+    };
+    detailRow.getCell(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFF1F5F9" },
+    };
+    for (let c = 1; c <= cCount; c++) {
+      detailRow.getCell(c).border = thinGrid;
+    }
 
-    // Row 3: Report period
-    const row3 = worksheet.addRow([`For the month ${month}/${year}`, "", "", "", "", "", "", "", "", "", "", "", "", ""]);
-    row3.height = 22;
-    worksheet.mergeCells("A3:J3");
-    row3.getCell(1).font = { bold: true, size: 14 };
-    row3.getCell(1).alignment = { horizontal: "left", vertical: "middle" };
-
-    // Row 4: Employee details
-    const row4 = worksheet.addRow([
-      `${employeeName}  ${employeeId}`, "", "", "", branchName, "", "", `Designation: ${designation}`, "", "", `Department: ${department}`, "", "", ""
-    ]);
-    row4.height = 22;
-    worksheet.mergeCells("A4:D4");
-    worksheet.mergeCells("E4:G4");
-    worksheet.mergeCells("H4:J4");
-    worksheet.mergeCells("K4:M4");
-    row4.font = { bold: true, size: 11 };
-    row4.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9D9D9" } };
-    row4.alignment = { horizontal: "left", vertical: "middle" };
-    row4.eachCell((cell) => {
-        cell.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
-    });
-
-    // Row 5: Main headers
     const row5 = worksheet.addRow([
-      "Date", "Day", "In time", "Out time", "Late min", "Status", "Earned Hours", "", "Overtime", "", "Expected Hours", "", "Policy #", "Shift #"
+      "Date", "Day", "In time", "Out time", "Late min", "Status",
+      "Earned Hours", "", "Overtime", "", "Expected Hours", "", "Policy #", "Shift #",
     ]);
-    row5.height = 25;
-    worksheet.mergeCells("G5:H5");
-    worksheet.mergeCells("I5:J5");
-    worksheet.mergeCells("K5:L5");
-    row5.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
-    row5.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF808080" } };
-    row5.alignment = { horizontal: "center", vertical: "middle" };
-    row5.eachCell((cell) => {
-        cell.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
-    });
+    row5.height = 22;
+    worksheet.mergeCells(4, 7, 4, 8);
+    worksheet.mergeCells(4, 9, 4, 10);
+    worksheet.mergeCells(4, 11, 4, 12);
+    for (let c = 1; c <= cCount; c++) {
+      const cell = row5.getCell(c);
+      cell.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: COLUMN_HEADER_BG },
+      };
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      cell.border = thinGrid;
+    }
 
-    // Row 6: Sub headers
-    const row6 = worksheet.addRow(["", "", "", "", "", "", "Hours", "Minutes", "Hours", "Minutes", "Hours", "Minutes", "", ""]);
+    const row6 = worksheet.addRow([
+      "", "", "", "", "", "", "Hours", "Minutes", "Hours", "Minutes", "Hours", "Minutes", "", "",
+    ]);
     row6.height = 20;
-    row6.font = { bold: true, size: 10, color: { argb: "FFFFFFFF" } };
-    row6.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF808080" } };
-    row6.alignment = { horizontal: "center", vertical: "middle" };
-    row6.eachCell((cell) => {
-        cell.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
-    });
+    for (let c = 1; c <= cCount; c++) {
+      const cell = row6.getCell(c);
+      cell.font = { bold: true, size: 10, color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: COLUMN_HEADER_BG },
+      };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = thinGrid;
+    }
 
-    // Add data rows (Row 7 onwards)
+    const statusStyle = (record) => {
+      const statusValue = record.Status;
+      const code = (record.StatusCode || "").toUpperCase();
+      const lower = String(statusValue).toLowerCase();
+
+      if (code === "P" || lower.includes("present")) {
+        return {
+          fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF00B050" } },
+          font: { size: 10, color: { argb: "FFFFFFFF" }, bold: true },
+        };
+      }
+      if (code === "A" || lower.includes("absent")) {
+        return {
+          fill: { type: "pattern", pattern: "solid", fgColor: { argb: ROW_FILL_WHITE } },
+          font: { size: 10, color: { argb: "FFDC2626" }, bold: true },
+        };
+      }
+      if (code === "H" || lower.includes("holiday") || lower.includes("weekly")) {
+        return {
+          fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFFDE047" } },
+          font: { size: 10, color: { argb: "FF000000" }, bold: true },
+        };
+      }
+      if (code === "MAL" || lower === "mal") {
+        return {
+          fill: { type: "pattern", pattern: "solid", fgColor: { argb: MAL_STATUS_FILL } },
+          font: { size: 10, color: { argb: "FFFFFFFF" }, bold: true },
+        };
+      }
+      if (
+        LEAVE_ATT_LABELS.has(code) ||
+        lower.includes("leave") ||
+        lower.includes("monthly")
+      ) {
+        return {
+          fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFFDE047" } },
+          font: { size: 10, color: { argb: "FF000000" }, bold: true },
+        };
+      }
+      return { font: { size: 10 }, fill: undefined };
+    };
+
     attendanceRecords.forEach((record) => {
       const row = worksheet.addRow([
-        record["Date"], record["Day"], record["In time"], record["Out time"], record["Late min"],
-        record["Status"], record["Earned Hours"], record["Earned Minutes"], record["Overtime Hours"],
-        record["Overtime Minutes"], record["Expected Hours"], record["Expected Minutes"], record["Policy #"], record["Shift #"]
+        record.Date,
+        record.Day,
+        record["In time"],
+        record["Out time"],
+        record["Late min"],
+        record.Status,
+        record["Earned Hours"],
+        record["Earned Minutes"],
+        record["Overtime Hours"],
+        record["Overtime Minutes"],
+        record["Expected Hours"],
+        record["Expected Minutes"],
+        record["Policy #"],
+        record["Shift #"],
       ]);
-      row.height = 18;
-
+      row.height = 20;
+      const st = statusStyle(record);
       row.eachCell((cell, colNumber) => {
-        cell.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
-        cell.alignment = { horizontal: colNumber >= 7 && colNumber <= 12 ? "center" : "left", vertical: "middle" };
-        cell.font = { size: 10 };
-
-        if (colNumber === 6) {
-          const statusValue = record["Status"];
-          const statusCode = record["StatusCode"] || "";
-
-          if (statusCode === "P" || statusValue.toLowerCase().includes("present")) {
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF00B050" } };
-            cell.font = { size: 10, color: { argb: "FFFFFFFF" }, bold: true };
-          } else if (statusCode === "A" || statusValue.toLowerCase().includes("absent")) {
-            cell.font = { size: 10, color: { argb: "FFFF0000" }, bold: true };
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFFFF" } };
-          } else if (statusCode === "H" || statusValue.toLowerCase().includes("holiday") || statusValue.toLowerCase().includes("weekly")) {
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } };
-            cell.font = { size: 10, color: { argb: "FF000000" }, bold: true };
-          } else if (statusValue && (statusValue.toLowerCase().includes("monthly") || statusValue.toLowerCase().includes("leave"))) {
-            cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFF00" } };
-            cell.font = { size: 10, color: { argb: "FF000000" }, bold: true };
-          }
+        cell.border = thinGrid;
+        cell.alignment = {
+          horizontal: colNumber >= 7 && colNumber <= 12 ? "center" : "left",
+          vertical: "middle",
+        };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: ROW_FILL_WHITE },
+        };
+        cell.font = { size: 10, color: { argb: "FF334155" } };
+        if (colNumber === 6 && st.fill) {
+          cell.fill = st.fill;
+          cell.font = st.font;
+        } else if (colNumber === 6) {
+          cell.font = st.font;
         }
       });
     });
 
-    // Generate filename
-    const now = new Date();
-    const fileName = `Att_Report_${year}-${String(month).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}_${String(now.getMinutes()).padStart(2, "0")} am.xlsx`;
+    const safeFileEmp = String(displayEmpId || "emp").replace(/[^\w-]+/g, "_");
+    const fileName = `individual_attendance_${safeFileEmp}_${year}-${String(month).padStart(2, "0")}_${new Date().toISOString().split("T")[0]}.xlsx`;
 
-    // Save the file
     const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = fileName;
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   };
 

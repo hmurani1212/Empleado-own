@@ -8,6 +8,52 @@ import Calendar from 'react-calendar'
 import { FaFileExcel, FaFilePdf, FaPrint } from 'react-icons/fa'
 import { useDebouncedValue } from '../../services/__debounceServices'
 import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
+import payrollApi from '../../Model/Data/Payroll/Payroll'
+
+/** Split IDs into batches for bulk-details API (avoid oversized payloads). */
+const chunkIds = (ids, size) => {
+  const out = []
+  for (let i = 0; i < ids.length; i += size) out.push(ids.slice(i, i + size))
+  return out
+}
+
+/**
+ * Merge full payslip rows from bulk-details into the same order as list results.
+ * List GET often omits nested wf_employee / attendance_summary / seconds fields.
+ */
+/** Fetch payslips without touching global store (Making Payments must not refresh when export filters change). */
+const fetchPayslipsListForExport = async (params) => {
+  const response = await payrollApi.getPayslips(params)
+  const data = response?.data
+  if (data?.STATUS === 'SUCCESSFUL' && Array.isArray(data?.DB_DATA?.payslips)) {
+    return data.DB_DATA.payslips
+  }
+  return []
+}
+
+const enrichPayslipsWithBulkDetails = async (listPayslips) => {
+  if (!listPayslips?.length) return listPayslips
+  const ids = listPayslips.map((p) => p.id).filter((id) => id != null && id !== '')
+  if (ids.length === 0) return listPayslips
+
+  const mergedById = new Map()
+  const batches = chunkIds(ids, 100)
+  for (const batch of batches) {
+    try {
+      const response = await payrollApi.getPayslipsBulkDetails(batch)
+      const data = response?.data
+      if (data?.STATUS === 'SUCCESSFUL' && Array.isArray(data?.DB_DATA?.payslips)) {
+        data.DB_DATA.payslips.forEach((p) => {
+          if (p?.id != null) mergedById.set(p.id, p)
+        })
+      }
+    } catch (e) {
+      console.warn('getPayslipsBulkDetails batch failed:', e)
+    }
+  }
+  if (mergedById.size === 0) return listPayslips
+  return listPayslips.map((p) => mergedById.get(p.id) || p)
+}
 
 /** Format seconds to "X hrs Y min" for expected/earned. */
 const formatSecondsToHrsMin = (seconds) => {
@@ -25,32 +71,35 @@ const formatOptionalNum = (val) => {
   return Number(n).toLocaleString()
 }
 
-/** Payslip column definition: key, Excel header, PDF header, width, hide column when all values are 0 */
+/** Payslip column definition: key, Excel header, PDF header, width (Excel char units), hide column when all values are 0 */
 const PAYSLIP_COLUMNS = [
-  { key: 'sNo', header: 'S.No', pdfHeader: 'S.No', width: 6, hideWhenAllZero: false },
-  { key: 'employmentNumber', header: 'Employment #', pdfHeader: 'Emp #', width: 14, hideWhenAllZero: false },
-  { key: 'name', header: 'Name', pdfHeader: 'Name', width: 40, hideWhenAllZero: false },
-  { key: 'department', header: 'Department', pdfHeader: 'Department', width: 32, hideWhenAllZero: false },
-  { key: 'designation', header: 'Designation', pdfHeader: 'Designation', width: 36, hideWhenAllZero: false },
-  { key: 'empSalary', header: 'Emp Salary', pdfHeader: 'Salary', width: 14, hideWhenAllZero: true },
-  { key: 'expected', header: 'Expected', pdfHeader: 'Expected', width: 10, hideWhenAllZero: false },
-  { key: 'earned', header: 'Earned', pdfHeader: 'Earned', width: 10, hideWhenAllZero: false },
-  { key: 'totalDays', header: 'Total Days', pdfHeader: 'Days', width: 12, hideWhenAllZero: false },
-  { key: 'presentDays', header: 'Present Days', pdfHeader: 'Present', width: 16, hideWhenAllZero: false },
-  { key: 'leaveDays', header: 'Leave Days', pdfHeader: 'Leave', width: 12, hideWhenAllZero: false },
-  { key: 'absentDays', header: 'Absent Days', pdfHeader: 'Absent', width: 12, hideWhenAllZero: false },
-  { key: 'overTime', header: 'Over Time', pdfHeader: 'OT', width: 12, hideWhenAllZero: true },
+  { key: 'sNo', header: 'S.No', pdfHeader: '#', width: 7, hideWhenAllZero: false },
+  { key: 'employmentNumber', header: 'Emp #', pdfHeader: 'Emp #', width: 13, hideWhenAllZero: false },
+  { key: 'name', header: 'Name', pdfHeader: 'Name', width: 34, hideWhenAllZero: false },
+  { key: 'department', header: 'Dept', pdfHeader: 'Dept', width: 24, hideWhenAllZero: false },
+  { key: 'designation', header: 'Designation', pdfHeader: 'Title', width: 30, hideWhenAllZero: false },
+  { key: 'empSalary', header: 'Emp Salary', pdfHeader: 'Emp Salary', width: 14, hideWhenAllZero: true },
+  { key: 'medAllowance', header: 'Med', pdfHeader: 'Med', width: 11, hideWhenAllZero: true },
+  { key: 'incentives', header: 'Incentives', pdfHeader: 'Inc.', width: 13, hideWhenAllZero: true },
+  { key: 'increments', header: 'Increments', pdfHeader: 'Incr.', width: 13, hideWhenAllZero: true },
+  { key: 'deduction', header: 'Deduction', pdfHeader: 'Ded.', width: 13, hideWhenAllZero: true },
+  { key: 'expected', header: 'Expected Hrs', pdfHeader: 'Exp. Hrs', width: 20, hideWhenAllZero: false },
+  { key: 'earned', header: 'Earned Hrs', pdfHeader: 'Earn. Hrs', width: 20, hideWhenAllZero: false },
+  { key: 'totalDays', header: 'Total Days', pdfHeader: 'Tot. Days', width: 12, hideWhenAllZero: false },
+  { key: 'presentDays', header: 'Present Days', pdfHeader: 'Pres. Days', width: 13, hideWhenAllZero: false },
+  { key: 'leaveDays', header: 'Total Leaves', pdfHeader: 'Tot. Leaves', width: 13, hideWhenAllZero: false },
+  { key: 'absentDays', header: 'Absent Days', pdfHeader: 'Abs. Days', width: 12, hideWhenAllZero: false },
+  { key: 'overTime', header: 'Overtime', pdfHeader: 'OT', width: 12, hideWhenAllZero: true },
   { key: 'fuel', header: 'Fuel', pdfHeader: 'Fuel', width: 10, hideWhenAllZero: true },
-  { key: 'lateMins', header: 'Late Mins', pdfHeader: 'Late', width: 10, hideWhenAllZero: true },
-  { key: 'absenties', header: 'Absenties', pdfHeader: 'Abs', width: 10, hideWhenAllZero: true },
-  { key: 'incomeTax', header: 'Income Tax', pdfHeader: 'Tax', width: 12, hideWhenAllZero: true },
+  { key: 'lateMins', header: 'Late', pdfHeader: 'Late', width: 10, hideWhenAllZero: true },
+  { key: 'incomeTax', header: 'Tax', pdfHeader: 'Tax', width: 11, hideWhenAllZero: true },
   { key: 'eobi', header: 'EOBI', pdfHeader: 'EOBI', width: 10, hideWhenAllZero: true },
-  { key: 'provident', header: 'Provident', pdfHeader: 'Provident', width: 12, hideWhenAllZero: true },
-  { key: 'testing', header: 'Testing', pdfHeader: 'Testing', width: 10, hideWhenAllZero: true },
-  { key: 'bikeLoan', header: 'Bike Loan', pdfHeader: 'Bike Loan', width: 12, hideWhenAllZero: true },
-  { key: 'loan', header: 'Loan', pdfHeader: 'Loan', width: 12, hideWhenAllZero: true },
-  { key: 'deduction', header: 'Deduction', pdfHeader: 'Deduct', width: 12, hideWhenAllZero: true },
-  { key: 'totalPayableSalary', header: 'Total Payable', pdfHeader: 'Net Pay', width: 16, hideWhenAllZero: true },
+  { key: 'provident', header: 'Provident Fund', pdfHeader: 'PF', width: 16, hideWhenAllZero: true },
+  { key: 'testing', header: 'Test', pdfHeader: 'Test', width: 10, hideWhenAllZero: true },
+  { key: 'bikeLoan', header: 'Bike', pdfHeader: 'Bike', width: 11, hideWhenAllZero: true },
+  { key: 'loan', header: 'Loan', pdfHeader: 'Loan', width: 11, hideWhenAllZero: true },
+  { key: 'totalPayableSalary', header: 'Net Pay', pdfHeader: 'Net Pay', width: 15, hideWhenAllZero: true },
+  { key: 'status', header: 'Status', pdfHeader: 'Status', width: 12, hideWhenAllZero: false },
 ]
 
 /** Get columns to display: hide columns where hideWhenAllZero and every row value is <= 0 */
@@ -61,6 +110,172 @@ const getVisiblePayslipColumns = (data) => {
     const hasAnyPositive = data.some((row) => (parseFloat(row[col.key]) || 0) > 0)
     return hasAnyPositive
   })
+}
+
+const buildSearchableEmployeeText = (payslip) => {
+  const wfEmployee = payslip?.wf_employee || {}
+  return [
+    payslip?.emp_id,
+    payslip?.employee_id,
+    wfEmployee?.emp_id,
+    wfEmployee?.employee_id,
+    wfEmployee?.bio_id,
+    wfEmployee?.name,
+    payslip?.name,
+    `${wfEmployee?.first_name || ''} ${wfEmployee?.last_name || ''}`.trim(),
+  ]
+    .filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
+    .map((value) => String(value).toLowerCase())
+}
+
+const getPayslipEmployeeName = (payslip) => {
+  const wfEmployee = payslip?.wf_employee || {}
+  const fullName = `${wfEmployee?.first_name || ''} ${wfEmployee?.last_name || ''}`.trim()
+  return (
+    wfEmployee?.name ||
+    payslip?.name ||
+    fullName ||
+    'N/A'
+  )
+}
+
+const getPayslipEmployeeId = (payslip) => {
+  const wfEmployee = payslip?.wf_employee || {}
+  return payslip?.emp_id || payslip?.employee_id || wfEmployee?.emp_id || wfEmployee?.employee_id || wfEmployee?.bio_id || 'N/A'
+}
+
+/** Match IndividualPayslipPreview number coercion (null/invalid → 0). */
+const toExportNum = (value) => {
+  if (value === null || value === undefined || value === '' || String(value).trim() === '') return 0
+  const numValue = typeof value === 'string' ? parseFloat(String(value).replace(/,/g, '')) : Number(value)
+  return Number.isNaN(numValue) ? 0 : numValue
+}
+
+const extractExportDepartment = (payslip) => {
+  const wfEmployee = payslip?.wf_employee || {}
+  const raw =
+    wfEmployee.department_name ||
+    wfEmployee.department?.name ||
+    wfEmployee.dept?.name ||
+    wfEmployee.dept_name ||
+    payslip.department_name ||
+    payslip.dept_name ||
+    payslip.wf_depts?.name ||
+    payslip.wf_department?.name ||
+    ''
+  return raw != null && String(raw).trim() !== '' ? String(raw).trim() : ''
+}
+
+const extractExportDesignation = (payslip) => {
+  const wfEmployee = payslip?.wf_employee || {}
+  const des = wfEmployee.designation ?? payslip.designation
+  if (typeof des === 'string' && des.trim()) return des.trim()
+  if (des && typeof des === 'object') {
+    const t = des.title ?? des.name ?? des.designation
+    if (t != null && String(t).trim() !== '') return String(t).trim()
+  }
+  return (
+    payslip.wf_designation?.title ||
+    payslip.wf_designation?.name ||
+    ''
+  )
+}
+
+/** One export row — supports bulk list shape (expected_hrs, total_working_days, …) and detailed wf_employee / attendance_summary shape. */
+const mapPayslipToExportRow = (payslip, index) => {
+  const wfEmployee = payslip?.wf_employee || {}
+  const summary = payslip.attendance_summary || {}
+  const cfg = payslip.payslip_config || {}
+  const dailyHrs = toExportNum(summary.daily_req_hrs) || toExportNum(cfg.daily_req_hrs) || 8
+
+  // Seconds: detailed payslips use total_working / total_present; list API uses expected_hrs / earned_hrs
+  let workingSecRaw = 0
+  if (payslip.total_working != null && payslip.total_working !== '') {
+    workingSecRaw = Number(payslip.total_working)
+  } else if (payslip.expected_hrs != null && payslip.expected_hrs !== '') {
+    workingSecRaw = Number(payslip.expected_hrs)
+  }
+
+  let presentSecRaw = 0
+  if (payslip.total_present != null && payslip.total_present !== '') {
+    presentSecRaw = Number(payslip.total_present)
+  } else if (payslip.earned_hrs != null && payslip.earned_hrs !== '') {
+    presentSecRaw = Number(payslip.earned_hrs)
+  }
+
+  const totalWorkingHoursFromSec = Number.isFinite(workingSecRaw) ? workingSecRaw / 3600 : 0
+  const totalPresentHoursFromSec = Number.isFinite(presentSecRaw) ? presentSecRaw / 3600 : 0
+
+  const totalDays =
+    summary.total_days !== undefined && summary.total_days !== null
+      ? toExportNum(summary.total_days)
+      : payslip.total_working_days !== undefined && payslip.total_working_days !== null
+        ? toExportNum(payslip.total_working_days)
+        : payslip.total_days !== undefined && payslip.total_days !== null
+          ? toExportNum(payslip.total_days)
+          : cfg.total_days !== undefined && cfg.total_days !== null
+            ? toExportNum(cfg.total_days)
+            : Math.round(totalWorkingHoursFromSec / dailyHrs)
+
+  const presentDays =
+    summary.present_days !== undefined && summary.present_days !== null
+      ? toExportNum(summary.present_days)
+      : payslip.present_days !== undefined && payslip.present_days !== null
+        ? toExportNum(payslip.present_days)
+        : Math.round(totalPresentHoursFromSec / dailyHrs)
+
+  const absentDays =
+    summary.absent_days !== undefined && summary.absent_days !== null
+      ? toExportNum(summary.absent_days)
+      : payslip.absent_days !== undefined && payslip.absent_days !== null
+        ? toExportNum(payslip.absent_days)
+        : Math.max(0, totalDays - presentDays)
+
+  const leaveDays =
+    summary.leaves !== undefined && summary.leaves !== null
+      ? toExportNum(summary.leaves)
+      : payslip.leaves !== undefined && payslip.leaves !== null
+        ? toExportNum(payslip.leaves)
+        : toExportNum(payslip.leave_days ?? payslip.leaves_encashable)
+
+  let totalWorkingSec = Number.isFinite(workingSecRaw) ? workingSecRaw : 0
+  let totalPresentSec = Number.isFinite(presentSecRaw) ? presentSecRaw : 0
+  if (totalWorkingSec === 0 && totalDays > 0) {
+    totalWorkingSec = totalDays * dailyHrs * 3600
+  }
+  if (totalPresentSec === 0 && presentDays > 0) {
+    totalPresentSec = presentDays * dailyHrs * 3600
+  }
+
+  return {
+    sNo: index + 1,
+    employmentNumber: payslip.emp_id ?? payslip.employee_id ?? wfEmployee.emp_id ?? wfEmployee.employee_id ?? '',
+    name: getPayslipEmployeeName(payslip),
+    department: extractExportDepartment(payslip),
+    designation: extractExportDesignation(payslip),
+    empSalary: toExportNum(payslip.salary_amount ?? payslip.salary_ftm),
+    medAllowance: toExportNum(payslip.med_allowance),
+    incentives: toExportNum(payslip.incentive ?? payslip.incentives),
+    increments: toExportNum(payslip.increment_amount ?? payslip.inc_amount ?? payslip.increment ?? payslip.incremented_amount),
+    deduction: toExportNum(payslip.total_deductions ?? payslip.deduction),
+    expected: formatSecondsToHrsMin(totalWorkingSec),
+    earned: formatSecondsToHrsMin(totalPresentSec),
+    totalDays,
+    presentDays,
+    leaveDays,
+    absentDays,
+    overTime: toExportNum(payslip.overtime_amount),
+    fuel: toExportNum(payslip.fuel_allowance),
+    lateMins: toExportNum(payslip.late_minutes),
+    incomeTax: toExportNum(payslip.income_tax?.amount ?? payslip.income_tax),
+    eobi: toExportNum(payslip.eobi_record?.emp_contribution ?? payslip.eobi),
+    provident: toExportNum(payslip.provident_fund),
+    testing: toExportNum(payslip.testing_allowance),
+    bikeLoan: toExportNum(payslip.bike_loan),
+    loan: toExportNum(payslip.loan_deduction),
+    totalPayableSalary: toExportNum(payslip.paid_amount),
+    status: (payslip.status ?? '').toString().trim() || '—',
+  }
 }
 
 const ExportPayslip = () => {
@@ -85,8 +300,6 @@ const ExportPayslip = () => {
   // Get branches and payslips from store
   const getAllBranchesPayroll = useStore((state) => state.getAllBranchesPayroll)
   const copyBranchesData = useStore((state) => state.copyBranchesData)
-  const gettingPayslips = useStore((state) => state.gettingPayslips)
-  const payslips = useStore((state) => state.payslips)
 
   // Global drawer functions
   const openDrawer = useStore((state) => state.openDrawer)
@@ -200,8 +413,8 @@ const ExportPayslip = () => {
     return years
   }, [])
 
-  // Debounced search term
-  const debouncedSearchTerm = useDebouncedValue(employeeIdSearch, 300)
+  // Debounced search term value for in-memory dropdown filtering
+  const debouncedSearchTerm = useDebouncedValue(employeeIdSearch.trim(), 300)
 
   // Derived search results (no useEffect = no setState loop). Used for dropdown list.
   // Filter by employee ID or Name only (not designation)
@@ -210,16 +423,8 @@ const ExportPayslip = () => {
     if (!allPayslipsData || allPayslipsData.length === 0) return []
     const searchTermLower = debouncedSearchTerm.toLowerCase()
     return allPayslipsData.filter((payslip) => {
-      const empId = String(payslip.emp_id || '').toLowerCase()
-      const empName = (payslip.wf_employee?.name || '').toLowerCase()
-      const altEmpName = (payslip.name || '').toLowerCase()
-      const altEmpId = (payslip.employee_id || '').toLowerCase()
-      return (
-        empId.includes(searchTermLower) ||
-        empName.includes(searchTermLower) ||
-        altEmpName.includes(searchTermLower) ||
-        altEmpId.includes(searchTermLower)
-      )
+      const searchableValues = buildSearchableEmployeeText(payslip)
+      return searchableValues.some((value) => value.includes(searchTermLower))
     })
   }, [debouncedSearchTerm, allPayslipsData])
 
@@ -239,8 +444,7 @@ const ExportPayslip = () => {
     try {
       // Build params for API (branch, department + filter: status / employee / month)
       const params = {
-        page: 0,
-        limit: 9999
+        pagination: false
       }
       if (exportBranch != null && (exportBranch.value === 0 || exportBranch.value === '0' || exportBranch.value)) {
         params.branch_id = exportBranch.value
@@ -261,50 +465,15 @@ const ExportPayslip = () => {
       }
       
       console.log('🔍 Fetching export data with params:', params)
-      
-      await gettingPayslips(params, true)
-      
-      const currentPayslips = useStore.getState().payslips
+
+      let currentPayslips = await fetchPayslipsListForExport(params)
+      if (Array.isArray(currentPayslips) && currentPayslips.length > 0) {
+        currentPayslips = await enrichPayslipsWithBulkDetails(currentPayslips)
+      }
       const hasData = currentPayslips && Array.isArray(currentPayslips) && currentPayslips.length > 0
       if (currentPayslips && Array.isArray(currentPayslips)) {
         setAllPayslipsData(currentPayslips)
-        const transformedData = currentPayslips.map((payslip, index) => {
-          const totalWorkingSec = payslip.total_working != null ? Number(payslip.total_working) : 0
-          const totalPresentSec = payslip.total_present != null ? Number(payslip.total_present) : 0
-          const totalWorkingHours = totalWorkingSec / 3600
-          const totalDays = payslip.payslip_config?.total_days != null
-            ? parseInt(payslip.payslip_config.total_days, 10)
-            : Math.round(totalWorkingHours / 8)
-          const presentDays = Math.round(totalPresentSec / 3600 / 8)
-          const absentDays = Math.max(0, totalDays - presentDays)
-          const leaveDays = payslip.leave_days != null ? parseInt(payslip.leave_days, 10) : 0
-          return {
-            sNo: index + 1,
-            employmentNumber: payslip.emp_id || '',
-            name: payslip.wf_employee?.name || payslip.name || '',
-            department: payslip.wf_employee?.department?.name || payslip.wf_employee?.department_name || payslip.wf_depts?.name || payslip.department_name || '',
-            designation: payslip.wf_employee?.designation?.title || payslip.wf_employee?.designation || payslip.designation || '',
-            empSalary: parseFloat(payslip.salary_amount || 0),
-            expected: formatSecondsToHrsMin(payslip.total_working),
-            earned: formatSecondsToHrsMin(payslip.total_present),
-            totalDays: totalDays || '',
-            presentDays: presentDays ?? '',
-            leaveDays: leaveDays ?? '',
-            absentDays: absentDays ?? '',
-            overTime: parseFloat(payslip.overtime_amount || 0),
-            fuel: parseFloat(payslip.fuel_allowance || 0),
-            lateMins: parseFloat(payslip.late_minutes || 0),
-            absenties: parseFloat(payslip.absent_days || 0),
-            incomeTax: parseFloat(payslip.income_tax?.amount ?? payslip.income_tax ?? 0),
-            eobi: parseFloat(payslip.eobi_record?.emp_contribution ?? payslip.eobi ?? 0),
-            provident: parseFloat(payslip.provident_fund || 0),
-            testing: parseFloat(payslip.testing_allowance || 0),
-            bikeLoan: parseFloat(payslip.bike_loan || 0),
-            loan: parseFloat(payslip.loan_deduction || 0),
-            deduction: parseFloat(payslip.total_deductions || 0),
-            totalPayableSalary: parseFloat(payslip.paid_amount || 0)
-          }
-        })
+        const transformedData = currentPayslips.map((payslip, index) => mapPayslipToExportRow(payslip, index))
         setExportData(transformedData)
         if (hasData) {
           setShowExportOptions(true)
@@ -332,10 +501,10 @@ const ExportPayslip = () => {
     if (col.key === 'empSalary' || col.key === 'totalPayableSalary') {
       return (parseFloat(val) || 0) > 0 ? Number(val) : '—'
     }
-    if (['overTime', 'fuel', 'lateMins', 'absenties', 'incomeTax', 'eobi', 'provident', 'testing', 'bikeLoan', 'loan', 'deduction'].includes(col.key)) {
+    if (['overTime', 'fuel', 'lateMins', 'incomeTax', 'eobi', 'provident', 'testing', 'bikeLoan', 'loan', 'medAllowance', 'incentives', 'increments', 'deduction'].includes(col.key)) {
       return formatOptionalNum(val)
     }
-    if (col.key === 'name' || col.key === 'department' || col.key === 'designation' || col.key === 'employmentNumber') {
+    if (col.key === 'name' || col.key === 'department' || col.key === 'designation' || col.key === 'employmentNumber' || col.key === 'status') {
       return val || '—'
     }
     return val
@@ -356,7 +525,10 @@ const ExportPayslip = () => {
       })
 
       const workbook = new ExcelJS.Workbook()
-      const sheet = workbook.addWorksheet('Payslips', { views: [{ rightToLeft: false }] })
+      const sheet = workbook.addWorksheet('Payslips', {
+        views: [{ rightToLeft: false }],
+        properties: { defaultRowHeight: 28 },
+      })
 
       sheet.columns = visibleCols.map((col) => ({ width: col.width }))
 
@@ -366,40 +538,77 @@ const ExportPayslip = () => {
       const GRID_COLOR = 'FFD1D5DB'
       const ROW_FILL_WHITE = 'FFFFFFFF'
 
+      const EXCEL_WRAP_TEXT_KEYS = new Set(['name', 'department', 'designation', 'expected', 'earned', 'status'])
+      const EXCEL_NUM_KEYS = new Set([
+        'sNo',
+        'empSalary',
+        'incentives',
+        'increments',
+        'deduction',
+        'totalDays',
+        'presentDays',
+        'leaveDays',
+        'absentDays',
+        'overTime',
+        'fuel',
+        'lateMins',
+        'incomeTax',
+        'eobi',
+        'provident',
+        'testing',
+        'bikeLoan',
+        'loan',
+        'totalPayableSalary',
+        'medAllowance',
+      ])
+
       const orgRow = sheet.addRow([`Organization: ${orgName}`])
-      orgRow.height = 26
+      orgRow.height = 32
       sheet.mergeCells(1, 1, 1, colCount)
       orgRow.getCell(1).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } }
-      orgRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' }
+      orgRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }
       orgRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ORG_HEADER_BG } }
 
       const titleRow = sheet.addRow([`Payslips Export — ${reportDate}`])
-      titleRow.height = 28
+      titleRow.height = 34
       sheet.mergeCells(2, 1, 2, colCount)
       titleRow.getCell(1).font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }
-      titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' }
+      titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }
       titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: DATE_HEADER_BG } }
 
       const headerLabels = visibleCols.map((c) => c.header)
       const headerRow = sheet.addRow(headerLabels)
-      headerRow.height = 22
+      headerRow.height = 32
       for (let c = 1; c <= colCount; c++) {
         const cell = headerRow.getCell(c)
         cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } }
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLUMN_HEADER_BG } }
-        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true, indent: 0 }
+        cell.border = {
+          top: { style: 'thin', color: { argb: GRID_COLOR } },
+          bottom: { style: 'thin', color: { argb: GRID_COLOR } },
+          left: { style: 'thin', color: { argb: GRID_COLOR } },
+          right: { style: 'thin', color: { argb: GRID_COLOR } },
+        }
       }
 
       if (exportData.length > 0) {
         exportData.forEach((row) => {
           const cellValues = visibleCols.map((col) => getCellDisplayValue(row, col))
           const dataRow = sheet.addRow(cellValues)
-          dataRow.height = 20
+          dataRow.height = 30
           for (let c = 1; c <= colCount; c++) {
             const cell = dataRow.getCell(c)
             const col = visibleCols[c - 1]
-            const isNumCol = ['sNo', 'empSalary', 'totalDays', 'presentDays', 'leaveDays', 'absentDays', 'overTime', 'fuel', 'lateMins', 'absenties', 'incomeTax', 'eobi', 'provident', 'testing', 'bikeLoan', 'loan', 'deduction', 'totalPayableSalary'].includes(col.key)
-            cell.alignment = { horizontal: isNumCol ? 'center' : 'left', vertical: 'middle', wrapText: false }
+            const isNumCol = EXCEL_NUM_KEYS.has(col.key)
+            const wrap = EXCEL_WRAP_TEXT_KEYS.has(col.key)
+            cell.font = { size: 11 }
+            cell.alignment = {
+              horizontal: isNumCol ? 'center' : 'left',
+              vertical: 'middle',
+              wrapText: wrap,
+              indent: !isNumCol && !wrap ? 1 : 0,
+            }
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ROW_FILL_WHITE } }
             cell.border = {
               top: { style: 'thin', color: { argb: GRID_COLOR } },
@@ -439,7 +648,7 @@ const ExportPayslip = () => {
       }
       const visibleCols = getVisiblePayslipColumns(exportData)
       const colCount = visibleCols.length
-      const numHeaderKeys = ['sNo', 'empSalary', 'totalDays', 'presentDays', 'leaveDays', 'absentDays', 'overTime', 'fuel', 'lateMins', 'absenties', 'incomeTax', 'eobi', 'provident', 'testing', 'bikeLoan', 'loan', 'deduction', 'totalPayableSalary']
+      const numHeaderKeys = ['sNo', 'empSalary', 'incentives', 'increments', 'deduction', 'totalDays', 'presentDays', 'leaveDays', 'absentDays', 'overTime', 'fuel', 'lateMins', 'incomeTax', 'eobi', 'provident', 'testing', 'bikeLoan', 'loan', 'totalPayableSalary', 'medAllowance']
 
       const orgName = getOrganizationData()?.orgName || getUserData()?.org_name || 'Organization Name'
       const reportDate = new Date().toLocaleDateString('en-US', {
@@ -577,20 +786,17 @@ const ExportPayslip = () => {
         try {
           const params = {
             branch_id: branchValue,
-            department_id: departmentValue
+            department_id: departmentValue,
+            pagination: false,
           }
-          await gettingPayslips(params, true)
-          setTimeout(() => {
-            const currentPayslips = useStore.getState().payslips
-            if (currentPayslips && Array.isArray(currentPayslips)) {
-              setAllPayslipsData(currentPayslips)
-            }
-          }, 500)
+          const currentPayslips = await fetchPayslipsListForExport(params)
+          setAllPayslipsData(Array.isArray(currentPayslips) ? currentPayslips : [])
         } catch (error) {
           console.error('Error loading payslips for search:', error)
+          setAllPayslipsData([])
         }
       } else {
-        if (allPayslipsData.length > 0) setAllPayslipsData([])
+        setAllPayslipsData([])
         setSearchDropdownOpen(false)
       }
     }
@@ -696,15 +902,15 @@ const ExportPayslip = () => {
                         key={index}
                         className='px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0'
                         onClick={() => {
-                          setEmployeeIdSearch(employee.wf_employee?.name || employee.emp_id || '')
+                          setEmployeeIdSearch(getPayslipEmployeeName(employee))
                           setSearchDropdownOpen(false)
                         }}
                       >
                         <div className='text-sm font-medium text-gray-900'>
-                          {employee.wf_employee?.name || 'N/A'}
+                          {getPayslipEmployeeName(employee)}
                         </div>
                         <div className='text-xs text-gray-500 mt-1'>
-                          <span className='font-medium'>ID:</span> {employee.emp_id || 'N/A'}
+                          <span className='font-medium'>ID:</span> {getPayslipEmployeeId(employee)}
                           {employee.wf_employee?.department?.name && (
                             <> &middot; <span className='font-medium'>Dept:</span> {employee.wf_employee.department.name}</>
                           )}

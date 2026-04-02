@@ -243,6 +243,8 @@ const SharedNotebooks = () => {
           footer={false}
           outsidePress={false}
           size="lg"
+          // Keep scroll so submit button stays reachable; allow select menu to overflow horizontally
+          bodyClassName="!overflow-x-visible !pb-12"
           compo={
             <ShareNoteBook
               handleChangeShareNotebook={handleChangeShareNotebook}

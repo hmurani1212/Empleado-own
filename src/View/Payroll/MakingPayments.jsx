@@ -9,10 +9,6 @@ import {
   Popover,
   PopoverContent,
   PopoverHandler,
-  Dialog,
-  DialogHeader,
-  DialogBody,
-  DialogFooter,
   Textarea,
 } from "@material-tailwind/react";
 // import { BiSearch } from 'react-icons/bi'
@@ -299,6 +295,9 @@ const MakingPayments = () => {
               margin: 0;
               size: A4;
             }
+            html, body {
+              background: #ffffff !important;
+            }
             body * {
               visibility: hidden;
             }
@@ -311,169 +310,240 @@ const MakingPayments = () => {
               left: 0;
               top: 0;
               width: 100%;
+              background: #ffffff !important;
             }
             .sideMenu, .flex, .h-\\[calc\\(100vh-66px\\)\\], header, nav, button, .bg-\\[\\#8bc9f8\\] {
               display: none !important;
             }
           }
           .payslip-container {
-            margin-bottom: 30px;
+            margin: 0 0 12px 0;
+            page-break-after: always;
             page-break-inside: avoid;
-            font-family: Arial, sans-serif;
-            padding-top: 20px;
-            font-size: 14px;
-            padding: 20px;
+            break-inside: avoid-page;
+            font-family: "Poppins", Arial, sans-serif;
+            font-size: 13px;
+            color: #0f172a;
+            padding: 10px;
+            background: #ffffff;
           }
-          .employee-header {
-            margin-bottom: 15px;
+          .payslip-container:last-child { page-break-after: auto; }
+          .print-shell {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 16px;
           }
-          .employee-name {
-            font-size: 20px;
-            font-weight: medium;
-            margin-bottom: 10px;
+          .print-card {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 24px;
+            padding: 16px;
           }
-          .employee-details {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-          }
-          .employee-details > div {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-          }
-          .attendance-inline {
-            display: flex;
-            gap: 5px;
-          }
-          .holidays-inline {
-            display: flex;
-            gap: 5px;
-          }
-          .payslip-details {
+          .hero {
+            border-radius: 12px;
+            margin-bottom: 12px;
+            padding: 14px 16px;
+            color: #fff;
+            background: linear-gradient(to right, #4f46e5, #2563eb, #06b6d4);
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 10px 20px;
+            align-items: end;
+            gap: 12px;
           }
-          .payslip-title {
+          .hero-subtitle {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            font-weight: 600;
+            opacity: 0.9;
+            margin-bottom: 2px;
+          }
+          .hero-title { font-size: 30px; line-height: 1.1; font-weight: 700; }
+          .hero-month {
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.35);
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 6px 10px;
+            white-space: nowrap;
+          }
+          .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+          }
+          .info-box {
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            background: #fff;
+          }
+          .info-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #1e293b;
+            margin-bottom: 4px;
+          }
+          .info-row { display: flex; gap: 8px; line-height: 1.35; margin-bottom: 1px; }
+          .info-label { min-width: 118px; font-weight: 700; font-size: 12px; color: #1e293b; }
+          .info-value { font-size: 11px; color: #475569; }
+          .summary-box {
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #fff;
+          }
+          .summary-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #b45309;
+            margin-bottom: 6px;
+          }
+          .summary-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            color: #0f172a;
+            font-size: 12px;
+          }
+          .summary-item b { margin-right: 4px; }
+          .print-table-shell {
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            background: #fff;
+          }
+          .print-heading {
+            background: linear-gradient(to right, #4f46e5, #2563eb, #06b6d4);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
             text-align: center;
-            font-size: 16px;
-            font-weight: medium;
-            margin: 15px 0;
-            padding-bottom: 6px;
-            border-bottom: 0.5px solid #000;
-          }
-          .payment-detail-section, .deductions-section, .payable-section {
-            margin: 15px 0;
-            width: 100%;
-          }
-          .all-items {
-            margin: 15px 0;
-            width: 100%;
-            border: 1px solid #e2e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            padding: 9px 10px;
           }
           .all-items-table {
             width: 100%;
             border-collapse: collapse;
-            border: 1px solid #e2e8f0;
-          }
-          .all-items-table th {
-            background-color: #f8f9fa;
-            font-weight: 500;
-            padding: 10px;
-            border: 1px solid #e2e8f0;
-            text-align: center;
+            table-layout: fixed;
+            font-size: 12px;
           }
           .all-items-table td {
-            padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-            text-align: left;
-            vertical-align: middle;
+            padding: 8px 10px;
+            border-bottom: none;
+            color: #475569;
           }
-          .all-items-table td + td {
-            border-left: 1px solid #e2e8f0; /* center vertical divider light */
-          }
-          .all-items-table .total-row td {
+          .all-items-table tr:last-child td { border-bottom: none; }
+          .all-items-table td:last-child {
+            text-align: right;
             font-weight: 600;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
           }
-          .section-header {
-            text-align: center;
-            font-weight: medium;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 0;
-          }
-          .section-subheader {
-            text-align: center;
-            font-weight: medium;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border: 1px solid #e2e8f0;
-          }
-          .payment-items, .deductions-items, .payable-items {
-            border: 1px solid #e2e8f0;
-            border-top: none;
-          }
-          .flex-item.total-row {
-            border-top: 1px solid #e2e8f0;
-            border-bottom: 1px solid #e2e8f0;
-          }
-          .flex-item.total-row .value {
-            border-left: 2px solid #000;
-          }
-          .flex-item {
+          .pf-breakdown-row {
+            width: 100%;
             display: flex;
-            justify-content: space-between;
             align-items: stretch;
-            padding: 8px 12px;
-            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
           }
-          .flex-item .label {
-            flex: 1;
-            padding-right: 12px;
-            display: flex;
-            align-items: center;
-          }
-          .flex-item .value {
-            flex: 1;
-            padding-left: 12px;
-            border-left: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
+          .pf-breakdown-col {
+            padding: 10px 12px;
             text-align: left;
+            line-height: 1.5;
           }
-          .flex-item:last-child {
-            border-bottom: 1px solid #e2e8f0;
+          .pf-breakdown-col + .pf-breakdown-col {
+            border-left: none;
           }
-          .signatures {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
+          .pf-col-title {
+            width: 34%;
+            font-weight: 500;
           }
-          .signature-line {
-            padding-top: 10px;
-            display: flex;
-            align-items: center;
-            width: 45%;
+          .pf-col-detail {
+            width: 42%;
           }
-          .signature-underline {
-            border-bottom: 1px solid #000;
-            min-width: 180px;
-            height: 20px;
+          .pf-col-value {
+            width: 24%;
+            font-weight: 500;
+          }
+          .pf-emp-row {
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .total-pay-row td {
+            background: linear-gradient(to right, #ecfdf5, rgba(240,253,250,0.9));
+            color: #065f46 !important;
+            font-weight: 700 !important;
+          }
+          .total-deduct-row td {
+            background: linear-gradient(to right, #fff1f2, rgba(255,241,242,0.9));
+            color: #9f1239 !important;
+            font-weight: 700 !important;
+          }
+          .amount-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 24px;
+          }
+          .amount-card {
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            border: none;
+            background: #ecfdf5;
+          }
+          .amount-card.deductions {
+            background: #fff1f2;
+          }
+          .amount-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #64748b;
+            font-weight: 600;
             margin-bottom: 6px;
           }
+          .amount-value {
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 26px;
+          }
+          .amount-value.small { font-size: 22px; }
+          .signatures {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+          }
+          .signature-line {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+          .signature-underline {
+            border-bottom: 1px solid #e5e7eb;
+            min-height: 24px;
+          }
           .signature-label {
-            font-weight: 500;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            color: #475569;
           }
-          .label {
-            font-weight: 500;
-          }
-          .value {
-            font-weight: 300;
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         </style>
         <div class="print-content">
@@ -525,7 +595,6 @@ const MakingPayments = () => {
               // Basic Pay and Total Pay: use salary_amount from API (DB_DATA.salary_amount)
               const basicSalary = parseFloat(payslip.salary_amount ?? payslip.wf_employee?.basic_pay ?? payslip.rate ?? 0);
               const incentive = parseFloat(payslip.incentive || 0);
-              const totalPay = parseFloat(payslip.salary_amount || 0);
               const netPayable = parseFloat(payslip.paid_amount || 0);
 
               // Handle incentive_deduction_details (similar to IndividualPayslipPreview)
@@ -617,7 +686,30 @@ const MakingPayments = () => {
                 payslip.provident_fund
               );
               const pfEmployeeForCalc = pfEmployee === null ? 0 : pfEmployee;
-              const otherDeductions = parseFloat(payslip.deduction || 0);
+              const pfEmployer =
+                payslip.provident_fund &&
+                typeof payslip.provident_fund === "object" &&
+                payslip.provident_fund.employer_contribution !== undefined
+                  ? parseFloat(payslip.provident_fund.employer_contribution) || 0
+                  : 0;
+              const pfTotal =
+                payslip.provident_fund &&
+                typeof payslip.provident_fund === "object" &&
+                payslip.provident_fund.total_pf !== undefined
+                  ? parseFloat(payslip.provident_fund.total_pf) || 0
+                  : 0;
+              /**
+               * Use explicit `other_deductions` only — not `payslip.deduction` (often duplicates itemized loan rows).
+               * If legacy data still echoes the same figure in `deduction` and itemized lines, count once.
+               */
+              const rawOtherDeductions = parseFloat(payslip.other_deductions || 0);
+              const aggregateDeduction = parseFloat(payslip.deduction || 0);
+              const duplicateOtherWithItemized =
+                rawOtherDeductions > 0 &&
+                deductionsFromIncentiveArray > 0 &&
+                Math.abs(rawOtherDeductions - deductionsFromIncentiveArray) < 0.01 &&
+                Math.abs(rawOtherDeductions - aggregateDeduction) < 0.01;
+              const otherDeductions = duplicateOtherWithItemized ? 0 : rawOtherDeductions;
 
               // Get calculated deductions from attendance_summary
               const calculatedAbsenteeDeduction = payslip.attendance_summary
@@ -631,6 +723,9 @@ const MakingPayments = () => {
                 ? parseFloat(
                     payslip.attendance_summary.calculated_late_deduction
                   )
+                : 0;
+              const downtimeDeduction = payslip.attendance_summary?.early_leave_downtime != null
+                ? parseFloat(payslip.attendance_summary.early_leave_downtime)
                 : 0;
 
               // Attendance Deduction should be the sum of calculated_absentee_deduction and calculated_late_deduction
@@ -650,6 +745,7 @@ const MakingPayments = () => {
                 eobiForCalc +
                 pfEmployeeForCalc +
                 incomeTaxForCalc +
+                downtimeDeduction +
                 otherDeductions;
 
               // Get incentives from incentive_deduction_details
@@ -660,245 +756,161 @@ const MakingPayments = () => {
                   amount: parseFloat(item.amount || 0),
                 }));
 
+              const overtimeAmount = parseFloat(payslip.overtime_amount || 0);
+              const salaryEarnedAmount = parseFloat(payslip.salary_amount || 0);
+              const totalPay = salaryEarnedAmount + incentive;
+              const requiredDays =
+                payslip.payslip_config?.total_days !== undefined &&
+                payslip.payslip_config?.total_days !== null
+                  ? parseInt(payslip.payslip_config.total_days, 10)
+                  : totalDays;
+              const showPaymentSection = basicSalary > 0 || overtimeAmount > 0 || incentive > 0 || salaryEarnedAmount > 0 || totalPay > 0;
+              const hasPrintDeductionContent =
+                (pfEmployee !== null && pfEmployee > 0) ||
+                (eobi !== null && eobi > 0) ||
+                (incomeTax !== null && incomeTax > 0) ||
+                calculatedAbsenteeDeduction > 0 ||
+                calculatedLateDeduction > 0 ||
+                downtimeDeduction > 0 ||
+                attendanceDeduction > 0 ||
+                otherDeductions > 0 ||
+                incentiveDeductionArray.some((item) => item.d_type === "DEDUCTION" && parseFloat(item.monthly_amount > 0 ? item.monthly_amount : item.amount || 0) > 0);
+              const deductionRows = incentiveDeductionArray.filter((item) => item.d_type === "DEDUCTION");
+              const formatPkr = (n) => `PKR ${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}/-`;
+              const formatPkrAmount = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+              const normalizeEpochToMs = (value) => {
+                if (value === null || value === undefined) return value;
+                const s = String(value).trim();
+                if (!s) return value;
+                const n = Number(s);
+                if (!Number.isFinite(n)) return value;
+                // API sometimes sends epoch seconds (e.g. 1640977200); JS Date expects ms.
+                if (n > 0 && n < 1e12) return n * 1000;
+                return n;
+              };
+              const joinDate = employee.joining_date || employee.date_of_joining || employee.join_date;
+              const joinDateLabel = joinDate ? new Date(normalizeEpochToMs(joinDate)).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+              const generatedOn = payslip.timestamp ? new Date(payslip.timestamp * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+              const displayName = employee.name || "N/A";
+              const bankBranchDisplay = employee.bank_branch || employee.bank_branch_name || "—";
+              const bankAccountMasked = employee.bank_account_no ? `****${String(employee.bank_account_no).replace(/\s/g, "").slice(-4)}` : "—";
+
               return `
               <div class="payslip-container">
-                <div class="employee-header">
-                  <div class="employee-name">${employee.name || "N/A"}</div>
-                  <div class="employee-details">
-                    <div><span class="label">Employee ID :</span> <span class="value">${
-                      employee.emp_id || "N/A"
-                    }</span> <span class="label">Biometric ID :</span> <span class="value">${
-                employee.bio_id || "N/A"
-              }</span></div>
-                    <div><span class="label">Branch :</span> <span class="value">${
-                      employee.branch_name || "N/A"
-                    }</span></div>
-                    <div><span class="label">Department :</span> <span class="value">${
-                      employee.department_name || "N/A"
-                    }</span></div>
-                    <div><span class="label">Designation :</span> <span class="value">${
-                      employee.designation || "N/A"
-                    }</span></div>
-                    <div><span class="label">Generated on :</span> <span class="value">${
-                      payslip.timestamp
-                        ? new Date(payslip.timestamp * 1000).toLocaleDateString(
-                            "en-GB",
-                            { day: "numeric", month: "short", year: "numeric" }
-                          )
-                        : new Date().toLocaleDateString("en-GB", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })
-                    }</span></div>
-                    <div class="attendance-inline">
-                      <span class="label">Attendance :</span> 
-                      <span class="value">${
-                        payslip.attendance
-                          ? parseFloat(payslip.attendance).toFixed(2)
-                          : "0.00"
-                      }%, ${presentDays} days</span>
+                <div class="print-shell">
+                  <div class="print-card">
+                    <div class="hero">
+                      <div>
+                        <div class="hero-subtitle">Employee</div>
+                        <div class="hero-title">${displayName}</div>
+                      </div>
+                      <div class="hero-month">${monthName} ${year}</div>
                     </div>
-                    <div class="holidays-inline">
-                      <span class="label">+Holidays:</span> <span class="value">0 / 0 days</span>
+
+                    <div class="info-grid">
+                      <div class="info-box">
+                        <div class="info-title">Profile</div>
+                        <div class="info-row"><span class="info-label">CNIC/Passport</span><span class="info-value">${employee.passport_no || "—"}</span></div>
+                        <div class="info-row"><span class="info-label">Employee ID</span><span class="info-value">${employee.emp_id || "—"}</span></div>
+                        <div class="info-row"><span class="info-label">Biometric ID</span><span class="info-value">${employee.bio_id || "—"}</span></div>
+                        <div class="info-row"><span class="info-label">Branch</span><span class="info-value">${employee.branch_name || "—"}</span></div>
+                        <div class="info-row"><span class="info-label">Department</span><span class="info-value">${employee.department_name || "—"}</span></div>
+                        <div class="info-row"><span class="info-label">Designation</span><span class="info-value">${employee.designation || "—"}</span></div>
+                        <div class="info-row"><span class="info-label">Joined on</span><span class="info-value">${joinDateLabel}</span></div>
+                        <div class="info-row"><span class="info-label">Generated on</span><span class="info-value">${generatedOn}</span></div>
+                      </div>
+                      <div class="info-box">
+                        <div class="info-title">Bank details</div>
+                        <div class="info-row"><span class="info-label">Bank</span><span class="info-value">${employee.bank_name || "—"}</span></div>
+                        <div class="info-row"><span class="info-label">Bank Branch</span><span class="info-value">${bankBranchDisplay}</span></div>
+                        <div class="info-row"><span class="info-label">Branch Code</span><span class="info-value">${employee.bank_branch_code || "—"}</span></div>
+                        <div class="info-row"><span class="info-label">Account No</span><span class="info-value">${bankAccountMasked}</span></div>
+                        <div class="info-row"><span class="info-label">Account Title</span><span class="info-value">${employee.bank_account_title || displayName}</span></div>
+                      </div>
                     </div>
-                    <div class="holidays-inline">
-                      <span class="label">+Holidays:</span> <span class="value">0</span>
+
+                    <div class="summary-box">
+                      <div class="summary-title">Payroll summary</div>
+                      <div class="summary-row">
+                        <span class="summary-item"><b>Total days</b>${totalDays}</span>
+                        <span class="summary-item"><b>Required days</b>${requiredDays}</span>
+                        <span class="summary-item"><b>Present days</b>${presentDays}</span>
+                        <span class="summary-item"><b>Absent days</b>${absentDays}</span>
+                        <span class="summary-item"><b>Leaves</b>${payslip.leaves_encashable || 0}</span>
+                      </div>
+                    </div>
+
+                    ${showPaymentSection ? `
+                    <div class="print-table-shell">
+                      <div class="print-heading">Payment details</div>
+                      <table class="all-items-table">
+                        <tbody>
+                          ${basicSalary > 0 ? `<tr><td>Basic Pay</td><td>${formatPkr(basicSalary)}</td></tr>` : ""}
+                          ${overtimeAmount > 0 ? `<tr><td>Overtime</td><td>${formatPkr(overtimeAmount)}</td></tr>` : ""}
+                          ${incentive > 0 ? `<tr><td>Incremented Amount</td><td>${formatPkr(incentive)}</td></tr>` : ""}
+                          ${salaryEarnedAmount > 0 ? `<tr><td><b>Total Earned</b></td><td>${formatPkr(salaryEarnedAmount)}</td></tr>` : ""}
+                          ${totalPay > 0 ? `<tr class="total-pay-row"><td>Total Pay</td><td>${formatPkr(totalPay)}</td></tr>` : ""}
+                        </tbody>
+                      </table>
+                    </div>` : ""}
+
+                    ${incentivesFromArray.length > 0 ? `
+                    <div class="print-table-shell">
+                      <div class="print-heading">Extra additions</div>
+                      <table class="all-items-table"><tbody>
+                        ${incentivesFromArray.map((inc) => `<tr><td>${inc.title || "Addition"}</td><td>${formatPkr(inc.amount)}</td></tr>`).join("")}
+                      </tbody></table>
+                    </div>` : ""}
+
+                    ${hasPrintDeductionContent ? `
+                    <div class="print-table-shell">
+                      <div class="print-heading">Deductions</div>
+                      <table class="all-items-table"><tbody>
+                        ${pfEmployee !== null && pfEmployee > 0 ? `
+                        <tr><td colspan="2" style="padding:0;">
+                              <div class="pf-breakdown-row">
+                                <div class="pf-breakdown-col pf-col-title" style="border-right:1px solid #e5e7eb;">Provident Fund Deductions</div>
+                                <div class="pf-breakdown-col pf-col-detail">
+                              <div class="pf-emp-row">Employee Contribution: PKR ${pfEmployeeForCalc.toLocaleString(undefined,{ minimumFractionDigits:2, maximumFractionDigits:2 })}</div>
+                              <div>Employer Contribution: PKR ${pfEmployer.toLocaleString(undefined,{ minimumFractionDigits:2, maximumFractionDigits:2 })}</div>
+                              <div style="margin-top:6px;font-weight:500;">Total: PKR ${pfTotal.toLocaleString(undefined,{ minimumFractionDigits:2, maximumFractionDigits:2 })}</div>
+                            </div>
+                            <div class="pf-breakdown-col pf-col-value">PKR ${pfEmployeeForCalc.toLocaleString(undefined,{ minimumFractionDigits:2, maximumFractionDigits:2 })}</div>
+                          </div>
+                        </td></tr>` : ""}
+                        ${eobi !== null && eobi > 0 ? `<tr><td>EOBI</td><td>${formatPkr(eobi)}</td></tr>` : ""}
+                        ${incomeTax !== null && incomeTax > 0 ? `<tr><td>Income Tax</td><td>${formatPkr(incomeTax)}</td></tr>` : ""}
+                        ${calculatedAbsenteeDeduction > 0 ? `<tr><td>Absentee Deduction</td><td>${formatPkr(calculatedAbsenteeDeduction)}</td></tr>` : ""}
+                        ${calculatedLateDeduction > 0 ? `<tr><td>Late Minute Deduction</td><td>${formatPkr(calculatedLateDeduction)}</td></tr>` : ""}
+                        ${downtimeDeduction > 0 ? `<tr><td>Downtime (Early Leave)</td><td>${formatPkr(downtimeDeduction)}</td></tr>` : ""}
+                        ${otherDeductions > 0 ? `<tr><td>Other Deductions</td><td>${formatPkr(otherDeductions)}</td></tr>` : ""}
+                        ${deductionRows.map((item) => {
+                          const amt = parseFloat(item.monthly_amount > 0 ? item.monthly_amount : item.amount || 0);
+                          if (amt <= 0) return "";
+                          return `<tr><td>${item.title || "Deduction"}</td><td>${formatPkr(amt)}</td></tr>`;
+                        }).join("")}
+                        ${attendanceDeduction > 0 ? `<tr class="total-deduct-row"><td>Attendance Deduction</td><td>${formatPkr(attendanceDeduction)}</td></tr>` : ""}
+                      </tbody></table>
+                    </div>` : ""}
+
+                    <div class="amount-grid">
+                      <div class="amount-card">
+                        <div class="amount-title">Payable</div>
+                        <div class="amount-value">PKR ${formatPkrAmount(netPayable)}/-</div>
+                      </div>
+                      <div class="amount-card deductions">
+                        <div class="amount-title">Total Deductions</div>
+                        <div class="amount-value small">PKR ${formatPkrAmount(totalDeductions)}/-</div>
+                      </div>
+                    </div>
+
+                    <div class="signatures">
+                      <div class="signature-line"><span class="signature-label">Officer signature</span><div class="signature-underline"></div></div>
+                      <div class="signature-line"><span class="signature-label">Employee signature</span><div class="signature-underline"></div></div>
                     </div>
                   </div>
                 </div>
-                
-                <div class="payslip-details">
-                  <div><span class="label">Total days :</span> <span class="value">${totalDays}</span></div>
-                  <div><span class="label">Present days :</span> <span class="value">${presentDays}</span></div>
-                  <div><span class="label">Absent days :</span> <span class="value">${absentDays}</span></div>
-                  <div><span class="label">Leaves :</span> <span class="value">${
-                    payslip.leaves_encashable || 0
-                  }</span></div>
-                </div>
-                
-                <div class="payslip-title">Payslip for the month of ${monthName} ${year}</div>
-                
-                <table class="all-items-table">
-                  <thead>
-                    <tr>
-                      <th colspan="2">Payment detail</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Basic Pay</td>
-                      <td>${basicSalary.toLocaleString()}/-</td>
-                    </tr>
-                    ${
-                      incentive > 0
-                        ? `<tr>
-                      <td>Incremented Amount</td>
-                      <td>${incentive.toLocaleString()}/-</td>
-                    </tr>`
-                        : ""
-                    }
-                    <tr class="total-row">
-                      <td>Total Pay</td>
-                      <td>${totalPay.toLocaleString()}/-</td>
-                    </tr>
-                    ${
-                      incentivesFromArray.length > 0
-                        ? `
-                    <tr>
-                      <th colspan="2">Extra Additions</th>
-                    </tr>
-                    ${incentivesFromArray
-                      .map(
-                        (inc) => `
-                    <tr>
-                      <td>${inc.title || "Incentive"}</td>
-                      <td>${inc.amount.toLocaleString()}/-</td>
-                    </tr>
-                    `
-                      )
-                      .join("")}
-                    `
-                        : ""
-                    }
-                    ${
-                      totalDeductions > 0
-                        ? `
-                    <tr>
-                      <th colspan="2">Deductions</th>
-                    </tr>
-                    ${
-                      incomeTax !== null && incomeTax > 0
-                        ? `
-                    <tr>
-                      <td>Income Tax</td>
-                      <td>${incomeTax.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}/-</td>
-                    </tr>
-                    `
-                        : ""
-                    }
-                    ${
-                      eobi !== null && eobi > 0
-                        ? `
-                    <tr>
-                      <td>EOBI</td>
-                      <td>${eobi.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}/-</td>
-                    </tr>
-                    `
-                        : ""
-                    }
-                    ${
-                      pfEmployee !== null && pfEmployee > 0
-                        ? `
-                    <tr>
-                      <td>Provident Fund</td>
-                      <td>${pfEmployee.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}/-</td>
-                    </tr>
-                    `
-                        : ""
-                    }
-                    ${
-                      calculatedAbsenteeDeduction > 0
-                        ? `
-                    <tr>
-                      <td>Calculated Absentee Deduction</td>
-                      <td>${calculatedAbsenteeDeduction.toLocaleString(
-                        undefined,
-                        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-                      )}/-</td>
-                    </tr>
-                    `
-                        : ""
-                    }
-                    ${
-                      calculatedLateDeduction > 0
-                        ? `
-                    <tr>
-                      <td>Calculated Late Deduction</td>
-                      <td>${calculatedLateDeduction.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}/-</td>
-                    </tr>
-                    `
-                        : ""
-                    }
-                    ${
-                      attendanceDeduction > 0
-                        ? `
-                    <tr>
-                      <td>Attendance Deduction</td>
-                      <td>${attendanceDeduction.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}/-</td>
-                    </tr>
-                    `
-                        : ""
-                    }
-                    ${
-                      otherDeductions > 0
-                        ? `
-                    <tr>
-                      <td>Other Deductions</td>
-                      <td>${otherDeductions.toLocaleString()}/-</td>
-                    </tr>
-                    `
-                        : ""
-                    }
-                    ${incentiveDeductionArray
-                      .filter((item) => item.d_type === "DEDUCTION")
-                      .map(
-                        (item) => `
-                    <tr>
-                      <td>${item.title || "Deduction"}</td>
-                      <td>${parseFloat(
-                        item.monthly_amount > 0
-                          ? item.monthly_amount
-                          : item.amount || 0
-                      ).toLocaleString()}/-</td>
-                    </tr>
-                    `
-                      )
-                      .join("")}
-                    <tr class="total-row">
-                      <td>Total Deductions</td>
-                      <td>${totalDeductions.toLocaleString()}/-</td>
-                    </tr>
-                    `
-                        : ""
-                    }
-                    <tr>
-                      <th colspan="2">Payable</th>
-                    </tr>
-                    <tr>
-                      <td>Payable</td>
-                      <td>PKR ${netPayable.toLocaleString()}/-</td>
-                    </tr>
-                  </tbody>
-                </table>
-                
-                <div class="signatures">
-                  <div class="signature-line">
-                  <span class="signature-label">Officer signature</span>
-                    <div class="signature-underline"></div>
-                  </div>
-                  <div class="signature-line">
-                  <span class="signature-label">Employee signature</span>
-                    <div class="signature-underline"></div>
-                  </div>
-                </div>
-              </div>
-            `;
+              </div>`;
             })
             .join("")}
         </div>
@@ -1020,7 +1032,7 @@ const MakingPayments = () => {
       provident_fund: parseFloat(
         originalPayslip.provident_fund || originalPayslip.pf_amount || 0
       ),
-      other_deductions: parseFloat(originalPayslip.deduction || 0),
+      other_deductions: parseFloat(originalPayslip.other_deductions || 0),
       net_salary: parseFloat(originalPayslip.paid_amount || 0),
       payable_amount: parseFloat(originalPayslip.paid_amount || 0),
       payment_method: originalPayslip.pay_method || "Cash",
@@ -1276,7 +1288,7 @@ const MakingPayments = () => {
   const buildFilterParams = (includePagination = false, overridePage = undefined, overrideSelectedDate = undefined) => {
     const params = {};
     
-    // Pagination params
+    // Pagination params (default: paginate)
     if (overridePage !== undefined) {
       params.page = overridePage;
       params.limit = 15;
@@ -1303,6 +1315,18 @@ const MakingPayments = () => {
       (selectedDepartment.value === 0 || selectedDepartment.value)
     ) {
       params.department_id = selectedDepartment.value;
+    }
+
+    // Requirement: when Branch + Department are selected, call API without limit and with pagination=false
+    if (
+      selectedBranch &&
+      selectedDepartment &&
+      (selectedBranch.value === 0 || selectedBranch.value) &&
+      (selectedDepartment.value === 0 || selectedDepartment.value)
+    ) {
+      params.pagination = false;
+      delete params.limit;
+      delete params.page;
     }
 
     // Main filter - backend: emp_id when search is numeric, emp_name otherwise
@@ -2287,18 +2311,16 @@ const MakingPayments = () => {
       />
 
       {/* Mark Paid Dialog */}
-      <Dialog
-        open={markPaidDialog}
-        handler={() => setMarkPaidDialog(false)}
-        size="sm"
-      >
-        <DialogHeader>
-          <Typography className="text-[#474747] font-Urbanist font-medium text-[16px]">
-            Mark Payslips as Paid
-          </Typography>
-        </DialogHeader>
+      {markPaidDialog && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border border-[#EAEFF5]">
+            <div className="px-5 py-4 border-b border-[#EEF2F6]">
+              <Typography className="text-[#474747] font-Urbanist font-medium text-[16px]">
+                Mark Payslips as Paid
+              </Typography>
+            </div>
 
-        <DialogBody className="space-y-4">
+            <div className="space-y-4 px-5 py-4">
           {/* Selected Count */}
           <div className="bg-blue-50 p-3 rounded-lg">
             <Typography variant="small" color="blue-gray">
@@ -2349,29 +2371,28 @@ const MakingPayments = () => {
               rows={3}
             />
           </div>
-        </DialogBody>
+            </div>
 
-        <DialogFooter className="space-x-2">
-          <Button
-            // variant='outlined'
-            // color='red'
-            className="bg-[#FF4979] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer"
-            onClick={() => setMarkPaidDialog(false)}
-            disabled={isMarkingPaid}
-          >
-            Cancel
-          </Button>
-          <Button
-            // color='green'
-            className="bg-[#0ACF97] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer"
-            onClick={confirmMarkPaid}
-            disabled={isMarkingPaid || !paymentMethod}
-            loading={isMarkingPaid}
-          >
-            {isMarkingPaid ? "Processing..." : "Mark as Paid"}
-          </Button>
-        </DialogFooter>
-      </Dialog>
+            <div className="px-5 py-4 border-t border-[#EEF2F6] flex justify-end gap-2">
+              <Button
+                className="bg-[#FF4979] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#e63f6f] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={() => setMarkPaidDialog(false)}
+                disabled={isMarkingPaid}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-[#0ACF97] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#08b784] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={confirmMarkPaid}
+                disabled={isMarkingPaid || !paymentMethod}
+                loading={isMarkingPaid}
+              >
+                {isMarkingPaid ? "Processing..." : "Mark as Paid"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Single Delete Confirmation Dialog */}
       <ConfirmationDialog
@@ -2383,18 +2404,16 @@ const MakingPayments = () => {
       />
 
       {/* Single Mark Paid Dialog */}
-      <Dialog
-        open={singleMarkPaidDialog}
-        handler={() => setSingleMarkPaidDialog(false)}
-        size="sm"
-      >
-        <DialogHeader>
-          <Typography className="text-[#474747] font-Urbanist font-medium text-[16px]">
-            Mark Payslip as Paid
-          </Typography>
-        </DialogHeader>
+      {singleMarkPaidDialog && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border border-[#EAEFF5]">
+            <div className="px-5 py-4 border-b border-[#EEF2F6]">
+              <Typography className="text-[#474747] font-Urbanist font-medium text-[16px]">
+                Mark Payslip as Paid
+              </Typography>
+            </div>
 
-        <DialogBody className="space-y-4">
+            <div className="space-y-4 px-5 py-4">
           {/* Employee Info */}
           <div className="bg-blue-50 p-3 rounded-lg">
             <Typography variant="small" color="blue-gray">
@@ -2445,29 +2464,28 @@ const MakingPayments = () => {
               rows={3}
             />
           </div>
-        </DialogBody>
+            </div>
 
-        <DialogFooter className="space-x-2">
-          <Button
-            // variant='outlined'
-            // color='red'
-            className="bg-[#FF4979] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer"
-            onClick={() => setSingleMarkPaidDialog(false)}
-            disabled={isMarkingPaid}
-          >
-            Cancel
-          </Button>
-          <Button
-            // color='green'
-            className="bg-[#0ACF97] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer"
-            onClick={confirmSingleMarkPaid}
-            disabled={isMarkingPaid || !paymentMethod}
-            loading={isMarkingPaid}
-          >
-            {isMarkingPaid ? "Processing..." : "Mark as Paid"}
-          </Button>
-        </DialogFooter>
-      </Dialog>
+            <div className="px-5 py-4 border-t border-[#EEF2F6] flex justify-end gap-2">
+              <Button
+                className="bg-[#FF4979] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#e63f6f] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={() => setSingleMarkPaidDialog(false)}
+                disabled={isMarkingPaid}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-[#0ACF97] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#08b784] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={confirmSingleMarkPaid}
+                disabled={isMarkingPaid || !paymentMethod}
+                loading={isMarkingPaid}
+              >
+                {isMarkingPaid ? "Processing..." : "Mark as Paid"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

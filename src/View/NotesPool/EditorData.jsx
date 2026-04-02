@@ -184,6 +184,26 @@ const formatContent = (content) => {
   return String(content);
 };
 
+// Note content from API/JSON is often HTML-entity encoded. Feeding `&lt;code&gt;...&lt;/code&gt; &amp; ...`
+// into dangerouslySetInnerHTML leaves markup as visible text. Decode (repeat for double-encoding) first.
+const decodeHtmlEntities = (str) => {
+  if (str == null) return '';
+  let s = String(str);
+  if (typeof document === 'undefined') return s;
+  let prev = '';
+  let guard = 0;
+  const textarea = document.createElement('textarea');
+  while (s !== prev && guard < 6) {
+    prev = s;
+    textarea.innerHTML = s;
+    s = textarea.value;
+    guard += 1;
+  }
+  return s;
+};
+
+const htmlForNoteView = (raw) => decodeHtmlEntities(formatContent(raw));
+
 const RenderEditorContent = ({ data }) => {
   const renderBlock = (block, index) => {
     if (block == null || typeof block !== 'object') return null;
@@ -193,14 +213,15 @@ const RenderEditorContent = ({ data }) => {
         if (typeof headerText === 'object' && headerText !== null) {
           headerText = formatContent(headerText);
         }
+        const headerHtml = htmlForNoteView(headerText);
         return (
           <div className='my-4' key={index}>
             {block.data.level === 1 ? (
-              <h1 key={index}>{String(headerText)}</h1>
+              <h1 key={index} dangerouslySetInnerHTML={{ __html: headerHtml }} />
             ) : block.data.level === 2 ? (
-              <h2 key={index}>{String(headerText)}</h2>
+              <h2 key={index} dangerouslySetInnerHTML={{ __html: headerHtml }} />
             ) : (
-              <h3 key={index}>{String(headerText)}</h3>
+              <h3 key={index} dangerouslySetInnerHTML={{ __html: headerHtml }} />
             )
             }
           </div>
@@ -216,7 +237,7 @@ const RenderEditorContent = ({ data }) => {
           <div className='my-4 min-w-0 break-words' key={index}>
             <p
               key={index}
-              dangerouslySetInnerHTML={{ __html: String(paragraphText) }}
+              dangerouslySetInnerHTML={{ __html: htmlForNoteView(paragraphText) }}
               className="paragraph-content break-words"
             />
           </div>
@@ -243,7 +264,7 @@ const RenderEditorContent = ({ data }) => {
                   if (typeof item === 'object' && item !== null) {
                     itemText = formatContent(item);
                   }
-                  return <li key={idx} className='pl-1' dangerouslySetInnerHTML={{ __html: String(itemText) }} />;
+                  return <li key={idx} className='pl-1' dangerouslySetInnerHTML={{ __html: htmlForNoteView(itemText) }} />;
                 })}
               </ul>
             ) : (
@@ -253,7 +274,7 @@ const RenderEditorContent = ({ data }) => {
                   if (typeof item === 'object' && item !== null) {
                     itemText = formatContent(item);
                   }
-                  return <li key={idx} className='pl-1' dangerouslySetInnerHTML={{ __html: String(itemText) }} />;
+                  return <li key={idx} className='pl-1' dangerouslySetInnerHTML={{ __html: htmlForNoteView(itemText) }} />;
                 })}
               </ol>
             )
@@ -278,7 +299,7 @@ const RenderEditorContent = ({ data }) => {
                           variant="small"
                           className="text-[#474747] break-words whitespace-normal"
                         >
-                          {String(headerText)}
+                          <span dangerouslySetInnerHTML={{ __html: htmlForNoteView(headerText) }} />
                         </Typography>
                       </th>
                     );
@@ -300,7 +321,7 @@ const RenderEditorContent = ({ data }) => {
                             variant="small"
                             className="font-normal leading-snug opacity-100 text-[#474747] break-words whitespace-normal"
                           >
-                            {String(cellText)}
+                            <span dangerouslySetInnerHTML={{ __html: htmlForNoteView(cellText) }} />
                           </Typography>
                         </td>
                       );
@@ -323,7 +344,7 @@ const RenderEditorContent = ({ data }) => {
               return (
                 <Checkbox key={idx} color='blue' checked={item.checked} readOnly label={
                   <Typography>
-                    {String(itemText)}
+                    <span dangerouslySetInnerHTML={{ __html: htmlForNoteView(itemText) }} className="break-words" />
                   </Typography>
                 } />
               );
@@ -332,7 +353,7 @@ const RenderEditorContent = ({ data }) => {
         );
 
       case 'raw':
-        return <div className='my-4' key={index} dangerouslySetInnerHTML={{ __html: block.data.html }} />;
+        return <div className='my-4' key={index} dangerouslySetInnerHTML={{ __html: htmlForNoteView(block.data.html) }} />;
 
       case 'quote':
         let quoteText = block.data.text || '';
@@ -345,8 +366,8 @@ const RenderEditorContent = ({ data }) => {
         }
         return (
           <blockquote key={index} className='space-y-1 my-4'>
-            <p>{String(quoteText)}</p>
-            <cite>{String(quoteCaption)}</cite>
+            <p dangerouslySetInnerHTML={{ __html: htmlForNoteView(quoteText) }} />
+            <cite dangerouslySetInnerHTML={{ __html: htmlForNoteView(quoteCaption) }} />
           </blockquote>
         );
 
@@ -365,7 +386,7 @@ const RenderEditorContent = ({ data }) => {
         }
         return (
           <SyntaxHighlighter key={index} language={block.data.language || 'javascript'} style={solarizedlight}>
-            {String(codeText)}
+            {decodeHtmlEntities(String(formatContent(codeText)))}
           </SyntaxHighlighter>
         );
 
@@ -383,7 +404,7 @@ const RenderEditorContent = ({ data }) => {
           <p
             key={index}
             dangerouslySetInnerHTML={{
-              __html: defaultContent
+              __html: htmlForNoteView(defaultContent)
             }}
           >
           </p>

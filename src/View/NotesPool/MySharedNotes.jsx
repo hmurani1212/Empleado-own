@@ -16,6 +16,7 @@ import UpdateNoteData from "./UpdateNoteData";
 import EditorData from "./EditorData";
 import useStore from "../../Store/store";
 import { MdEditDocument } from "react-icons/md";
+import { NoteSkeleton } from "./NotesPoolSkeletons";
 
 const MySharedNotes = (props) => {
   const { notes: notesFromProps, noteBookTitle, noteBookID, onBack } = props;
@@ -30,8 +31,6 @@ const MySharedNotes = (props) => {
     note.note_title?.toLowerCase().includes(searchValue.toLowerCase())
   );
 
-  const isLoading = !notes;
-
   const {
     starredNotes,
     handleStarClick,
@@ -39,6 +38,7 @@ const MySharedNotes = (props) => {
     initializeStarredNotes,
     starStateVersion,
     isStarredNotesInitialized,
+    notebookNotesLoading,
   } = useStore();
   const {
     handleNoteMenuList,
@@ -100,7 +100,9 @@ const MySharedNotes = (props) => {
         <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-gray-100 shadow-sm">
                 <span className="text-xs text-gray-500">Total:</span>
-                <span className="text-sm font-bold text-gray-800">{filteredNotes?.length || 0}</span>
+                <span className="text-sm font-bold text-gray-800">
+                  {notebookNotesLoading ? "—" : filteredNotes?.length || 0}
+                </span>
              </div>
 
             {/* Search */}
@@ -119,6 +121,9 @@ const MySharedNotes = (props) => {
         </div>
       </div>
 
+      {notebookNotesLoading ? (
+        <NoteSkeleton />
+      ) : (
       <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-5 w-full">
         {filteredNotes?.length > 0 ? filteredNotes.map((ele, i) => {
             const { bgColor } = titleNameAlpha(ele.note_title);
@@ -234,6 +239,7 @@ const MySharedNotes = (props) => {
             </div>
           )}
       </div>
+      )}
 
       {addNoteValue.showNote && (
         <CustomDialog

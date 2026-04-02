@@ -2,6 +2,7 @@ import axiosInstance, { axiosInstancecoremodule, payRollinstancemodule, training
 import axios from "axios"
 import { CORE_BASE_URL } from "../../BaseUri"
 import { getLocalStorage } from "../../../Authentication/localStorageServices"
+import { getUserData } from "../../../Authentication/jwt_decode"
 
 const employeesApi = {
     getBranches: function () {
@@ -98,6 +99,7 @@ const employeesApi = {
         return axiosInstancecoremodule.request({
             method: 'GET',
             url: `/api/v1/departments${query ? `?${query}` : ''}`,
+            url: `/api/v1/departments?${params.toString()}`,
         })
     },
     getDesignations: function (data) {
@@ -929,10 +931,14 @@ const employeesApi = {
 
     // Update employee profile (Official Information)
     updateEmployeeProfile: function (data) {
+        const orgId = getUserData()?.org_id || 0
         return axiosInstancecoremodule.request({
             method: 'POST',
             url: `/api/v1/employee_v2/update_employee_profile?id=${data.id}`,
-            data: data
+            data: {
+                ...data,
+                org_id: data?.org_id ?? orgId
+            }
         })
     },
 

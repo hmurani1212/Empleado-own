@@ -28,26 +28,61 @@ const useEmployeeCheckList = ()=>{
     }) 
 
 
-    const handleEmpCheckList = async(branchId)=>{
-        setEmployeeCheckListValue((prevState)=>({
-            ...prevState,
-            show:true,
-            isEdit: false,
-            editId: null
-        }))
-
-        // Load departments directly with branch_id=0
-        const response = await departmentsApi.manageDepartments(branchId,1,10,true)
-        const responseData = response.data
-
-
-        if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
-            setEmployeeCheckListValue((prevState)=>({
+    const handleEmpCheckList = async (branchId, opts = {}) => {
+        const { skipInitialShowToggle = false } = opts
+        if (!skipInitialShowToggle) {
+            setEmployeeCheckListValue((prevState) => ({
                 ...prevState,
-                departmentList: responseData.DB_DATA || []
+                show: true,
+                isEdit: false,
+                editId: null
             }))
         }
 
+        const bid = branchId === undefined || branchId === null || branchId === ''
+            ? 0
+            : Number(branchId)
+
+        try {
+            let allDepartments = []
+            let page = 1
+            let totalPages = 1
+
+            while (page <= totalPages) {
+                const response = await departmentsApi.manageDepartments(bid, page, 100, true)
+                const responseData = response.data
+
+                if (response.status !== 200 || responseData.STATUS !== 'SUCCESSFUL') {
+                    break
+                }
+
+                const db = responseData.DB_DATA
+                let deps = []
+                if (Array.isArray(db)) {
+                    deps = db
+                } else if (db && Array.isArray(db.departments)) {
+                    deps = db.departments
+                }
+
+                allDepartments = [...allDepartments, ...deps]
+
+                const pag = db?.pagination
+                totalPages = pag?.pages ?? 1
+                page += 1
+            }
+
+            setEmployeeCheckListValue((prevState) => ({
+                ...prevState,
+                departmentList: {
+                    ...(typeof prevState.departmentList === 'object' && prevState.departmentList !== null
+                        ? prevState.departmentList
+                        : {}),
+                    departments: allDepartments
+                }
+            }))
+        } catch (err) {
+            console.log(err)
+        }
     }
 
     const handleEditCheckList = async(checklistData)=>{
@@ -85,14 +120,7 @@ const useEmployeeCheckList = ()=>{
 
         // Load departments if needed
         if (mappedData.checkListType === 2) {
-            const response = await departmentsApi.manageDepartments(0)
-            const responseData = response.data
-            if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
-                setEmployeeCheckListValue((prevState)=>({
-                    ...prevState,
-                    departmentList: responseData.DB_DATA || []
-                }))
-            }
+            await handleEmpCheckList(0, { skipInitialShowToggle: true })
         }
 
         // Load employees if needed
