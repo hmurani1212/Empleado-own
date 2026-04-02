@@ -303,10 +303,9 @@ const hireViewModel = (set, get) => ({
     },
 
 
-    get_rejected_app: async (app_id) => {
-        /// console.log('get_rejected_app called with app_id:', app_id);
+    get_rejected_app: async (params = {}) => {
         try {
-            const response = await hireApi2.get_rejected_app(app_id);
+            const response = await hireApi2.get_rejected_app(params);
             const data = response.data;
             // console.log('get_rejected_app API response:', data);
 

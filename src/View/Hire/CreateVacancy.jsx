@@ -158,10 +158,13 @@ const CreateVacancy = () => {
     allCities?.filter((city) => selectedCityIds.includes(city.id.toString())) ||
     [];
 
-  // Add validation functions
-  const validateStep0 = async () => {
+  // Add validation functions — silent=true skips toasts (for tab enablement + live completeness)
+  const validateStep0 = async (silent = false) => {
+    const fail = (msg) => {
+      if (!silent) toast.error(msg);
+      return false;
+    };
     try {
-      // Validate fields one by one
       const step0Data = {
         title: newVacValues.title,
         vacancy_type: newVacValues.locations === "0" ? 1 : 2,
@@ -184,7 +187,6 @@ const CreateVacancy = () => {
         description: newVacValues.description,
       };
 
-      // Step 0 validations aligned with backend Joi vacancy_creation_schema (first page)
       try {
         await Yup.string()
           .min(1, "Vacancy title is required")
@@ -192,8 +194,7 @@ const CreateVacancy = () => {
           .required("Vacancy title is required")
           .validate(step0Data.title);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       if (step0Data.vacancy_type === 2) {
@@ -203,8 +204,7 @@ const CreateVacancy = () => {
             .required("Locations are required for office job")
             .validate(step0Data.locations);
         } catch (error) {
-          toast.error(error.message);
-          return false;
+          return fail(error.message);
         }
       }
 
@@ -215,8 +215,7 @@ const CreateVacancy = () => {
           .required("Minimum age is required")
           .validate(step0Data.age_from);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       try {
@@ -226,13 +225,11 @@ const CreateVacancy = () => {
           .required("Maximum age is required")
           .validate(step0Data.age_upto);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       if (step0Data.age_from >= step0Data.age_upto) {
-        toast.error("Age upper limit cannot be less than lower limit");
-        return false;
+        return fail("Age upper limit cannot be less than lower limit");
       }
 
       try {
@@ -243,8 +240,7 @@ const CreateVacancy = () => {
           .required("Available seats are required")
           .validate(step0Data.seats);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       try {
@@ -254,8 +250,7 @@ const CreateVacancy = () => {
           .required("Gender requirement is required")
           .validate(step0Data.req_gender);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       try {
@@ -263,8 +258,7 @@ const CreateVacancy = () => {
           .required("Experience is required")
           .validate(step0Data.experience);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       try {
@@ -272,8 +266,7 @@ const CreateVacancy = () => {
           .required("Required qualification is required")
           .validate(step0Data.required_qualification);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       try {
@@ -281,8 +274,7 @@ const CreateVacancy = () => {
           .required("Job description is required")
           .validate(step0Data.description);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       try {
@@ -291,8 +283,7 @@ const CreateVacancy = () => {
           .required("Apply start date is required")
           .validate(step0Data.apply_from);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       try {
@@ -301,8 +292,7 @@ const CreateVacancy = () => {
           .required("Apply end date is required")
           .validate(step0Data.last_date);
       } catch (error) {
-        toast.error(error.message);
-        return false;
+        return fail(error.message);
       }
 
       const lastDate = new Date(step0Data.last_date);
@@ -311,18 +301,15 @@ const CreateVacancy = () => {
       applyFrom.setHours(0, 0, 0, 0);
       const oneDayMs = 24 * 60 * 60 * 1000;
       if (lastDate.getTime() - applyFrom.getTime() < oneDayMs) {
-        toast.error("End date must be at least one day after start date");
-        return false;
+        return fail("End date must be at least one day after start date");
       }
 
-      // Apply last date cannot be in the past (backend custom: !value.id && new Date(value.last_date) < new Date())
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const lastDateOnly = new Date(lastDate.getTime());
       lastDateOnly.setHours(0, 0, 0, 0);
       if (lastDateOnly < today) {
-        toast.error("Apply last date cannot be in the past");
-        return false;
+        return fail("Apply last date cannot be in the past");
       }
 
       setValidationErrors({});
@@ -331,6 +318,28 @@ const CreateVacancy = () => {
       console.error("Validation error:", error);
       return false;
     }
+  };
+
+  const [vacancyDetailsComplete, setVacancyDetailsComplete] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const ok = await validateStep0(true);
+      if (!cancelled) setVacancyDetailsComplete(ok);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run when vacancy form values change
+  }, [newVacValues]);
+
+  const goToStepFromTab = (step) => {
+    if (step > 0 && !vacancyDetailsComplete) {
+      toast.info("Please complete all Vacancy Details before opening this step.");
+      return;
+    }
+    handleStepActive(step);
   };
 
   const validateStep1 = async () => {
@@ -671,7 +680,20 @@ const CreateVacancy = () => {
                   </Step>
 
                   <Step
-                    onClick={() => handleStepActive(1)}
+                    role="button"
+                    tabIndex={vacancyDetailsComplete ? 0 : -1}
+                    aria-disabled={!vacancyDetailsComplete}
+                    title={
+                      vacancyDetailsComplete
+                        ? undefined
+                        : "Complete all Vacancy Details fields to open Questionnaire"
+                    }
+                    className={
+                      vacancyDetailsComplete
+                        ? ""
+                        : "opacity-45 cursor-not-allowed"
+                    }
+                    onClick={() => goToStepFromTab(1)}
                     activeClassName="bg-[#61ADFF] relative"
                     completedClassName="text-white"
                   >
@@ -686,7 +708,20 @@ const CreateVacancy = () => {
                   </Step>
 
                   <Step
-                    onClick={() => handleStepActive(2)}
+                    role="button"
+                    tabIndex={vacancyDetailsComplete ? 0 : -1}
+                    aria-disabled={!vacancyDetailsComplete}
+                    title={
+                      vacancyDetailsComplete
+                        ? undefined
+                        : "Complete all Vacancy Details fields to open Interview Settings"
+                    }
+                    className={
+                      vacancyDetailsComplete
+                        ? ""
+                        : "opacity-45 cursor-not-allowed"
+                    }
+                    onClick={() => goToStepFromTab(2)}
                     activeClassName="bg-[#61ADFF]"
                     completedClassName="text-white"
                   >

@@ -61,14 +61,6 @@ const ViewDetail = (props) => {
     },
   ];
 
-  // Tooba
-  // Shortlist, Reject, Talent Pool in Application Detail of Candidates
-  const actions = [
-    { label: "Shortlist", onClick: () => console.log("Shortlist") },
-    { label: "Reject", onClick: () => console.log("Reject") },
-    { label: "Talent Pool", onClick: () => console.log("Talent Pool") },
-  ];
-
   // Extract candidate data from the new API response structure
   const candidateData = viewPending?.candidate || {};
   
@@ -82,8 +74,6 @@ const ViewDetail = (props) => {
       handleClose={handleClose}
       viewPending={viewPending}
       steps={steps}
-      buttonText={"shortlist"}
-      actions={actions}
     />
   );
 };

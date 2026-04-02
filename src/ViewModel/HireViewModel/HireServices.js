@@ -128,7 +128,7 @@ const useHire = () => {
   const hireShareItems = [
     { id: 1, icon: <FaFacebookF />, title: 'Facebook' },
     { id: 2, icon: <FaInstagram />, title: 'Instagram' },
-    { id: 3, icon: <FaLinkedinIn />, title: 'LinkedIn (redirects to Facebook)' },
+    { id: 3, icon: <FaLinkedinIn />, title: 'LinkedIn' },
     { id: 4, icon: <FaXTwitter />, title: 'Twitter' }
   ]
 
@@ -1644,7 +1644,7 @@ const useHire = () => {
 
       case 5:
         navigate(`/hire/vacancies_list/all_applicants/${vacancy}/rejected`)
-        gettingRejectedApp(vacancy)
+        // gettingRejectedApp(vacancy)
         // gettingAllCount(vacancy)
         break;
 

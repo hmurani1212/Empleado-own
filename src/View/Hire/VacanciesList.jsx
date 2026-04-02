@@ -5,7 +5,7 @@ import {
   Select,
   Typography,
 } from "@material-tailwind/react";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { BiSearch } from "react-icons/bi";
 import useHire from "../../ViewModel/HireViewModel/HireServices";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
@@ -13,7 +13,8 @@ import { formatTimestamp } from "../Branches/utils";
 import { motion } from "framer-motion";
 import { FaChevronDown } from "react-icons/fa";
 import { getAllMonths } from "../../services/__appServicesData";
-import { getAllYearsHire, getCityNamesFromIds } from "../../services/__hireServices";
+import { getAllYearsHire, getCityNamesFromIds, buildVacancyPublicShareUrl } from "../../services/__hireServices";
+import { showToast } from "../../Components/Toaster/Toaster";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import useStore from "../../Store/store";
 import { useNavigate } from "react-router";
@@ -69,6 +70,41 @@ const VacanciesList = () => {
     year_date: "",
     month_date: "",
   });
+
+  /** While user is focused / opened the select; used only to hide inner placeholder (labels above stay visible). */
+  const [yearSelectInteracting, setYearSelectInteracting] = useState(false)
+  const [monthSelectInteracting, setMonthSelectInteracting] = useState(false)
+
+  const hasYearValue = Boolean(filters.year_date)
+  const hasMonthValue = Boolean(filters.month_date)
+
+  /** Placeholder inside the field: show when empty and not interacting; hide on click/open; restore on close without pick. */
+  const showYearPlaceholder = !hasYearValue && !yearSelectInteracting
+  const showMonthPlaceholder = !hasMonthValue && !monthSelectInteracting
+
+  const yearSelectRef = useRef(null)
+  const monthSelectRef = useRef(null)
+
+  /** Second click on the trigger closes the menu without blurring — restore placeholder when closing with no value. */
+  const handleYearSelectClick = () => {
+    const root = yearSelectRef.current
+    const menuWasOpen = root?.querySelector('ul[role="listbox"]') != null
+    if (menuWasOpen) {
+      queueMicrotask(() => setYearSelectInteracting(false))
+    } else {
+      setYearSelectInteracting(true)
+    }
+  }
+
+  const handleMonthSelectClick = () => {
+    const root = monthSelectRef.current
+    const menuWasOpen = root?.querySelector('ul[role="listbox"]') != null
+    if (menuWasOpen) {
+      queueMicrotask(() => setMonthSelectInteracting(false))
+    } else {
+      setMonthSelectInteracting(true)
+    }
+  }
 
   // Create a memoized debounced version of the search function
   const debouncedSearch = useDebounce(
@@ -171,43 +207,77 @@ const VacanciesList = () => {
 
   const Navigate = useNavigate();
 
-  // Social media sharing functions
-  const handleSocialShare = (platform, vacancy) => {
-    // Use the actual vacancy URL instead of hardcoded URL
-    const careerPageUrl = `http://172.18.0.44:8080/10824961/vacancy/${vacancy.id}`;
-    const shareText = `Check out this job opportunity: ${vacancy.title}`;
+  // Public vacancy URL for social share + copy (source_id = vacancy id from API)
+  const handleCopyVacancyLink = async (vacancy) => {
+    const text = buildVacancyPublicShareUrl(vacancy?.id)
+    if (!text) {
+      showToast("Unable to build link for this vacancy.", "error")
+      return
+    }
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text)
+        showToast("Link copied to clipboard", "success")
+      } else {
+        const textArea = document.createElement("textarea")
+        textArea.value = text
+        textArea.style.position = "fixed"
+        textArea.style.left = "-999999px"
+        textArea.style.top = "-999999px"
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        try {
+          const successful = document.execCommand("copy")
+          if (successful) {
+            showToast("Link copied to clipboard", "success")
+          } else {
+            throw new Error("execCommand failed")
+          }
+        } finally {
+          document.body.removeChild(textArea)
+        }
+      }
+    } catch (err) {
+      console.error("Copy failed:", err)
+      showToast("Failed to copy link. Please try again.", "error")
+    }
+  }
 
-    let shareUrl = "";
+  // Social media sharing — uses same public URL as copy (LinkedIn, Facebook, X)
+  const handleSocialShare = (platform, vacancy) => {
+    const careerPageUrl = buildVacancyPublicShareUrl(vacancy?.id)
+    if (!careerPageUrl) return
+    const shareText = `Check out this job opportunity: ${vacancy.title}`
+
+    let shareUrl = ""
 
     switch (platform) {
       case "facebook":
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
           careerPageUrl
-        )}&quote=${encodeURIComponent(shareText)}`;
-        break;
+        )}&quote=${encodeURIComponent(shareText)}`
+        break
       case "instagram":
-        // Instagram doesn't support direct URL sharing, but we can redirect to their website
-        // Users can then copy the link and share it manually
-        shareUrl = "https://www.instagram.com/";
-        break;
+        // No web share URL; open site — user can paste from Copy link
+        shareUrl = "https://www.instagram.com/"
+        break
       case "linkedin":
-        // LinkedIn sharing URL
         shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
           careerPageUrl
-        )}`;
-        break;
+        )}`
+        break
       case "twitter":
         shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
           shareText
-        )}&url=${encodeURIComponent(careerPageUrl)}`;
-        break;
+        )}&url=${encodeURIComponent(careerPageUrl)}`
+        break
       default:
-        return;
+        return
     }
 
-    // Open in new window
-    window.open(shareUrl, "_blank", "noopener,noreferrer");
-  };
+    window.open(shareUrl, "_blank", "noopener,noreferrer")
+  }
 
   // console.log("allVacanciesList_data", allVacanciesList_data.response)
   return (
@@ -252,15 +322,46 @@ const VacanciesList = () => {
               </div>
             </div>
             <div>
-              <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">Year Filter</label>
+              <label
+                className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist"
+                htmlFor="hire-year-filter"
+              >
+                Year Filter
+              </label>
               <Select
-                label="Year Filter"
-                // labelProps={{className: "hidden"}}
+                ref={yearSelectRef}
+                id="hire-year-filter"
+                labelProps={{ className: "hidden" }}
                 color="blue"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 name="yearFilter"
                 value={filters.year_date ? String(filters.year_date) : ""}
-                onChange={(val) => handleFilterChange("yearFilter", val)}
+                onChange={(val) => {
+                  handleFilterChange("yearFilter", val)
+                  setYearSelectInteracting(false)
+                }}
+                selected={(optionEl) => {
+                  if (hasYearValue) {
+                    return optionEl
+                  }
+                  if (showYearPlaceholder) {
+                    return (
+                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                        Year Filter
+                      </span>
+                    )
+                  }
+                  return <span className="text-[12px] font-Urbanist text-[#474747]">&nbsp;</span>
+                }}
+                onClick={handleYearSelectClick}
+                onFocus={() => setYearSelectInteracting(true)}
+                containerProps={{
+                  onBlur: (e) => {
+                    const next = e.relatedTarget
+                    if (next && e.currentTarget.contains(next)) return
+                    setYearSelectInteracting(false)
+                  },
+                }}
               >
                 {years.map((year, i) => (
                   <Option key={i} value={String(year)}>
@@ -271,13 +372,18 @@ const VacanciesList = () => {
             </div>
 
             <div>
-              <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">Month Filter</label>
+              <label
+                className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist"
+                htmlFor="hire-month-filter"
+              >
+                Month Filter
+              </label>
               <Select
+                ref={monthSelectRef}
+                id="hire-month-filter"
+                labelProps={{ className: "hidden" }}
                 color="blue"
-                label="Month Filter"
-                // labelProps={{className: "hidden"}}
-                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                placeholder="Select Month"
+                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 value={
                   filters.month_date
                     ? months.find(
@@ -285,7 +391,32 @@ const VacanciesList = () => {
                       )?.id?.toString()
                     : ""
                 }
-                onChange={(val) => handleFilterChange("monthFilter", val)}
+                onChange={(val) => {
+                  handleFilterChange("monthFilter", val)
+                  setMonthSelectInteracting(false)
+                }}
+                selected={(optionEl) => {
+                  if (hasMonthValue) {
+                    return optionEl
+                  }
+                  if (showMonthPlaceholder) {
+                    return (
+                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                        Month Filter
+                      </span>
+                    )
+                  }
+                  return <span className="text-[12px] font-Urbanist text-[#474747]">&nbsp;</span>
+                }}
+                onClick={handleMonthSelectClick}
+                onFocus={() => setMonthSelectInteracting(true)}
+                containerProps={{
+                  onBlur: (e) => {
+                    const next = e.relatedTarget
+                    if (next && e.currentTarget.contains(next)) return
+                    setMonthSelectInteracting(false)
+                  },
+                }}
               >
                 {months.map((month) => (
                   <Option key={month.id} value={String(month.id)}>
@@ -441,18 +572,24 @@ const VacanciesList = () => {
                             </Button>
 
                             {openMenuShare[index] && (
-                              <div className="border border-gray-200 z-30 rounded-lg absolute bg-white left-[-60px] w-[200px] shadow-md">
+                              <div className="border border-gray-200 z-30 rounded-lg absolute bg-white left-[-60px] min-w-[220px] shadow-md">
                                 <motion.div
                                   initial={{ opacity: 0, y: 50 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: 50 }}
                                   transition={{ duration: 0.2 }}
                                 >
-                                  <ul className="flex w-full gap-1">
+                                  <div
+                                    role="group"
+                                    aria-label="Share on social media"
+                                    className="flex flex-nowrap flex-row items-center justify-center gap-1 px-2 py-2"
+                                  >
                                     {hireShareItems.map((menuItem) => (
-                                      <MenuItem
-                                        className="flex items-center justify-between bg-[#F2F9FF] m-[3px] text-[#3DA5F4] cursor-pointer hover:bg-[#E3F2FD]"
+                                      <button
+                                        type="button"
                                         key={menuItem.id}
+                                        title={menuItem.title}
+                                        className="inline-flex shrink-0 items-center justify-center rounded-md bg-[#F2F9FF] text-[#3DA5F4] cursor-pointer hover:bg-[#E3F2FD] h-9 w-9 p-0 border-0"
                                         onClick={() => {
                                           const platform =
                                             menuItem.id === 1
@@ -461,14 +598,23 @@ const VacanciesList = () => {
                                               ? "instagram"
                                               : menuItem.id === 3
                                               ? "linkedin"
-                                              : "twitter";
-                                          handleSocialShare(platform, hire);
+                                              : "twitter"
+                                          handleSocialShare(platform, hire)
                                         }}
                                       >
-                                        <span>{menuItem.icon}</span>
-                                      </MenuItem>
+                                        <span className="inline-flex">{menuItem.icon}</span>
+                                      </button>
                                     ))}
-                                  </ul>
+                                  </div>
+                                  <div className="border-t border-gray-100 px-2 pb-2 pt-1">
+                                    <button
+                                      type="button"
+                                      className="w-full rounded-md bg-[#3DA5F4] text-white text-[11px] font-Urbanist font-medium py-1.5 px-2 hover:bg-[#2d8fd6] transition-colors"
+                                      onClick={() => handleCopyVacancyLink(hire)}
+                                    >
+                                      Copy link
+                                    </button>
+                                  </div>
                                 </motion.div>
                               </div>
                             )}

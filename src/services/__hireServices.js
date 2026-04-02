@@ -1,3 +1,19 @@
+import { VACANCY_PUBLIC_APP_ORIGIN } from "../Model/BaseUri"
+
+/**
+ * Shareable public URL for a vacancy (career app deep link).
+ * Format: `{origin}/app/source_id={vacancyId}` (matches backend / marketing app expectations).
+ * @param {string|number} vacancyId - vacancy primary key from API
+ * @returns {string}
+ */
+export const buildVacancyPublicShareUrl = (vacancyId) => {
+  const id = Number(vacancyId)
+  if (!Number.isFinite(id) || id <= 0) return ""
+  const base = String(VACANCY_PUBLIC_APP_ORIGIN || "").replace(/\/$/, "")
+  if (!base) return ""
+  return `${base}/app/source_id=${id}`
+}
+
 export const getAllYearsHire = () => {
   const startYear = 2016;
   const currentYear = new Date().getFullYear();

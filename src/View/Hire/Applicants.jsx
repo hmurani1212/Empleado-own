@@ -14,7 +14,7 @@ import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import ShortlistForm from "./ShortlistForm";
 import RejectAppForm from "./RejectAppForm";
 import ShortlistTemplateModal from "./ShortlistTemplateModal";
-import { TiStarFullOutline } from "react-icons/ti";
+// import { TiStarFullOutline } from "react-icons/ti"; // Star by name — hidden for now
 import TalentPoolForm from "./TalentPoolForm";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { formatTimestamp } from "../Branches/utils";
@@ -41,13 +41,13 @@ const Applicants = (data) => {
     handleActionReject,
     rejectValues,
     handleRejectApp,
-    handleStarClick,
-    starred,
-    starredIndexes,
+    // handleStarClick,
+    // starred,
+    // starredIndexes,
     openTalentPool,
     setOpenTalentPool,
     handleActionTalentPool,
-    starredIndex,
+    // starredIndex,
     handleAddTalentPool,
     addTalentPoolValues,
     shortlistTemplateDialog,
@@ -125,6 +125,7 @@ const Applicants = (data) => {
                                 {hire?.candidate?.name}
                               </span>
                             </div>
+                            {/* Star next to applicant name — temporarily hidden
                             <motion.span
                               whileHover={{ scale: 1.5 }}
                               className={`absolute top-0 left-[-7px]`}
@@ -135,6 +136,7 @@ const Applicants = (data) => {
                             >
                               <TiStarFullOutline className="text-[18px]" />
                             </motion.span>
+                            */}
                           </Typography>
                         </td>
 

@@ -1,12 +1,12 @@
 import { Button, Option, Select, Typography } from "@material-tailwind/react";
-import React, { useEffect } from "react";
+import React from "react";
 import useHire from "../../ViewModel/HireViewModel/HireServices";
 import { FaEye } from "react-icons/fa";
 import { Outlet, useLocation } from "react-router";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { formatTimestamp } from "../Branches/utils";
 const Rejected = () => {
-  const { get_rejected_app_data, get_rejected_app, handleNavigateView } =
+  const { get_rejected_app_data, handleNavigateView } =
     useHire();
   // const { get_applicants_data } = useHire_2();
 
@@ -19,10 +19,6 @@ const Rejected = () => {
     "Rejection Reason",
     "Action",
   ];
-  useEffect(() => {
-    // Using a static app_id as requested
-    get_rejected_app("10824961");
-  }, []);
   const location = useLocation();
   const application_type = "rejected";
   return (

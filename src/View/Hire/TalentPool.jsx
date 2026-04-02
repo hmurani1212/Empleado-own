@@ -1,5 +1,5 @@
 import { Button, Option, Select, Typography } from "@material-tailwind/react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { getAllAge } from "../../services/__hireServices";
 import { FaEye } from "react-icons/fa";
 import { format } from "date-fns";
@@ -21,6 +21,59 @@ const TalentPool = () => {
     age_to: "",
     label_id: "",
   });
+
+  /** Placeholder UX (same as Vacancies Year/Month): outer label only; inner grey hint toggles with open/focus. */
+  const [labelIx, setLabelIx] = useState(false);
+  const [genderIx, setGenderIx] = useState(false);
+  const [ageFromIx, setAgeFromIx] = useState(false);
+  const [ageToIx, setAgeToIx] = useState(false);
+
+  const labelRef = useRef(null);
+  const genderRef = useRef(null);
+  const ageFromRef = useRef(null);
+  const ageToRef = useRef(null);
+
+  const hasLabelFilterValue =
+    filters.label_id !== undefined &&
+    filters.label_id !== null &&
+    String(filters.label_id).trim() !== "";
+  const hasGenderValue =
+    filters.gender !== undefined &&
+    filters.gender !== null &&
+    filters.gender !== "";
+  const hasAgeFromValue =
+    filters.age_from !== undefined &&
+    filters.age_from !== null &&
+    String(filters.age_from).trim() !== "";
+  const hasAgeToValue =
+    filters.age_to !== undefined &&
+    filters.age_to !== null &&
+    String(filters.age_to).trim() !== "";
+
+  const showLabelPh = !hasLabelFilterValue && !labelIx;
+  const showGenderPh = !hasGenderValue && !genderIx;
+  const showAgeFromPh = !hasAgeFromValue && !ageFromIx;
+  const showAgeToPh = !hasAgeToValue && !ageToIx;
+
+  const clickSelect = useCallback((ref, setIx) => {
+    const root = ref.current;
+    const menuWasOpen = root?.querySelector('ul[role="listbox"]') != null;
+    if (menuWasOpen) {
+      queueMicrotask(() => setIx(false));
+    } else {
+      setIx(true);
+    }
+  }, []);
+
+  const containerBlur = useCallback((setIx) => ({
+    onBlur: (e) => {
+      const next = e.relatedTarget;
+      if (next && e.currentTarget.contains(next)) return;
+      setIx(false);
+    },
+  }), []);
+
+  const genderSelectValue = hasGenderValue ? String(filters.gender) : "";
 
   useEffect(() => {
     // Initial load of talent pool data
@@ -81,13 +134,34 @@ const TalentPool = () => {
                 All Labels
               </label>
               <Select
-                label="Label Filter"
+                ref={labelRef}
+                labelProps={{ className: "hidden" }}
                 color="blue"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                value={filters.label_id || ""}
-                onChange={(val) => handleFilterChange("label_id", val)}
+                value={hasLabelFilterValue ? String(filters.label_id) : ""}
+                onChange={(val) => {
+                  handleFilterChange("label_id", val);
+                  setLabelIx(false);
+                }}
+                selected={(optionEl) => {
+                  if (hasLabelFilterValue) return optionEl;
+                  if (showLabelPh) {
+                    return (
+                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                        All Labels
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="text-[12px] font-Urbanist text-[#474747]">
+                      &nbsp;
+                    </span>
+                  );
+                }}
+                onClick={() => clickSelect(labelRef, setLabelIx)}
+                onFocus={() => setLabelIx(true)}
+                containerProps={containerBlur(setLabelIx)}
               >
-                {/* <Option value="">All Labels</Option> */}
                 <Option value="1">Label 1</Option>
                 <Option value="2">Label 2</Option>
                 <Option value="3">Label 3</Option>
@@ -99,13 +173,34 @@ const TalentPool = () => {
                 Gender Filter
               </label>
               <Select
-                label="Gender Filter"
+                ref={genderRef}
+                labelProps={{ className: "hidden" }}
                 color="blue"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                value={filters.gender || ""}
-                onChange={(val) => handleFilterChange("gender", val)}
+                value={genderSelectValue}
+                onChange={(val) => {
+                  handleFilterChange("gender", val);
+                  setGenderIx(false);
+                }}
+                selected={(optionEl) => {
+                  if (hasGenderValue) return optionEl;
+                  if (showGenderPh) {
+                    return (
+                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                        Gender Filter
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="text-[12px] font-Urbanist text-[#474747]">
+                      &nbsp;
+                    </span>
+                  );
+                }}
+                onClick={() => clickSelect(genderRef, setGenderIx)}
+                onFocus={() => setGenderIx(true)}
+                containerProps={containerBlur(setGenderIx)}
               >
-                {/* <Option value="">All Genders</Option> */}
                 <Option value="0">Female</Option>
                 <Option value="1">Male</Option>
               </Select>
@@ -116,17 +211,39 @@ const TalentPool = () => {
                 Age From
               </label>
               <Select
-                label="Age From"
-                // labelProps={{className: "hidden"}}
+                ref={ageFromRef}
+                labelProps={{ className: "hidden" }}
                 color="blue"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                value={filters?.age_from}
-                onChange={(val) => handleFilterChange("age_from", val)}
+                value={
+                  hasAgeFromValue ? String(filters.age_from) : ""
+                }
+                onChange={(val) => {
+                  handleFilterChange("age_from", val);
+                  setAgeFromIx(false);
+                }}
+                selected={(optionEl) => {
+                  if (hasAgeFromValue) return optionEl;
+                  if (showAgeFromPh) {
+                    return (
+                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                        Age From
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="text-[12px] font-Urbanist text-[#474747]">
+                      &nbsp;
+                    </span>
+                  );
+                }}
+                onClick={() => clickSelect(ageFromRef, setAgeFromIx)}
+                onFocus={() => setAgeFromIx(true)}
+                containerProps={containerBlur(setAgeFromIx)}
               >
-                {/* <Option>Any Age</Option> */}
-                {age.map((age, i) => (
-                  <Option key={i} value={age}>
-                    {age}
+                {age.map((a, i) => (
+                  <Option key={i} value={a}>
+                    {a}
                   </Option>
                 ))}
               </Select>
@@ -137,16 +254,37 @@ const TalentPool = () => {
                 Age To
               </label>
               <Select
+                ref={ageToRef}
+                labelProps={{ className: "hidden" }}
                 color="blue"
-                label="Age To"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                value={filters.age_to || ""}
-                onChange={(val) => handleFilterChange("age_to", val)}
+                value={hasAgeToValue ? String(filters.age_to) : ""}
+                onChange={(val) => {
+                  handleFilterChange("age_to", val);
+                  setAgeToIx(false);
+                }}
+                selected={(optionEl) => {
+                  if (hasAgeToValue) return optionEl;
+                  if (showAgeToPh) {
+                    return (
+                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                        Age To
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="text-[12px] font-Urbanist text-[#474747]">
+                      &nbsp;
+                    </span>
+                  );
+                }}
+                onClick={() => clickSelect(ageToRef, setAgeToIx)}
+                onFocus={() => setAgeToIx(true)}
+                containerProps={containerBlur(setAgeToIx)}
               >
-                {/* <Option value="">Any Age</Option> */}
-                {age.map((age, i) => (
-                  <Option key={i} value={age}>
-                    {age}
+                {age.map((a, i) => (
+                  <Option key={i} value={a}>
+                    {a}
                   </Option>
                 ))}
               </Select>
@@ -240,7 +378,7 @@ const TalentPool = () => {
                           >
                             {ele?.candidate?.cv_name ? (
                               <a
-                                href={ele.candidate.cv_name}
+                                href={`https://hiring.veevotech.com/candidate_cv/${ele.candidate.cv_folder}/${ele.candidate.cv_name}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >

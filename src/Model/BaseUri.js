@@ -43,3 +43,8 @@ export const EXPENSE_BASE_URL = 'https://emp.veevotech.com/empleado_app/expense'
 export const payroll = 'https://emp.veevotech.com/empleado_app/payroll'
 
 export const org_id = 10381947
+
+/** Public career app URL for vacancy share links: `{origin}/app/source_id={vacancyId}`. Set `VITE_VACANCY_PUBLIC_APP_ORIGIN` for other hosts. */
+export const VACANCY_PUBLIC_APP_ORIGIN =
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_VACANCY_PUBLIC_APP_ORIGIN) ||
+  "http://172.18.0.44:6181"

@@ -28,8 +28,6 @@ const AllApplicants = () => {
   const {
     get_vacanc_filter,
     get_vacanc_filter_data,
-    get_city,
-    get_city_data,
     get_allApplicants,
   } = useHire_2();
 
@@ -41,10 +39,25 @@ const AllApplicants = () => {
 
   const [filters, setFilters] = useState({
     gender: "",
-    city: "",
     vacancy_id: "",
     status: "4", // Default to pending status
   });
+
+  const genderLabelFromCode = (g) => {
+    if (g === "1" || g === 1) return "Male";
+    if (g === "0" || g === 0) return "Female";
+    if (g === "2" || g === 2) return "Other";
+    return "";
+  };
+
+  const rejectedRequestPayload = (f) => {
+    const payload = {};
+    const vid = f.vacancy_id || (vacancyId && vacancyId !== "0" ? vacancyId : "");
+    if (vid) payload.vacancy_id = vid;
+    if (f.gender !== undefined && f.gender !== null && f.gender !== "")
+      payload.gender = f.gender;
+    return payload;
+  };
 
   const handleFilterChange = (type, value) => {
     const newFilters = { ...filters };
@@ -53,9 +66,6 @@ const AllApplicants = () => {
       case "gender":
         newFilters.gender =
           value === "Male" ? "1" : value === "Female" ? "0" : "2";
-        break;
-      case "city":
-        newFilters.city = value;
         break;
       case "vacancy":
         newFilters.vacancy_id = value;
@@ -86,7 +96,7 @@ const AllApplicants = () => {
       currentStatus = "3";
       currentLocation = "Accepted";
     } else if (currentPath.includes("/rejected")) {
-      // Don't apply filters for rejected as it uses a different endpoint
+      get_rejected_app(rejectedRequestPayload(newFilters));
       return;
     } else {
       currentStatus = "4";
@@ -103,8 +113,7 @@ const AllApplicants = () => {
 
     // If clicking on Rejected (id = 6), use the rejected endpoint
     if (id === 6) {
-      // Using a static app_id as requested in the previous conversation
-      get_rejected_app("10824961");
+      get_rejected_app(rejectedRequestPayload(filters));
       return;
     }
 
@@ -144,17 +153,15 @@ const AllApplicants = () => {
   };
 
   useEffect(() => {
-    // Initial load of data
     get_vacanc_filter();
-    get_city();
 
     // Determine the correct status based on the current path
     let initialStatus = "4"; // Default to Applicants
     let initialLocation = "Applicants";
 
     if (location.pathname.includes("/rejected")) {
-      get_rejected_app("10824961");
-      return; // Exit early for rejected
+      get_rejected_app(rejectedRequestPayload(filters));
+      return;
     } else if (location.pathname.includes("/accepted")) {
       initialStatus = "3";
       initialLocation = "Accepted";
@@ -247,11 +254,17 @@ const AllApplicants = () => {
                   label="Filter by Jobs"
                   color="blue"
                   className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                  value={
+                    filters.vacancy_id !== undefined &&
+                    filters.vacancy_id !== null &&
+                    filters.vacancy_id !== ""
+                      ? String(filters.vacancy_id)
+                      : ""
+                  }
                   onChange={(value) => handleFilterChange("vacancy", value)}
-                  disabled={location.pathname.includes("/rejected")}
                 >
                   {get_vacanc_filter_data?.map((item, index) => (
-                    <Option value={item.id} key={index}>
+                    <Option value={String(item.id)} key={index}>
                       {item.title}
                     </Option>
                   ))}
@@ -263,28 +276,12 @@ const AllApplicants = () => {
                   label="Filter by Gender"
                   color="blue"
                   className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                  value={genderLabelFromCode(filters.gender)}
                   onChange={(value) => handleFilterChange("gender", value)}
-                  disabled={location.pathname.includes("/rejected")}
                 >
                   <Option value="Male">Male</Option>
                   <Option value="Female">Female</Option>
                   <Option value="Other">Other</Option>
-                </Select>
-              </div>
-
-              <div>
-                <Select
-                  label="Filter by City"
-                  color="blue"
-                  className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                  onChange={(value) => handleFilterChange("city", value)}
-                  disabled={location.pathname.includes("/rejected")}
-                >
-                  {get_city_data?.map((item, index) => (
-                    <Option value={item.id} key={index}>
-                      {item.city_name}
-                    </Option>
-                  ))}
                 </Select>
               </div>
             </div>

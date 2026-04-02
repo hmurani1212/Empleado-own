@@ -74,10 +74,12 @@ const hireApi = {
     },
 
 
-    get_rejected_app: function (app_id) {
+    /** Query params e.g. { vacancy_id, gender } — backend filters rejected applications */
+    get_rejected_app: function (params = {}) {
         return axiosInstanceHire.request({
             method: 'GET',
             url: `/api/v1/applications//rejected/get_rejected_app`,
+            params,
         })
     },
 
