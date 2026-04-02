@@ -21,6 +21,8 @@ const notesPoolViewModel = (set, get) => ({
     starredNotesCopy:[],
     noteBookID:null,
     notesPoolMount:false,
+    /** True while fetching notes for the opened notebook (avoids showing previous notebook's notes). */
+    notebookNotesLoading: false,
     notes:null,
     notesCopy:[],
     noteBookTitle:'',
@@ -83,42 +85,73 @@ const notesPoolViewModel = (set, get) => ({
             set({sharednotebookCount: 0})
         }
     },
-    gettingNotes:async(data)=>{
-        const apiData = {
-            id: data.id || data._id
-        }
+    gettingNotes: async (data) => {
+        const id = data.id || data._id
+        set({
+            notebookNotesLoading: true,
+            notes: [],
+            notesCopy: [],
+            noteBookTitle: data.notebook_title || data.notebook_name || '',
+            noteBookID: id,
+        })
         try {
-            const response = await notesPoolApi.getNotes(apiData)
+            const response = await notesPoolApi.getNotes({ id })
             const responseData = response.data
-
-            if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
-                set({notes : responseData.DB_DATA.notes})
-                set({notesCopy : responseData.DB_DATA.notes})
-                set({noteBookTitle : responseData.notebook_name})
-                set({noteBookID: data.id || data._id})
-            
+            if (get().noteBookID !== id) return
+            if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+                const list = responseData.DB_DATA?.notes ?? []
+                set({
+                    notes: list,
+                    notesCopy: list,
+                    noteBookTitle: responseData.notebook_name,
+                    notebookNotesLoading: false,
+                })
+            } else {
+                set({ notes: [], notesCopy: [], notebookNotesLoading: false })
             }
-        } catch(err){
+        } catch (err) {
             console.log(err)
+            if (get().noteBookID === id) {
+                set({ notes: [], notesCopy: [], notebookNotesLoading: false })
+            }
         }
     },
-    gettingShareNotes:async(data)=>{
-        const apiData = {
-            id: data.id || data._id
-        }
+    gettingShareNotes: async (data) => {
+        const id = data.id || data._id
+        set({
+            notebookNotesLoading: true,
+            mySharednotebookNotes: [],
+            mySharednotebookNotesCopy: [],
+            noteBookTitle: data.notebook_name || data.notebook_title || '',
+            noteBookID: id,
+        })
         try {
-            const response = await notesPoolApi.getShareNotes(apiData)
+            const response = await notesPoolApi.getShareNotes({ id })
             const responseData = response.data
-
-            if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
-                set({mySharednotebookNotes : responseData.DB_DATA.notes})
-                set({mySharednotebookNotesCopy : responseData.DB_DATA})
-                set({noteBookTitle : responseData.notebook_name})
-                set({noteBookID: data.id || data._id})
-            
+            if (get().noteBookID !== id) return
+            if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+                set({
+                    mySharednotebookNotes: responseData.DB_DATA.notes,
+                    mySharednotebookNotesCopy: responseData.DB_DATA,
+                    noteBookTitle: responseData.notebook_name,
+                    notebookNotesLoading: false,
+                })
+            } else {
+                set({
+                    mySharednotebookNotes: [],
+                    mySharednotebookNotesCopy: [],
+                    notebookNotesLoading: false,
+                })
             }
-        } catch(err){
+        } catch (err) {
             console.log(err)
+            if (get().noteBookID === id) {
+                set({
+                    mySharednotebookNotes: [],
+                    mySharednotebookNotesCopy: [],
+                    notebookNotesLoading: false,
+                })
+            }
         }
     },
 
@@ -334,17 +367,23 @@ const notesPoolViewModel = (set, get) => ({
             }
         }
     },
-    serachingNoteBook:(data)=>{
-        const name = (data?.name || "").trim().toLowerCase()
-        if(name === ""){
+    serachingNoteBook: async (data) => {
+        const name = (data?.name || "").trim()
+        if (name === "") {
             set({ notebooks: get().notebooksCopy })
-        }else{
-            const source = Array.isArray(get().notebooksCopy) ? get().notebooksCopy : []
-            const filtered = source.filter((ele) => {
-                const title = (ele?.notebook_title || ele?.notebook_name || "").toLowerCase()
-                return title.includes(name)
-            })
-            set({ notebooks: filtered })
+            return
+        }
+        try {
+            const response = await notesPoolApi.getNotebooks({ name })
+            const responseData = response.data
+            if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+                set({ notebooks: responseData.DB_DATA })
+            } else {
+                set({ notebooks: [] })
+            }
+        } catch (err) {
+            console.log(err)
+            set({ notebooks: [] })
         }
     },
     serachingMySharedNoteBook:(data)=>{

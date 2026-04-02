@@ -12,7 +12,6 @@ import {
     Checkbox,
 } from "@material-tailwind/react";
 import { gettingEmployeeFrequentSalaryDetails } from "../../services/__frequentApiServices"
-import usePayroll from "../PayrollViewModel/PayrollServices"
 import payrollApi from "../../Model/Data/Payroll/Payroll"
 import { showToast } from "../../Components/Toaster/Toaster"
 // import { showToast } from "../../Components/Toaster/Toaster";
@@ -25,7 +24,6 @@ import employeesApi from "../../Model/Data/Employees/Employees"
 const useEmployeeActionService = () => {
 
     const { gettingAtData } = useIndividualAttendanceServices()
-    const { handleIncrementDrawer } = usePayroll()
     const authRole = useStore((state) => state.authRole);
 
     const { deactive_employeefn, Active_employeefn, getEmployeesWithFilters, currentEmployeeStatus } = useEmployees();
@@ -41,11 +39,13 @@ const useEmployeeActionService = () => {
         data: {},
         show: false,
         showDialog: false,
+        sourceEmpId: '',
         id: '',
         reason: '',
         loading: false,
 
     })
+    const [employeeIncrementLoading, setEmployeeIncrementLoading] = useState(false)
 
     const handleOnChangeCancelInc = (e) => {
         const { name, value } = e.target
@@ -829,6 +829,7 @@ const useEmployeeActionService = () => {
     async function gettingSalaryDetails(empData) {
 
         const apiData = empData.data
+        const sourceEmpId = apiData?.id ?? apiData?.emp_id ?? apiData?.employee_id ?? ''
 
         const response = await gettingEmployeeFrequentSalaryDetails(apiData)
         const responseData = response.data
@@ -836,21 +837,194 @@ const useEmployeeActionService = () => {
             setSalaryDetailsValue((prevState) => ({
                 ...prevState,
                 data: responseData.DB_DATA,
+                sourceEmpId,
                 show: true
             }))
         }
     }
 
-    // Function to open salary increment drawer using existing payroll component
+    const EmployeeIncrementDrawerContent = ({ employeeData }) => {
+        const salaryHistoryData = employeeData?.data ?? {}
+        const salaryFromHistory = salaryHistoryData?.salary ?? {}
+        const summaryFromHistory = salaryHistoryData?.summary ?? {}
+        const resolveEmployeeId =
+            employeeData?.emp_id ??
+            employeeData?.id ??
+            employeeData?.employee_id ??
+            employeeData?.data?.employee_info?.emp_id ??
+            employeeData?.data?.employee_info?.id ??
+            employeeData?.data?.employee_info?.employee_id ??
+            employeeData?.data?.emp_id ??
+            employeeData?.data?.id ??
+            salaryDetailsValue?.sourceEmpId
+        const resolvedCurrentSalaryRaw =
+            employeeData?.current_salary ??
+            salaryHistoryData?.current_salary ??
+            summaryFromHistory?.net_salary ??
+            salaryFromHistory?.current_salary ??
+            employeeData?.starting_salary ??
+            salaryHistoryData?.starting_salary ??
+            salaryFromHistory?.basic_salary ??
+            summaryFromHistory?.basic_salary ??
+            employeeData?.basic_salary ??
+            employeeData?.salary_amount ??
+            employeeData?.temp_salary ??
+            0
+        const resolvedCurrentSalary = Number(
+            String(resolvedCurrentSalaryRaw).replace(/,/g, '')
+        ) || 0
+        const [incrementForm, setIncrementForm] = useState({
+            salary_inc_type: 'value',
+            inc_amount: '',
+            effective_from: '',
+            increment_detail: '',
+            hr_comments: ''
+        })
+
+        const incrementAmountValue = Number(incrementForm.inc_amount) || 0
+        const expectedSalary = incrementForm.salary_inc_type === 'percent'
+            ? resolvedCurrentSalary + ((resolvedCurrentSalary * incrementAmountValue) / 100)
+            : resolvedCurrentSalary + incrementAmountValue
+
+        const handleIncrementFormChange = (event) => {
+            const { name, value } = event.target
+            setIncrementForm((prevState) => ({
+                ...prevState,
+                [name]: value
+            }))
+        }
+
+        const handleSubmitEmployeeIncrement = async (e) => {
+            e.preventDefault()
+            if (!resolveEmployeeId) {
+                showToast('Employee ID not found', 'error')
+                return
+            }
+            if (!incrementForm.inc_amount || Number(incrementForm.inc_amount) <= 0) {
+                showToast('Please enter a valid increment amount', 'error')
+                return
+            }
+            if (!incrementForm.effective_from) {
+                showToast('Please select effective date', 'error')
+                return
+            }
+            if (!incrementForm.increment_detail.trim()) {
+                showToast('Increment detail is required', 'error')
+                return
+            }
+
+            const payload = {
+                emp_id: Number(resolveEmployeeId),
+                salary_inc_type: incrementForm.salary_inc_type,
+                effective_from: incrementForm.effective_from,
+                increment_detail: incrementForm.increment_detail.trim(),
+                hr_comments: incrementForm.hr_comments?.trim() || '',
+                expected_salary: Number(expectedSalary.toFixed(2)),
+                inc_amount: Number(incrementForm.inc_amount)
+            }
+
+            try {
+                setEmployeeIncrementLoading(true)
+                const response = await payrollApi.incrementEmpSalary(payload)
+                const responseData = response?.data
+                if (response.status === 200 && responseData?.STATUS === 'SUCCESSFUL') {
+                    showToast(responseData?.MESSAGE || 'Salary increment applied successfully', 'success')
+                    closeDrawer()
+                } else {
+                    showToast(responseData?.ERROR_DESCRIPTION || 'Failed to apply salary increment', 'error')
+                }
+            } catch (error) {
+                const apiError = error?.response?.data?.ERROR_DESCRIPTION || error?.response?.data?.message
+                showToast(apiError || 'Failed to apply salary increment', 'error')
+            } finally {
+                setEmployeeIncrementLoading(false)
+            }
+        }
+
+        return (
+            <form onSubmit={handleSubmitEmployeeIncrement} className='flex flex-col gap-4 px-2 pt-2'>
+                <div>
+                    <span className='text-[12px] text-gray-700'>
+                        Current Salary: {Number(resolvedCurrentSalary).toLocaleString()}
+                    </span>
+                </div>
+                <div>
+                    <span className='text-[12px]'>Increment Type</span>
+                    <div className='flex text-[14px]'>
+                        <Radio
+                            name='salary_inc_type'
+                            label='% percent'
+                            color='blue'
+                            value='percent'
+                            checked={incrementForm.salary_inc_type === 'percent'}
+                            onChange={handleIncrementFormChange}
+                        />
+                        <Radio
+                            name='salary_inc_type'
+                            label='Amount'
+                            color='blue'
+                            value='value'
+                            checked={incrementForm.salary_inc_type === 'value'}
+                            onChange={handleIncrementFormChange}
+                        />
+                    </div>
+                </div>
+                <Input
+                    label={incrementForm.salary_inc_type === 'percent' ? 'Percentage' : 'Amount'}
+                    type='number'
+                    color='blue'
+                    name='inc_amount'
+                    value={incrementForm.inc_amount}
+                    onChange={handleIncrementFormChange}
+                />
+                <Input
+                    label='Effective From'
+                    type='date'
+                    color='blue'
+                    name='effective_from'
+                    value={incrementForm.effective_from}
+                    onChange={handleIncrementFormChange}
+                />
+                <Textarea
+                    label='Increment Detail'
+                    color='blue'
+                    name='increment_detail'
+                    value={incrementForm.increment_detail}
+                    onChange={handleIncrementFormChange}
+                />
+                <Textarea
+                    label='HR Comments'
+                    color='blue'
+                    name='hr_comments'
+                    value={incrementForm.hr_comments}
+                    onChange={handleIncrementFormChange}
+                />
+                <div>
+                    <span className='text-[12px] text-gray-700'>
+                        Expected Salary: {Number(expectedSalary).toLocaleString()}
+                    </span>
+                </div>
+                <div>
+                    <Button type='submit' color='blue' disabled={employeeIncrementLoading}>
+                        {employeeIncrementLoading ? 'Submitting...' : 'Increment Salary'}
+                    </Button>
+                </div>
+            </form>
+        )
+    }
+
+    // Function to open salary increment drawer using employee increment endpoint
     const handleSalaryIncrement = (empData) => {
         // Close the current salary details modal
         setSalaryDetailsValue((prevState) => ({
             ...prevState,
             show: false
         }))
-        
-        // Use the existing payroll increment drawer
-        handleIncrementDrawer(empData)
+
+        openDrawer()
+        settingDrawerTitle('Salary Increment')
+        settingDrawerSize('45vw')
+        settingComponent(<EmployeeIncrementDrawerContent employeeData={{ ...empData, sourceEmpId: salaryDetailsValue?.sourceEmpId }} />)
     }
 
     const handleSubmitCancelInc = async (e) => {

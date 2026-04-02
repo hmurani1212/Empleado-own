@@ -2,10 +2,16 @@ import axiosInstance from "../../base"
 import { NotesPoolinstancemodeule, NotesPoolFileInstance } from "../../base"
 
 const notesPoolApi = {
-    getNotebooks: function (){
+    /** @param {{ name?: string }} [params] - optional `name` for server-side search */
+    getNotebooks: function (params = {}){
+        const query = {}
+        if (params.name != null && String(params.name).trim() !== '') {
+            query.name = String(params.name).trim()
+        }
         return NotesPoolinstancemodeule.request({
             method: 'GET',
-            url: `/api/v1/notebooks/get/notebook`
+            url: `/api/v1/notebooks/get/notebook`,
+            params: Object.keys(query).length ? query : undefined
         })
     },
 

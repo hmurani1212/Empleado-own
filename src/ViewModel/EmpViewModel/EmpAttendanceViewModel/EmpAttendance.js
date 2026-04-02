@@ -125,7 +125,8 @@ const empAttendanceViewModel = (set, get) =>({
                         department: dbData.employee_data?.department?.name || '',
                         designation: dbData.employee_data?.designationObj?.title || '',
                         // phone: dbData.employee_data?.contacts?.[0].contact,
-                        working_from: dbData.employee_data?.join_date ? new Date(dbData.employee_data.join_date * 1000).toLocaleDateString() : ''
+                        working_from: dbData.employee_data?.join_date ? new Date(dbData.employee_data.join_date * 1000).toLocaleDateString() : '',
+                        mobile_attendance: dbData.employee_data?.mobile_attendance
                     },
                     attendance_detail: {
                         total: dbData.attendance_data?.DB_DATA?.total || 0, // Convert to seconds

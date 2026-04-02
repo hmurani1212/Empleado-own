@@ -104,7 +104,8 @@ const Notesbook = () => {
                 <input
                 className="w-full h-full bg-transparent text-gray-700 border-none outline-none text-sm font-medium px-4 rounded-xl placeholder:text-gray-400"
                 placeholder="Search Notebooks..." 
-                name='searchBranch' 
+                name="name"
+                value={noteBookSearchValue.name}
                 onChange={handleChangeNoteBookSearch} 
                 />
             </div>
@@ -260,6 +261,8 @@ const Notesbook = () => {
           footer={false}
           outsidePress={false}
           size="lg"
+          // Keep scroll so submit button stays reachable; allow select menu to overflow horizontally
+          bodyClassName="!overflow-x-visible !pb-12"
           compo={
             <ShareNoteBook
               handleChangeShareNotebook={handleChangeShareNotebook}

@@ -6,6 +6,7 @@ import { showToast } from '../../Components/Toaster/Toaster';
 import CustomSelect from '../../Components/CustomSelect/CustomSelect';
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices';
 import { officialInfoTage } from '../../services/EmpServices';
+import { getUserData } from '../../Authentication/jwt_decode';
 
 const EmployeeOfficialInfo = ({
     employeeData,
@@ -40,12 +41,17 @@ const EmployeeOfficialInfo = ({
         eobi: '0',
         eobi_number: '',
         provident_fund: '0',
+        provident_fund_initial_amount: '',
         social_security: '0',
         social_sec_number: '',
         insurance: '0',
         health_benefits: '0',
         job_description: ''
     });
+
+    useEffect(() => {
+        console.log("officialInfoForm",officialInfoForm);
+    })
 
     const [tagsList] = useState([...officialInfoTage]);
 
@@ -131,6 +137,12 @@ const EmployeeOfficialInfo = ({
                 eobi: officialInfo.eobi || '0',
                 eobi_number: officialInfo.eobi_number || '',
                 provident_fund: officialInfo.provident_fund || '0',
+                provident_fund_initial_amount:
+                    officialInfo.provident_fund_initial_amount.emp_contribution ||
+                    officialInfo.prident_fund_amount ||
+                    officialInfo.provident_fund_amount ||
+                    employeeData?.prident_fund_amount ||
+                    '',
                 social_security: officialInfo.social_security || '0',
                 social_sec_number: officialInfo.social_sec_number || '',
                 insurance: officialInfo.insurance || '0',
@@ -224,6 +236,9 @@ const EmployeeOfficialInfo = ({
             if (field === 'tag' && value !== 'other') {
                 next.tag_other = '';
             }
+            if (field === 'provident_fund' && value !== '1') {
+                next.provident_fund_initial_amount = '';
+            }
             return next;
         });
 
@@ -286,6 +301,7 @@ const EmployeeOfficialInfo = ({
 
             const apiData = {
                 id: employeeData?.Official_Info?.id,
+                org_id: getUserData()?.org_id || 0,
                 emp_id: officialInfoForm.emp_id,
                 employment_status: getValue(officialInfoForm.employment_status),
                 emp_branch: getValue(officialInfoForm.branch),
@@ -297,6 +313,15 @@ const EmployeeOfficialInfo = ({
                 eobi: officialInfoForm.eobi,
                 eobi_number: officialInfoForm.eobi === '1' ? officialInfoForm.eobi_number : '',
                 provident_fund: officialInfoForm.provident_fund,
+                provident_fund_initial_amount: officialInfoForm.provident_fund === '1'
+                    ? officialInfoForm.provident_fund_initial_amount
+                    : '',
+                provident_fund_amount: officialInfoForm.provident_fund === '1'
+                    ? officialInfoForm.provident_fund_initial_amount
+                    : '',
+                prident_fund_amount: officialInfoForm.provident_fund === '1'
+                    ? officialInfoForm.provident_fund_initial_amount
+                    : '',
                 social_security: officialInfoForm.social_security,
                 social_sec_number: officialInfoForm.social_security === '1' ? officialInfoForm.social_sec_number : '',
                 insurance: officialInfoForm.insurance,
@@ -473,28 +498,41 @@ const EmployeeOfficialInfo = ({
                         </div>
 
                         {/* Provident Fund */}
-                        <div className="flex items-center gap-4">
-                            <Typography variant="small" className="font-medium text-gray-700">
-                                Provident Fund
-                            </Typography>
-                            <div className="flex gap-2">
-                                <Button
-                                    size="sm"
-                                    variant={officialInfoForm.provident_fund === '1' ? 'filled' : 'outlined'}
-                                    color={officialInfoForm.provident_fund === '1' ? 'green' : 'gray'}
-                                    onClick={() => handleFormChange('provident_fund', '1')}
-                                >
-                                    Available
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant={officialInfoForm.provident_fund === '0' ? 'filled' : 'outlined'}
-                                    color={officialInfoForm.provident_fund === '0' ? 'red' : 'gray'}
-                                    onClick={() => handleFormChange('provident_fund', '0')}
-                                >
-                                    Not Available
-                                </Button>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-4">
+                                <Typography variant="small" className="font-medium text-gray-700">
+                                    Provident Fund
+                                </Typography>
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant={officialInfoForm.provident_fund === '1' ? 'filled' : 'outlined'}
+                                        color={officialInfoForm.provident_fund === '1' ? 'green' : 'gray'}
+                                        onClick={() => handleFormChange('provident_fund', '1')}
+                                    >
+                                        Available
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant={officialInfoForm.provident_fund === '0' ? 'filled' : 'outlined'}
+                                        color={officialInfoForm.provident_fund === '0' ? 'red' : 'gray'}
+                                        onClick={() => handleFormChange('provident_fund', '0')}
+                                    >
+                                        Not Available
+                                    </Button>
+                                </div>
                             </div>
+                            {officialInfoForm.provident_fund === '1' && (
+                                <Input
+                                    className="!h-11 !rounded-6"
+                                    color="blue"
+                                    label="Provident Fund Initial Amount"
+                                    type="number"
+                                    min="0"
+                                    value={officialInfoForm.provident_fund_initial_amount}
+                                    onChange={(e) => handleFormChange('provident_fund_initial_amount', e.target.value)}
+                                />
+                            )}
                         </div>
 
                         {/* Social Security */}

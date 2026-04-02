@@ -142,8 +142,9 @@ export const gettingBranchesFrequentHit = async()=>{
 
 
 export const gettingEmployeeFrequentSalaryDetails = async(data)=>{
+    const resolvedEmpId = data?.id ?? data?.emp_id ?? data?.employee_id
     const apiData = {
-        emp_id:data.id
+        emp_id: resolvedEmpId
     }
     try{
         const response = await payrollApi.empSalaryDetaisl(apiData);

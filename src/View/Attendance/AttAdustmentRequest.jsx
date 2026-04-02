@@ -80,7 +80,7 @@ const AttAdustmentRequest = () => {
     }
 
     searchDebounceRef.current = setTimeout(() => {
-      setDebouncedSearchTerm(value.trim().toLowerCase());
+      setDebouncedSearchTerm(value.trim());
       searchDebounceRef.current = null;
     }, DEBOUNCE_DELAY_MS);
   };
@@ -94,14 +94,10 @@ const AttAdustmentRequest = () => {
     };
   }, []);
 
-  // Filter requestData by name and emp_id (one_id)
-  const filteredRequestData = debouncedSearchTerm
-    ? requestData.filter((ele) => {
-        const empId = String(ele.one_id || ele.emp_id || "").toLowerCase();
-        const name = String(ele.name || "").toLowerCase();
-        return empId.includes(debouncedSearchTerm) || name.includes(debouncedSearchTerm);
-      })
-    : requestData;
+  // Server-side search: refetch page 1 with `name` query param after debounce (see gettingRequestAdj in store)
+  useEffect(() => {
+    gettingRequestAdj(false, 1, { name: debouncedSearchTerm });
+  }, [debouncedSearchTerm]);
 
   // Pagination helpers
   const getPaginationData = () => {
@@ -156,11 +152,6 @@ const AttAdustmentRequest = () => {
       }
     }
   };
-
-  // Fetch all employees on component mount
-  useEffect(() => {
-    gettingRequestAdj();
-  }, []);
 
   // Fetch employees when form opens (for admin side)
   useEffect(() => {
@@ -253,8 +244,8 @@ const AttAdustmentRequest = () => {
 
                 <tbody className="divide-y divide-gray-100">
                   <AnimatePresence>
-                  {filteredRequestData.length > 0 ? (
-                    filteredRequestData.map((ele, index) => {
+                  {requestData.length > 0 ? (
+                    requestData.map((ele, index) => {
                       return (
                         <motion.tr 
                           key={ele._id || index}

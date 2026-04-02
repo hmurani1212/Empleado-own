@@ -172,6 +172,15 @@ const usePayroll = () => {
   };
 
     const handleIncrementDrawer = (ele) => {
+      // Support opening increment drawer from multiple flows (template list, employee salary details)
+      const resolvedTemplateId =
+        ele?.salary_template_id ??
+        ele?.template_id ??
+        ele?.data?.salary_template_id ??
+        ''
+      if (resolvedTemplateId) {
+        settingSalaryTemp(resolvedTemplateId)
+      }
       openDrawer()
       settingDrawerTitle('Salary Increment')
       settingDrawerSize('45vw')
@@ -196,11 +205,13 @@ const usePayroll = () => {
     console.log(salary_id)
     e.preventDefault()
     const incData = {
-      salary_template_id : salary_id,
       increment_detail : incNewValues.increment_detail,
       effective_from : incNewValues.effective_from,
       salary_inc_type : incNewValues.salary_inc_type,
       inc_amount : incNewValues.inc_amount,
+    }
+    if (salary_id) {
+      incData.salary_template_id = salary_id
     }
     console.log(incData)
 

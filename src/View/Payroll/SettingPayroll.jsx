@@ -7,11 +7,11 @@ import { showToast } from "../../Components/Toaster/Toaster";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { getContentByLabel } from "../../services/getContentService";
 import { SettingsSkeleton } from "./PayrollSkeletons";
-import { getUserData } from "../../Authentication/jwt_decode";
+import { getOrganizationData, getUserData } from "../../Authentication/jwt_decode";
 import payrollApi from "../../Model/Data/Payroll/Payroll";
 
 const SettingPayroll = () => {
-  const [activeSection, setActiveSection] = useState("tax_exemptions");
+  const [activeSection, setActiveSection] = useState("social_security");
   const [formData, setFormData] = useState({
     branch: null,
     employeeSalaryPercentage: "",
@@ -136,9 +136,23 @@ const SettingPayroll = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchOrgSettingsAndFillForm = useCallback(async (branchId, sectionType) => {
+  const resolveOrgId = useCallback(() => {
     const userData = getUserData();
-    const org_id = userData?.org_id ?? 0;
+    const orgData = getOrganizationData();
+    const localOrgIdRaw = localStorage.getItem("org_id");
+    const localOrgId = Number(localOrgIdRaw);
+
+    const resolved =
+      Number(userData?.org_id) ||
+      Number(orgData?._id) ||
+      Number(orgData?.id) ||
+      (Number.isFinite(localOrgId) ? localOrgId : 0);
+
+    return Number.isFinite(resolved) ? resolved : 0;
+  }, []);
+
+  const fetchOrgSettingsAndFillForm = useCallback(async (branchId, sectionType) => {
+    const org_id = resolveOrgId();
     if (!org_id) return;
     setSettingsLoading(true);
     setOrgSettingId(null);
@@ -199,7 +213,9 @@ const SettingPayroll = () => {
     } finally {
       setSettingsLoading(false);
     }
-  }, [getOrgSettings]);
+  }, [getOrgSettings, resolveOrgId]);
+
+  const ORG_SETTINGS_SECTIONS = ["social_security", "medical_allowance", "eobi", "provident_fund"];
 
   // Fetch data when navigating to specific sections
   useEffect(() => {
@@ -207,26 +223,34 @@ const SettingPayroll = () => {
       getIncomeTaxSlabs();
     } else if (activeSection === "tax_exemptions") {
       getTaxExemptions();
-    } else if (["social_security", "medical_allowance", "eobi", "provident_fund"].includes(activeSection)) {
+    } else if (ORG_SETTINGS_SECTIONS.includes(activeSection)) {
       setOrgSettingId(null);
-      if (formData.branch?.value !== undefined && formData.branch?.value !== null) {
-        fetchOrgSettingsAndFillForm(formData.branch.value, activeSection);
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection]);
+
+  // Centralized org-settings fetch:
+  // Trigger whenever user changes branch (including All Branches=0) or switches between payroll settings sections.
+  useEffect(() => {
+    if (!ORG_SETTINGS_SECTIONS.includes(activeSection)) return;
+
+    const branchValue = formData.branch?.value;
+    if (branchValue === undefined || branchValue === null || branchValue === "") return;
+
+    fetchOrgSettingsAndFillForm(branchValue, activeSection);
+  }, [activeSection, formData.branch, fetchOrgSettingsAndFillForm]);
 
   if (!branchesLoaded) {
     return <SettingsSkeleton />;
   }
 
   const navigationItems = [
-    { id: "social_security", label: "Social Security", active: false },
+    { id: "social_security", label: "Social Security", active: true },
     { id: "medical_allowance", label: "Medical Allowance", active: false },
     { id: "eobi", label: "EOBI", active: false },
     { id: "provident_fund", label: "Provident Fund", active: false },
     { id: "income_tax_slabs", label: "Income Tax Slabs", active: false },
-    { id: "tax_exemptions", label: "Tax Exemptions", active: true },
+    { id: "tax_exemptions", label: "Tax Exemptions", active: false },
   ];
 
   // Prepare branch options - Add "All Branches" option with value 0
@@ -246,10 +270,7 @@ const SettingPayroll = () => {
       [field]: value,
     }));
     if (field === "branch" && value?.value !== undefined && value?.value !== null) {
-      const section = activeSection;
-      if (["social_security", "medical_allowance", "eobi", "provident_fund"].includes(section)) {
-        fetchOrgSettingsAndFillForm(value.value, section);
-      } else {
+      if (!ORG_SETTINGS_SECTIONS.includes(activeSection)) {
         setOrgSettingId(null);
       }
     }
@@ -1520,111 +1541,92 @@ const SettingPayroll = () => {
   };
 
   return (
-    <div className="flex flex-wrap bg-white relative rounded-[10px] mx-2 drop-shadow-md">
-      {/* Left Column - Navigation Sidebar */}
-      <div className="w-full lg:w-80 md:w-80 bg-[#F8F9FA] p-6 overflow-y-auto">
-        <div className="relative">
-          {navigationItems.map((item, index) => {
-            const isActive = activeSection === item.id;
-            const isLast = index === navigationItems.length - 1;
+    <div className="mx-2 rounded-2xl border border-[#EAEFF5] bg-white shadow-sm overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] min-h-[640px]">
+        {/* Left Column - Navigation Sidebar */}
+        <div className="bg-[#F8FAFD] border-r border-[#EAEFF5] p-5">
+          <div className="mb-5 rounded-xl bg-gradient-to-r from-[#3DA5F4] to-[#2486D6] p-4">
+            <h2 className="text-white font-Urbanist font-semibold text-[15px]">Payroll Settings</h2>
+            <p className="text-white/85 font-Urbanist text-[12px] mt-1">
+              Configure statutory deductions and payroll defaults
+            </p>
+          </div>
 
-            return (
-              <div
-                key={item.id}
-                className={`relative flex items-center gap-4 px-4 py-3 ${
-                  isActive ? "bg-bgBlue rounded-[10px]" : ""
-                }`}
-              >
-                {/* Timeline column */}
-                <div className="relative flex flex-col items-center">
-                  {/* Top line (connects previous circle) */}
-                  {index !== 0 && (
-                    <div className="absolute -top-6 w-[2px] h-6 bg-bgBlue" />
-                  )}
-
-                  {/* Circle */}
-                  <div
-                    className={`z-10 flex items-center justify-center w-4 h-4 rounded-full border-2 ${
-                      isActive
-                        ? "bg-bgBlue border-white"
-                        : "bg-white border-bgBlue"
-                    }`}
-                  >
-                    <div
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        isActive ? "bg-white" : "bg-bgBlue"
-                      }`}
-                    />
-                  </div>
-
-                  {/* Bottom line (connects next circle) */}
-                  {!isLast && (
-                    <div className="absolute top-4 w-[2px] h-6 bg-bgBlue" />
-                  )}
-                </div>
-
-                {/* Label */}
+          <div className="space-y-2">
+            {navigationItems.map((item) => {
+              const isActive = activeSection === item.id;
+              return (
                 <button
+                  key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`text-[14px] font-Urbanist font-medium transition-colors ${
-                    isActive ? "text-white" : "text-[#474747]"
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left cursor-pointer ${
+                    isActive
+                      ? "bg-bgBlue text-white shadow-sm"
+                      : "bg-white text-[#4A5565] border border-[#E6EDF5] hover:bg-[#EEF5FD] hover:border-[#C7D9EE]"
                   }`}
                 >
-                  {item.label}
+                  <span className="font-Urbanist text-[13px] font-medium">{item.label}</span>
+                  <span
+                    className={`w-2 h-2 rounded-full ${isActive ? "bg-white" : "bg-[#7EA6C7]"}`}
+                  />
                 </button>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Right Column - Content Area */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1 overflow-y-auto px-8 py-2">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-[16px] font-Urbanist font-medium text-bgBlue">
+        {/* Right Column - Content Area */}
+        <div className="flex flex-col bg-[#FCFDFE]">
+          <div className="px-6 py-5 border-b border-[#EAEFF5] bg-white">
+            <h1 className="text-[18px] font-Urbanist font-semibold text-[#1E3A56]">
               {navigationItems.find((item) => item.id === activeSection)?.label}
             </h1>
-            <div className="w-full h-[1px] bg-[#F2F2F9]"></div>
+            <p className="text-[12px] text-[#7A8A9B] font-Urbanist mt-1">
+              Adjust settings and save changes for selected branch scope.
+            </p>
           </div>
 
-          {/* Form Content */}
-          <div className="max-w-2xl mx-auto mb-8 relative">
-            {settingsLoading && (activeSection === "social_security" || activeSection === "medical_allowance" || activeSection === "eobi" || activeSection === "provident_fund") && (
-              <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-lg">
-                <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Form Content */}
+            <div className="max-w-3xl mx-auto mb-8 relative rounded-2xl border border-[#EAEFF5] bg-white p-6 shadow-sm">
+              {settingsLoading &&
+                (activeSection === "social_security" ||
+                  activeSection === "medical_allowance" ||
+                  activeSection === "eobi" ||
+                  activeSection === "provident_fund") && (
+                  <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-2xl">
+                    <div className="w-8 h-8 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              {renderFormContent()}
+            </div>
+
+            {/* Action Buttons - Only for form sections */}
+            {(activeSection === "social_security" ||
+              activeSection === "medical_allowance" ||
+              activeSection === "eobi" ||
+              activeSection === "provident_fund") && (
+              <div className="max-w-3xl mx-auto flex justify-end gap-3">
+                <Button
+                  variant="filled"
+                  onClick={handleSave}
+                  className="px-6 py-2.5 bg-bgBlue text-white capitalize font-semibold text-[12px] font-Urbanist rounded-[10px] hover:bg-blue-600 shadow-sm cursor-pointer transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save Settings"}
+                </Button>
+                <Button
+                  color="red"
+                  variant="filled"
+                  onClick={handleReset}
+                  className="px-6 py-2.5 bg-red-500 text-white capitalize font-semibold text-[12px] font-Urbanist rounded-[10px] hover:bg-red-600 shadow-sm cursor-pointer transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={isSaving}
+                >
+                  Reset
+                </Button>
               </div>
             )}
-            {renderFormContent()}
           </div>
-
-          {/* Action Buttons - Only for form sections */}
-          {(activeSection === "social_security" ||
-            activeSection === "medical_allowance" ||
-            activeSection === "eobi" ||
-            activeSection === "provident_fund") && (
-            <div className="flex justify-center gap-4 mt-8">
-              <Button
-                // color='blue'
-                variant="filled"
-                onClick={handleSave}
-                className="px-8 py-2 bg-bgBlue text-white capitalize font-medium text-[12px] font-Urbanist py-2 px-4 rounded-[7px] hover:bg-blue-600 cursor-pointer"
-                disabled={isSaving}
-              >
-                {isSaving ? "Saving..." : "Save Settings"}
-              </Button>
-              <Button
-                color="red"
-                variant="filled"
-                onClick={handleReset}
-                className="px-8 py-2 bg-red-500 text-white capitalize font-medium text-[12px] font-Urbanist py-2 px-4 rounded-[7px] hover:bg-red-600 cursor-pointer"
-                disabled={isSaving}
-              >
-                Reset
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 

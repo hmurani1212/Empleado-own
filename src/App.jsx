@@ -233,24 +233,24 @@ const App = () => {
   }
 
   return (
-    <div className='flex flex-col h-screen w-full relative overflow-hidden bg-white'>
+    <div className='app-root-shell flex flex-col h-screen w-full relative overflow-hidden bg-white print:h-auto print:min-h-0 print:max-h-none print:overflow-visible'>
 
-      <div className="flex-none z-50">
+      <div className="flex-none z-50 print:hidden">
         {showMainLayout && <Header />}
       </div>
 
-      <div className='flex flex-1 overflow-hidden relative'>
+      <div className='flex flex-1 min-h-0 overflow-hidden relative print:flex-none print:min-h-0 print:h-auto print:max-h-none print:overflow-visible'>
         {showMainLayout &&
-          <div className={`${showMainLayout && 'hidden lg:block transition-all duration-300'} ${toggleState ? 'w-20' : 'w-64'} h-full border-r border-gray-100 bg-white shadow-sm z-40`}>
+          <div className={`${showMainLayout && 'hidden lg:block transition-all duration-300'} ${toggleState ? 'w-20' : 'w-64'} h-full border-r border-gray-100 bg-white shadow-sm z-40 print:hidden`}>
             <SideMenu
               toggleState={toggleState}
             />
           </div>
         }
         <div
-          className={`flex-1 h-full overflow-y-auto p-6 bg-background transition-all duration-300 relative ${isEmployeeProfileRoute ? 'employee-profile-scroll' : 'customScroll'}`}
+          className={`flex-1 min-h-0 h-full overflow-y-auto overflow-x-hidden overscroll-contain p-6 bg-background relative print:h-auto print:min-h-0 print:max-h-none print:overflow-visible print:p-0 ${isEmployeeProfileRoute ? 'employee-profile-scroll' : 'customScroll'}`}
         >
-          <div className="min-h-full">
+          <div className="min-h-full print:min-h-0">
             <Routers />
           </div>
           {/* <div> */}
@@ -260,7 +260,7 @@ const App = () => {
       </div>
 
 
-      <div>
+      <div className="print:hidden">
         {showMainLayout && <Toaster />}
         {!isLogInRoute && <GlobalAttendanceReportListener />}
         <CustomDrawer

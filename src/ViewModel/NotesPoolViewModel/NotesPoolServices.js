@@ -36,6 +36,7 @@ const useNotesPoolServices = () => {
 
   const gettingNotes = useStore((state) => state.gettingNotes);
   const gettingShareNotes = useStore((state) => state.gettingShareNotes);
+  const notebookNotesLoading = useStore((state) => state.notebookNotesLoading);
   const notes = useStore((state) => state.notes);
   const mySharednotebookNotes = useStore(
     (state) => state.mySharednotebookNotes
@@ -158,6 +159,7 @@ const useNotesPoolServices = () => {
   };
 
   const handleBackToNotebooks = () => {
+    useStore.setState({ notebookNotesLoading: false });
     dispatch({ type: "BACK_TO_NOTEBOOKS" });
   };
 
@@ -385,6 +387,7 @@ const useNotesPoolServices = () => {
     searchingSharedNotebookNotes,
     handleNotes,
     notes,
+    notebookNotesLoading,
     noteBookTitle,
     toggleMenuValue,
     openMenuValue,

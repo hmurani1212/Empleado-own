@@ -9,6 +9,10 @@
 
 @layer utilities {
 
+    /* Main app scroll: momentum on iOS; avoids transition-all jank (see App.jsx). */
+    .customScroll {
+        -webkit-overflow-scrolling: touch;
+    }
 
     .customSVG {
             transform: rotate(-90deg);
