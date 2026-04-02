@@ -68,7 +68,13 @@ const SalaryDetails = (props) => {
             <Button
                 color="blue"
                 className='text-[12px] px-10'
-                onClick={() => handleSalaryIncrement({ ...employeeInfo, ...salary, ...summary, data: data })}
+                onClick={() => handleSalaryIncrement({
+                    ...employeeInfo,
+                    ...salary,
+                    ...summary,
+                    data: data,
+                    emp_id: employeeInfo?.emp_id ?? employeeInfo?.id ?? data?.emp_id ?? data?.employee_info?.emp_id
+                })}
             >
                 Increment
             </Button>

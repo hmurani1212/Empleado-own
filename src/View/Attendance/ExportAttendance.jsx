@@ -12,10 +12,6 @@ import { getContentByLabel } from '../../services/getContentService'
 import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer'
 import { FaInfoCircle } from 'react-icons/fa'
 import { getDecodedToken } from '../../Authentication/jwt_decode'
-import {
-  scheduleAttendanceLongWaitToast,
-  clearAttendanceLongWaitToast
-} from '../../services/attendanceExportDelayedToast'
 
 /** Generate a unique request id for this export so socket event can be matched to this user/session. */
 const generateReportRequestId = () => {
@@ -23,7 +19,6 @@ const generateReportRequestId = () => {
   return `att-report-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 const ATTENDANCE_PENDING_EXPORT_KEY = 'attendance_pending_export'
-
 const ExportAttendance = () => {
   const { individualExport, handleCheckboxChangeAtt, excelLayoutOptions } = useAttendance();
   const scheduleReport = useStore((state) => state.scheduleReport)
@@ -34,8 +29,24 @@ const ExportAttendance = () => {
   const downloadTimeoutRef = useRef(null)
   const exportStartedAtRef = useRef(null)
   const currentExportMetaRef = useRef(null)
+  const longWaitToastTimeoutRef = useRef(null)
 
   const DOWNLOAD_WAIT_MS = 5 * 60 * 1000
+
+  const scheduleAttendanceLongWaitToast = () => {
+    if (longWaitToastTimeoutRef.current) clearTimeout(longWaitToastTimeoutRef.current)
+    // Show a gentle heads-up if report generation takes time.
+    longWaitToastTimeoutRef.current = setTimeout(() => {
+      showToast('Generating attendance report… this may take a while. You can keep working.', 'info')
+    }, 12000)
+  }
+
+  const clearAttendanceLongWaitToast = () => {
+    if (longWaitToastTimeoutRef.current) {
+      clearTimeout(longWaitToastTimeoutRef.current)
+      longWaitToastTimeoutRef.current = null
+    }
+  }
   
   // State for API data (same as BranchWiseListReporting)
   const [empBranches, setEmpBranches] = useState([])
@@ -133,7 +144,6 @@ const ExportAttendance = () => {
 
     const handleAttendanceReportReady = (data) => {
       if (!data || !data.file_url) return;
-
       const requestIdMatch =
         data.request_id != null &&
         pendingReportRequestIdRef.current != null &&
@@ -142,9 +152,7 @@ const ExportAttendance = () => {
       const legacyNoId = pendingReportRequestIdRef.current != null && data.request_id == null && data.one_id == null
 
       if (!requestIdMatch && !oneIdMatch && !legacyNoId) return
-
       clearAttendanceLongWaitToast()
-
       if (pendingReportRequestIdRef.current != null) pendingReportRequestIdRef.current = null
       if (downloadTimeoutRef.current) {
         clearTimeout(downloadTimeoutRef.current)
@@ -167,6 +175,20 @@ const ExportAttendance = () => {
       setIsSendingEmail(false)
       exportStartedAtRef.current = null
       currentExportMetaRef.current = null
+      showToast('Your attendance report is ready! Downloading...', 'success')
+
+      try {
+        const link = document.createElement('a')
+        link.href = data.file_url
+        link.rel = 'noopener noreferrer'
+        const filename = data.file_name || `${data.report_type}_${data.export_type}_${new Date().toISOString().split('T')[0]}.xlsx`
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } catch (error) {
+        showToast('Failed to download the report', 'error')
+      }
     }
 
     socketIoRef.current.on('attendance_report_ready', handleAttendanceReportReady)

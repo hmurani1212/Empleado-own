@@ -6,8 +6,16 @@ import { showToast } from '../../Components/Toaster/Toaster'
 import debounce from 'lodash.debounce'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import employeesApi from '../../Model/Data/Employees/Employees'
-import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
+import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
+
+// Excel styling constants — matched to Individual Attendance Report
+const ORG_HEADER_BG = 'FF1F4E79'
+const DATE_HEADER_BG = 'FF2E75B6'
+const COLUMN_HEADER_BG = 'FF1F4E79'
+const GRID_COLOR = 'FFD1D5DB'
+const ROW_FILL_WHITE = 'FFFFFFFF'
+const LEAVES_EXPORT_COL_COUNT = 7
 
 const AvailedLeavesReportForm = () => {
   // Get global drawer close function

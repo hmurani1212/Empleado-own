@@ -11,6 +11,8 @@ const attendanceViewModel = (set, get) => ({
     empListAtt: [],
     individualRequestDetail: [],
     requestData: [],
+    /** Server-side name/ID search for adjustment requests list (Time Adjustment screen); sent as query param `name` */
+    requestAdjName: '',
     requestPagination: {
         page: 1,
         limit: 20,
@@ -243,8 +245,18 @@ const attendanceViewModel = (set, get) => ({
         }
     },
 
-    gettingRequestAdj: async (loadMore = false, pageNumber = null) => {
+    gettingRequestAdj: async (loadMore = false, pageNumber = null, options = {}) => {
         const currentState = get()
+        const { name: nameOpt } = options
+
+        if (nameOpt !== undefined) {
+            set({ requestAdjName: String(nameOpt).trim() })
+        }
+
+        const adjName = (nameOpt !== undefined
+            ? String(nameOpt).trim()
+            : (currentState.requestAdjName || '').trim())
+
         const currentPage = pageNumber != null
             ? pageNumber
             : loadMore ? currentState.requestPagination.page + 1 : 1
@@ -255,7 +267,8 @@ const attendanceViewModel = (set, get) => ({
             getall: 'false',
             last_id: '',
             page: currentPage,
-            limit: currentState.requestPagination.limit
+            limit: currentState.requestPagination.limit,
+            ...(adjName ? { name: adjName } : {})
         }
 
         try {

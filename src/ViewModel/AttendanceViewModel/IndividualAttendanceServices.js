@@ -67,6 +67,26 @@ const useIndividualAttendanceServices = ()=>{
             ? Number(db.ot_percentage).toFixed(2)
             : '0.00';
 
+        const empSrc = db.employee || db.emp_data || db.emp || {};
+        const employeeSnapshot = {
+            id: empSrc.id ?? db.emp_id ?? null,
+            emp_id: empSrc.emp_id ?? db.emp_id ?? null,
+            bio_id: empSrc.bio_id ?? db.bio_id ?? null,
+            name: empSrc.name ?? db.employee_name ?? db.emp_name ?? null,
+            branch:
+                empSrc.branch ??
+                db.branch ??
+                (db.branch_name ? { branch_name: db.branch_name } : null),
+            department:
+                empSrc.department ??
+                db.department ??
+                (db.department_name ? { name: db.department_name } : null),
+            designation:
+                empSrc.designation ??
+                db.designation ??
+                (db.designation_title ? { title: db.designation_title } : null),
+        };
+
         const transformedData = {
             total: totalSeconds,
             expected_working_days: db.expected_working_days ?? 0,
@@ -78,6 +98,7 @@ const useIndividualAttendanceServices = ()=>{
             attendance: Array.isArray(db.attendance) ? db.attendance : [],
             last_policy: db.last_policy || {},
             policy_closeing_time: db.policy_closeing_time || null,
+            employeeSnapshot,
             summary: {
                 expectedHours: Math.round((db.working_secs ?? db.total ?? 0) / 3600) || 0,
                 completedHours: Math.round(earnedSeconds / 3600) || 0,
@@ -473,6 +494,26 @@ const useIndividualAttendanceServices = ()=>{
                         : 0
                     const presentDays = db.present_days ?? (presentDaysFromArray || presentDaysFromHours || 0)
 
+                    const empSrc = db.employee || db.emp_data || db.emp || {};
+                    const employeeSnapshot = {
+                        id: empSrc.id ?? db.emp_id ?? null,
+                        emp_id: empSrc.emp_id ?? db.emp_id ?? null,
+                        bio_id: empSrc.bio_id ?? db.bio_id ?? null,
+                        name: empSrc.name ?? db.employee_name ?? db.emp_name ?? null,
+                        branch:
+                            empSrc.branch ??
+                            db.branch ??
+                            (db.branch_name ? { branch_name: db.branch_name } : null),
+                        department:
+                            empSrc.department ??
+                            db.department ??
+                            (db.department_name ? { name: db.department_name } : null),
+                        designation:
+                            empSrc.designation ??
+                            db.designation ??
+                            (db.designation_title ? { title: db.designation_title } : null),
+                    };
+
                     const transformedData = {
                         total: totalSeconds,
                         expected_working_days: db.expected_working_days ?? 0,
@@ -484,6 +525,7 @@ const useIndividualAttendanceServices = ()=>{
                         attendance: Array.isArray(db.attendance) ? db.attendance : [],
                         last_policy: db.last_policy || {},
                         policy_closeing_time: db.policy_closeing_time || null,
+                        employeeSnapshot,
                         summary: {
                             expectedHours: Math.round((db.working_secs ?? db.total ?? 0) / 3600) || 0,
                             completedHours: completedHours,

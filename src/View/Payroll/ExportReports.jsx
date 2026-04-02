@@ -4,17 +4,17 @@ import {
   FaGift,
   FaShieldAlt,
   FaCross,
-  FaChartLine,
+  // FaChartLine, // Overtime Report (disabled)
   FaChartBar,
   FaArrowUp,
-  FaCalendarAlt,
-  FaFileAlt,
+  // FaCalendarAlt, // Availed Leaves Report (disabled)
+  // FaFileAlt, // Leave Balance Sheet (disabled)
 } from "react-icons/fa";
 import ReportForm from "./ReportForm";
 import IncrementReportForm from "./IncrementReportForm";
 import IncentiveDeductionReportForm from "./IncentiveDeductionReportForm";
-import AvailedLeavesReportForm from "./AvailedLeavesReportForm";
-import LeaveBalanceSheetForm from "./LeaveBalanceSheetForm";
+// import AvailedLeavesReportForm from "./AvailedLeavesReportForm";
+// import LeaveBalanceSheetForm from "./LeaveBalanceSheetForm";
 import useStore from "../../Store/store";
 
 const ExportReports = () => {
@@ -59,14 +59,14 @@ const ExportReports = () => {
       bgColor: "bg-[#FDA006]",
       // hoverColor: 'hover:bg-yellow-100'
     },
-    {
-      id: 5,
-      title: "Overtime Report",
-      icon: FaChartLine,
-      iconColor: "text-[#ED61BC]",
-      bgColor: "bg-[#ED61BC]",
-      // hoverColor: 'hover:bg-gray-100'
-    },
+    // --- Disabled: Overtime Report (not needed) ---
+    // {
+    //   id: 5,
+    //   title: "Overtime Report",
+    //   icon: FaChartLine,
+    //   iconColor: "text-[#ED61BC]",
+    //   bgColor: "bg-[#ED61BC]",
+    // },
     {
       id: 6,
       title: "Increment Report",
@@ -83,22 +83,22 @@ const ExportReports = () => {
       bgColor: "bg-[#6889D4]",
       // hoverColor: 'hover:bg-[#6889D2s]'
     },
-    {
-      id: 8,
-      title: "Availed Leaves Report",
-      icon: FaCalendarAlt,
-      iconColor: "text-[#98C379]",
-      bgColor: "bg-[#98C379]",
-      // hoverColor: 'hover:bg-gray-100'
-    },
-    {
-      id: 9,
-      title: "Leave Balance Sheet",
-      icon: FaFileAlt,
-      iconColor: "text-[#C69121]",
-      bgColor: "bg-[#C69121]",
-      // hoverColor: 'hover:bg-blue-100'
-    },
+    // --- Disabled: Availed Leaves Report (not needed) ---
+    // {
+    //   id: 8,
+    //   title: "Availed Leaves Report",
+    //   icon: FaCalendarAlt,
+    //   iconColor: "text-[#98C379]",
+    //   bgColor: "bg-[#98C379]",
+    // },
+    // --- Disabled: Leave Balance Sheet (not needed) ---
+    // {
+    //   id: 9,
+    //   title: "Leave Balance Sheet",
+    //   icon: FaFileAlt,
+    //   iconColor: "text-[#C69121]",
+    //   bgColor: "bg-[#C69121]",
+    // },
   ];
 
   const handleReportClick = (report) => {
@@ -120,22 +120,21 @@ const ExportReports = () => {
       settingDrawerSize(700);
       settingComponent(<IncentiveDeductionReportForm />);
     }
-    // Handle Availed Leaves Report with global drawer
-    else if (report.id === 8) {
-      // Availed Leaves Report has id: 8
-      openDrawer();
-      settingDrawerTitle("Export Availed Leaves Report");
-      settingDrawerSize(700);
-      settingComponent(<AvailedLeavesReportForm />);
-    }
-    // Handle Leave Balance Sheet with global drawer
-    else if (report.id === 9) {
-      // Leave Balance Sheet has id: 9
-      openDrawer();
-      settingDrawerTitle("Export Leave Balance Sheet");
-      settingDrawerSize(700);
-      settingComponent(<LeaveBalanceSheetForm />);
-    } else {
+    // --- Disabled: Availed Leaves Report ---
+    // else if (report.id === 8) {
+    //   openDrawer();
+    //   settingDrawerTitle("Export Availed Leaves Report");
+    //   settingDrawerSize(700);
+    //   settingComponent(<AvailedLeavesReportForm />);
+    // }
+    // --- Disabled: Leave Balance Sheet ---
+    // else if (report.id === 9) {
+    //   openDrawer();
+    //   settingDrawerTitle("Export Leave Balance Sheet");
+    //   settingDrawerSize(700);
+    //   settingComponent(<LeaveBalanceSheetForm />);
+    // }
+    else {
       // Handle other reports with inline form
       setActiveReport(report.title);
     }
@@ -164,7 +163,8 @@ const ExportReports = () => {
                 ${report.bgColor} 
                 // ${report.hoverColor}
                 rounded-[15px] 
-                px-4 py-6
+                px-4 py-9
+                min-h-[92px]
                 cursor-pointer 
                 transition-all 
                 duration-200 

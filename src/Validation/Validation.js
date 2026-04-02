@@ -257,7 +257,6 @@ const validateEditPolicyForm = object().shape({
 });
 
 const validateIncrementForm = object().shape({
-        salary_template_id: string().required('Salary Template ID is required'),
         salary_inc_type: string().required('Increment type is required'),
 
         inc_amount: string()

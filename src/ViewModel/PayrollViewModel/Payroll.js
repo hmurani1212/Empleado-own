@@ -878,9 +878,14 @@ const payrollViewModel = (set, get) => ({
                 const clonedResponse = JSON.parse(JSON.stringify(data))
                 
                 // Extract pagination from API response - DB_DATA has page_id, pages, has_more, total_count (not nested pagination)
-                const currentPage = clonedDBData.page_id !== undefined ? clonedDBData.page_id : (clonedDBData.pagination?.page !== undefined ? clonedDBData.pagination.page : (params.page ?? 0));
-                const totalPages = clonedDBData.pages !== undefined ? clonedDBData.pages : (clonedDBData.pagination?.pages !== undefined ? clonedDBData.pagination.pages : 0);
-                const hasMore = clonedDBData.has_more !== undefined ? clonedDBData.has_more : (clonedDBData.pagination?.page !== undefined && clonedDBData.pagination?.pages !== undefined ? clonedDBData.pagination.page < clonedDBData.pagination.pages : clonedPayslips.length === 15);
+                const paginationDisabled =
+                    params.pagination === false ||
+                    params.pagination === 'false' ||
+                    params.pagination === 0 ||
+                    params.pagination === '0';
+                const currentPage = paginationDisabled ? 0 : (clonedDBData.page_id !== undefined ? clonedDBData.page_id : (clonedDBData.pagination?.page !== undefined ? clonedDBData.pagination.page : (params.page ?? 0)));
+                const totalPages = paginationDisabled ? 1 : (clonedDBData.pages !== undefined ? clonedDBData.pages : (clonedDBData.pagination?.pages !== undefined ? clonedDBData.pagination.pages : 0));
+                const hasMore = paginationDisabled ? false : (clonedDBData.has_more !== undefined ? clonedDBData.has_more : (clonedDBData.pagination?.page !== undefined && clonedDBData.pagination?.pages !== undefined ? clonedDBData.pagination.page < clonedDBData.pagination.pages : clonedPayslips.length === 15));
                 
                 // If loading more, append to existing list
                 if (loadMore && currentState.payslips && Array.isArray(currentState.payslips)) {

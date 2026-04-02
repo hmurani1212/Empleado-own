@@ -1048,6 +1048,7 @@ const useEmployees = () => {
             } else {
                 applyEmptyBranchContext()
             }
+            // Do not clear designations here - designations are loaded after department select.
         } catch (err) {
             console.error('Error fetching branch dropdown data:', err)
             setDept_subDept({ departments: [] })
@@ -1094,18 +1095,19 @@ const useEmployees = () => {
                 // Handle different response structures (DB_DATA or top-level DESIGNATIONS)
                 let rawList = [];
 
-                if (resData?.DB_DATA?.designations) {
-                    rawList = resData.DB_DATA.designations;
-                } else if (resData?.DB_DATA?.departments) {
-                    rawList = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
-                } else if (Array.isArray(resData?.DESIGNATIONS)) {
+                // API can return DESIGNATIONS at top level (e.g. /api/v1/designations?dept_id=...)
+                if (Array.isArray(resData?.DESIGNATIONS)) {
                     rawList = resData.DESIGNATIONS;
                 } else if (Array.isArray(resData?.DB_DATA)) {
                     rawList = resData.DB_DATA;
+                } else if (resData?.DB_DATA?.designations) {
+                    rawList = resData.DB_DATA.designations;
+                } else if (resData?.DB_DATA?.departments) {
+                    rawList = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
                 }
 
-                const normalized = rawList.map(normalizeDesignationItem).filter(Boolean);
-                setDesignations(normalized);
+                const designationsData = rawList.map(normalizeDesignationItem).filter(Boolean);
+                setDesignations(designationsData);
             } else {
                 setDesignations([])
             }

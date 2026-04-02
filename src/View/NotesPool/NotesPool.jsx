@@ -59,6 +59,7 @@ const NotesPool = () => {
     handleSubmitNote,
     toggleEditorNote,
     mySharednotebookNotes,
+    notebookNotesLoading,
     handleBackToNotebooks,
   } = useNotesPoolServices();
 
@@ -114,10 +115,11 @@ const NotesPool = () => {
               context={{
                 notesState,
                 handleNotes,
-                notes,
-                noteBookTitle,
-                mySharednotebookNotes,
-                handleBackToNotebooks,
+    notes,
+    noteBookTitle,
+    notebookNotesLoading,
+    mySharednotebookNotes,
+    handleBackToNotebooks,
               }}
             />
           </div>
