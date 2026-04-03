@@ -82,7 +82,13 @@ const empTimeAdjustmentViewModel = (set, get) => ({
     },
 
     addnewTimeAdjustment: (data) => {
-        set({ timeAjustmentData: [...new Set([data, ...get().timeAjustmentData])] });
+        if (!data || typeof data !== "object") return;
+        const prev = get().timeAjustmentData || [];
+        const id = data._id;
+        const withoutDup = id != null
+            ? prev.filter((row) => row && row._id !== id)
+            : prev.filter(Boolean);
+        set({ timeAjustmentData: [data, ...withoutDup] });
     },
 });
 

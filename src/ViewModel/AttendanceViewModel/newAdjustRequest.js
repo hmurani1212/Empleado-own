@@ -132,8 +132,11 @@ const useNewAdjustRequest = ()=>{
                 const response = await empTimeAdjustmentApi.addNewTimeRequest(apiData)
                 const responseData = response.data 
                 if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
-                    const newData = responseData.INSERTED_DATA
-                    addnewTimeAdjustment(newData)
+                    // Inbox API returns the created row in DB_DATA; older handlers used INSERTED_DATA
+                    const newData = responseData.DB_DATA ?? responseData.INSERTED_DATA
+                    if (newData) {
+                        addnewTimeAdjustment(newData)
+                    }
                     toggleAddNewAdjustRequest()
                     showToast('Request Submitted Successfully', 'success')
                     

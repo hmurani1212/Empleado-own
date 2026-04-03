@@ -42,15 +42,18 @@ const EmpTimeAdjustment = () => {
                 rejected: 0,
             };
         }
-        const counts = timeAjustmentData.reduce(
-            (acc, curr) => {
-                if (curr.status === 0) acc.pending++;
-                if (curr.status === 1) acc.approved++;
-                if (curr.status === 2) acc.rejected++;
-                return acc;
-            },
-            { pending: 0, approved: 0, rejected: 0 }
-        );
+        const counts = timeAjustmentData
+            .filter((row) => row != null && typeof row === "object")
+            .reduce(
+                (acc, curr) => {
+                    const s = curr.status;
+                    if (s === 0) acc.pending++;
+                    else if (s === 1) acc.approved++;
+                    else if (s === 2) acc.rejected++;
+                    return acc;
+                },
+                { pending: 0, approved: 0, rejected: 0 }
+            );
         return {
             total: typeof fromPagination === 'number' ? fromPagination : timeAjustmentData.length,
             ...counts,
