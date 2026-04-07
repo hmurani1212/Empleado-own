@@ -108,6 +108,101 @@ import { Stepper, Step } from "@material-tailwind/react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 // import {formatTimestampToDate}  from "../../services/__dateTimeServices"
+
+/**
+ * Normalize get_emp_profile_module_privileges DB_DATA.
+ * Supports: (1) roll_response.DB_DATA role rows + DB_DATA["0"].module_privileges, (2) legacy module_privileges array.
+ */
+function normalizeModulePrivilegesDbData(dbData) {
+    if (!dbData) {
+        return { rows: [], privilegeBlock: null, modulePrivilegesSource: [] };
+    }
+
+    const roll = dbData.roll_response;
+    if (roll?.STATUS === "SUCCESSFUL" && Array.isArray(roll.DB_DATA) && roll.DB_DATA.length > 0) {
+        const block = dbData["0"] ?? dbData[0];
+        let allowedModuleCount = 0;
+        if (
+            block?.module_privileges &&
+            typeof block.module_privileges === "object" &&
+            !Array.isArray(block.module_privileges)
+        ) {
+            allowedModuleCount = Object.values(block.module_privileges).filter(
+                (v) => v === 1 || v === "1"
+            ).length;
+        }
+        const rows = roll.DB_DATA.map((r) => ({
+            ...r,
+            role_name: r.role_name,
+            description: r.description ?? "",
+            allowedModuleCount,
+        }));
+        return {
+            rows,
+            privilegeBlock: block || null,
+            modulePrivilegesSource: block ? [block] : [],
+        };
+    }
+
+    if (Array.isArray(dbData.module_privileges)) {
+        const rows = dbData.module_privileges.map((item) => {
+            const moduleCount =
+                item.module_privileges && typeof item.module_privileges === "object"
+                    ? Object.values(item.module_privileges).filter((v) => v === 1 || v === "1").length
+                    : 0;
+            const roleLabel =
+                item.privileges === "0"
+                    ? "Employee"
+                    : item.privileges === "1"
+                      ? "Super Admin"
+                      : item.privileges === "2"
+                        ? "Branch Admin"
+                        : item.privileges === "3"
+                          ? "Department Admin"
+                          : item.privileges;
+            return {
+                ...item,
+                role_name: roleLabel,
+                description: item.ip_filter != null && item.ip_filter !== "" ? String(item.ip_filter) : "—",
+                allowedModuleCount: moduleCount,
+            };
+        });
+        return {
+            rows,
+            privilegeBlock: dbData.module_privileges[0] || null,
+            modulePrivilegesSource: dbData.module_privileges,
+        };
+    }
+
+    return { rows: [], privilegeBlock: null, modulePrivilegesSource: [] };
+}
+
+/** Backend one_id_roll values for assign_previlage (must match dropdown Option values). */
+const ONE_ID_ROLL = {
+    EMPLOYEE: "14",
+    ADMIN: "13",
+    BRANCH_ADMIN: "24",
+    DEPARTMENT_ADMIN: "25",
+};
+
+/** Legacy privileges 0–3 → one_id_roll string */
+function legacyPrivilegesToOneIdRollString(privileges) {
+    const m = { "0": "14", "1": "13", "2": "24", "3": "25" };
+    if (privileges === undefined || privileges === null) return ONE_ID_ROLL.EMPLOYEE;
+    const k = String(privileges);
+    return m[k] ?? k;
+}
+
+/** one_id_roll / role_id (13,14,24,25) → remove_previlage body privilege 0–3 */
+function oneIdRollToLegacyRemovePrivilege(n) {
+    const x = Number(n);
+    if (x === 14) return 0;
+    if (x === 13) return 1;
+    if (x === 24) return 2;
+    if (x === 25) return 3;
+    return null;
+}
+
 const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     const { employeeId } = useParams();
     ////console.log('Employee ID from URL params:', employeeId);
@@ -149,7 +244,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         documents: false,
     });
     const [privilegesForm, setPrivilegesForm] = useState({
-        privilege: "1",
+        privilege: ONE_ID_ROLL.EMPLOYEE,
         ipFilter: "",
     });
     const [userRoles, setUserRoles] = useState([]);
@@ -623,21 +718,36 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             if (!modulePrivilegesTabFetchedRef.current) {
                 modulePrivilegesTabFetchedRef.current = true;
                 gettingEmpProfileModulePrivileges(employeeId).then((data) => {
-                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.module_privileges) {
-                        const list = data.DB_DATA.module_privileges;
-                        setEmployeeData((prev) => ({
+                    if (data?.STATUS !== "SUCCESSFUL" || !data?.DB_DATA) return;
+                    const db = data.DB_DATA;
+                    const hasLegacyList = Array.isArray(db.module_privileges);
+                    const hasRoll =
+                        db.roll_response?.STATUS === "SUCCESSFUL" &&
+                        Array.isArray(db.roll_response?.DB_DATA) &&
+                        db.roll_response.DB_DATA.length > 0;
+                    if (!hasLegacyList && !hasRoll) return;
+
+                    const norm = normalizeModulePrivilegesDbData(db);
+                    setEmployeeData((prev) => ({
+                        ...prev,
+                        module_privileges: norm.modulePrivilegesSource,
+                        user_roles_table_rows: norm.rows,
+                        privileges_block: norm.privilegeBlock,
+                    }));
+                    const first =
+                        norm.privilegeBlock ||
+                        (Array.isArray(norm.modulePrivilegesSource) && norm.modulePrivilegesSource[0]);
+                    if (first) {
+                        setPrivilegesForm((prev) => ({
                             ...prev,
-                            module_privileges: list,
+                            privilege:
+                                first.one_id_roll != null && first.one_id_roll !== ""
+                                    ? String(first.one_id_roll)
+                                    : first.privileges != null
+                                      ? legacyPrivilegesToOneIdRollString(first.privileges)
+                                      : prev.privilege,
+                            ipFilter: first.ip_filter ?? prev.ipFilter,
                         }));
-                        // Populate privileges form from first item so dropdowns show current values
-                        if (Array.isArray(list) && list.length > 0) {
-                            const first = list[0];
-                            setPrivilegesForm((prev) => ({
-                                ...prev,
-                                privilege: first.privileges != null ? String(first.privileges) : prev.privilege,
-                                ipFilter: first.ip_filter ?? prev.ipFilter,
-                            }));
-                        }
                     }
                 });
             }
@@ -706,7 +816,13 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 case "privileges": {
                     const data = await gettingEmpProfileModulePrivileges(employeeId);
                     if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
-                        setEmployeeData((prev) => ({ ...prev, module_privileges: data.DB_DATA.module_privileges }));
+                        const norm = normalizeModulePrivilegesDbData(data.DB_DATA);
+                        setEmployeeData((prev) => ({
+                            ...prev,
+                            module_privileges: norm.modulePrivilegesSource,
+                            user_roles_table_rows: norm.rows,
+                            privileges_block: norm.privilegeBlock,
+                        }));
                     }
                     break;
                 }
@@ -1930,13 +2046,18 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         }
     };
 
-    // Map role name to privilege number
+    // Map role name to remove_previlage privilege 0–3 (legacy); prefer oneIdRollToLegacyRemovePrivilege(role_id) when present
     const getPrivilegeNumber = (roleName) => {
+        if (roleName == null || roleName === "") return null;
         const roleMapping = {
             Employee: 0,
             Admin: 1,
+            Super_Admin: 1,
+            "Super Admin": 1,
             Branch_Admin: 2,
+            "Branch Admin": 2,
             Department_Admin: 3,
+            "Department Admin": 3,
         };
         return roleMapping[roleName] !== undefined ? roleMapping[roleName] : null;
     };
@@ -1967,11 +2088,23 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
 
         setIsDeletingRole(true);
         try {
-            const privilegeNumber = roleToDelete.privileges != null
-                ? Number(roleToDelete.privileges)
-                : getPrivilegeNumber(roleToDelete.role_name);
+            let privilegeNumber = null;
+            if (roleToDelete.role_id != null && roleToDelete.role_id !== "") {
+                privilegeNumber = oneIdRollToLegacyRemovePrivilege(roleToDelete.role_id);
+            }
+            if (privilegeNumber === null && roleToDelete.privileges != null && roleToDelete.privileges !== "") {
+                const p = Number(roleToDelete.privileges);
+                if (p >= 0 && p <= 3) {
+                    privilegeNumber = p;
+                } else {
+                    privilegeNumber = oneIdRollToLegacyRemovePrivilege(p);
+                }
+            }
+            if (privilegeNumber === null) {
+                privilegeNumber = getPrivilegeNumber(roleToDelete.role_name);
+            }
 
-            if (privilegeNumber === null || isNaN(privilegeNumber)) {
+            if (privilegeNumber === null || Number.isNaN(privilegeNumber)) {
                 showToast("Invalid role", "error");
                 return;
             }
@@ -5934,10 +6067,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             }
                         // className="border-gray-200"
                         >
-                            <Option value="0">Employee</Option>
-                            <Option value="1">Super Admin</Option>
-                            <Option value="2">Branch Admin</Option>
-                            <Option value="3">Department Admin</Option>
+                            <Option value={ONE_ID_ROLL.EMPLOYEE}>Employee</Option>
+                            <Option value={ONE_ID_ROLL.ADMIN}>Admin</Option>
+                            <Option value={ONE_ID_ROLL.BRANCH_ADMIN}>Branch_Admin</Option>
+                            <Option value={ONE_ID_ROLL.DEPARTMENT_ADMIN}>Department_Admin</Option>
                         </Select>
                     </div>
                     <div>
@@ -6016,7 +6149,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     </div> */}
                 </div>
 
-                {/* User Roles Table - shows module_privileges from API (Role, Description = IP Filter + Modules enabled, Action) */}
+                {/* User Roles: roll_response.DB_DATA (Role, Description) + DB_DATA["0"].module_privileges (Allowed Module count); legacy array still supported */}
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                         <thead>
@@ -6037,28 +6170,49 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     scope="col"
                                     className="px-4 py-3 font-semibold text-gray-700 text-xs"
                                 >
+                                    Allowed Module
+                                </th>
+                                <th
+                                    scope="col"
+                                    className="px-4 py-3 font-semibold text-gray-700 text-xs"
+                                >
                                     Action
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {employeeData?.module_privileges && employeeData.module_privileges.length > 0 ? (
-                                employeeData.module_privileges.map((item, index) => {
-                                    const roleLabel = item.privileges === "0" ? "Employee" : item.privileges === "1" ? "Super Admin" : item.privileges === "2" ? "Branch Admin" : item.privileges === "3" ? "Department Admin" : item.privileges;
-                                    const moduleCount = item.module_privileges && typeof item.module_privileges === "object"
-                                        ? Object.values(item.module_privileges).filter((v) => v === 1 || v === "1").length
-                                        : 0;
-                                    const description = `${item.ip_filter ?? "—"} · ${moduleCount} modules enabled`;
+                            {employeeData?.user_roles_table_rows &&
+                            employeeData.user_roles_table_rows.length > 0 ? (
+                                employeeData.user_roles_table_rows.map((item, index) => {
+                                    const roleLabel =
+                                        item.role_name ??
+                                        (item.privileges === "0"
+                                            ? "Employee"
+                                            : item.privileges === "1"
+                                              ? "Super Admin"
+                                              : item.privileges === "2"
+                                                ? "Branch Admin"
+                                                : item.privileges === "3"
+                                                  ? "Department Admin"
+                                                  : item.privileges);
+                                    const desc =
+                                        item.description != null && item.description !== ""
+                                            ? item.description
+                                            : "—";
+                                    const n =
+                                        typeof item.allowedModuleCount === "number"
+                                            ? item.allowedModuleCount
+                                            : 0;
                                     return (
-                                        <tr key={index} className="bg-white border-b border-gray-100">
-                                            <td className="px-4 py-3 text-gray-900">
-                                                {roleLabel}
-                                            </td>
+                                        <tr key={item.role_id ?? index} className="bg-white border-b border-gray-100">
+                                            <td className="px-4 py-3 text-gray-900">{roleLabel}</td>
+                                            <td className="px-4 py-3 text-gray-700">{desc}</td>
                                             <td className="px-4 py-3 text-gray-700">
-                                                {description}
+                                                {n} module{n === 1 ? "" : "s"} enabled
                                             </td>
                                             <td className="px-4 py-3">
                                                 <button
+                                                    type="button"
                                                     onClick={() => handleDeleteRole(item)}
                                                     className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-red-500 hover:bg-red-50 transition-colors"
                                                     title="Remove"
@@ -6071,7 +6225,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan="3" className="px-4 py-4 text-center">
+                                    <td colSpan="4" className="px-4 py-4 text-center">
                                         <Typography
                                             variant="small"
                                             color="gray"

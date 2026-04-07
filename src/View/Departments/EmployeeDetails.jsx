@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import useDepartments from "../../ViewModel/DepartmentsViewModel/DepartmentsServices";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import { buildEmployeeImageUrl } from "../../utils/imageUrlUtils";
 
 /** Pixels from bottom of scroll area to consider "at end" and show Load more */
 const SCROLL_BOTTOM_THRESHOLD_PX = 72;
@@ -101,8 +102,8 @@ const EmployeeDetails = () => {
                       <div className="row-span-3">
                         <div>
                           <img
-                            className="rounded-full w-[50px] h-[50px]"
-                            src="https://elephant.veevotech.com/files/4d6a4d774e444930/9_9a9781ecfa76ca3.jpeg"
+                            className="rounded-full w-[50px] h-[50px] object-cover"
+                            src={buildEmployeeImageUrl(data)}
                             alt=""
                           />
                         </div>
@@ -113,10 +114,10 @@ const EmployeeDetails = () => {
                           {data.name || "N/A"}
                         </div>
                         <div className="text-[12px]">
-                          {data?.department?.name || "N/A"}
+                          {data?.department?.name || data?.emp_id || "N/A"}
                         </div>
                         <div className="text-[12px] text-[#9B9B9B]">
-                          {data?.designation || "N/A"}
+                          {data?.designation || "—"}
                         </div>
                       </div>
                     </div>

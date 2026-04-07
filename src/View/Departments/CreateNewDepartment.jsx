@@ -24,8 +24,12 @@ import { FaPlus } from "react-icons/fa";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { getContentByLabel } from "../../services/getContentService";
 import { showToast } from "../../Components/Toaster/Toaster";
+import { Navigate, useParams } from "react-router";
+import { getUserData } from "../../Authentication/jwt_decode";
+import { isDepartmentAdmin } from "../../Authentication/roleHelpers";
 
 const CreateNewDepartment = () => {
+  const { id: branchRouteId } = useParams();
   const {
     activeStepDept,
     isFirstStepDept,
@@ -89,6 +93,16 @@ const CreateNewDepartment = () => {
   }, []);
 
   const handleOpen = (value) => setOpen(open === value ? null : value);
+
+  if (isDepartmentAdmin(getUserData()?.roleId)) {
+    return (
+      <Navigate
+        to={`/departments/manageDept/${branchRouteId}`}
+        replace
+      />
+    );
+  }
+
   return (
     <>
       <div className="px-2 flex flex-col gap-3">

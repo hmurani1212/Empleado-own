@@ -538,6 +538,8 @@ import EmployeeDetails from "../../View/Departments/EmployeeDetails";
 import { FaPencilAlt, FaTrash, FaUserCog } from "react-icons/fa";
 import EditDepartmentModal from "../../View/Departments/EditDepartmentModal";
 import AddNewDesignation from "../../View/Departments/AddNewDesignation";
+import { getUserData } from "../../Authentication/jwt_decode";
+import { isDepartmentAdmin } from "../../Authentication/roleHelpers";
 
 const useDepartments = () => {
     const getAllDepartments = useStore((state) => state.getAllDepartments)
@@ -697,6 +699,9 @@ const useDepartments = () => {
     }
 
     const handleNavigateNewDept = () => {
+        if (isDepartmentAdmin(getUserData()?.roleId)) {
+            return;
+        }
         if (!branchIdset) {
             showToast('Please select branch', 'error')
         }
@@ -708,6 +713,9 @@ const useDepartments = () => {
     }
 
     const handleNavigateCreateNewDept = () => {
+        if (isDepartmentAdmin(getUserData()?.roleId)) {
+            return;
+        }
         console.log(branchIdset)
         if (!branchIdset) {
             showToast('Please select branch', 'error')
@@ -718,6 +726,9 @@ const useDepartments = () => {
     }
 
     const addNewDepartment = () => {
+        if (isDepartmentAdmin(getUserData()?.roleId)) {
+            return;
+        }
         setShowDrawer(true)
     }
 

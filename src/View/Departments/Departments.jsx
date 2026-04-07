@@ -20,6 +20,8 @@ import { Outlet, useLocation, useParams } from "react-router";
 import useDropdownService from "../../services/__dropDownHoverService";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import useStore from "../../Store/store";
+import { getUserData } from "../../Authentication/jwt_decode";
+import { isDepartmentAdmin } from "../../Authentication/roleHelpers";
 
 /** Skeleton row mirroring table columns: Dept Name (left), Description, Employees, Head of Dept, Sub Depts, Designations, Actions */
 const SkeletonRow = () => (
@@ -79,7 +81,8 @@ const Departments = () => {
   const { triggerRefs, getDropdownPosition } = useDropdownService();
   const { handleSubDept } = useSubDept();
   const drawerOpen = useStore((state) => state.drawerOpen);
-  
+  const hideCreateDepartmentButton = isDepartmentAdmin(getUserData()?.roleId);
+
   const deptData = [
     "Dept Name",
     "Description",
@@ -226,13 +229,15 @@ const Departments = () => {
                   >
                     Back
                   </CustomButton>
-                  <CustomButton
-                    className="bg-bgBlue text-white hover:bg-blue-600 px-4 py-2 rounded-lg shadow-lg shadow-blue-500/20 font-medium transition-all flex items-center gap-2"
-                    onClick={handleNavigateCreateNewDept}
-                    title="Add Department"
-                  >
-                    <span className="text-lg">+</span> Add Department
-                  </CustomButton>
+                  {!hideCreateDepartmentButton && (
+                    <CustomButton
+                      className="bg-bgBlue text-white hover:bg-blue-600 px-4 py-2 rounded-lg shadow-lg shadow-blue-500/20 font-medium transition-all flex items-center gap-2"
+                      onClick={handleNavigateCreateNewDept}
+                      title="Add Department"
+                    >
+                      <span className="text-lg">+</span> Add Department
+                    </CustomButton>
+                  )}
                 </div>
               </div>
 
@@ -511,19 +516,21 @@ const Departments = () => {
                   <p className="text-gray-500 mb-8 font-poppins text-sm">
                     You haven't created any departments yet. Start by building your organization structure.
                   </p>
-                  <CustomButton
-                    className="w-full bg-bgBlue text-white hover:bg-blue-600 py-3 rounded-xl shadow-lg shadow-blue-500/20 font-semibold transition-all"
-                    onClick={() => handleNavigateCreateNewDept()}
-                    title="Add Your First Department"
-                  >
-                    Add New Department
-                  </CustomButton>
+                  {!hideCreateDepartmentButton && (
+                    <CustomButton
+                      className="w-full bg-bgBlue text-white hover:bg-blue-600 py-3 rounded-xl shadow-lg shadow-blue-500/20 font-semibold transition-all"
+                      onClick={() => handleNavigateCreateNewDept()}
+                      title="Add Your First Department"
+                    >
+                      Add New Department
+                    </CustomButton>
+                  )}
                 </motion.div>
              </div>
           )}
 
           <CustomDrawer
-            open={showDrawer}
+            open={showDrawer && !hideCreateDepartmentButton}
             closeDrawer={closeDeptDrawer}
             compo={<AddNewDepartment />}
             title="Add New Department"

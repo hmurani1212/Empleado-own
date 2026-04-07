@@ -284,25 +284,26 @@ const departmentsViewModel = (set, get) => ({
     getEmployeeDetails: async (id, page = 1, append = false) => {
         const limit = 10
         try {
-            if (!append) {
+            // Single-shot list from get_all_employee?deptt_id= — no pagination / load-more
+            if (append) {
                 set((state) => ({
                     ...state,
-                    empDetailDeptLoading: true,
-                    empDetailDeptLoadingMore: false,
-                    empDetailDept: [],
-                    empDetailDeptDeptId: id,
-                    empDetailDeptPagination: { page: 1, pages: 1, limit, total: 0 }
+                    empDetailDeptLoadingMore: false
                 }))
-            } else {
-                set((state) => ({
-                    ...state,
-                    empDetailDeptLoadingMore: true
-                }))
+                return
             }
 
-            const response = await departmentsApi.getDeptEmployees(id, page, limit)
+            set((state) => ({
+                ...state,
+                empDetailDeptLoading: true,
+                empDetailDeptLoadingMore: false,
+                empDetailDept: [],
+                empDetailDeptDeptId: id,
+                empDetailDeptPagination: { page: 1, pages: 1, limit, total: 0 }
+            }))
+
+            const response = await employeesApi.getAllEmployeesByDepttId(id)
             const data = unwrapCoreApiBody(response)
-            // 304 Not Modified is treated as success by some stacks but often has no JSON body — accept 200 + 304 when body is valid
             const httpOk =
                 response?.status === 200 ||
                 response?.status === 304
@@ -311,7 +312,6 @@ const departmentsViewModel = (set, get) => ({
             const isSuccess = statusVal === "SUCCESSFUL"
             const isError = statusVal === "ERROR"
             const employeesFromPayload = data ? extractEmployeesListFromBody(data) : []
-            /** HTTP 200 with a list but nonstandard / missing STATUS (not ERROR) */
             const treatAsListSuccess =
                 httpOk &&
                 data &&
@@ -319,32 +319,17 @@ const departmentsViewModel = (set, get) => ({
                 !isSuccess &&
                 employeesFromPayload.length > 0
 
-            const applyDeptEmployeesSuccess = (payloadData) => {
+            const applySuccess = (payloadData) => {
                 const employees = extractEmployeesListFromBody(payloadData)
-                const pag = extractDeptEmpPaginationFromBody(payloadData, page, limit)
-                const currentPage = pag.page ?? page
-                const perLimit = pag.limit ?? limit
-                const totalPages =
-                    pag.pages != null && pag.pages > 0
-                        ? pag.pages
-                        : Math.max(
-                              1,
-                              Math.ceil(
-                                  (pag.total ?? employees.length) / (perLimit || limit)
-                              )
-                          )
-                const total = pag.total ?? employees.length
-
+                const total = employees.length
                 set((state) => ({
                     ...state,
-                    empDetailDept: append
-                        ? [...(state.empDetailDept || []), ...employees]
-                        : employees,
+                    empDetailDept: employees,
                     empDetailDeptPagination: {
-                        page: currentPage,
-                        pages: totalPages,
-                        limit: perLimit,
-                        total: total
+                        page: 1,
+                        pages: 1,
+                        limit: Math.max(total, 1),
+                        total
                     },
                     empDetailDeptLoading: false,
                     empDetailDeptLoadingMore: false
@@ -352,21 +337,20 @@ const departmentsViewModel = (set, get) => ({
             }
 
             if (httpOk && data && isSuccess) {
-                applyDeptEmployeesSuccess(data)
+                applySuccess(data)
             } else if (treatAsListSuccess) {
-                applyDeptEmployeesSuccess(data)
+                applySuccess(data)
             } else if (httpOk && data && isError) {
                 set((state) => ({
                     ...state,
-                    empDetailDept: append ? state.empDetailDept : [],
+                    empDetailDept: [],
                     empDetailDeptLoading: false,
                     empDetailDeptLoadingMore: false
                 }))
             } else {
-                // 304 with empty body, unexpected status, or missing STATUS — always clear loading so drawer UI can finish
                 set((state) => ({
                     ...state,
-                    empDetailDept: append ? state.empDetailDept : [],
+                    empDetailDept: [],
                     empDetailDeptLoading: false,
                     empDetailDeptLoadingMore: false
                 }))
@@ -375,7 +359,7 @@ const departmentsViewModel = (set, get) => ({
             console.log(error)
             set((state) => ({
                 ...state,
-                empDetailDept: append ? state.empDetailDept : [],
+                empDetailDept: [],
                 empDetailDeptLoading: false,
                 empDetailDeptLoadingMore: false
             }))
@@ -407,27 +391,30 @@ const departmentsViewModel = (set, get) => ({
 
     },
 
-    // New function to get employees by department ID
+    // Employees in a department (Change HOD, create-dept flow, etc.) — same source as Employee Details drawer
     getEmployeesByDeptId: async (dept_id) => {
         try {
-            const response = await departmentsApi.getEmployeesByDeptId(dept_id)
-            const data = response.data
-            // console.log('employees by dept data', data)
-
-            if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
-                // Transform the data to match the expected format
-                const employees = data.DB_DATA.employees.map(emp => ({
-                    id: emp.id,
-                    name: emp.name,
-                    emp_id: emp.emp_id,
-                    work_email: emp.work_email
-                }))
-                set({ allSuggestionsEmp: employees })
-                return employees
-            } else if (response.status === 200 && data.STATUS === 'ERROR') {
+            const response = await employeesApi.getAllEmployeesByDepttId(dept_id)
+            const data = unwrapCoreApiBody(response) ?? response?.data
+            const httpOk = response?.status === 200 || response?.status === 304
+            if (!httpOk || !data) {
                 set({ allSuggestionsEmp: [] })
                 return []
             }
+            const statusVal = normalizeApiStatus(data?.STATUS ?? data?.status)
+            if (statusVal === 'ERROR') {
+                set({ allSuggestionsEmp: [] })
+                return []
+            }
+            const raw = extractEmployeesListFromBody(data)
+            const employees = raw.map((emp) => ({
+                id: emp.id,
+                name: emp.name,
+                emp_id: emp.emp_id,
+                work_email: emp.work_email
+            }))
+            set({ allSuggestionsEmp: employees })
+            return employees
         } catch (error) {
             console.log(error)
             set({ allSuggestionsEmp: [] })
@@ -807,7 +794,7 @@ const departmentsViewModel = (set, get) => ({
             const data = response.data
 
             if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
-                showToast('HOD updated successfully', 'success')
+                showToast(data.DESCRIPTION || 'HOD updated successfully', 'success')
 
                 // Update the department in the store
                 const hodName = empIdHod.emp_Id.label
@@ -822,6 +809,7 @@ const departmentsViewModel = (set, get) => ({
                         loading: false
                     }
                 }))
+                get().closeDrawer()
             } else {
                 showToast(data.ERROR_DESCRIPTION || 'Failed to update HOD', 'error')
             }

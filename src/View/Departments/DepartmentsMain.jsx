@@ -5,6 +5,9 @@ import { Outlet, useLocation } from "react-router";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import { getUserData } from "../../Authentication/jwt_decode";
+import { isDepartmentAdmin } from "../../Authentication/roleHelpers";
+
 const DepartmentsMain = () => {
   const {
     mountBranch,
@@ -31,6 +34,7 @@ const DepartmentsMain = () => {
   }, []);
 
   const location = useLocation();
+  const hideCreateDepartmentButton = isDepartmentAdmin(getUserData()?.roleId);
 
   // console.log('branchId', branchId)
   // console.log("allBranches", empBranches)
@@ -86,6 +90,7 @@ const DepartmentsMain = () => {
             </div>
 
             <div className="flex flex-col gap-3">
+                {!hideCreateDepartmentButton && (
                 <CustomButton
                 className="w-full bg-bgBlue text-white hover:bg-blue-600 py-3 rounded-xl font-medium transition-all shadow-lg shadow-blue-500/20"
                 onClick={handleNavigateNewDept}
@@ -93,6 +98,7 @@ const DepartmentsMain = () => {
                 >
                 Create Department
                 </CustomButton>
+                )}
                 
                 <CustomButton
                 className="w-full bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 py-3 rounded-xl font-medium transition-all"

@@ -92,6 +92,7 @@ import SubComptency from "../View/Performance/SubComptency";
 import SubGoals from "../View/Performance/SubGoals";
 import useStore from "../Store/store";
 import { getUserData } from "../Authentication/jwt_decode";
+import { isFullAdmin, isBranchAdmin, isDepartmentAdmin } from "../Authentication/roleHelpers";
 import EmpDashboard from "../View/EmployeeView/EmpDashboard/EmpDashboard";
 import EmpAttendance from "../View/EmployeeView/EmpAttendance/EmpAttendance";
 import EmpNotices from "../View/EmployeeView/EmpNotices/EmpNotices";
@@ -140,10 +141,12 @@ const Routers = () => {
   // Show login shell only at `/` when unauthenticated; authenticated `/` uses dashboard routes below
   const isLoginRoute = location.pathname === "/" && !jwt;
 
-  // Get role from JWT token directly
+  // Get role from JWT token directly (e.g. Admin, Employee, Branch_Admin, Department_Admin)
   const userData = getUserData();
-  const authRole = userData?.roleId || 'Employee';
-
+  const authRole = userData?.roleId || "Employee";
+  const isAdmin = isFullAdmin(authRole);
+  const canAccessBranches = isAdmin || isBranchAdmin(authRole);
+  const canAccessDepartments = isAdmin || isDepartmentAdmin(authRole);
 
   return (
     <Routes>
@@ -162,22 +165,22 @@ const Routers = () => {
           {/* <Route path="/vacancy/:id" element={<HiringPage />} />
           <Route path="/vacancy/:id/profile" element={<Profile />} /> */}
 
-          {authRole === "Admin" ? (
+          {isAdmin ? (
             <Route exact path="/" element={<Dashboard />} />
           ) : (
             <Route exact path="/" element={<EmployeeDashboard />} />
           )}
 
           {/* Dashboard route for both roles */}
-          {authRole === "Admin" ? (
+          {isAdmin ? (
             <Route exact path="/dashboard" element={<Dashboard />} />
           ) : (
             <Route exact path="/dashboard" element={<EmployeeDashboard />} />
           )}
-          {authRole !== "Admin" && (
+          {!isAdmin && (
             <Route path="/attendance" element={<EmpAttendance />} />
           )}
-          {authRole === "Admin" && (
+          {isAdmin && (
             <Route path="/employees/" element={<Employees />}>
               <Route path="all_employess" element={<AllEmployess />}>
                 <Route
@@ -195,32 +198,38 @@ const Routers = () => {
           )}
           <Route path="/employee-profile/:employeeId" element={<AdminEmployeeProfile />}></Route>
           <Route path="employee-payslip/:employeeId" element={<AdminEmployeePayslip />}></Route>
-          <Route path="/departments/" element={<DepartmentsMain />}>
-            <Route path="edit/:id" element={<EditDepartment />} />
-            <Route path="manageDept/:id" element={<Departments />}>
+          {canAccessDepartments && (
+            <Route path="/departments/" element={<DepartmentsMain />}>
+              <Route path="edit/:id" element={<EditDepartment />} />
+              <Route path="manageDept/:id" element={<Departments />}>
+                <Route
+                  path="manage_sub_dep/:subDeptid"
+                  element={<ManageSubDepartments />}
+                ></Route>
+              </Route>
               <Route
-                path="manage_sub_dep/:subDeptid"
-                element={<ManageSubDepartments />}
+                path="createNewDept/:id"
+                element={<CreateNewDepartment />}
+              ></Route>
+              <Route
+                path="createNewDeptManage/:id"
+                element={<CreateNewDepartment />}
               ></Route>
             </Route>
-            <Route
-              path="createNewDept/:id"
-              element={<CreateNewDepartment />}
-            ></Route>
-            <Route
-              path="createNewDeptManage/:id"
-              element={<CreateNewDepartment />}
-            ></Route>
-          </Route>
+          )}
 
-          <Route path="/branches" element={<Branches />} />
-          <Route
-            path="/branches/create_new_branch"
-            element={<CreateNewBranch />}
-          />
+          {canAccessBranches && (
+            <>
+              <Route path="/branches" element={<Branches />} />
+              <Route
+                path="/branches/create_new_branch"
+                element={<CreateNewBranch />}
+              />
+            </>
+          )}
 
           {/* Training module routes */}
-          {authRole === "Admin" && (
+          {isAdmin && (
             <>
               <Route path="/trainingDash" element={<TrainingDash />} />
               <Route path="/courseCompletion" element={<CourseCompletion />} />
@@ -230,47 +239,53 @@ const Routers = () => {
             </>
           )}
 
-          <Route path="/hrpolicies/" element={<HRPolicies />}>
-            <Route path="manage_policies" element={<ManagePolicies />}></Route>
-            <Route path="create_new" element={<CreateNew />}></Route>
+          {isAdmin && (
+            <Route path="/hrpolicies/" element={<HRPolicies />}>
+              <Route path="manage_policies" element={<ManagePolicies />}></Route>
+              <Route path="create_new" element={<CreateNew />}></Route>
 
-            <Route path="swap_policies" element={<SwapPolicies />}></Route>
-          </Route>
+              <Route path="swap_policies" element={<SwapPolicies />}></Route>
+            </Route>
+          )}
 
-          <Route path="/payroll" element={<Payroll />}>
-            <Route
-              path="payroll_overview"
-              element={<PayrollOverview />}
-            ></Route>
-            <Route
-              path="manage_salary_template"
-              element={<ManageSalaryTemplate />}
-            ></Route>
-            <Route
-              path="manage_employees_salary"
-              element={<ManageEmployeesSalary />}
-            ></Route>
-            <Route path="manage_payslip" element={<ManagePayslips />}></Route>
-            <Route path="export_Reports" element={<ExportReports />}></Route>
-            <Route path="settings" element={<SettingPayroll />}></Route>
-          </Route>
-          <Route
-            path="/payroll/manage_employees_salary/incentive_deduction/"
-            element={<IncentivesDeductions />}
-          >
-            <Route
-              path="manage_Incent_deduct"
-              element={<ManageIncDeduct />}
-            ></Route>
-            <Route
-              path="history_Inc_deduct"
-              element={<HistoryIncDeduct />}
-            ></Route>
-            <Route path="incentive_list" element={<IncentiveList />}></Route>
-            <Route path="deduct_list" element={<DeductionList />}></Route>
-          </Route>
+          {isAdmin && (
+            <>
+              <Route path="/payroll" element={<Payroll />}>
+                <Route
+                  path="payroll_overview"
+                  element={<PayrollOverview />}
+                ></Route>
+                <Route
+                  path="manage_salary_template"
+                  element={<ManageSalaryTemplate />}
+                ></Route>
+                <Route
+                  path="manage_employees_salary"
+                  element={<ManageEmployeesSalary />}
+                ></Route>
+                <Route path="manage_payslip" element={<ManagePayslips />}></Route>
+                <Route path="export_Reports" element={<ExportReports />}></Route>
+                <Route path="settings" element={<SettingPayroll />}></Route>
+              </Route>
+              <Route
+                path="/payroll/manage_employees_salary/incentive_deduction/"
+                element={<IncentivesDeductions />}
+              >
+                <Route
+                  path="manage_Incent_deduct"
+                  element={<ManageIncDeduct />}
+                ></Route>
+                <Route
+                  path="history_Inc_deduct"
+                  element={<HistoryIncDeduct />}
+                ></Route>
+                <Route path="incentive_list" element={<IncentiveList />}></Route>
+                <Route path="deduct_list" element={<DeductionList />}></Route>
+              </Route>
+            </>
+          )}
 
-          {authRole === "Admin" ? (
+          {isAdmin ? (
             <Route path="/notices/" element={<Notices />}>
               <Route path="list_notices" element={<ListNotices />}></Route>
               <Route path="add_notice" element={<AddNotice />}></Route>
@@ -285,7 +300,7 @@ const Routers = () => {
           {/* Tasks route removed - now redirects to external URL https://accelerate.veevotech.com/ */}
 
           {/* <Route path='/attendance' element={<Attendance />}/> */}
-          {authRole === "Admin" && (
+          {isAdmin && (
             <Route path="/attendance/" element={<Attendance />}>
               <Route
                 path="individual-attendance"
@@ -320,74 +335,82 @@ const Routers = () => {
             </Route>
           )}
 
-          <Route path="/shiftPlanners" element={<ShiftPlanners />} />
+          {isAdmin && <Route path="/shiftPlanners" element={<ShiftPlanners />} />}
 
-          <Route path="/hire/" element={<Hire />}>
-            <Route path="vacancies_list" element={<VacanciesList />}></Route>
-            <Route path="talent_pool" element={<TalentPool />}></Route>
-          </Route>
-          <Route
-            path="/hire/create_vacancy"
-            element={<CreateVacancy />}
-          ></Route>
+          {isAdmin && (
+            <>
+              <Route path="/hire/" element={<Hire />}>
+                <Route path="vacancies_list" element={<VacanciesList />}></Route>
+                <Route path="talent_pool" element={<TalentPool />}></Route>
+              </Route>
+              <Route
+                path="/hire/create_vacancy"
+                element={<CreateVacancy />}
+              ></Route>
 
-          <Route
-            path="/hire/vacancies_list/all_applicants/:vacancyId"
-            element={<AllApplicants />}
-          >
-            <Route path="applicant" element={<Applicants />}>
               <Route
-                path="view_detail/:id"
-                element={<ViewDetailApplicants />}
-              ></Route>
-            </Route>
-            <Route path="shortlisted" element={<Shortlisted />}>
-              <Route
-                path="view_detail/:id"
-                element={<ViewDetailApplicants />}
-              ></Route>
-            </Route>
-            <Route path="interviewed" element={<Interviewed />}>
-              <Route
-                path="view_detail/:id"
-                element={<ViewDetailApplicants />}
-              ></Route>
-            </Route>
-            <Route path="accepted" element={<Accepted />}>
-              <Route
-                path="view_detail/:id"
-                element={<ViewDetailApplicants />}
-              ></Route>
-            </Route>
-            <Route path="rejected" element={<Rejected />}>
-              <Route
-                path="view_detail/:id"
-                element={<ViewDetailApplicants />}
-              ></Route>
-            </Route>
+                path="/hire/vacancies_list/all_applicants/:vacancyId"
+                element={<AllApplicants />}
+              >
+                <Route path="applicant" element={<Applicants />}>
+                  <Route
+                    path="view_detail/:id"
+                    element={<ViewDetailApplicants />}
+                  ></Route>
+                </Route>
+                <Route path="shortlisted" element={<Shortlisted />}>
+                  <Route
+                    path="view_detail/:id"
+                    element={<ViewDetailApplicants />}
+                  ></Route>
+                </Route>
+                <Route path="interviewed" element={<Interviewed />}>
+                  <Route
+                    path="view_detail/:id"
+                    element={<ViewDetailApplicants />}
+                  ></Route>
+                </Route>
+                <Route path="accepted" element={<Accepted />}>
+                  <Route
+                    path="view_detail/:id"
+                    element={<ViewDetailApplicants />}
+                  ></Route>
+                </Route>
+                <Route path="rejected" element={<Rejected />}>
+                  <Route
+                    path="view_detail/:id"
+                    element={<ViewDetailApplicants />}
+                  ></Route>
+                </Route>
 
-            <Route path="starred" element={<Starred />}>
+                <Route path="starred" element={<Starred />}>
+                  <Route
+                    path="view_detail/:id"
+                    element={<ViewDetailApplicants />}
+                  ></Route>
+                </Route>
+              </Route>
+            </>
+          )}
+
+          {isAdmin && (
+            <Route path="/application/" element={<Application />}>
               <Route
-                path="view_detail/:id"
-                element={<ViewDetailApplicants />}
+                path="application_list"
+                element={<ApplicationsLists />}
               ></Route>
+              <Route path="new_applications" element={<NewApplication />}></Route>
             </Route>
-          </Route>
+          )}
 
-          <Route path="/application/" element={<Application />}>
-            <Route
-              path="application_list"
-              element={<ApplicationsLists />}
-            ></Route>
-            <Route path="new_applications" element={<NewApplication />}></Route>
-          </Route>
-
-          <Route path="/leavesPlanner" element={<LeavesPlanner />}>
-            <Route path="leaves_group" element={<LeavesGroup />}>
-              <Route path="viewLeaves/:id" element={<ViewLeaves />} />
+          {isAdmin && (
+            <Route path="/leavesPlanner" element={<LeavesPlanner />}>
+              <Route path="leaves_group" element={<LeavesGroup />}>
+                <Route path="viewLeaves/:id" element={<ViewLeaves />} />
+              </Route>
+              <Route path="public_holiday" element={<PublicHoliday />} />
             </Route>
-            <Route path="public_holiday" element={<PublicHoliday />} />
-          </Route>
+          )}
           {
             authRole === "Admin" || "Employee" ? (
               <Route path="/notespool/" element={<NotesPool />}>
@@ -412,7 +435,7 @@ const Routers = () => {
             // <Route path='/notespool' element={<EmpNotices />} />
           }
 
-          {authRole === "Admin" ? (
+          {isAdmin ? (
             <Route path="/performance/" element={<Performance />}>
               <Route path="" element={<PRC />} />
               <Route path="goals" element={<Goals />}>
@@ -428,18 +451,20 @@ const Routers = () => {
             <Route path="/performance" element={<EmpPerformance />} />
           )}
 
-          <Route path="/formApproval/" element={<FormApproval />}>
-            <Route path="custom_form" element={<CustomForm />}></Route>
-            <Route path="approval_flow" element={<ApprovalFlow />}></Route>
-          </Route>
+          {isAdmin && (
+            <Route path="/formApproval/" element={<FormApproval />}>
+              <Route path="custom_form" element={<CustomForm />}></Route>
+              <Route path="approval_flow" element={<ApprovalFlow />}></Route>
+            </Route>
+          )}
 
           {/* Expense Management Route for Admin */}
-          {authRole === "Admin" && (
+          {isAdmin && (
             <Route path="/expense" element={<Expense />}>
               <Route index element={<ExpenseDashboard />} />
             </Route>
           )}
-          {authRole !== "Admin" && (
+          {!isAdmin && (
             <>
               <Route path="/time-adjustment" element={<EmpTimeAdjustment />} />
               <Route path="/applications" element={<EmpApplication />} />
@@ -449,14 +474,14 @@ const Routers = () => {
           )}
 
           <Route path="/inbox" element={<Inbox />}></Route>
-          {authRole !== "Admin" && (
+          {!isAdmin && (
             <Route path="/profile" element={<EmpProfile />} />
           )}
-          {authRole !== "Admin" && (
+          {!isAdmin && (
             <Route path="/expense" element={<EmpExpense />} />
           )}
           {/* Employee Training routes */}
-          {authRole !== "Admin" && (
+          {!isAdmin && (
             <>
               <Route path="/EmployeeTraining" element={<EmployeeTraining />} />
               <Route path="/EmployeeTraining/course/:courseIndex" element={<CourseDetailPage />} />
@@ -465,7 +490,7 @@ const Routers = () => {
           )}
           
           {/* Settings Route - Available for Admin users */}
-          {authRole === "Admin" && (
+          {isAdmin && (
             <Route path="/settings" element={<Settings />} />
           )}
         </>

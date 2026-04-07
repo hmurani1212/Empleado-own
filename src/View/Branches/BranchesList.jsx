@@ -204,7 +204,29 @@ const BranchesList = (props) => {
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-400 italic text-xs">Unassigned</span>
+                            <span
+                              className="text-gray-400 italic text-xs cursor-pointer hover:text-brand-600 hover:underline"
+                              onClick={() =>
+                                markBranchAdmin({
+                                  id: branch.id,
+                                  ...branch,
+                                })
+                              }
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  markBranchAdmin({
+                                    id: branch.id,
+                                    ...branch,
+                                  });
+                                }
+                              }}
+                              title="Assign Branch Admin"
+                            >
+                              Unassigned
+                            </span>
                           )}
                         </Typography>
                       </td>

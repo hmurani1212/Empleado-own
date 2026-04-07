@@ -9,6 +9,7 @@ import employeesApi from '../../../Model/Data/Employees/Employees'
 import trainingApi from '../../../Model/Data/TrainigPages/Training'
 import ConfirmationDialog from '../../../Components/ConfirmationDialog/ConfirmationDialog'
 import useProfileCompletion from '../../../hooks/useProfileCompletion'
+import { buildDocumentFileUrl } from '../../../utils/imageUrlUtils'
 
 const tableHeader = [
   "S.No", "Document Title", "View Document", "Actions"
@@ -308,10 +309,10 @@ const EmpProfileDocuments = () => {
     }
 
     // Handle view document
-    const handleViewDocument = (docUrl) => {
-        if (docUrl) {
-            window.open(docUrl, '_blank')
-        }
+    const handleViewDocument = (doc) => {
+        const url = buildDocumentFileUrl(doc)
+        if (!url) return
+        window.open(url, '_blank', 'noopener,noreferrer')
     }
 
   return (
@@ -339,7 +340,7 @@ const EmpProfileDocuments = () => {
             </Card>
         ) : documentData.length > 0 ? (
             <div>
-                <table className="w-[100%] min-w-max text-left">
+                <table className="w-full min-w-max text-left">
                     <thead className='sticky top-[-9px]'>
                         <tr>
                             {tableHeader?.map((head, i) => (
@@ -376,7 +377,7 @@ const EmpProfileDocuments = () => {
                                         size="sm"
                                         variant="outlined"
                                         color="blue"
-                                        onClick={() => handleViewDocument(document.doc_name)}
+                                        onClick={() => handleViewDocument(document)}
                                         disabled={!document.doc_name}
                                     >
                                         View

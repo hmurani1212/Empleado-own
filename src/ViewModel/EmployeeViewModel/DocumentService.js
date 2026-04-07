@@ -3,6 +3,7 @@ import useStore from "../../Store/store"
 import employeesApi from "../../Model/Data/Employees/Employees"
 import { showToast } from "../../Components/Toaster/Toaster"
 import { File_BASE_URL } from "../../Model/BaseUri"
+import { buildDocumentFileUrl } from "../../utils/imageUrlUtils"
 // import useElephantSerivce from "../../services/__elephantServices"
 
 const useDocumentServices = ()=>{
@@ -221,10 +222,14 @@ const useDocumentServices = ()=>{
 
 
     const handleDocumentView = (data)=>{
-        if (data?.doc_url) {
-            const url = `${File_BASE_URL}${data.doc_url}`
-            window.open(url, '_blank');
-        }
+        // Prefer the same URL building mechanism used for profile pics:
+        // - if doc_name is present, build `.../files/images/<encryptedFolder>/<name>` (or elephant URL)
+        // - else fall back to legacy `doc_url` (relative path)
+        const url = buildDocumentFileUrl(data) || (data?.doc_url ? `${File_BASE_URL}${data.doc_url}` : "")
+        if (!url) return
+
+        // Direct navigation is most reliable across browsers (about:blank + location assignment can be blocked)
+        window.open(url, '_blank', 'noopener,noreferrer')
     }
 
 

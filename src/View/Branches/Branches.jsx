@@ -9,6 +9,8 @@ import CreateNewBranch from './CreateNewBranch'
 import BranchesList from './BranchesList'
 import CustomButton from '../../Components/CustomButton/CustomButton'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
+import { getUserData } from '../../Authentication/jwt_decode'
+import { isBranchAdmin } from '../../Authentication/roleHelpers'
 import '../../index.css'
 
 
@@ -16,6 +18,7 @@ const Branches = () => {
   const { branchStatus, statusBranch, mountBranch, creatingNewBranch, branchesAllnew, handleChangeBranch, showDrawer, formatPhoneNumberTable, OpenAddBranchDrawer, closeBranchDrawer, gettingAllBranchesNew, currentFilterStatus, branchesListLoading } = useBranches2()
   const data = ['Branch ID', 'Branch Name', 'Branch Admin', 'Currency', 'Phone', 'Email', 'Creation Time', 'Actions']
   const hasFetchedRef = useRef(false);
+  const hideCreateBranchButton = isBranchAdmin(getUserData()?.roleId)
 
   useEffect(() => {
     // Single fetch on mount; ref avoids duplicate call from React Strict Mode or multiple triggers
@@ -70,6 +73,7 @@ const Branches = () => {
                   />
                </div>
 
+               {!hideCreateBranchButton && (
                <CustomButton 
                  title='Create New Branch' 
                  onClick={creatingNewBranch} 
@@ -77,6 +81,7 @@ const Branches = () => {
                >
                  <span className="text-lg">+</span> Create New Branch
                </CustomButton>
+               )}
             </div>
           </div>
 

@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import useBranches2 from '../../ViewModel/Brach2ViewModel/BranchesServices2'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
+import { buildBranchAdminEmployeeOptions } from '../../utils/branchEmployeeSelect'
 import { Button, IconButton, Typography } from '@material-tailwind/react'
 import { IoClose } from "react-icons/io5";
 import { CiEdit } from 'react-icons/ci';
@@ -34,29 +35,42 @@ const MarkBranchAdmin = (props) => {
     const showDeleteOption = ()=>{
         setDeleteOption(!deleteOption)
     }
+
+    const employeeSelectOptions = useMemo(
+        () => buildBranchAdminEmployeeOptions(brnachAdminData),
+        [brnachAdminData]
+    );
+
+    const showNoEmployeesLine = employeeSelectOptions.length === 0;
+
   return (
     <>
     <div className='flex flex-col space-y-6 p-6'>
         <div>
+            {showNoEmployeesLine && (
+                <Typography
+                    variant="small"
+                    className="mb-2 font-semibold text-amber-900 font-poppins"
+                >
+                    No employees found on this branch
+                </Typography>
+            )}
             <Typography variant="small" className="mb-2 font-medium font-poppins text-gray-700">
                 Select Employee to mark as Branch Admin
             </Typography>
+            {brnachAdminData?.employeesFetchError && (
+                <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900 font-poppins">
+                    {brnachAdminData.employeesFetchError}
+                </div>
+            )}
             <div className="w-full">
                 <CustomSelect
                 placeHolderTitle='Select Employee'
                 value={empIdBranchAdmin?.emp_Id}
-                options={brnachAdminData?.DB_DATA?.length > 0 ? 
-                    brnachAdminData.DB_DATA
-                        .filter(employee => {
-                            // Filter out employees who are already branch admins
-                            const existingAdminIds = brnachAdminData?.BRANCH_ADMIN_DATA?.map(admin => admin.employee_id) || [];
-                            return !existingAdminIds.includes(employee.id);
-                        })
-                        .map((employee) => ({value:employee.id, label:employee.name})) : 
-                    []
-                }
+                options={employeeSelectOptions}
                 onChangeHandler={(selectedOption, e) => onChangeEmpBranc(selectedOption, 'emp_Id', e)}
                 customStyles={false}
+                noOptionsMessage={() => 'No employees found on this branch'}
                 /> 
             </div>
         </div>

@@ -8,7 +8,7 @@ import {
 } from "@material-tailwind/react";
 import React, { useRef } from "react";
 import useSubDept from "../../ViewModel/DepartmentsViewModel/SubDeptServices";
-import { useNavigate, useParams, useLocation } from "react-router";
+import { useParams, useLocation } from "react-router";
 import { FaChevronDown, FaEye } from "react-icons/fa";
 import { HiOutlineOfficeBuilding, HiOutlineUserGroup } from "react-icons/hi"; // New icons
 import useDepartments from "../../ViewModel/DepartmentsViewModel/DepartmentsServices";
@@ -17,6 +17,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import useDropdownService from "../../services/__dropDownHoverService";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import { getUserData } from "../../Authentication/jwt_decode";
+import { isDepartmentAdmin } from "../../Authentication/roleHelpers";
 
 /** Skeleton row for sub-department table: Dept Name (left), Employees, Head, Sub Depts, Designations, Action */
 const SubDeptSkeletonRow = () => (
@@ -84,7 +86,7 @@ const ManageSubDepartments = () => {
   } = useSubDept();
   // console.log("subDeptsubDept", subDept)
   const { triggerRefs, getDropdownPosition } = useDropdownService();
-  const navigate = useNavigate();
+  const hideCreateDepartmentButton = isDepartmentAdmin(getUserData()?.roleId);
 
   return (
     <div className="min-h-screen">
@@ -107,13 +109,15 @@ const ManageSubDepartments = () => {
             >
               Back
             </CustomButton>
-            <CustomButton
-              className="bg-bgBlue text-white hover:bg-blue-600 px-4 py-2 rounded-lg shadow-lg shadow-blue-500/20 font-medium transition-all flex items-center gap-2"
-              onClick={() => handleAddSubDept(params)}
-              title="Add Sub-Department"
-            >
-              <span className="text-lg">+</span> Add Sub-Department
-            </CustomButton>
+            {!hideCreateDepartmentButton && (
+              <CustomButton
+                className="bg-bgBlue text-white hover:bg-blue-600 px-4 py-2 rounded-lg shadow-lg shadow-blue-500/20 font-medium transition-all flex items-center gap-2"
+                onClick={() => handleAddSubDept(params)}
+                title="Add Sub-Department"
+              >
+                <span className="text-lg">+</span> Add Sub-Department
+              </CustomButton>
+            )}
           </div>
         </div>
 

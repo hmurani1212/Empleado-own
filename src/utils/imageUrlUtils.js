@@ -312,15 +312,48 @@ export function buildEmployeeImageUrl(employee, thumbnail = false) {
  */
 export function buildDocumentFileUrl(doc) {
   if (!doc || !doc.doc_name) return '';
-  const name = doc.doc_name.trim();
-  if (/^https?:\/\//i.test(name)) return name;
+  let name = doc.doc_name.trim();
+
+  // If backend returned a full URL:
+  // - allow known file hosts as-is
+  // - but normalize dev/unknown hosts that simply point to "/<filename>" back into our canonical files/images URL
+  if (/^https?:\/\//i.test(name)) {
+    try {
+      const u = new URL(name);
+      const host = u.hostname.toLowerCase();
+      const isKnownHost =
+        host === 'emp-beta.veevotech.com' ||
+        host === 'elephant.veevotech.com' ||
+        host.endsWith('.veevotech.com');
+
+      // If it's already a real file host URL, keep it
+      if (isKnownHost && (u.pathname.startsWith('/files/') || host === 'elephant.veevotech.com')) {
+        return name;
+      }
+
+      // If URL looks like a dev/SPA origin serving "/<filename>", extract filename and rebuild
+      const path = u.pathname || '';
+      const maybeFile = path.split('/').filter(Boolean).pop() || '';
+      if (maybeFile && !path.includes('/files/') && !path.includes('/images/')) {
+        name = maybeFile;
+      } else {
+        // Otherwise keep the full URL as-is
+        return name;
+      }
+    } catch {
+      // If URL parsing fails, fall through to treating it as a filename
+    }
+  }
+
+  // Encode filename to avoid navigation failures on special characters/spaces
+  const safeName = encodeURIComponent(name);
   const folderId = doc.folder_id ?? doc.host_id ?? 1;
   const folderStr = String(folderId);
   if (folderStr.length > 5) {
-    return `https://elephant.veevotech.com/files/${folderId}/${name}`;
+    return `https://elephant.veevotech.com/files/${folderId}/${safeName}`;
   }
   const encryptedFolder = simpleEncrypt(folderId);
-  return `${FILE_BASE_URL}files/images/${encryptedFolder}/${name}`;
+  return `${FILE_BASE_URL}files/images/${encryptedFolder}/${safeName}`;
 }
 
 /**

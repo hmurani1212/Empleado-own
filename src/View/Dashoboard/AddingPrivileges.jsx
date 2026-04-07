@@ -104,34 +104,31 @@ const AddingPrivileges = (props) => {
             return;
         }
 
-        // Map privilege level to one_id_roll
-        // UI values: 0 = No Privilege, 1 = Super Admin, 2 = Branch Admin, 3 = Department Admin
-        // API expects: 1 = Employee, 2 = Super Admin, 3 = Branch Admin, 4 = Department Admin
-        // Mapping: UI value + 1 = API value
-        const getOneIdRoll = (privilege) => {
-            const privilegeNum = parseInt(privilege);
-            // Map: 0→1, 1→2, 2→3, 3→4
-            return privilegeNum + 1;
-        };
+        // one_id_roll must be backend role ids: 14 = Employee, 13 = Admin, 24 = Branch_Admin, 25 = Department_Admin
+        const ALLOWED_ONE_ID_ROLL = [13, 14, 24, 25];
+        const oneIdRoll = parseInt(privilegeLevel, 10);
+        if (!Number.isFinite(oneIdRoll) || !ALLOWED_ONE_ID_ROLL.includes(oneIdRoll)) {
+            showToast('Invalid role selected. Use Employee, Admin, Branch_Admin, or Department_Admin.', 'error');
+            return;
+        }
 
         // Convert module IDs to integers
-        const module = Object.keys(selectedValues).map(key => parseInt(key));
+        const module = Object.keys(selectedValues).map(key => parseInt(key, 10));
         
         // Build privileges object with integer values
         const privilegesKeys = {};
         Object.keys(selectedValues).forEach(key => {
             const variableName = `privileges_${key}`;
-            // Convert string to integer for API
-            privilegesKeys[variableName] = parseInt(selectedValues[key]);
+            privilegesKeys[variableName] = parseInt(selectedValues[key], 10);
         });
 
-        // Prepare API payload
+        // Prepare API payload (aligns with assign_previlage: empId, one_id_roll, module, privileges_1..20, ip_filter)
         const apiData = {
-            empId: parseInt(empId),
-            one_id_roll: getOneIdRoll(privilegeLevel || '0'), // Default to 0 if not provided
+            empId: parseInt(empId, 10),
+            one_id_roll: oneIdRoll,
             module: module,
             ...privilegesKeys,
-            ip_filter: ipFilter || '' // Use IP filter from form or empty string
+            ip_filter: ipFilter || ''
         };
 
         try{

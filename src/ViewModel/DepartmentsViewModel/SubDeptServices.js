@@ -5,6 +5,8 @@ import { useState } from "react";
 import { showToast } from "../../Components/Toaster/Toaster";
 import departmentsApi from "../../Model/Data/Departments/Departments";
 import { validateAddSubDepartment } from "../../Validation/Validation";
+import { getUserData } from "../../Authentication/jwt_decode";
+import { isDepartmentAdmin } from "../../Authentication/roleHelpers";
 
 const useSubDept = ()=>{
 
@@ -90,9 +92,10 @@ const useSubDept = ()=>{
     
     
     const handleAddSubDept= (data)=>{
+        if (isDepartmentAdmin(getUserData()?.roleId)) {
+            return;
+        }
 
-       
-        
         openDrawer()
         settingDrawerSize(500)
         settingDrawerTitle('Add Sub Departments')

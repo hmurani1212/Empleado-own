@@ -780,6 +780,21 @@ const employeesApi = {
             params: params
         })
     },
+    /**
+     * Departments → Employee Details drawer: full employee list for a department.
+     * Uses query param deptt_id (API spelling) — not the paginated /api/v1/employees?dept_id=… endpoint.
+     */
+    getAllEmployeesByDepttId: function (deptt_id) {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: '/api/v1/employees/employee/get_all_employee',
+            params: { deptt_id },
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        })
+    },
     gettingAllEmployees: function (params = {}) {
         return axiosInstancecoremodule.request({
             method: 'GET',

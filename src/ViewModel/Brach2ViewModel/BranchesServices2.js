@@ -13,6 +13,7 @@ import Premisis from "../../View/Branches/Premisis"
 import MarkBranchAdmin from "../../View/Branches/MarkBranchAdmin"
 import EditBranchForm from "../../View/Branches/EditBranchForm"
 import branch2Api from "../../Model/Data/Branches/Branch2"
+import { parseBranchEmployeesPayload } from "../../utils/branchEmployeeSelect"
 import mainBranchApi from "../../Model/Data/Branches/Branches"  // Renamed for clarity
 // import Branches from "../../"
 const useBranches2 = () => {
@@ -707,42 +708,63 @@ const useBranches2 = () => {
 
 
 
-    const markBranchAdmin = async (branchData) => {
-        try {
-            if (!branchData || !branchData.id) {
-                showToast('Invalid branch data', 'error');
-                return;
-            }
+    const openBranchAdminDrawer = () => {
+        gettingCountries();
+        openDrawer();
+        settingDrawerSize(620);
+        settingDrawerTitle('Branch Admin');
+        settingComponent(<MarkBranchAdmin />);
+    };
 
-            // Call API to get branch employees
-            const response = await branch2Api.getBranchEmployees(branchData.id);
+    const markBranchAdmin = async (branchData) => {
+        if (!branchData || !branchData.id) {
+            showToast('Invalid branch data', 'error');
+            return;
+        }
+
+        const branchId = branchData.id;
+        const basePayload = {
+            BRANCH_ADMIN_DATA: [],
+            DB_DATA: [],
+            branchId,
+            employeesFetchError: null,
+        };
+
+        try {
+            const response = await branch2Api.getBranchEmployees(branchId);
             const responseData = response.data;
 
             if (response.status === 200 && responseData.STATUS === 'SUCCESSFUL') {
+                const { employees, admins } = parseBranchEmployeesPayload(responseData);
                 const newData = {
-                    BRANCH_ADMIN_DATA: responseData.DB_DATA.Existig_admin || [],
-                    DB_DATA: responseData.DB_DATA.employees || []
+                    BRANCH_ADMIN_DATA: admins,
+                    DB_DATA: employees,
+                    branchId,
+                    employeesFetchError: null,
                 };
-                console.log('API Response Data:', responseData.DB_DATA);
-                console.log('Mapped Data:', newData);
                 settingBranchAdminData(newData);
-
-                // Use the SAME drawer system as Edit Branch
-                gettingCountries();
-                openDrawer();
-                settingDrawerSize(620);
-                settingDrawerTitle('Branch Admin');
-                settingComponent(
-                    <MarkBranchAdmin />
-                );
-            } else {
-                const error = responseData.ERROR_DESCRIPTION || 'Failed to get branch employees';
-                showToast(error, 'error');
+                openBranchAdminDrawer();
+                return;
             }
 
+            const errMsg =
+                responseData?.ERROR_DESCRIPTION || 'Failed to get branch employees';
+            settingBranchAdminData({
+                ...basePayload,
+                employeesFetchError: errMsg,
+            });
+            openBranchAdminDrawer();
         } catch (err) {
             console.log('Error in mark branch admin:', err);
-            showToast(err?.response?.data?.ERROR_DESCRIPTION || 'Failed to get branch employees', 'error');
+            const msg =
+                err?.response?.data?.ERROR_DESCRIPTION ||
+                err?.message ||
+                'Failed to get branch employees';
+            settingBranchAdminData({
+                ...basePayload,
+                employeesFetchError: msg,
+            });
+            openBranchAdminDrawer();
         }
     };
 
