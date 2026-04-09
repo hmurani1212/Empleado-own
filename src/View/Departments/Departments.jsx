@@ -82,7 +82,6 @@ const Departments = () => {
   const { handleSubDept } = useSubDept();
   const drawerOpen = useStore((state) => state.drawerOpen);
   const hideCreateDepartmentButton = isDepartmentAdmin(getUserData()?.roleId);
-
   const deptData = [
     "Dept Name",
     "Description",

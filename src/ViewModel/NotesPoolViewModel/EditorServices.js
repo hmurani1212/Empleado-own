@@ -1,6 +1,13 @@
 import { useRef, useState } from "react"
 import notesPoolApi from "../../Model/Data/NotesPool/NotesPool"
 import { showToast } from "../../Components/Toaster/Toaster"
+import { serializeEditorContentForLegacyBackend } from "../../services/__notesPoolEditorContent"
+import {
+  extractUploadedAttachmentRows,
+  mergeAttachmentListsForUpdate,
+  filterAttachmentsForNoteUpdatePayload,
+} from "../../services/__notesPoolAttachments"
+import { isNotesPoolLooseSuccess } from "../../services/__notesPoolApi"
 
 const useEditorService = ()=>{
 
@@ -105,22 +112,40 @@ const useEditorService = ()=>{
     const [uploadProgress, setUploadProgress] = useState({});
 
 
+    const resolveNoteIdForUpload = (data) =>
+        data?.note_id ?? data?.noteHeader?.note_id ?? data?.noteHeader?.id ?? data?.id ?? data?._id;
+
     const handleDrop = (e, data) => {
         e.preventDefault();
-        const droppedFiles = Array.from(e.dataTransfer.files);
-        setFiles((prevFiles) => [...prevFiles, ...droppedFiles]);
+        const droppedFiles = Array.from(e.dataTransfer.files || []);
+        if (!droppedFiles.length) return;
+        void uploadFiles(droppedFiles, data);
     };
 
-    const handleFileChange = (e, data) => {
-        const selectedFiles = Array.from(e.target.files);
-        uploadFiles(selectedFiles, data);
+    const handleFileChange = async (e, data) => {
+        const selectedFiles = Array.from(e.target.files || []);
+        if (!selectedFiles.length) return null;
+        return uploadFiles(selectedFiles, data);
     };
 
     const handleRemoveFile = async (file, data, index) => {
+        // EditorFileUpload: remove pending local file — onClick passes only index (number)
+        if (typeof file === "number") {
+            const idx = file;
+            setFiles((prev) => prev.filter((_, i) => i !== idx));
+            return;
+        }
 
-        // Handle different file object structures
-        const noteId = data.noteHeader?.id || data.note_id || data.id || data._id;
-        const fileId = file.id || file.ID || file.file_id || file.FILE_ID; // Use the primary key from notes_attachment table
+        const fileId = file?.id || file?.ID || file?.file_id || file?.FILE_ID;
+        if (!fileId && (file instanceof File || (typeof file?.name === "string" && !file?.REC_ID && !file?.rec_id))) {
+            setEditorValue((prevState) => ({
+                ...prevState,
+                attachements: (prevState.attachements || []).filter((_, i) => i !== index),
+            }));
+            return;
+        }
+
+        const noteId = data?.noteHeader?.note_id ?? data?.noteHeader?.id ?? data?.note_id ?? data?.id ?? data?._id;
         const fileName = file.FILE_NAME || file.file_name;
 
         if (!noteId) {
@@ -173,38 +198,50 @@ const useEditorService = ()=>{
 
 
     const uploadFiles = async (filesToUpload, data) => {
+        if (!filesToUpload?.length) return null;
+
+        const noteId = resolveNoteIdForUpload(data);
+        if (!noteId) {
+            showToast("Cannot upload attachment: note ID is missing", "error");
+            return null;
+        }
 
         const formData = new FormData();
         filesToUpload.forEach((file) => {
-            formData.append("file", file); // Append each file individually
+            formData.append("file", file);
         });
-        formData.append("note_id", data.note_id); // Add note_id to formData
+        formData.append("note_id", noteId);
         formData.append("operation", "upload_attachment");
 
         try {
-            const response = await notesPoolApi.uploadNoteAttachemnt(
-                formData,
-                (progress) => { // Only pass formData and progress callback
-                    setUploadProgress((prevProgress) => ({
-                        ...prevProgress,
-                        [filesToUpload[0].name]: progress,
-                    }));
-                }
-            );
-            const responseData = response.data;
-            if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-                setEditorValue((prevState) => ({
-                    ...prevState,
-                    attachements: [...prevState.attachements, responseData.INSERTED_DATA],
+            const response = await notesPoolApi.uploadNoteAttachemnt(formData, (progress) => {
+                setUploadProgress((prevProgress) => ({
+                    ...prevProgress,
+                    [filesToUpload[0].name]: progress,
                 }));
-            } else {
-                const errorDescp = responseData.ERROR_DESCRIPTION;
-                showToast(errorDescp, "error");
+            });
+            const responseData = response.data;
+            if (isNotesPoolLooseSuccess(response.status, responseData)) {
+                const newItems = extractUploadedAttachmentRows(responseData);
+                let merged = null;
+                setEditorValue((prevState) => {
+                    const prev = prevState.attachements || [];
+                    merged = [...prev, ...newItems];
+                    return { ...prevState, attachements: merged };
+                });
+                setFiles([]);
+                setUploadProgress({});
+                return merged;
             }
-            setUploadProgress({}); // Reset progress after upload completes
+            const errorDescp = responseData?.ERROR_DESCRIPTION;
+            showToast(errorDescp || "Upload failed", "error");
+            setUploadProgress({});
+            return null;
         } catch (error) {
             console.error("Upload failed:", error);
-            setUploadProgress({}); // Reset progress on error
+            showToast("Failed to upload attachment", "error");
+            setUploadProgress({});
+            return null;
         }
     };
 
@@ -224,8 +261,12 @@ const useEditorService = ()=>{
             String(tag.label || tag.name || tag).trim()
         ).filter(tag => tag.length > 0); // Remove empty tags
 
-        // Fix: Parse editor_content if it's a string
-        let editorContentData = editorValue.editorContent?.editor_content || editorValue.editorContent;
+        // Prefer payload from caller (e.g. Editor.save()) over React state — state can lag behind the editor.
+        let editorContentData =
+            data?.editor_content ??
+            data?.editorContent ??
+            editorValue.editorContent?.editor_content ??
+            editorValue.editorContent;
         if (typeof editorContentData === 'string') {
             try {
                 editorContentData = JSON.parse(editorContentData);
@@ -233,21 +274,25 @@ const useEditorService = ()=>{
                 console.error('Error parsing editor content:', e);
             }
         }
+        const editorContentPayload = serializeEditorContentForLegacyBackend(
+            editorContentData ?? { blocks: [], time: Date.now(), version: '2.31.0' }
+        );
         
         // Fix: Use the correct data structure from the UI
         console.log("data from", data)
         const apiData = {
             operation: "update_note_content",
-            note_id: data.note_id || data.noteHeader?.id || data.note_id,
+            note_id: data.note_id || data.noteHeader?.note_id || data.noteHeader?.id || data.id || data._id,
             notebook_id: data.notebook_id || data.noteHeader?.notebook_id || '',
             notebook_title: data.notebook_title || data.noteHeader?.notebook_title || '',
-            editor_content: editorContentData, // Send as object, not string
+            editor_content: editorContentPayload,
             tags: tagsForDB, // Send as array of strings
-            // Filter out images from attachments payload as they are now inline in editor_content
-            attachements: (editorValue.attachements || []).filter(file => {
-                const mimeType = file.FILE_MIME || file.type || file.mimeType || file.mime_type || file.file_type;
-                return !mimeType?.startsWith('image/');
-            })
+            attachements: filterAttachmentsForNoteUpdatePayload(
+                mergeAttachmentListsForUpdate(
+                    data.attachements || data.attachments,
+                    editorValue.attachements
+                )
+            )
         };
         
         setEditorValue((prevState)=>({
@@ -259,16 +304,16 @@ const useEditorService = ()=>{
             const response = await notesPoolApi.updateNote(apiData)
             const responseData = await response.data 
             
-            if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
+            if (isNotesPoolLooseSuccess(response.status, responseData)) {
                 toggleEditorNote()
                 showToast('Note Updated Successfully', 'success')
-            }else{
-                const apiError = responseData.ERROR_DESCRIPTION || 'Failed to update note'
+            } else {
+                const apiError = responseData?.ERROR_DESCRIPTION || 'Failed to update note'
                 showToast(apiError, 'error')
             }
         }catch(err){
             console.error('Error updating note:', err)
-            showToast('Add tags to update note', 'error')
+            showToast('Failed to update note', 'error')
         }finally{
             setEditorValue((prevState)=>({
                 ...prevState, 

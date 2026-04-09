@@ -354,8 +354,25 @@ const payrollViewModel = (set, get) => ({
                 const annualSalary = apiData.annual_salary || apiData.annualSalary || []
                 const grossSalaryData = apiData.gross_salary || apiData.grossSalary || []
                 const netSalaryData = apiData.net_salary || apiData.netSalary || []
+                const sumSeriesValues = (series) => {
+                    if (!Array.isArray(series)) return 0
+                    return series.reduce((acc, entry) => {
+                        const raw = entry?.value
+                        const n =
+                            typeof raw === 'number'
+                                ? raw
+                                : parseFloat(String(raw ?? '').replace(/,/g, ''))
+                        return acc + (Number.isFinite(n) ? n : 0)
+                    }, 0)
+                }
+                const grossTotal = sumSeriesValues(grossSalaryData)
+                const netTotal = sumSeriesValues(netSalaryData)
                 set({
-                    grossNetValues: apiData,
+                    grossNetValues: {
+                        ...apiData,
+                        gross: grossTotal,
+                        net: netTotal,
+                    },
                     annualGrossSalary: Array.isArray(annualSalary) ? annualSalary : [],
                     grossSalary: Array.isArray(grossSalaryData) ? grossSalaryData : [],
                     netSalary: Array.isArray(netSalaryData) ? netSalaryData : [],

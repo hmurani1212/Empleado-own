@@ -1,6 +1,5 @@
-import { FaBook } from "react-icons/fa6";
-import { BiShare } from "react-icons/bi";
-import { FaTrash  } from "react-icons/fa6";
+import { FaBook, FaTrash } from "react-icons/fa6";
+import { BiShare, BiDownload } from "react-icons/bi";
 import { IoCopy,IoCut   } from 'react-icons/io5'
 import employeesApi from "../Model/Data/Employees/Employees"
 
@@ -27,8 +26,19 @@ export const sharednotesMenuList = [
     {id:2, name:'Edit', icon:<FaBook className="text-green-500" />},
 ]
 
+/** True when a sharing permission field from the API is granted. */
+export function isSharingPermissionGranted(val) {
+  return val === 1 || val === '1' || val === true;
+}
+
+/**
+ * Shared notebook **card** overflow menu (Shared Notebooks list only).
+ * Add note / edit are not shown here; users open the notebook from the card and those actions follow allow_notes_addition / allow_edit inside the notebook view.
+ * `permKey` maps to `notebook.shared_links[0].permissions`.
+ */
 export const sharedNotebookMenuList = [
-    {id:1, name:'Share', icon:<BiShare className="text-yellow-500" />},
+    { id: 1, name: 'Share',    icon: <BiShare    className="text-yellow-500" />, permKey: 'allow_sharing'  },
+    { id: 3, name: 'Download', icon: <BiDownload className="text-blue-500"   />, permKey: 'allow_download' },
 ]
 export const mysharenoteBookenuList = [
     {id:2, name:'Delete', icon: <FaTrash className="text-red-500" />},
@@ -42,13 +52,27 @@ export const notebookShareData = [
 
 
 export const sharenotbookPermissionData = [
-    {id:1, title:'Download', fieldName: 'download'},
-    {id:2, title:'Sharing', fieldName: 'allow_sharing'},
-    {id:3, title:'Notes Addition', fieldName: 'notes_addition'},
-    {id:4, title:'Read', fieldName: 'read'},
-    {id:5, title:'Write', fieldName: 'write'},
-
+    {id:1, title:'Download',        fieldName: 'allow_download'        },
+    {id:2, title:'Sharing',         fieldName: 'allow_sharing'         },
+    {id:3, title:'Notes Addition',  fieldName: 'allow_notes_addition'  },
+    {id:4, title:'View',            fieldName: 'allow_view'            },
+    {id:5, title:'Edit',            fieldName: 'allow_edit'            },
 ]
+
+/**
+ * @param {string[]} allowPermission - `fieldName` values from UI checkboxes that are selected
+ * @returns {{ allow_download: number, allow_view: number, allow_sharing: number, allow_notes_addition: number, allow_edit: number }}
+ */
+export function buildSharingPermission(allowPermission = []) {
+    const selected = new Set(allowPermission)
+    return {
+        allow_download: selected.has('allow_download') ? 1 : 0,
+        allow_view: selected.has('allow_view') ? 1 : 0,
+        allow_sharing: selected.has('allow_sharing') ? 1 : 0,
+        allow_notes_addition: selected.has('allow_notes_addition') ? 1 : 0,
+        allow_edit: selected.has('allow_edit') ? 1 : 0,
+    }
+}
 
 
 export const sharenotebookShareWithData = [
@@ -64,6 +88,20 @@ export const noteShareData = [
     {id: 2, title :'Add this NoteBook to Shared Pool'},
     {id: 3, title :'Share Publicly'},
 ]
+
+/**
+ * getMySharedNotebooks response: DB_DATA may be a notebook array or { shared_notebooks: [...] }.
+ * Same shape as NotesPool store `gettingMySharedNoteBooks`.
+ * @param {{ DB_DATA?: unknown }} responseData - axios `response.data`
+ * @returns {unknown[]}
+ */
+export const normalizeMySharedNotebooksFromApi = (responseData) => {
+  const db = responseData?.DB_DATA;
+  if (db == null) return [];
+  if (Array.isArray(db)) return db;
+  if (Array.isArray(db.shared_notebooks)) return db.shared_notebooks;
+  return [];
+};
 
 /** Departments for a branch: match branch_id, plus company-wide rows (branch_id 0). */
 export const filterDepartmentsForBranch = (departments, branchId) => {

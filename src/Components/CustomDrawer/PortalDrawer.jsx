@@ -2,13 +2,26 @@ import { Drawer, Typography } from '@material-tailwind/react';
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { FaTimes } from 'react-icons/fa';
-import { resolveDrawerSizePx } from '../../utils/drawerSizeUtils';
+import { useDrawerWidthPx } from '../../hooks/useDrawerWidthPx';
 
 const PortalDrawer = (props) => {
-  const { open, closeDrawer, compo, direction = "right", title, widthSize = '45vw', customImg = false, image, zIndex } = props;
-  const drawerWidthPx = resolveDrawerSizePx(widthSize);
+  const { open, closeDrawer, compo, direction = "right", title, widthSize: _widthSize, customImg = false, image, zIndex } = props;
+  /** `widthSize` kept in API for compatibility; width is always the shared 47vw (see `useDrawerWidthPx`). */
+  const drawerWidthPx = useDrawerWidthPx({ widthSize: _widthSize, customImg: false })
+  const [shouldRender, setShouldRender] = useState(!!open)
   const [isToastVisible, setIsToastVisible] = useState(false)
   
+  // Unmount closed drawers to avoid "stuck" side panel on resize/zoom.
+  // Keep it mounted briefly so Material Tailwind can remove its overlay cleanly.
+  useEffect(() => {
+    if (open) {
+      setShouldRender(true)
+      return
+    }
+    const t = setTimeout(() => setShouldRender(false), 250)
+    return () => clearTimeout(t)
+  }, [open])
+
   // Track toast presence to avoid accidental drawer close while interacting with toasts
   useEffect(() => {
     const checkForToasts = () => {
@@ -45,6 +58,8 @@ const PortalDrawer = (props) => {
     ...(zIndex != null && { zIndex }),
   };
 
+  if (!shouldRender) return null
+
   return ReactDOM.createPortal(
     <>
       <style>{`
@@ -57,32 +72,31 @@ const PortalDrawer = (props) => {
     <Drawer 
       open={open} 
       onClose={handleDrawerClose}
-      className="px-4 py-2 customDrwerScroll overflow-auto h-full max-w-[620px]"
+      className="flex flex-col overflow-hidden h-full bg-white shadow-2xl border-l border-gray-300"
       placement={direction}
       size={drawerWidthPx}
       style={drawerStyle}
     >
-      <div className="flex flex-col">
-        <div className="flex items-center justify-between px-[0.10vw] pt-[1.1vw] flex-shrink-0">
-          {customImg ? 
+      <div className="shrink-0 border-b border-gray-200 bg-gradient-to-b from-white to-slate-50/50 px-4 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
+        <div className="flex items-center justify-between">
+          {customImg ? (
             <img src={image} alt="logo" height="30" width="130" />
-            :
-            <Typography className='text-[1.2vw] font-medium font-Urbanist text-[#474747]'>
+          ) : (
+            <Typography className="text-base font-semibold font-poppins text-slate-800 tracking-tight">
               {title}
             </Typography>
-          }
+          )}
           <button
-            onClick={() => closeDrawer?.()}
-            className="w-[20px] h-[20px] hover:text-red-500 flex justify-center items-center hover:rotate-180 transition-all duration-300 "
+            onClick={handleDrawerClose}
+            className="p-2 -m-2 rounded-lg text-slate-500 hover:text-red-500 hover:bg-slate-100 flex justify-center items-center transition-all duration-200"
             title="Close"
           >
             <FaTimes size={16} />
           </button>
         </div>
-        <hr className='mb-2 flex-shrink-0' />
-        <div className="flex-shrink-0 pb-0">
-          {open ? compo : null}
-        </div>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden customDrwerScroll px-4 pb-4">
+        {open ? compo : null}
       </div>
     </Drawer>
     </>,

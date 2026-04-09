@@ -24,7 +24,7 @@ import EditorData from "./EditorData";
 import UpdateNoteData from "./UpdateNoteData";
 import CutNote from "./CutNote";
 import ShareNote from "./ShareNote";
-import { NoteSkeleton } from "./NotesPoolSkeletons";
+import { NoteSkeleton, NoteViewSkeleton } from "./NotesPoolSkeletons";
 
 const Notes = (props) => {
   const { notes: notesFromProps, noteBookTitle, noteBookID, onBack } = props;
@@ -112,7 +112,7 @@ const Notes = (props) => {
                 <FaBook className="text-lg" />
              </span>
              <div>
-                <span className="text-xl font-bold text-gray-800">{noteBookTitle}</span>
+                <span className="text-xl font-bold text-gray-800" title={noteBookTitle ? String(noteBookTitle) : undefined}>{noteBookTitle}</span>
                 <p className="text-xs text-gray-500">View and manage notes</p>
              </div>
           </div>
@@ -169,6 +169,7 @@ const Notes = (props) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
+                title={ele.note_title ? String(ele.note_title) : undefined}
                 className={`relative flex flex-col justify-between w-full h-[220px] rounded-2xl bg-white border border-gray-100 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-blue-100 group ${openMenuValue[i] ? "z-[100]" : "z-0"}`}
                 onClick={() => handleNoteHandler(ele)}
               > 
@@ -255,7 +256,7 @@ const Notes = (props) => {
                         <BiCalendar className="text-xs" />
                         <span className="text-[11px] font-medium">{formatDateDMY(ele.last_updated)}</span>
                     </div>
-                    {ele?.view_count > 0 && (
+                    {ele?.view_count != null && (
                         <span className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-medium">
                             {ele.view_count} views
                         </span>
@@ -324,7 +325,13 @@ const Notes = (props) => {
           handleOpen={toggleShowNote}
           title={addNoteValue.note_title}
           footer={false}
-          compo={<EditorData editorData={editorData} />}
+          compo={
+            addNoteValue.viewNoteLoading ? (
+              <NoteViewSkeleton />
+            ) : (
+              <EditorData editorData={editorData} />
+            )
+          }
         />
       )}
       {editorValue.show && (
@@ -367,8 +374,8 @@ const Notes = (props) => {
           handleOpen={toggleNoteShare}
           footer={false}
           outsidePress={false}
-          // Keep scroll so submit button stays reachable; allow select menu to overflow horizontally
-          bodyClassName="!overflow-x-visible !pb-12"
+          scrollableBody
+          bodyClassName="notes-pool-share-dialog-body !pb-4"
           compo={
             <ShareNote
               handleChangeShareNote={handleChangeShareNote}

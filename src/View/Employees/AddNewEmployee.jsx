@@ -198,7 +198,21 @@ const AddNewEmployee = () => {
           const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
           const empId = lastEnrolled?.emp_id;
           setLastEnrolledEmployeeIdFallback(empId != null && empId !== "" ? String(empId) : "N/A");
+        } else {
+          setLastEnrolledEmployeeIdFallback("N/A");
         }
+        // OLD (incoming merge): used setLastEnrolledEmployeeId — no such setter; last enrolled is derived from adminDashboardData + lastEnrolledEmployeeIdFallback above.
+        // if (data?.STATUS === 'SUCCESSFUL') {
+        //   const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
+        //   const empId = lastEnrolled?.emp_id;
+        //   if (empId != null && empId !== '') {
+        //     setLastEnrolledEmployeeId(String(empId));
+        //   } else {
+        //     setLastEnrolledEmployeeId('N/A');
+        //   }
+        // } else {
+        //   setLastEnrolledEmployeeId('N/A');
+        // }
       } catch {
         if (!cancelled) setLastEnrolledEmployeeIdFallback("N/A");
       }

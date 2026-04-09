@@ -22,6 +22,9 @@ const AddNotice = () => {
     handleNoticesSearchEmp,
     showEmployeeName,
     loading,
+    departmentsLoading,
+    departmentsLoadedForBranchId,
+    employeesLoading,
   } = useNotice();
 
   const hasFetchedBranches = useRef(false);
@@ -59,6 +62,23 @@ const AddNotice = () => {
     }
   }, [getBranchesOnly]);
 
+  const selectedBranchIdRaw =
+    addNoticeValue?.branch_id?.value !== undefined
+      ? addNoticeValue.branch_id.value
+      : addNoticeValue?.branch_id;
+
+  const isBranchDropdownLoading =
+    Boolean(departmentsLoading) && (!noticesBranches || noticesBranches.length === 0);
+
+  const isDepartmentDropdownLoading =
+    Boolean(departmentsLoading) &&
+    selectedBranchIdRaw !== undefined &&
+    selectedBranchIdRaw !== null &&
+    selectedBranchIdRaw !== '' &&
+    String(departmentsLoadedForBranchId) !== String(selectedBranchIdRaw);
+
+  const isEmployeeDropdownLoading = Boolean(employeesLoading);
+
   return (
     <div className="bg-white rounded-2xl">
       <form onSubmit={addNewNotice} className="flex flex-col gap-6 p-4">
@@ -75,14 +95,21 @@ const AddNotice = () => {
             <CustomSelect
               placeHolderTitle="Select Branch"
               value={addNoticeValue.branch_id}
-              options={noticesBranches?.map((branch) => ({
-                value: branch.id === '0' ? 0 : branch.id,
-                label: branch.branch_name,
-              }))}
+              options={
+                isBranchDropdownLoading
+                  ? []
+                  : noticesBranches?.map((branch) => ({
+                      value: branch.id === '0' ? 0 : branch.id,
+                      label: branch.branch_name,
+                    }))
+              }
               onChangeHandler={(option) =>
                 handleAddNoticeBranch('branch_id', option)
               }
               customStyles={false}
+              menuLoading={isBranchDropdownLoading}
+              menuLoadingLabel="Loading branches..."
+              hideControlLoadingIndicator
             />
           </div>
 
@@ -94,17 +121,24 @@ const AddNotice = () => {
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('DEPARTMENT_NOTICES_EMP')} />
             </div>
             <CustomSelect
-              placeHolderTitle={addNoticeValue.branch_id !== undefined && addNoticeValue.branch_id !== null && addNoticeValue.branch_id !== '' ? "Select Department" : "Select branch first"}
+              placeHolderTitle={addNoticeValue.branch_id !== undefined && addNoticeValue.branch_id !== null && addNoticeValue.branch_id !== '' ? "Select Department" : "Select Branch"}
               value={addNoticeValue.deptt_id}
-              options={(filterDepartmentsNotices || []).map((dept) => ({
-                value: dept.id === '0' ? 0 : dept.id,
-                label: dept.name,
-              }))}
+              options={
+                isDepartmentDropdownLoading
+                  ? []
+                  : (filterDepartmentsNotices || []).map((dept) => ({
+                      value: dept.id === '0' ? 0 : dept.id,
+                      label: dept.name,
+                    }))
+              }
               onChangeHandler={(option) =>
                 handleAddNoticeBranch('deptt_id', option)
               }
               customStyles={false}
               disabled={addNoticeValue.branch_id === undefined || addNoticeValue.branch_id === null || addNoticeValue.branch_id === ''}
+              menuLoading={isDepartmentDropdownLoading}
+              menuLoadingLabel="Loading departments..."
+              hideControlLoadingIndicator
             />
           </div>
         </div>
@@ -130,12 +164,15 @@ const AddNotice = () => {
                 placeHolderTitle="Search Employee by Name or ID"
                 name="emp_id"
                 value={addNoticeValue.emp_id}
-                options={employeeOptions}
+                options={isEmployeeDropdownLoading ? [] : employeeOptions}
                 onHandleSelectSearch={handleNoticesSearchEmp}
                 onChangeHandler={(option) =>
                   handleAddNoticeBranch('emp_id', option)
                 }
                 customStyles={false}
+                menuLoading={isEmployeeDropdownLoading}
+                menuLoadingLabel="Loading employees..."
+                hideControlLoadingIndicator
               />
             </div>
           </div>

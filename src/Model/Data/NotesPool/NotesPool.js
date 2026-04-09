@@ -1,6 +1,22 @@
 import axiosInstance from "../../base"
 import { NotesPoolinstancemodeule, NotesPoolFileInstance } from "../../base"
 
+/**
+ * Upload uses FormData; `data.note_id` is undefined on FormData instances.
+ * Read note_id from FormData.get('note_id') for the query string.
+ * @param {FormData|{ note_id?: unknown }} data
+ */
+function resolveNoteIdForUploadUrl(data) {
+    if (data && typeof data.get === "function") {
+        const v = data.get("note_id");
+        if (v != null && String(v) !== "") return String(v);
+    }
+    if (data && data.note_id != null && String(data.note_id) !== "") {
+        return String(data.note_id);
+    }
+    return "";
+}
+
 const notesPoolApi = {
     /** @param {{ name?: string }} [params] - optional `name` for server-side search */
     getNotebooks: function (params = {}){
@@ -102,14 +118,16 @@ const notesPoolApi = {
         })
     },
     updateNote: function (data){
-        console.log("data", data)
+        const payload = data && typeof data === "object" ? data : {};
+        const noteId = payload.note_id;
+        console.log("updateNote", payload);
         return NotesPoolinstancemodeule.request({
             method: 'POST',
-            url: `/api/v1/notes?note_id=${data.note_id}`,
+            url: `/api/v1/notes?note_id=${noteId ?? ""}`,
             data: {
                 operation: 'update_note_title',
-                ...data,
-            }
+                ...payload,
+            },
         })
     },
     deleteNote: function (data){
@@ -143,9 +161,10 @@ const notesPoolApi = {
         })
     },
     uploadNoteAttachemnt : function(data,onUploadProgress){
+        const noteId = resolveNoteIdForUploadUrl(data);
         return NotesPoolFileInstance.request({
             method: 'POST',            
-            url:`/api/v1/notes?note_id=${data.note_id}`,
+            url:`/api/v1/notes?note_id=${encodeURIComponent(noteId)}`,
             data:data,
             onUploadProgress: (progressEvent) => {
                 if (onUploadProgress) {
@@ -156,6 +175,30 @@ const notesPoolApi = {
                 }
             },
         })
+    },
+
+    /**
+     * Single-call update that includes attachments (multipart/form-data).
+     * Backend must accept operation=update_note_content with file[] fields.
+     *
+     * @param {FormData} formData
+     * @param {(percent: number) => void} [onUploadProgress]
+     */
+    updateNoteContentWithAttachments: function (formData, onUploadProgress) {
+        const noteId = resolveNoteIdForUploadUrl(formData);
+        return NotesPoolFileInstance.request({
+            method: "POST",
+            url: `/api/v1/notes?note_id=${encodeURIComponent(noteId)}`,
+            data: formData,
+            onUploadProgress: (progressEvent) => {
+                if (onUploadProgress) {
+                    const total = progressEvent.total;
+                    const loaded = progressEvent.loaded;
+                    const percentage = total ? Math.floor((loaded / total) * 100) : 0;
+                    onUploadProgress(percentage);
+                }
+            },
+        });
     },
 
     noteAdditionalData: function(data){
@@ -374,9 +417,17 @@ const notesPoolApi = {
             method: 'GET',
             url: `/api/v1/notes/organization/all`
         })
-    }
+    },
 
-    
+    /** Fetch a shared notebook's full data (notes + metadata) for client-side download. */
+    downloadSharedNotebook: function(sharedNotebookId){
+        return NotesPoolinstancemodeule.request({
+            method: 'GET',
+            url: `/api/v1/notebooks/get/view_shared_notebook?shared_notebook_id=${sharedNotebookId}`,
+            params: { operation: 'get_shared_notes' }
+        })
+    },
+
 }
 
 export default notesPoolApi

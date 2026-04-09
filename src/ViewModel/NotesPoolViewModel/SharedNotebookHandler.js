@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { showToast } from "../../Components/Toaster/Toaster";
 import notesPoolApi from "../../Model/Data/NotesPool/NotesPool";
+import { buildSharingPermission } from "../../services/__notesPoolServices";
+import { downloadSharedNotebookPdf } from "../../services/__sharedNotebookPdfExport";
+import useStore from "../../Store/store";
 
 const useSharedNotebookHandler = () => {
   const [shareNotebookValue, setShareNotebookValue] = useState({
@@ -19,6 +22,14 @@ const useSharedNotebookHandler = () => {
   });
 
   const [copied, setCopied] = useState(false);
+
+  const sharedNotebookDelete = useStore((state) => state.sharedNotebookDelete);
+  const [deleteValue, setDeleteValue] = useState({
+    confirm: false,
+    loading: false,
+    id: null,
+    notebook_name: "",
+  });
 
   const handleShareMenuClick = (notebook) => {
     setShareNotebookValue((prevState) => ({
@@ -181,19 +192,13 @@ const useSharedNotebookHandler = () => {
       }));
 
       try {
-        // Transform permissions array to object with values of 1
-        const permissionsObject = {};
-        shareNotebookValue.allowPermission.forEach((permission) => {
-          permissionsObject[permission] = 1;
-        });
-
         const apiDataAdd = {
           notebook_id: id,
           operation_type: operation_type,
           notebook_type: "new_notebook",
           notebook_name: shareNotebookValue.notebook_name,
           new_notebook_name: shareNotebookValue.notebook_name,
-          ...permissionsObject,
+          sharing_permission: buildSharingPermission(shareNotebookValue.allowPermission),
           name_dept_branch: shareNotebookValue.shareWith,
           branch: shareNotebookValue.empBranches_id,
           dept: shareNotebookValue.empDepartment_id,
@@ -274,6 +279,68 @@ const useSharedNotebookHandler = () => {
     setCopied(false);
   };
 
+  const handleDeleteSharedNotebookMenuClick = (notebook) => {
+    setDeleteValue((prev) => ({
+      ...prev,
+      id: notebook?._id || notebook?.id || notebook?.shared_notebook_id,
+      notebook_name: notebook?.notebook_name || "",
+      confirm: true,
+    }));
+  };
+
+  const toggleDeleteSharedNotebookDialog = () => {
+    setDeleteValue((prev) => ({ ...prev, confirm: false }));
+  };
+
+  const deleteSharedNotebookConfirmation = async () => {
+    const id = deleteValue.id;
+    if (!id) {
+      setDeleteValue((prev) => ({ ...prev, confirm: false }));
+      showToast("Cannot delete: shared notebook id is missing", "error");
+      return;
+    }
+    setDeleteValue((prev) => ({ ...prev, loading: true }));
+    try {
+      const response = await notesPoolApi.deleteMySharedNoteBook({ id, portal: "admin" });
+      const data = response.data;
+      if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
+        sharedNotebookDelete(id);
+        showToast("Shared notebook removed successfully", "success");
+        setDeleteValue((prev) => ({ ...prev, confirm: false }));
+      } else {
+        showToast(data.ERROR_DESCRIPTION || "Failed to remove shared notebook", "error");
+        setDeleteValue((prev) => ({ ...prev, confirm: false }));
+      }
+    } catch (err) {
+      console.error("Delete shared notebook error:", err);
+      showToast("Failed to remove shared notebook", "error");
+      setDeleteValue((prev) => ({ ...prev, confirm: false }));
+    } finally {
+      setDeleteValue((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  /** Download a shared notebook as a PDF (content from API, rendered client-side). */
+  const handleDownloadNotebook = async (notebook) => {
+    const notebookId = notebook._id || notebook.id;
+    const notebookName = notebook.notebook_name || 'notebook';
+    try {
+      showToast('Preparing PDF…', 'info');
+      const response = await notesPoolApi.downloadSharedNotebook(notebookId);
+      const data = response.data;
+      if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
+        const rawNotes = data.DB_DATA?.notes ?? data.DB_DATA ?? [];
+        downloadSharedNotebookPdf(notebookName, rawNotes);
+        showToast('Notebook downloaded as PDF', 'success');
+      } else {
+        showToast(data.ERROR_DESCRIPTION || 'Failed to download notebook', 'error');
+      }
+    } catch (err) {
+      console.error('Download notebook error:', err);
+      showToast('Failed to download notebook', 'error');
+    }
+  };
+
   return {
     shareNotebookValue,
     handleShareMenuClick,
@@ -285,6 +352,11 @@ const useSharedNotebookHandler = () => {
     handleCopytoClipboard,
     handleCopytoClipboardMouseLeave,
     copied,
+    handleDownloadNotebook,
+    deleteValue,
+    handleDeleteSharedNotebookMenuClick,
+    toggleDeleteSharedNotebookDialog,
+    deleteSharedNotebookConfirmation,
   };
 };
 

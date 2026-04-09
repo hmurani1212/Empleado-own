@@ -68,11 +68,13 @@ const PayrollOverview = () => {
                     <p className="text-emerald-50 font-semibold text-base font-poppins">
                       Gross Salary
                     </p>
-                    <p className="text-white/80 text-sm font-poppins font-normal mt-0.5">
+                    <p className="text-black/80 text-sm font-poppins font-normal mt-0.5">
                       Previous Month
                     </p>
-                    <p className="text-white font-bold text-xl mt-1 font-poppins tabular-nums">
-                      {grossNetValues.gross ?? "—"}
+                    <p className="text-black/80 font-bold text-xl mt-1 font-poppins tabular-nums">
+                      {typeof grossNetValues?.gross === "number"
+                        ? grossNetValues.gross.toLocaleString()
+                        : "—"}
                     </p>
                   </div>
                 </div>
@@ -97,7 +99,9 @@ const PayrollOverview = () => {
                       Previous Month
                     </p>
                     <p className="text-white font-bold text-xl mt-1 font-poppins tabular-nums">
-                      {grossNetValues.net ?? "—"}
+                      {typeof grossNetValues?.net === "number"
+                        ? grossNetValues.net.toLocaleString()
+                        : "—"}
                     </p>
                   </div>
                 </div>

@@ -112,6 +112,8 @@ const useEmployees = () => {
     const isSavingReportingEmail = useStore((state) => state.isSavingReportingEmail);
     const getReportingEmails = useStore((state) => state.getReportingEmails);
     const sendReportingEmail = useStore((state) => state.sendReportingEmail);
+    const isSavingExcelHeading = useStore((state) => state.isSavingExcelHeading);
+    const setExcelHeading = useStore((state) => state.setExcelHeading);
 
     // Profile Update Invite function
     const sendProfileUpdateInvite = useStore((state) => state.sendProfileUpdateInvite);
@@ -150,6 +152,7 @@ const useEmployees = () => {
     ]
 
     const [empBranches, setEmpBranches] = useState([])
+    const [branchesLoading, setBranchesLoading] = useState(false)
     const [empManager, setEmpmanager] = useState([])
 
     // console.log("empBranchesempBranches", empBranches)
@@ -198,6 +201,7 @@ const useEmployees = () => {
     // Centralized API call for branches - GET /api/v1/branches/get_branch_employee (Core module)
     // Response: { STATUS, DB_DATA: { branches: [{ id, branch_name }, ...] } }
     const centralizedGetBranches = async () => {
+        setBranchesLoading(true)
         const apiKey = createApiKey('/api/v1/branches/get_branch_employee', {});
         try {
             const response = await executeApiCall(apiKey, () => employeesApi.gettingAllBranches());
@@ -213,6 +217,8 @@ const useEmployees = () => {
         } catch (err) {
             console.error('Error fetching branches (get_branch_employee):', err);
             setEmpBranches([]);
+        } finally {
+            setBranchesLoading(false)
         }
     };
 
@@ -1024,6 +1030,8 @@ const useEmployees = () => {
                     : []
                 setDept_subDept({ departments })
                 useStore.setState({ get_all_department: departments })
+
+                // Branch change: clear designations; reload only after department selection.
                 setDesignations([])
 
                 const rawEmp = db.EMPLOYEEE || db.EMPLOYEE || []
@@ -1048,7 +1056,7 @@ const useEmployees = () => {
             } else {
                 applyEmptyBranchContext()
             }
-            // Do not clear designations here - designations are loaded after department select.
+            // OLD (incoming merge): had a second dangling `else` block and extra clearing/logs; removed for correctness.
         } catch (err) {
             console.error('Error fetching branch dropdown data:', err)
             setDept_subDept({ departments: [] })
@@ -1100,9 +1108,9 @@ const useEmployees = () => {
                     rawList = resData.DESIGNATIONS;
                 } else if (Array.isArray(resData?.DB_DATA)) {
                     rawList = resData.DB_DATA;
-                } else if (resData?.DB_DATA?.designations) {
+                } else if (Array.isArray(resData?.DB_DATA?.designations)) {
                     rawList = resData.DB_DATA.designations;
-                } else if (resData?.DB_DATA?.departments) {
+                } else if (Array.isArray(resData?.DB_DATA?.departments)) {
                     rawList = resData.DB_DATA.departments.flatMap(dept => dept.designations || []);
                 }
 
@@ -1787,7 +1795,7 @@ const useEmployees = () => {
         empTitles, getEmployeesList, allEmployees, employeesListLoading, empMount, handleEmpMount, setSkipGetAllEmployeeOnListPage, allBranches, handleFilterChange, handleFilterDeptChange, filterValues, getAllDepartments, filterDepartments,
         listView, handleListToggle, handleGridToggle, handleChangeEmployees, empStatus, handleStatusFilter, handelAlphabetSearch, alphaIndex, newEmpValues, handleNewEmpChange, getFindEmp,
         handleVerifyUserModalClose, verfiyUser, findingEmp, handleStepActive, activeStep, isFirstStep, isLastStep, handlePrev, handleNext, handleLastStep, handleFirstStep, allCountries,
-        handleSelectChange, handleDOB, passwordToggle, validateAge, empBranches, dept_subDept, flattenOptions, customStyles,
+        handleSelectChange, handleDOB, passwordToggle, validateAge, empBranches, branchesLoading, dept_subDept, flattenOptions, customStyles,
         designations, empManager, policies, salaryTemplate, addEmpHandler,
         openMenuValue, toggleMenuValue,
         gettingEmployeeCheckList,
@@ -1877,6 +1885,8 @@ const useEmployees = () => {
         isSavingReportingEmail,
         getReportingEmails,
         sendReportingEmail,
+        isSavingExcelHeading,
+        setExcelHeading,
         // Profile Update Invite function
         sendProfileUpdateInvite,
         // Update Profile Image function

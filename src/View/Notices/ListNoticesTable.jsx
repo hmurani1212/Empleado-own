@@ -13,7 +13,8 @@ import EditNoticeForm from './EditNoticeForm';
 const ListNoticesTable = () => {
   const {allNoticesList, getAllNoticesList,deleteNotices, openMenu, noticeMount, noticesMenuItems, toggleMenuNotices,  openDialog, handleMenuItemsNotices,handleDelete,
   openViewDialog, setOpenViewDialog, handleView, loading,addNoticeValue,handleEditNoticeToggle,
-  noticesBranches,filterDepartmentsNotices,handleEditNotice,handleNewNotice,handleAddNoticeBranch
+  noticesBranches,filterDepartmentsNotices,handleEditNotice,handleNewNotice,handleAddNoticeBranch,
+  departmentsLoading, departmentsLoadedForBranchId
 } = useNotice()
   const data = ['Month', 'Notice ID', 'Notice Title', 'Recipient', 'Created Date', 'Actions']
 
@@ -184,6 +185,9 @@ const ListNoticesTable = () => {
                         handleEditNotice ={handleEditNotice}
                         handleNewNotice ={handleNewNotice}
                         handleAddNoticeBranch ={handleAddNoticeBranch}
+                        loading={loading}
+                        departmentsLoading={departmentsLoading}
+                        departmentsLoadedForBranchId={departmentsLoadedForBranchId}
                     />
                 }
             />

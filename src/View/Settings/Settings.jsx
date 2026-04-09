@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Button, Textarea, Tooltip } from '@material-tailwind/react';
-import { FaPlus, FaTimes, FaEdit } from 'react-icons/fa';
+import {
+  FaPlus,
+  FaTimes,
+  FaEdit,
+  FaFileExcel,
+  FaImage,
+  FaBirthdayCake,
+  FaSlidersH,
+  FaEnvelope,
+} from 'react-icons/fa';
+import { FaSignature, FaMobileScreenButton } from 'react-icons/fa6';
 import useStore from '../../Store/store';
 import AddSignatureForm from '../../Components/AddSignatureForm/AddSignatureForm';
 import AddDigitalSignatureForm from '../../Components/AddDigitalSignatureForm/AddDigitalSignatureForm';
@@ -82,6 +92,8 @@ const Settings = () => {
     isSavingReportingEmail,
     getReportingEmails,
     sendReportingEmail,
+    isSavingExcelHeading,
+    setExcelHeading,
     orgLogo,
     isLoadingLogo,
     getOrgLogo,
@@ -146,13 +158,13 @@ const Settings = () => {
   }, [retirementData]);
 
   const settingsSections = [
-    { id: 'signatures', title: 'Signatures' },
-    { id: 'excel_heading', title: 'Excel Heading' },
-    { id: 'company_logo', title: 'Company/Org Logo' },
-    { id: 'birthday_template', title: 'Birthday Template' },
-    { id: 'mobile_attendance', title: 'Mobile Attendance' },
-    { id: 'employee_misc', title: 'Employee Misc Setting' },
-    { id: 'reporting_mail', title: 'Reporting Mail' }
+    { id: 'signatures', title: 'Signatures', Icon: FaSignature },
+    { id: 'excel_heading', title: 'Excel Heading', Icon: FaFileExcel },
+    { id: 'company_logo', title: 'Company/Org Logo', Icon: FaImage },
+    { id: 'birthday_template', title: 'Birthday Template', Icon: FaBirthdayCake },
+    { id: 'mobile_attendance', title: 'Mobile Attendance', Icon: FaMobileScreenButton },
+    { id: 'employee_misc', title: 'Employee Misc Setting', Icon: FaSlidersH },
+    { id: 'reporting_mail', title: 'Reporting Mail', Icon: FaEnvelope },
   ];
 
   // Handler for opening Add Signature drawer
@@ -344,8 +356,10 @@ const Settings = () => {
     </div>
   );
 
-  const handleExcelHeadingSave = () => {
-    const branchId = excelHeadingBranch?.value ?? excelHeadingBranch;
+  const handleExcelHeadingSave = async () => {
+    const raw = excelHeadingBranch?.value ?? excelHeadingBranch;
+    // 0 = all branches (explicit API contract); do not treat as "no selection"
+    const branchId = raw === '0' ? 0 : raw === 0 ? 0 : raw;
     if (branchId === undefined || branchId === null || branchId === '') {
       showToast('Please select a branch', 'error');
       return;
@@ -358,21 +372,52 @@ const Settings = () => {
       showToast('Header text must be max 100 characters', 'error');
       return;
     }
-    // TODO: wire to API when backend endpoint is ready
-    showToast('Excel heading save to be connected to API', 'info');
+
+    try {
+      const branch_id =
+        branchId === 0 || branchId === '0' ? 0 : Number(branchId);
+      const result = await setExcelHeading({
+        branch_id,
+        header_text: excelHeadingHeaderText.trim(),
+      });
+      if (result.success) {
+        showToast(result.message || 'Excel heading saved successfully!', 'success');
+      } else {
+        showToast(result.error || 'Failed to save Excel heading', 'error');
+      }
+    } catch {
+      showToast('An error occurred while saving Excel heading', 'error');
+    }
   };
 
   const renderExcelHeadingSection = () => {
+    const ALL_BRANCHES_OPTION = { value: 0, label: 'All branches' };
     const branchesList = Array.isArray(excelHeadingBranches) ? excelHeadingBranches : [];
-    const branchOptions = branchesList.map((branch) => ({
-      value: branch.id,
-      label: branch.branch_name
-    }));
-    const selectedBranchOption = excelHeadingBranch && (typeof excelHeadingBranch === 'object' && 'value' in excelHeadingBranch)
-      ? excelHeadingBranch
-      : excelHeadingBranch != null && excelHeadingBranch !== ''
-        ? { value: excelHeadingBranch, label: branchesList.find((b) => b.id === excelHeadingBranch || b.id == excelHeadingBranch)?.branch_name || 'Branch' }
-        : null;
+    const branchOptions = [
+      ALL_BRANCHES_OPTION,
+      ...branchesList
+        .filter((b) => b.id !== 0 && b.id !== '0')
+        .map((branch) => ({
+          value: branch.id,
+          label: branch.branch_name,
+        })),
+    ];
+
+    let selectedBranchOption = null;
+    if (excelHeadingBranch && typeof excelHeadingBranch === 'object' && 'value' in excelHeadingBranch) {
+      const v = excelHeadingBranch.value;
+      selectedBranchOption =
+        v === 0 || v === '0' ? ALL_BRANCHES_OPTION : excelHeadingBranch;
+    } else if (excelHeadingBranch === 0 || excelHeadingBranch === '0') {
+      selectedBranchOption = ALL_BRANCHES_OPTION;
+    } else if (excelHeadingBranch !== undefined && excelHeadingBranch !== null && excelHeadingBranch !== '') {
+      selectedBranchOption = {
+        value: excelHeadingBranch,
+        label:
+          branchesList.find((b) => b.id === excelHeadingBranch || b.id == excelHeadingBranch)?.branch_name ||
+          'Branch',
+      };
+    }
 
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -416,9 +461,14 @@ const Settings = () => {
           <Button
             className="bg-[#3DA5F4] hover:bg-[#2B8CE6]"
             onClick={handleExcelHeadingSave}
-            disabled={!selectedBranchOption || !excelHeadingHeaderText.trim()}
+            disabled={
+              !selectedBranchOption ||
+              !excelHeadingHeaderText.trim() ||
+              isSavingExcelHeading
+            }
+            loading={isSavingExcelHeading}
           >
-            Save
+            {isSavingExcelHeading ? 'Saving...' : 'Save'}
           </Button>
         </div>
       </div>
@@ -1117,42 +1167,81 @@ const Settings = () => {
       </div>
 
       <div className="flex gap-6">
-        {/* Left Navigation */}
-        <div className="w-80 bg-white rounded-lg border border-gray-200 p-4">
-          <div className="space-y-4">
-            {settingsSections.map((section, index) => (
-              <div key={section.id} className="relative flex items-center">
-                {/* Connection Line - positioned to connect circles properly */}
-                {index > 0 && (
-                  <div className="absolute left-3 w-0.5 h-8 bg-[#3DA5F4] -top-4"></div>
-                )}
-                
-                {/* Circle and Text */}
-                <div className="flex items-center gap-3 ml-2 relative top-2">
-                  <div
-                    className={`w-3 h-3 rounded-full border-2 transition-colors ${
-                      activeSection === section.id
-                        ? 'bg-[#3DA5F4] border-[#3DA5F4]'
-                        : 'bg-white border-[#3DA5F4]'
-                    }`}
-                  ></div>
-                  <button
-                    onClick={() => setActiveSection(section.id)}
-                    className={`text-left transition-colors ${
-                      activeSection === section.id
-                        ? 'text-[#3DA5F4] font-medium'
-                        : 'text-gray-600 hover:text-[#3DA5F4]'
-                    }`}
-                  >
-                    <Typography variant="small">
-                      {section.title}
-                    </Typography>
-                  </button>
-                </div>
+        {/* Left Navigation — full-row targets, icons, clear hover/active hierarchy */}
+        <aside className="w-[19rem] shrink-0">
+          <nav
+            className="relative overflow-hidden rounded-xl border border-gray-200/90 bg-white shadow-sm"
+            aria-label="Settings sections"
+          >
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-50/40 via-white to-white"
+              aria-hidden
+            />
+            <div className="relative p-2.5">
+              <Typography
+                variant="small"
+                className="mb-2.5 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400"
+              >
+                Sections
+              </Typography>
+              <div className="relative">
+                <div
+                  className="pointer-events-none absolute left-[25px] top-2.5 bottom-2.5 w-px bg-gradient-to-b from-[#3DA5F4]/20 via-[#3DA5F4]/45 to-[#3DA5F4]/20"
+                  aria-hidden
+                />
+                <ul className="relative space-y-1">
+                {settingsSections.map((section) => {
+                  const isActive = activeSection === section.id;
+                  const Icon = section.Icon;
+                  return (
+                    <li key={section.id} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setActiveSection(section.id)}
+                        aria-current={isActive ? 'true' : undefined}
+                        className={[
+                          'group flex w-full min-h-[44px] items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-all duration-200',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3DA5F4]/35 focus-visible:ring-offset-2',
+                          isActive
+                            ? 'bg-gradient-to-r from-sky-50 to-white text-[#2B8CE6] shadow-[inset_3px_0_0_0_#3DA5F4]'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                        ].join(' ')}
+                      >
+                        <span
+                          className={[
+                            'relative z-[1] flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
+                            isActive
+                              ? 'border-[#3DA5F4] bg-[#3DA5F4] text-white shadow-md shadow-[#3DA5F4]/25'
+                              : 'border-[#3DA5F4]/35 bg-white text-[#3DA5F4]/85 group-hover:border-[#3DA5F4]/70 group-hover:bg-sky-50/80 group-hover:text-[#3DA5F4]',
+                          ].join(' ')}
+                        >
+                          <Icon className="h-4 w-4" aria-hidden />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <Typography
+                            variant="small"
+                            className={`font-medium leading-snug ${
+                              isActive ? 'text-[#1a7fd4]' : 'text-inherit'
+                            }`}
+                          >
+                            {section.title}
+                          </Typography>
+                        </span>
+                        {isActive && (
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full bg-[#3DA5F4] shadow-sm"
+                            aria-hidden
+                          />
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+                </ul>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </nav>
+        </aside>
 
         {/* Right Content Area */}
         <div className="flex-1">

@@ -5,7 +5,15 @@ import Select from 'react-select';
 
 // Custom MenuList component to handle pagination
 const MenuList = (props) => {
-  const { children, onLoadMore, hasMore, loading, thinScrollbar = false } = props;
+  const {
+    children,
+    onLoadMore,
+    hasMore,
+    loading,
+    thinScrollbar = false,
+    menuLoading = false,
+    menuLoadingLabel = 'Loading...',
+  } = props;
   
   const handleScroll = (e) => {
     const { target } = e;
@@ -51,7 +59,39 @@ const MenuList = (props) => {
           paddingRight: '0px'
         }}
       >
-        {children}
+        {menuLoading && (
+          <div
+            style={{
+              padding: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#4b5563',
+              borderBottom: '1px solid #f3f4f6',
+            }}
+          >
+            <div
+              style={{
+                width: '14px',
+                height: '14px',
+                border: '2px solid #3DA5F4',
+                borderTopColor: 'transparent',
+                borderRadius: '9999px',
+                animation: 'customSelectSpin 0.9s linear infinite',
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ fontSize: '12px' }}>{menuLoadingLabel}</span>
+            <style>
+              {`
+                @keyframes customSelectSpin {
+                  to { transform: rotate(360deg); }
+                }
+              `}
+            </style>
+          </div>
+        )}
+        {!menuLoading && children}
         {hasMore && (
           <div style={{ padding: '8px', textAlign: 'center', color: '#666' }}>
             {loading ? 'Loading...' : 'Scroll to load more'}
@@ -85,6 +125,13 @@ const CustomSelect = (props) => {
     filterOption,
     menuPortalTarget,
     customStyles: propCustomStyles,
+    isLoading,
+    loadingMessage,
+    noOptionsMessage: noOptionsMessageProp,
+    hideControlLoadingIndicator = false,
+    menuLoading = false,
+    menuLoadingLabel = 'Loading...',
+    components: userComponents = {},
     ...restProps // Capture any other props to pass through
   } = props
   // const { customStyles } = useEmployees()
@@ -222,15 +269,38 @@ const CustomSelect = (props) => {
       ...customStyles,
     };
   }
+
+  const mergedComponents = {
+    ...userComponents,
+    IndicatorSeparator: null,
+    MenuList: (menuListProps) => (
+      <MenuList
+        {...menuListProps}
+        onLoadMore={onLoadMore}
+        hasMore={hasMore}
+        loading={loading}
+        thinScrollbar={thinScrollbar}
+        menuLoading={menuLoading}
+        menuLoadingLabel={menuLoadingLabel}
+      />
+    ),
+  };
+  if (hideControlLoadingIndicator) {
+    mergedComponents.LoadingIndicator = () => null;
+  }
+
+  const resolvedNoOptionsMessage =
+    typeof noOptionsMessageProp === 'function'
+      ? noOptionsMessageProp
+      : noOptionsMessageProp != null
+        ? () => noOptionsMessageProp
+        : () => 'No data found';
   
   return (
     <div>
       <Select
         placeholder={placeHolderTitle}
-        components={{ 
-          IndicatorSeparator: null,
-          MenuList: (props) => <MenuList {...props} onLoadMore={onLoadMore} hasMore={hasMore} loading={loading} thinScrollbar={thinScrollbar} />
-        }}
+        components={mergedComponents}
         value={value}
         options={options}     
         onChange={onChangeHandler}    
@@ -242,7 +312,9 @@ const CustomSelect = (props) => {
         isMulti={isMulti}
         filterOption={filterOption}
         menuPortalTarget={menuPortalTarget}
-        noOptionsMessage={() => "No data found"}
+        isLoading={isLoading}
+        loadingMessage={loadingMessage}
+        noOptionsMessage={resolvedNoOptionsMessage}
         {...restProps} // Pass through any other props
       />
     </div>

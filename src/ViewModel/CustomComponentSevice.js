@@ -1,8 +1,10 @@
+import { STANDARD_APP_SIDE_DRAWER } from '../utils/drawerSizeUtils'
+
 const CustomComponentService = (set, get)=>({
     drawerOpen: false, 
     childComponent: '',
     drawerTitle: '',
-    drawerSize:'',
+    drawerSize: STANDARD_APP_SIDE_DRAWER,
     closeDrawer:()=>{
         set({drawerOpen: false})
     },
@@ -16,8 +18,9 @@ const CustomComponentService = (set, get)=>({
         set({drawerTitle: title})
     },
 
-    settingDrawerSize:(size)=>{
-        set({drawerSize:size})
+    /** All store-driven side drawers use one width; call-site values are ignored for consistency */
+    settingDrawerSize: () => {
+        set({ drawerSize: STANDARD_APP_SIDE_DRAWER })
     }
 })
 

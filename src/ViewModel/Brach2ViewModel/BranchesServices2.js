@@ -745,6 +745,18 @@ const useBranches2 = () => {
                 settingBranchAdminData(newData);
                 openBranchAdminDrawer();
                 return;
+
+                // Use the SAME drawer system as Edit Branch
+                gettingCountries();
+                openDrawer();
+                settingDrawerSize(620);
+                settingDrawerTitle('Branch Admin');
+                settingComponent(
+                    <MarkBranchAdmin />
+                );
+            } else {
+                const error = responseData.ERROR_DESCRIPTION || 'Failed to get branch employees';
+                showToast(error, 'error');
             }
 
             const errMsg =

@@ -39,7 +39,7 @@ const PayrollSettings = (props) => {
       <div className="bg-gray-50/50 p-6 rounded-xl border border-gray-100">
         <div className="flex items-center justify-center gap-1.5 mb-4">
           <label className="text-sm font-medium text-gray-700 font-poppins block text-center">
-            Payroll Cycle
+            Payroll Month Cycle
           </label>
           {openContentDrawer && (
             <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer("PAYPERIOD_HRPOLICY_EMP")} />

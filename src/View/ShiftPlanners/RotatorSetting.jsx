@@ -1,5 +1,6 @@
 import { Input, Radio, Typography, Drawer, Button } from '@material-tailwind/react';
-import React, { useEffect } from 'react'
+import React from 'react'
+import { useDrawerWidthPx } from '../../hooks/useDrawerWidthPx'
 import { FaClock } from "react-icons/fa";
 import SubmitButton from '../../Components/SubmitButton/SubmitButton';
 import useShiftManagement from '../../ViewModel/ShiftManagementViewModel/ShiftManagementServices';
@@ -10,6 +11,8 @@ const RotatorSetting = (props) => {
     // Rotator Settings
     const {allRotatorStatus,allRotatorClock} = props
     const {changeRotatorSetting, rotatorSettingValues, handleChangeRotator, handleRotatorRadioChange, openRosterDialog, handleRosterDialog, rosterValues, handleRosterChange, handleDownloadRoster, gettingAllShift, allShiftData, isUpdatingRotator, isDownloadingRoster} = useShiftManagement()
+
+    const rosterDrawerWidthPx = useDrawerWidthPx({ customImg: false })
 
     const headRotator = ['Shift', 'On Rotator', 'Off Rotator']
 
@@ -203,7 +206,7 @@ const RotatorSetting = (props) => {
         </div>
     </form>
     
-    {openRosterDialog && <Drawer open={openRosterDialog} onClose={handleRosterDialog} placement="right" size={500} className="p-4">
+    {openRosterDialog && <Drawer open={openRosterDialog} onClose={handleRosterDialog} placement="right" size={rosterDrawerWidthPx} className="flex flex-col overflow-hidden h-full bg-white shadow-2xl border-l border-gray-300 p-4">
         <div className="mb-6 flex justify-between items-center">
             <Typography variant="h5" color="blue-gray">
                 Shift Roster

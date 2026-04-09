@@ -9,10 +9,32 @@ const EditNoticeForm = (props) => {
 
   // Edit Notice
     const { handleNewNotice, handleAddNoticeBranch, handleEditNotice,
-      noticesBranches,  filterDepartmentsNotices, addNoticeValue, loading
+      noticesBranches,  filterDepartmentsNotices, addNoticeValue, loading,
+      departmentsLoading = false,
+      departmentsLoadedForBranchId = null,
 
     } = props
    
+    const selectedBranchIdRaw =
+      addNoticeValue?.branch_id?.value !== undefined
+        ? addNoticeValue.branch_id.value
+        : addNoticeValue?.branch_id;
+
+    const isBranchDropdownLoading =
+      Boolean(departmentsLoading) && (!noticesBranches || noticesBranches.length === 0);
+
+    const isDepartmentDropdownLoading =
+      Boolean(departmentsLoading) &&
+      selectedBranchIdRaw !== undefined &&
+      selectedBranchIdRaw !== null &&
+      selectedBranchIdRaw !== '' &&
+      String(departmentsLoadedForBranchId) !== String(selectedBranchIdRaw);
+
+    const isBranchSelected =
+      selectedBranchIdRaw !== undefined &&
+      selectedBranchIdRaw !== null &&
+      selectedBranchIdRaw !== '';
+
 
   return (
     <div className='p-6 h-full flex flex-col'>
@@ -25,12 +47,19 @@ const EditNoticeForm = (props) => {
                     <CustomSelect 
                         placeHolderTitle='Select Branch'
                         value={addNoticeValue.branch_id}
-                        options={noticesBranches?.map(ele => ({
-                            value: ele.id,
-                            label: ele.branch_name
-                        }))}
+                        options={
+                          isBranchDropdownLoading
+                            ? []
+                            : noticesBranches?.map(ele => ({
+                                value: ele.id === '0' ? 0 : ele.id,
+                                label: ele.branch_name
+                              }))
+                        }
                         onChangeHandler={(option) => handleAddNoticeBranch("branch_id", option)}
                         customStyles={false}
+                        menuLoading={isBranchDropdownLoading}
+                        menuLoadingLabel="Loading branches..."
+                        hideControlLoadingIndicator
                     />
                 </div>
             </div>
@@ -39,14 +68,21 @@ const EditNoticeForm = (props) => {
                 <label className="text-sm font-semibold text-gray-700 font-poppins">Department</label>
                 <div className="w-full">
                     <CustomSelect 
-                        placeHolderTitle='Select Department'
+                        placeHolderTitle={isBranchSelected ? 'Select Department' : 'Select Branch'}
                         value={addNoticeValue.deptt_id}
-                        options={filterDepartmentsNotices?.map(dept => ({
-                            value: dept.id,
-                            label: dept.name
-                        }))}
+                        options={
+                          isDepartmentDropdownLoading
+                            ? []
+                            : filterDepartmentsNotices?.map(dept => ({
+                                value: dept.id === '0' ? 0 : dept.id,
+                                label: dept.name
+                              }))
+                        }
                         onChangeHandler={(option) => handleAddNoticeBranch("deptt_id", option)}
                         customStyles={false}
+                        menuLoading={isDepartmentDropdownLoading}
+                        menuLoadingLabel="Loading departments..."
+                        hideControlLoadingIndicator
                     />
                 </div>
             </div>

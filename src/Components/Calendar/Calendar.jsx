@@ -1,4 +1,5 @@
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
+import { MdPhoneIphone } from "react-icons/md";
 import { motion } from "framer-motion";
 import { attendanceColorData } from "../../services/__attendanceServices";
 import CustomDialog from "../CustomDialog/CustomDialog";
@@ -81,6 +82,9 @@ const Calendar = (props) => {
               { key: 'early_leave', colorClass: '!bg-[#1e00ff]', position: 'bottom-right-1' },  // Blue
               { key: 'leave_request', colorClass: '!bg-[#008000]', position: 'bottom-right-2' }, // Green
             ];
+
+            const isManualChanged = !!getExtraAttribute(day, searchingEmpValue.month.value - 1, searchingEmpValue.year.value, 'manual_changed')
+            const hasGeoLogDay = !!getExtraAttribute(day, searchingEmpValue.month.value - 1, searchingEmpValue.year.value, 'GEO_LOG_DAY')
           
           // Filter attributes that are true
           const activeTopAttributes = topAttributes.filter(attr => 
@@ -151,6 +155,23 @@ const Calendar = (props) => {
                     ></div>
                   );
                 })}
+
+                {/* GEO day badge (bottom-right) — hidden when manual_changed */}
+                {hasGeoLogDay && !isManualChanged && (
+                  <div
+                    className="absolute z-30 flex items-center justify-center rounded-full bg-slate-200 text-slate-700 ring-2 ring-white shadow-[0_10px_18px_-10px_rgba(0,0,0,0.35)] pointer-events-none"
+                    style={{
+                      bottom: '-8px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '16px',
+                      height: '16px',
+                    }}
+                    title="Geo location available"
+                  >
+                    <MdPhoneIphone className="text-[13px]" />
+                  </div>
+                )}
               </motion.div>
             ) : (
               <div key={index} className="px-4 py-2"></div>

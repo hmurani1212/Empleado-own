@@ -19,6 +19,10 @@ import { HiXMark } from "react-icons/hi2";
 import { FaFilePdf } from "react-icons/fa6";
 import { FaFileAlt, FaFileExcel, FaFileWord, FaFileVideo } from "react-icons/fa";
 import notesPoolApi from '../../Model/Data/NotesPool/NotesPool';
+import { getLocalStorage } from '../../Authentication/localStorageServices';
+import { showToast } from '../../Components/Toaster/Toaster';
+import { serializeEditorContentForLegacyBackend } from '../../services/__notesPoolEditorContent';
+import { isNotesPoolLooseSuccess } from '../../services/__notesPoolApi';
 // import { cornersOfRectangle } from '@dnd-kit/core/dist/utilities/algorithms/helpers';
 
 
@@ -151,12 +155,54 @@ const renderFilePreview = (file, index) => {
   }
 };
 
+/** Fetch a file as a blob (with auth) and save it directly to the user's system. */
+const handleDownloadFile = async (file) => {
+  const recId = file.REC_ID || file.rec_id;
+  const fileName = file.FILE_NAME || file.file_name || file.name || 'file';
+  let fileUrl = file.FILE_URL || file.url || file.preview;
+  if (!fileUrl && recId && fileName && fileName !== 'Unknown file') {
+    fileUrl = `https://elephant.veevotech.com/files/${recId}/${fileName}`;
+  } else if (!fileUrl && recId) {
+    fileUrl = recId;
+  }
+  if (!fileUrl) return;
+
+  const jwt = getLocalStorage();
+  try {
+    const res = await fetch(fileUrl, {
+      headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = blobUrl;
+    anchor.download = fileName;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error('Attachment download failed:', err);
+    // Last-resort fallback: direct navigation (browser will prompt save if server sends Content-Disposition: attachment)
+    const anchor = document.createElement('a');
+    anchor.href = fileUrl;
+    anchor.download = fileName;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  }
+};
+
 const UpdateNoteData = (props) => {
     const {addNoteValue, toggleEditNote,editorContent,handleAllTagRemove,handleAddTag,handleChangeEditor,toggleHandleConfirmTag,
         handleRemoveTag, confirmRemoveAllTags,handleAddNotesData, handleDrop,handleFileChange,handleRemoveFile,handleClick,handleAllFileRemove,fileInputRef,uploadProgress,
     } = props 
     const [aiResponse, setAiResponse] = useState("");
     const [aiLoading, setAiLoading] = useState(false);
+    const [updating, setUpdating] = useState(false);
 
     useEffect(() => { 
         console.log("addNoteValue", addNoteValue)
@@ -165,6 +211,7 @@ const UpdateNoteData = (props) => {
     // Add state for file previews
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [filePreviews, setFilePreviews] = useState([]);
+    const editorInstance = useRef(null);
 
     const noteContent = addNoteValue?.editor_content?.blocks || [];
     const entry_time = addNoteValue?.last_updated
@@ -254,44 +301,13 @@ const UpdateNoteData = (props) => {
         }));
     };
 
-    // Enhanced update handler that uploads files
+    // Save editor first, then upload pending files, then POST update_note_content (always runs after save).
     const handleUpdateWithFiles = async () => {
         try {
-            // First upload all selected files using the existing handleFileChange function
-            if (selectedFiles.length > 0) {
-                
-                // Get the correct note_id
-                const noteId = addNoteValue.note_id || addNoteValue.noteHeader?.note_id || addNoteValue.id || addNoteValue._id;
-                
-                if (!noteId) {
-                    return;
-                }
-                
-                // Create a data object with the correct structure for uploadFiles
-                const uploadData = {
-                    note_id: noteId,
-                    noteHeader: {
-                        id: noteId
-                    }
-                };
-                
-                // Create a mock event object to use with existing handleFileChange
-                const mockEvent = {
-                    target: {
-                        files: selectedFiles
-                    }
-                };
-                
-                // Call handleFileChange with the correct data structure
-                await handleFileChange(mockEvent, uploadData);
-                
-                // Clear the selected files after upload
-                setSelectedFiles([]);
-                setFilePreviews([]);
-            }
-            
-            // Get current editor content in table format: { time (ms), blocks, version }
-            let payload = { ...addNoteValue };
+            setUpdating(true);
+            let mergedAttachments = addNoteValue.attachements || addNoteValue.attachments || [];
+
+            let payload = { ...addNoteValue, attachements: mergedAttachments };
             if (editorInstance.current) {
                 try {
                     const savedData = await editorInstance.current.save();
@@ -301,14 +317,72 @@ const UpdateNoteData = (props) => {
                         blocks: savedData?.blocks ?? [],
                         version: savedData?.version ?? "2.31.0",
                     };
-                    payload = { ...addNoteValue, editor_content: JSON.stringify(normalized), editorContent: normalized };
+                    payload = {
+                        ...addNoteValue,
+                        attachements: mergedAttachments,
+                        editor_content: serializeEditorContentForLegacyBackend(normalized),
+                        editorContent: normalized,
+                    };
                 } catch (e) {
-                    // Keep addNoteValue as-is if save fails
+                    payload = { ...addNoteValue, attachements: mergedAttachments };
                 }
             }
-            handleAddNotesData(payload, toggleEditNote);
+
+            const noteId =
+                addNoteValue.note_id ||
+                addNoteValue.noteHeader?.note_id ||
+                addNoteValue.noteHeader?.id ||
+                addNoteValue.id ||
+                addNoteValue._id;
+
+            // If there are new files, do a SINGLE multipart call for update_note_content + file(s)
+            if (selectedFiles.length > 0) {
+                if (!noteId) {
+                    showToast("Cannot update note: note ID is missing", "error");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("operation", "update_note_content");
+                formData.append("note_id", String(noteId));
+                formData.append("notebook_id", String(payload.notebook_id || payload.noteHeader?.notebook_id || ""));
+                formData.append("notebook_title", String(payload.notebook_title || payload.noteHeader?.notebook_title || ""));
+                formData.append("editor_content", String(payload.editor_content || ""));
+
+                const tags = Array.isArray(payload.tags)
+                    ? payload.tags
+                    : Array.isArray(payload?.noteHeader?.tags)
+                        ? payload.noteHeader.tags
+                        : [];
+                // backend expects tags array; safest in FormData is repeated keys
+                tags
+                    .map((t) => (t?.label ?? t?.name ?? t))
+                    .filter((t) => t != null && String(t).trim() !== "")
+                    .forEach((t) => formData.append("tags[]", String(t).trim()));
+
+                // Attach files as `file` (same as existing upload API)
+                selectedFiles.forEach((f) => formData.append("file", f));
+
+                const response = await notesPoolApi.updateNoteContentWithAttachments(formData);
+                const responseData = response.data;
+                if (isNotesPoolLooseSuccess(response.status, responseData)) {
+                    setSelectedFiles([]);
+                    setFilePreviews([]);
+                    toggleEditNote();
+                    showToast("Note Updated Successfully", "success");
+                    return;
+                }
+                showToast(responseData?.ERROR_DESCRIPTION || "Failed to update note", "error");
+                return;
+            }
+
+            // No new files -> normal JSON update_note_content
+            await handleAddNotesData(payload, toggleEditNote);
         } catch (error) {
-            // Handle error silently
+            console.error("Update with files failed:", error);
+            showToast("Failed to update note", "error");
+        } finally {
+            setUpdating(false);
         }
     };
 
@@ -354,8 +428,6 @@ const UpdateNoteData = (props) => {
         }
     };
 
-    const editorInstance = useRef(null);
-
     // Helper function to save editor content to database
     const saveEditorContentToDatabase = async () => {
       if (!editorInstance.current) return;
@@ -378,7 +450,7 @@ const UpdateNoteData = (props) => {
         
         const apiData = {
           note_id: noteId,
-          editor_content: JSON.stringify(normalized),
+          editor_content: serializeEditorContentForLegacyBackend(normalized),
         };
       
         editorContent(apiData, entry_time, currentTimeInSeconds);
@@ -1003,7 +1075,7 @@ const UpdateNoteData = (props) => {
 
             const apiData = {
               note_id: noteId,
-              editor_content: JSON.stringify(normalized),
+              editor_content: serializeEditorContentForLegacyBackend(normalized),
             };
 
             if (!apiData.note_id) {
@@ -1025,101 +1097,106 @@ const UpdateNoteData = (props) => {
     }, []);
   return (
     <>
-    <div className='w-[1100px] mx-auto space-y-6'>
-        <div className='flex items-center justify-between border-b pb-4'>
-          <div className='flex items-center gap-4'>
+    <div className="w-full mx-auto px-2.5 pb-6">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] px-5 sm:px-8 py-6 sm:py-8 space-y-6">
+        <div className="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
             {/* Beautiful user avatar with initials */}
-            <div className='relative'>
+            <div className='relative shrink-0'>
               {addNoteValue?.creator_name || addNoteValue?.created_by || addNoteValue?.user_name || addNoteValue?.author ? (
                 (() => {
                   const { firstLetter, bgColor } = titleNameAlpha(addNoteValue?.creator_name || addNoteValue?.created_by || addNoteValue?.user_name || addNoteValue?.author || 'U');
                   return (
-                    <div className='flex items-center justify-center w-14 h-14 rounded-full text-white text-lg font-semibold shadow-lg ring-2 ring-white' style={{ backgroundColor: bgColor || '#6366f1' }}>
+                    <div className='flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-md ring-2 ring-white' style={{ backgroundColor: bgColor || '#6366f1' }}>
                       {firstLetter}
                     </div>
                   );
                 })()
               ) : (
-                <div className='flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 text-white text-lg font-semibold shadow-lg ring-2 ring-white'>
-                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                <div className='flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-400 to-slate-600 text-lg font-semibold text-white shadow-md ring-2 ring-white'>
+                  <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0A7 7 0 013 18z" clipRule="evenodd" />
                   </svg>
                 </div>
               )}
             </div>
-            <div className='flex flex-col gap-1'>
-              <div className='flex items-center gap-2'>
-                <span className='text-[14px] font-semibold text-gray-800'>
-                  {addNoteValue?.creator_name || addNoteValue?.created_by || addNoteValue?.user_name || addNoteValue?.author || 'Unknown User'}
-                </span>
-              </div>
-              <div className='flex items-center gap-2 text-[12px] text-gray-600'>
-                <FaClock className='text-gray-500' />
+            <div className='flex min-w-0 flex-col gap-0.5'>
+              <span className='truncate text-sm font-semibold text-slate-800'>
+                {addNoteValue?.creator_name || addNoteValue?.created_by || addNoteValue?.user_name || addNoteValue?.author || 'Unknown User'}
+              </span>
+              <div className='flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500'>
+                <FaClock className='shrink-0 text-slate-400' />
                 <span>{formatDateDMY(entry_time)}</span>
-                <span className='text-gray-400'>•</span>
+                <span className='text-slate-300'>·</span>
                 <span>{formatTimestampToTime(entry_time)}</span>
               </div>
             </div>
           </div>
-          <div>
-            <button 
-              className='bg-blue-500 text-white px-4 py-1 rounded-md text-[13px]' 
+          <div className="flex shrink-0 justify-center sm:justify-end">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={aiLoading}
               onClick={() => handleEnhancedWithAI(addNoteValue.note_id || addNoteValue.noteHeader?.note_id || addNoteValue.id || addNoteValue._id)}
             >
-              {aiLoading ? 'Processing...' : 'Enhanced with AI'}
+              {aiLoading ? 'Processing…' : 'Enhanced with AI'}
             </button>
           </div>
-          <div className='flex items-center gap-2'>
-            <span>Last Save : </span>
-            <span>
-              {(() => {
-                const saveTime = addNoteValue.autoSaveTime ?? addNoteValue.last_updated;
-                const valid = saveTime != null && saveTime !== "" && Number(saveTime) > 0;
-                const displayTime = valid ? saveTime : Math.floor(Date.now() / 1000);
-                return formatTimestampToTimeSeconds(displayTime);
-              })()}
+          <div className="flex shrink-0 justify-center sm:justify-end sm:min-w-[9rem]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+              <span className="text-slate-400">Last save</span>
+              <span className="tabular-nums text-slate-700">
+                {(() => {
+                  const saveTime = addNoteValue.autoSaveTime ?? addNoteValue.last_updated;
+                  const valid = saveTime != null && saveTime !== "" && Number(saveTime) > 0;
+                  const displayTime = valid ? saveTime : Math.floor(Date.now() / 1000);
+                  return formatTimestampToTimeSeconds(displayTime);
+                })()}
+              </span>
             </span>
           </div>
         </div>
-        <div id="editorjs" className="w-full border border-gray-500 rounded-md p-0 editor-content" />
-           <div className='space-y-2'>
-          <div className='flex items-center gap-6'>
-            <label className='text-[#698592] text-[12px]'>Add Tags</label>
+        <div
+          id="editorjs"
+          className="editor-content min-h-[280px] w-full rounded-xl border border-gray-200 bg-slate-50/40 p-4 shadow-inner ring-1 ring-gray-200"
+        />
+           <div className='space-y-3'>
+          <div className='flex flex-wrap items-center justify-between gap-3'>
+            <label className='text-xs font-semibold uppercase tracking-wide text-slate-500'>Tags</label>
             {addNoteValue.tags && addNoteValue.tags.length > 1 &&
               <motion.div 
-                whileHover={{scale:1.1}}
-                className='flex items-center gap-2 px-2 rounded-lg bg-red-400 text-white text-[13px] cursor-pointer'
+                whileHover={{scale:1.02}}
+                className='flex cursor-pointer items-center gap-2 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-rose-600'
                 onClick={handleAllTagRemove}  
               >
-                <span>Remove All</span>
-                <span className='p-1 bg-white text-red-400 rounded-full text-[10px]'><FaTrash /></span>
+                <span>Remove all</span>
+                <span className='rounded-full bg-white/20 p-1 text-[10px]'><FaTrash /></span>
               </motion.div>
             }
           </div>
-          <div className='flex flex-wrap items-center gap-2 border border-gray-500 p-1 rounded-lg'>
+          <div className='flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-2 shadow-sm'>
             {addNoteValue.tags?.map((ele, i) => (
               <div 
                 key={i} 
-                className='flex items-center gap-2 text-white text-[12px] bg-blue-gray-400 p-2 rounded-lg'
+                className='flex items-center gap-2 rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm'
               >
                 <span>{ele.label}</span>
                 <motion.span 
-                  whileHover={{ scale: 1.1 }}
+                  whileHover={{ scale: 1.05 }}
                   onClick={() => handleRemoveTag(i)}
-                  className='bg-white rounded-full text-blue-gray-600 p-1 cursor-pointer'
+                  className='cursor-pointer rounded-full bg-white/20 p-0.5 text-indigo-100 hover:bg-white/30'
                 >
-                  <FaXmark />
+                  <FaXmark className="h-3.5 w-3.5" />
                 </motion.span>
               </div>
             ))}
             <input 
-              className='flex-grow text-[#333333] text-[12px] rounded-md py-[8px] px-[17px] outline-none'
+              className='min-w-[8rem] flex-1 rounded-lg border-0 bg-transparent py-2 pl-2 pr-3 text-sm text-slate-800 outline-none placeholder:text-slate-400'
               type='text' 
               value={addNoteValue.tag_name}
               name='tag_name' 
               onChange={handleChangeEditor}
-              placeholder='Add Tag'
+              placeholder='Add a tag — press Enter'
               onKeyDown={handleAddTag}
             />
           </div>
@@ -1129,14 +1206,21 @@ const UpdateNoteData = (props) => {
         </div>
         
         {/* Attachments display - only shows files uploaded through drop/select button */}
-        <div className="flex mt-[20px] flex-wrap">
+        <div className="flex mt-[20px] flex-wrap gap-2">
             {addNoteValue.attachements?.map((file, index) => (
-                <div key={index} className="mr-[10px] text-center relative">
-                    <div>{renderFilePreview(file, index)}</div>
+                <div key={index} className="mr-[10px] text-center relative group">
+                    <div
+                        className="cursor-pointer relative inline-block"
+                        title={`Download ${file.FILE_NAME || file.file_name || file.name || 'file'}`}
+                        onClick={() => handleDownloadFile(file)}
+                    >
+                        {renderFilePreview(file, index)}
+                        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 group-hover:bg-black/20 transition-colors duration-150 pointer-events-none" />
+                    </div>
                     <motion.span
                         whileHover={{ scale: 1.2 }}
-                        className="absolute -top-[9px] -right-[7px] bg-red-500 p-[4px] rounded-full border-2 border-white text-white text-[12px] cursor-pointer"
-                        onClick={() => handleRemoveFile(file, addNoteValue, index)}
+                        className="absolute -top-[9px] -right-[7px] bg-red-500 p-[4px] rounded-full border-2 border-gray-200 text-white text-[12px] cursor-pointer z-10"
+                        onClick={(e) => { e.stopPropagation(); handleRemoveFile(file, addNoteValue, index); }}
                     >
                         <HiXMark />
                     </motion.span>
@@ -1148,6 +1232,9 @@ const UpdateNoteData = (props) => {
                             ></div>
                         </div>
                     )}
+                    <p className="text-xs mt-1 truncate w-[100px] group-hover:text-blue-600 transition-colors">
+                        {file.FILE_NAME || file.file_name || file.name || 'file'}
+                    </p>
                 </div>
             ))}
         </div>
@@ -1155,14 +1242,14 @@ const UpdateNoteData = (props) => {
         {/* New file preview section */}
         {filePreviews.length > 0 && (
             <div className="mt-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Selected Files (will be uploaded on update):</h4>
+                <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Selected files — uploaded when you save</h4>
                 <div className="flex flex-wrap gap-2">
                     {filePreviews.map((preview) => (
                         <div key={preview.id} className="relative">
                             {renderFilePreviewComponent(preview)}
                             <motion.span
                                 whileHover={{ scale: 1.2 }}
-                                className="absolute -top-[9px] -right-[7px] bg-red-500 p-[4px] rounded-full border-2 border-white text-white text-[12px] cursor-pointer"
+                                className="absolute -top-[9px] -right-[7px] bg-red-500 p-[4px] rounded-full border-2 border-gray-200 text-white text-[12px] cursor-pointer"
                                 onClick={() => handleRemoveFilePreview(preview.id)}
                             >
                                 <HiXMark />
@@ -1178,13 +1265,7 @@ const UpdateNoteData = (props) => {
             onClick={handleClick}
             onDrop={handleDropWithPreview}
             onDragOver={(e) => e.preventDefault()}
-            style={{
-                border: "2px dashed #ccc",
-                padding: "20px",
-                borderRadius: "4px",
-                textAlign: "center",
-                cursor: "pointer",
-            }}
+            className="group cursor-pointer rounded-xl border-2 border-dashed border-gray-200 bg-gradient-to-b from-slate-50/80 to-white px-6 py-10 text-center transition hover:border-gray-300 hover:bg-slate-50/50"
         >
             <input
                 type="file"
@@ -1194,16 +1275,22 @@ const UpdateNoteData = (props) => {
                 className="hidden"
                 id="file-input"
             />
-            <p>Drop files here to upload or click to select</p>
+            <p className="text-sm font-medium text-slate-600 group-hover:text-slate-800">
+              Drop files here or <span className="text-slate-700 underline decoration-gray-300 underline-offset-2">browse</span>
+            </p>
+            <p className="mt-1 text-xs text-slate-400">Images, PDFs, and documents</p>
         </div>
         
-        <div>
+        <div className="flex justify-end border-t border-gray-200 pt-6">
             <CustomButton 
                 title="Update"
-                loading={addNoteValue.loading}
+                type="button"
+                className="min-w-[7rem]"
+                loading={updating || addNoteValue.loading}
                 onClick={handleUpdateWithFiles}
             />
         </div>
+      </div>
     </div>
 
     {addNoteValue.confirm && 

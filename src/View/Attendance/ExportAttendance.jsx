@@ -18,6 +18,12 @@ const generateReportRequestId = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
   return `att-report-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
+
+/** Generate a unique request id for this export so socket event can be matched to this user/session. */
+// const generateReportRequestId = () => {
+//   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+//   return `att-report-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+// }
 const ATTENDANCE_PENDING_EXPORT_KEY = 'attendance_pending_export'
 const ExportAttendance = () => {
   const { individualExport, handleCheckboxChangeAtt, excelLayoutOptions } = useAttendance();
@@ -47,7 +53,7 @@ const ExportAttendance = () => {
       longWaitToastTimeoutRef.current = null
     }
   }
-  
+
   // State for API data (same as BranchWiseListReporting)
   const [empBranches, setEmpBranches] = useState([])
   const [dept_subDept, setDept_subDept] = useState([])
@@ -175,6 +181,7 @@ const ExportAttendance = () => {
       setIsSendingEmail(false)
       exportStartedAtRef.current = null
       currentExportMetaRef.current = null
+      localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
       showToast('Your attendance report is ready! Downloading...', 'success')
 
       try {
