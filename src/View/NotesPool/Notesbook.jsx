@@ -128,6 +128,7 @@ const Notesbook = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => handleNotes(ele)}
+                title={ele.notebook_title ? String(ele.notebook_title) : undefined}
                 className="group relative flex flex-col justify-between w-full min-h-[140px] rounded-2xl bg-white border border-gray-100 p-5 cursor-pointer transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 hover:border-blue-100"
               >
                 {/* Decorative Gradient Background (Subtle) */}
@@ -261,8 +262,8 @@ const Notesbook = () => {
           footer={false}
           outsidePress={false}
           size="lg"
-          // Keep scroll so submit button stays reachable; allow select menu to overflow horizontally
-          bodyClassName="!overflow-x-visible !pb-12"
+          scrollableBody
+          bodyClassName="notes-pool-share-dialog-body !pb-4"
           compo={
             <ShareNoteBook
               handleChangeShareNotebook={handleChangeShareNotebook}

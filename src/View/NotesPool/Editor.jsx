@@ -16,6 +16,7 @@ import ConfirmationDialog from '../../Components/ConfirmationDialog/Confirmation
 import EditorFileUpload from './EditorFileUpload';
 import CustomButton from '../../Components/CustomButton/CustomButton';
 import { formatTimestampToTimeSeconds } from '../../services/__dateTimeServices';
+import { serializeEditorContentForLegacyBackend } from '../../services/__notesPoolEditorContent';
 
 
 const headerClasses = {
@@ -66,7 +67,7 @@ const Editor = (props) => {
       
       const apiData = {
         note_id: noteId,
-        editor_content: JSON.stringify(normalized),
+        editor_content: serializeEditorContentForLegacyBackend(normalized),
       };
 
       editorContent(apiData, addNoteValue.last_updated, currentTimeInSeconds);
@@ -730,7 +731,7 @@ const Editor = (props) => {
           const noteId = addNoteValue.note_id || addNoteValue.noteHeader?.note_id || addNoteValue.id || addNoteValue._id;
           const apiData = {
             note_id: noteId,
-            editor_content: JSON.stringify(normalized),
+            editor_content: serializeEditorContentForLegacyBackend(normalized),
           };
           editorContent(apiData, addNoteValue.last_updated, currentTimeInSeconds);
         }).catch((error) => {
@@ -762,11 +763,12 @@ const Editor = (props) => {
 
   return (
     <>
-      <div className='w-[1100px] mx-auto space-y-6'>
-         <div className='flex items-center justify-between'>
-           <div className='flex items-center gap-2'>
-             <span>Last Save : </span>
-             <span>
+      <div className="w-full mx-auto px-2.5 pb-6">
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] px-5 sm:px-8 py-6 sm:py-8 space-y-6">
+         <div className="flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
+           <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+             <span className="text-slate-400">Last save</span>
+             <span className="tabular-nums text-slate-700">
                {(() => {
                  const saveTime = editorValue.autoSave ?? editorValue.last_updated;
                  const valid = saveTime != null && saveTime !== "" && Number(saveTime) > 0;
@@ -774,57 +776,58 @@ const Editor = (props) => {
                  return formatTimestampToTimeSeconds(displayTime);
                })()}
              </span>
-           </div>
+           </span>
            <div>
-             <button 
-               className='bg-blue-500 text-white px-4 py-1 rounded-md text-[13px]' 
+             <button
+               type="button"
+               className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                disabled={aiLoading}
                onClick={() => handleEnhancedWithAI(addNoteValue.note_id || addNoteValue.noteHeader?.note_id || addNoteValue.id || addNoteValue._id)}
              >
-               {aiLoading ? 'Processing...' : 'Enhanced with AI'}
+               {aiLoading ? 'Processing…' : 'Enhanced with AI'}
              </button>
            </div>
          </div>
 
-        <div id="editorjs" className="w-full border border-gray-500 rounded-md p-0 editor-content" />
+        <div id="editorjs" className="editor-content min-h-[280px] w-full rounded-xl border border-gray-200 bg-slate-50/40 p-4 shadow-inner ring-1 ring-gray-200" />
         
-        <div className='space-y-2'>
-          <div className='flex items-center gap-6'>
-            <label className='text-[#698592] text-[12px]'>Add Tags</label>
+        <div className='space-y-3'>
+          <div className='flex flex-wrap items-center justify-between gap-3'>
+            <label className='text-xs font-semibold uppercase tracking-wide text-slate-500'>Tags</label>
             {editorValue.tags.length > 1 &&
               <motion.div 
-                whileHover={{scale:1.1}}
-                className='flex items-center gap-2 px-2 rounded-lg bg-red-400 text-white text-[13px] cursor-pointer'
+                whileHover={{scale:1.02}}
+                className='flex cursor-pointer items-center gap-2 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-rose-600'
                 onClick={handleAllTagRemove}  
               >
-                <span>Remove All</span>
-                <span className='p-1 bg-white text-red-400 rounded-full text-[10px]'><FaTrash /></span>
+                <span>Remove all</span>
+                <span className='rounded-full bg-white/20 p-1 text-[10px]'><FaTrash /></span>
               </motion.div>
             }
           </div>
-          <div className='flex flex-wrap items-center gap-2 border border-gray-500 p-1 rounded-lg'>
+          <div className='flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-2 shadow-sm'>
             {editorValue.tags?.map((ele, index) => (
               <div 
                 key={ele.id || index} 
-                className='flex items-center gap-2 text-white text-[12px] bg-blue-gray-400 p-2 rounded-lg'
+                className='flex items-center gap-2 rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white shadow-sm'
               >
                 <span>{ele.label}</span>
                 <motion.span 
-                  whileHover={{ scale: 1.1 }}
+                  whileHover={{ scale: 1.05 }}
                   onClick={() => handleRemoveTag(ele)}
-                  className='bg-white rounded-full text-blue-gray-600 p-1 cursor-pointer'
+                  className='cursor-pointer rounded-full bg-white/20 p-0.5 text-indigo-100 hover:bg-white/30'
                 >
-                  <FaXmark />
+                  <FaXmark className="h-3.5 w-3.5" />
                 </motion.span>
               </div>
             ))}
             <input 
-              className='flex-grow text-[#333333] text-[12px] rounded-md py-[8px] px-[17px] outline-none'
+              className='min-w-[8rem] flex-1 rounded-lg border-0 bg-transparent py-2 pl-2 pr-3 text-sm text-slate-800 outline-none placeholder:text-slate-400'
               type='text' 
               value={editorValue.tag_name}
               name='tag_name' 
               onChange={handleChangeEditor}
-              placeholder='Add Tag'
+              placeholder='Add a tag — press Enter'
               onKeyDown={handleAddTag}
             />
           </div>
@@ -844,14 +847,39 @@ const Editor = (props) => {
           uploadProgress = {uploadProgress}
           editorValue = {editorValue}
         />
-        <div>
+        <div className="flex justify-end border-t border-gray-200 pt-6">
             <CustomButton 
               title="Update"
+              type="button"
+              className="min-w-[7rem]"
               loading={editorValue.loading}
-              onClick = {()=>handleAddNotesData(addNoteValue, toggleEditorNote)}
+              onClick={async () => {
+                try {
+                  let payload = { ...addNoteValue };
+                  if (editorInstance.current) {
+                    const savedData = await editorInstance.current.save();
+                    const timeMs = Date.now();
+                    const normalized = {
+                      time: timeMs,
+                      blocks: savedData?.blocks ?? [],
+                      version: savedData?.version ?? "2.31.0",
+                    };
+                    payload = {
+                      ...addNoteValue,
+                      editor_content: serializeEditorContentForLegacyBackend(normalized),
+                      editorContent: normalized,
+                    };
+                  }
+                  await handleAddNotesData(payload, toggleEditorNote);
+                } catch (err) {
+                  console.error("Update note failed:", err);
+                  await handleAddNotesData(addNoteValue, toggleEditorNote);
+                }
+              }}
             />
           </div>
 
+        </div>
       </div>
 
       {editorValue.confirm && 

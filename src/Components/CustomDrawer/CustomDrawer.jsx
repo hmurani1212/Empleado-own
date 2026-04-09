@@ -1,12 +1,25 @@
 import { Drawer } from '@material-tailwind/react'
 import React, { useEffect, useState } from 'react'
 import { FaTimes } from 'react-icons/fa'
-import { resolveDrawerSizePx } from '../../utils/drawerSizeUtils'
+import { useDrawerWidthPx } from '../../hooks/useDrawerWidthPx'
 
 const CustomDrawer = (props) => {
-  const { open, closeDrawer, compo, direction="right", title, widthSize='45vw', customImg=false, image} = props
-  const drawerWidthPx = resolveDrawerSizePx(widthSize)
+  const { open, closeDrawer, compo, direction = 'right', title, widthSize, customImg = false, image } = props
+  /** Mobile hamburger menu keeps its width; all other side drawers use 47vw (responsive). */
+  const drawerWidthPx = useDrawerWidthPx({ widthSize, customImg })
+  const [shouldRender, setShouldRender] = useState(!!open)
   const [isToastVisible, setIsToastVisible] = useState(false)
+
+  // Unmount closed drawers to avoid "stuck" side panel on resize/zoom.
+  // Keep it mounted briefly so Material Tailwind can remove its overlay cleanly.
+  useEffect(() => {
+    if (open) {
+      setShouldRender(true)
+      return
+    }
+    const t = setTimeout(() => setShouldRender(false), 250)
+    return () => clearTimeout(t)
+  }, [open])
 
   // Monitor for toast visibility
   useEffect(() => {
@@ -35,6 +48,8 @@ const CustomDrawer = (props) => {
     closeDrawer();
   };
 
+  if (!shouldRender) return null
+
   return (
     <Drawer 
       open={open} 
@@ -44,7 +59,7 @@ const CustomDrawer = (props) => {
       // size={drawerWidthPx}
       className="flex flex-col overflow-hidden h-full bg-white shadow-2xl border-l border-gray-300" 
       // placement={direction} 
-      size={widthSize}
+      size={drawerWidthPx}
       overlayProps={{
         className: "fixed inset-0 w-full h-full !bg-transparent !backdrop-blur-none z-[9995]",
       }}

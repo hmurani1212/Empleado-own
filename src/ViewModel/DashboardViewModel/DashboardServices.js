@@ -153,9 +153,54 @@ const useDashboard = () => {
     ]
 
 
-    const empLate_absent_labels = adminDashboardData?.LAST_7_DAYS_LATE_OFF?.slice(1).map(item => item[0]) || dashboardData?.LAST_7_DAYS_LATE_OFFS?.slice(1).map(item => item[0]);
-    const lateComersChartData = adminDashboardData?.LAST_7_DAYS_LATE_OFF?.slice(1).map(item => item[1]) || dashboardData?.LAST_7_DAYS_LATE_OFFS?.slice(1).map(item => item[1]);
-    const absentEmployeesData = adminDashboardData?.LAST_7_DAYS_LATE_OFF?.slice(1).map(item => item[2]) || dashboardData?.LAST_7_DAYS_LATE_OFFS?.slice(1).map(item => item[2]);
+    const totalEmployeesForChart = adminDashboardData?.TOTAL_EMPLOYEES ?? dashboardData?.EMPLOYEE_COUNT ?? 0
+
+    const lateOffTable =
+        adminDashboardData?.LAST_7_DAYS_LATE_OFF ||
+        dashboardData?.LAST_7_DAYS_LATE_OFFS ||
+        []
+
+    const headerRow = Array.isArray(lateOffTable?.[0]) ? lateOffTable[0] : []
+    const lateOffRows = Array.isArray(lateOffTable) ? lateOffTable.slice(1) : []
+
+    const empLate_absent_labels = lateOffRows.map((item) => item?.[0])
+
+    // Mapping based on header row (most reliable):
+    // ["Date", "Late Comers", "Absent Employees"] => col2 is absent
+    const col2Header = String(headerRow?.[2] ?? '').toLowerCase()
+    const col2IsAbsent = col2Header.includes('absent')
+    const col2IsPresent = col2Header.includes('present')
+
+    const lateComersChartData = lateOffRows.map((item) => {
+        const n = Number(item?.[1] ?? 0)
+        return Number.isFinite(n) ? n : 0
+    })
+    const col2Series = lateOffRows.map((item) => {
+        const n = Number(item?.[2] ?? 0)
+        return Number.isFinite(n) ? n : 0
+    })
+
+    const total = Number(totalEmployeesForChart ?? 0)
+
+    const presentEmployeesChartData = col2IsPresent
+        ? col2Series.map((v) => Math.max(v, 0))
+        : col2IsAbsent
+            ? col2Series.map((absent) => Math.max(total - absent, 0))
+            : col2Series.map((v) => Math.max(v, 0))
+
+    const absentEmployeesData = col2IsAbsent
+        ? col2Series.map((absent) => Math.max(absent, 0))
+        : col2IsPresent
+            ? col2Series.map((present) => Math.max(total - present, 0))
+            : col2Series.map(() => 0)
+
+    const lateComersCumulativeChartData = (() => {
+        let running = 0
+        return lateComersChartData.map((v) => {
+            running += Number(v ?? 0)
+            return running
+        })
+    })()
 
     const empCheckListData = dashboardData.EMPLOYEES_CHECKLIST
     const upcommingBirthdays = adminDashboardData?.UPCOMING_BIRTHDAYS ?? dashboardData?.UPCOMING_BIRTHDAY ?? []
@@ -981,7 +1026,21 @@ const useDashboard = () => {
 
 
     return {
-        dashboardDataFunc, dashboardData, dashboardCustomData, sideMenuToggleState, dashboardCountData, empLate_absent_labels, lateComersChartData, absentEmployeesData, pendingCheckListHeaders, mett_greetList, meet_greetHeaders, upcommingBirthdays, upcommingHolidays,
+        dashboardDataFunc,
+        dashboardData,
+        dashboardCustomData,
+        sideMenuToggleState,
+        dashboardCountData,
+        empLate_absent_labels,
+        lateComersChartData,
+        lateComersCumulativeChartData,
+        absentEmployeesData,
+        presentEmployeesChartData,
+        pendingCheckListHeaders,
+        mett_greetList,
+        meet_greetHeaders,
+        upcommingBirthdays,
+        upcommingHolidays,
         getdashboardCountData, showDrawer, closeDashBoradDrawer, meetAndGreetData, dashboardValues, handleDashboardValueChange, handleChange, dashCountData, empCheckListData,
         handleViewEmp, settingEmpView, empView, checkListData, empDocuments, empExtraData, selectType, accelerateValue, handleSelectChange,
         handleEmpProfileEdit, empPersonalInfoValue, handleCloseEditEmpInfo, handleSelectEditChange,

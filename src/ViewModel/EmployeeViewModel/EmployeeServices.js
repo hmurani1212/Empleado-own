@@ -112,6 +112,8 @@ const useEmployees = () => {
     const isSavingReportingEmail = useStore((state) => state.isSavingReportingEmail);
     const getReportingEmails = useStore((state) => state.getReportingEmails);
     const sendReportingEmail = useStore((state) => state.sendReportingEmail);
+    const isSavingExcelHeading = useStore((state) => state.isSavingExcelHeading);
+    const setExcelHeading = useStore((state) => state.setExcelHeading);
 
     // Profile Update Invite function
     const sendProfileUpdateInvite = useStore((state) => state.sendProfileUpdateInvite);
@@ -150,6 +152,7 @@ const useEmployees = () => {
     ]
 
     const [empBranches, setEmpBranches] = useState([])
+    const [branchesLoading, setBranchesLoading] = useState(false)
     const [empManager, setEmpmanager] = useState([])
 
     // console.log("empBranchesempBranches", empBranches)
@@ -198,6 +201,7 @@ const useEmployees = () => {
     // Centralized API call for branches - GET /api/v1/branches/get_branch_employee (Core module)
     // Response: { STATUS, DB_DATA: { branches: [{ id, branch_name }, ...] } }
     const centralizedGetBranches = async () => {
+        setBranchesLoading(true)
         const apiKey = createApiKey('/api/v1/branches/get_branch_employee', {});
         try {
             const response = await executeApiCall(apiKey, () => employeesApi.gettingAllBranches());
@@ -213,6 +217,8 @@ const useEmployees = () => {
         } catch (err) {
             console.error('Error fetching branches (get_branch_employee):', err);
             setEmpBranches([]);
+        } finally {
+            setBranchesLoading(false)
         }
     };
 
@@ -1789,7 +1795,7 @@ const useEmployees = () => {
         empTitles, getEmployeesList, allEmployees, employeesListLoading, empMount, handleEmpMount, setSkipGetAllEmployeeOnListPage, allBranches, handleFilterChange, handleFilterDeptChange, filterValues, getAllDepartments, filterDepartments,
         listView, handleListToggle, handleGridToggle, handleChangeEmployees, empStatus, handleStatusFilter, handelAlphabetSearch, alphaIndex, newEmpValues, handleNewEmpChange, getFindEmp,
         handleVerifyUserModalClose, verfiyUser, findingEmp, handleStepActive, activeStep, isFirstStep, isLastStep, handlePrev, handleNext, handleLastStep, handleFirstStep, allCountries,
-        handleSelectChange, handleDOB, passwordToggle, validateAge, empBranches, dept_subDept, flattenOptions, customStyles,
+        handleSelectChange, handleDOB, passwordToggle, validateAge, empBranches, branchesLoading, dept_subDept, flattenOptions, customStyles,
         designations, empManager, policies, salaryTemplate, addEmpHandler,
         openMenuValue, toggleMenuValue,
         gettingEmployeeCheckList,
@@ -1879,6 +1885,8 @@ const useEmployees = () => {
         isSavingReportingEmail,
         getReportingEmails,
         sendReportingEmail,
+        isSavingExcelHeading,
+        setExcelHeading,
         // Profile Update Invite function
         sendProfileUpdateInvite,
         // Update Profile Image function

@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import profileImage from '../../assets/images/userProfileNote.png'
 import { formatDateDMY, formatTimestampToTime } from '../../services/__dateTimeServices'
-import { FaClock } from 'react-icons/fa6'
+import { FaClock, FaPaperclip } from 'react-icons/fa6'
 import { Checkbox, Typography } from '@material-tailwind/react';
 import { titleNameAlpha } from '../../services/appServices';
+import { getLocalStorage } from '../../Authentication/localStorageServices';
 
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import solarizedlight from 'react-syntax-highlighter';
@@ -12,11 +13,15 @@ import { FaFilePdf } from "react-icons/fa6";
 import { FaFileAlt, FaFileExcel, FaFileWord, FaFileVideo } from "react-icons/fa";
 import { motion } from 'framer-motion'
 
-const renderFilePreview = (file, index) => {
+/** Thumbnails for attachment list. `compact` uses smaller icons/previews for a denser grid. */
+const renderFilePreview = (file, index, compact = false) => {
+  const thumb = compact ? 'h-12 w-12' : 'h-[72px] w-[72px]';
+  const icon = compact ? 'h-10 w-10' : 'h-14 w-14';
+  const rounded = compact ? 'rounded-md' : 'rounded-lg';
 
   // Add null checks and handle different file object structures
   if (!file) {
-    return <FaFileAlt className="w-[100px] h-[100px] object-cover rounded-lg" />;
+    return <FaFileAlt className={`${icon} shrink-0 ${rounded} object-cover text-slate-400`} />;
   }
 
   // Check for different possible mime type properties
@@ -37,13 +42,13 @@ const renderFilePreview = (file, index) => {
       <motion.img
         src={fileUrl}
         alt={`Uploaded ${index}`}
-        className="w-[100px] h-[100px] object-cover rounded-lg"
+        className={`${thumb} shrink-0 object-cover ${rounded}`}
         onError={(e) => {
           console.error('Image failed to load:', fileUrl);
           e.target.style.display = 'none';
           // Show fallback icon
           const fallback = document.createElement('div');
-          fallback.innerHTML = '<FaFileAlt className="w-[100px] h-[100px] object-cover rounded-lg" />';
+          fallback.innerHTML = '<FaFileAlt class="w-10 h-10 object-cover rounded-md text-slate-400" />';
           e.target.parentNode.appendChild(fallback.firstChild);
         }}
       />
@@ -52,14 +57,14 @@ const renderFilePreview = (file, index) => {
     return (
       <video
         src={fileUrl}
-        className="w-[100px] h-[100px] object-cover rounded-lg"
+        className={`${thumb} shrink-0 object-cover ${rounded}`}
         controls={false}
         onError={(e) => {
           console.error('Video failed to load:', fileUrl);
           e.target.style.display = 'none';
           // Show fallback icon
           const fallback = document.createElement('div');
-          fallback.innerHTML = '<FaFileVideo className="w-[100px] h-[100px] object-cover rounded-lg text-blue-500" />';
+          fallback.innerHTML = '<FaFileVideo class="w-10 h-10 object-cover rounded-md text-blue-500" />';
           e.target.parentNode.appendChild(fallback.firstChild);
         }}
       />
@@ -69,13 +74,13 @@ const renderFilePreview = (file, index) => {
     if (mimeType) {
       switch (mimeType) {
         case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-          return <FaFileWord className="w-[100px] h-[100px] object-cover rounded-lg text-blue-500" />;
+          return <FaFileWord className={`${icon} shrink-0 ${rounded} object-cover text-blue-500`} />;
         case "application/vnd.ms-excel":
-          return <FaFileExcel className="w-[100px] h-[100px] object-cover rounded-lg text-green-500" />;
+          return <FaFileExcel className={`${icon} shrink-0 ${rounded} object-cover text-green-500`} />;
         case "application/pdf":
-          return <FaFilePdf className="w-[100px] h-[100px] object-cover rounded-lg text-red-500" />;
+          return <FaFilePdf className={`${icon} shrink-0 ${rounded} object-cover text-red-500`} />;
         default:
-          return <FaFileAlt className="w-[100px] h-[100px] object-cover rounded-lg" />;
+          return <FaFileAlt className={`${icon} shrink-0 ${rounded} object-cover text-slate-500`} />;
       }
     } else {
       // Fallback for files without mime type - try to determine from file extension
@@ -94,12 +99,12 @@ const renderFilePreview = (file, index) => {
             <motion.img
               src={fileUrl}
               alt={`Uploaded ${index}`}
-              className="w-[100px] h-[100px] object-cover rounded-lg"
+              className={`${thumb} shrink-0 object-cover ${rounded}`}
               onError={(e) => {
                 console.error('Image failed to load:', fileUrl);
                 e.target.style.display = 'none';
                 const fallback = document.createElement('div');
-                fallback.innerHTML = '<FaFileAlt className="w-[100px] h-[100px] object-cover rounded-lg" />';
+                fallback.innerHTML = '<FaFileAlt class="w-10 h-10 object-cover rounded-md text-slate-400" />';
                 e.target.parentNode.appendChild(fallback.firstChild);
               }}
             />
@@ -113,27 +118,27 @@ const renderFilePreview = (file, index) => {
           return (
             <video
               src={fileUrl}
-              className="w-[100px] h-[100px] object-cover rounded-lg"
+              className={`${thumb} shrink-0 object-cover ${rounded}`}
               controls={false}
               onError={(e) => {
                 console.error('Video failed to load:', fileUrl);
                 e.target.style.display = 'none';
                 const fallback = document.createElement('div');
-                fallback.innerHTML = '<FaFileVideo className="w-[100px] h-[100px] object-cover rounded-lg text-blue-500" />';
+                fallback.innerHTML = '<FaFileVideo class="w-10 h-10 object-cover rounded-md text-blue-500" />';
                 e.target.parentNode.appendChild(fallback.firstChild);
               }}
             />
           );
         case 'pdf':
-          return <FaFilePdf className="w-[100px] h-[100px] object-cover rounded-lg text-red-500" />;
+          return <FaFilePdf className={`${icon} shrink-0 ${rounded} object-cover text-red-500`} />;
         case 'doc':
         case 'docx':
-          return <FaFileWord className="w-[100px] h-[100px] object-cover rounded-lg text-blue-500" />;
+          return <FaFileWord className={`${icon} shrink-0 ${rounded} object-cover text-blue-500`} />;
         case 'xls':
         case 'xlsx':
-          return <FaFileExcel className="w-[100px] h-[100px] object-cover rounded-lg text-green-500" />;
+          return <FaFileExcel className={`${icon} shrink-0 ${rounded} object-cover text-green-500`} />;
         default:
-          return <FaFileAlt className="w-[100px] h-[100px] object-cover rounded-lg" />;
+          return <FaFileAlt className={`${icon} shrink-0 ${rounded} object-cover text-slate-500`} />;
       }
     }
   }
@@ -294,7 +299,7 @@ const RenderEditorContent = ({ data }) => {
                       headerText = formatContent(headerCell);
                     }
                     return (
-                      <th key={headerIndex} className='border-b border-blue-gray-100 bg-blue-gray-50 p-4 text-left align-top min-w-0 max-w-[50%]'>
+                      <th key={headerIndex} className='border-b border-gray-200 bg-slate-50 p-4 text-left align-top min-w-0 max-w-[50%]'>
                         <Typography
                           variant="small"
                           className="text-[#474747] break-words whitespace-normal"
@@ -316,7 +321,7 @@ const RenderEditorContent = ({ data }) => {
                         cellText = formatContent(cell);
                       }
                       return (
-                        <td key={cellIndex} className='p-4 border-b border-blue-gray-100 text-left align-top min-w-0 max-w-[50%]'>
+                        <td key={cellIndex} className='p-4 border-b border-gray-200 text-left align-top min-w-0 max-w-[50%]'>
                           <Typography
                             variant="small"
                             className="font-normal leading-snug opacity-100 text-[#474747] break-words whitespace-normal"
@@ -373,9 +378,19 @@ const RenderEditorContent = ({ data }) => {
 
       case 'image':
         return (
-          <figure key={index} className='my-4'>
-            <img src={block.data.file.url} alt={block.data.caption} />
-            <figcaption>{block.data.caption}</figcaption>
+          <figure key={index} className="my-5 mx-auto max-w-xs sm:max-w-sm">
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-slate-50/50 shadow-sm">
+              <img
+                src={block.data.file.url}
+                alt={block.data.caption || ''}
+                className="mx-auto max-h-48 w-full object-contain sm:max-h-56"
+              />
+            </div>
+            {block.data.caption ? (
+              <figcaption className="mt-2 text-center text-xs text-slate-500">
+                {block.data.caption}
+              </figcaption>
+            ) : null}
           </figure>
         );
 
@@ -422,9 +437,49 @@ const RenderEditorContent = ({ data }) => {
 
 
 
+/** Fetch a file as a blob (with auth) and save it directly to the user's system. */
+const handleDownloadFile = async (file) => {
+  const recId = file.REC_ID || file.rec_id;
+  const fileName = file.FILE_NAME || file.file_name || file.name || 'file';
+  let fileUrl = file.FILE_URL || file.url || file.preview;
+  if (!fileUrl && recId && fileName && fileName !== 'Unknown file') {
+    fileUrl = `https://elephant.veevotech.com/files/${recId}/${fileName}`;
+  } else if (!fileUrl && recId) {
+    fileUrl = recId;
+  }
+  if (!fileUrl) return;
+
+  const jwt = getLocalStorage();
+  try {
+    const res = await fetch(fileUrl, {
+      headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = blobUrl;
+    anchor.download = fileName;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error('Attachment download failed:', err);
+    // Last-resort fallback: direct navigation (browser will prompt save if server sends Content-Disposition: attachment)
+    const anchor = document.createElement('a');
+    anchor.href = fileUrl;
+    anchor.download = fileName;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+  }
+};
+
 const EditorData = (props) => {
   const { editorData } = props
-  // console.log("what is the Editor Data:",  editorData);
   const [attachments, setAttachments] = useState([]);
 
   // Process attachments from different possible sources
@@ -618,6 +673,9 @@ const EditorData = (props) => {
             overflow-wrap: break-word;
             word-wrap: break-word;
             word-break: break-word;
+            font-size: 15px;
+            line-height: 1.7;
+            letter-spacing: 0.01em;
           }
           
           .editor-note-content .editor-note-table {
@@ -633,64 +691,87 @@ const EditorData = (props) => {
           }
         `}
       </style>
-      <div className='w-full max-w-[1100px] mx-auto space-y-4 pb-0 overflow-hidden'>
-        <div className='flex items-center justify-between border-b pb-4'>
-          <div className='flex items-center gap-4'>
-            {/* Beautiful user avatar with initials */}
-            <div className='relative'>
-              {editorData?.creator_name || editorData?.created_by || editorData?.user_name || editorData?.author ? (
-                (() => {
-                  const { firstLetter, bgColor } = titleNameAlpha(editorData?.creator_name || editorData?.created_by || editorData?.user_name || editorData?.author || 'U');
-                  return (
-                    <div className='flex items-center justify-center w-14 h-14 rounded-full text-white text-lg font-semibold shadow-lg ring-2 ring-white' style={{ backgroundColor: bgColor || '#6366f1' }}>
-                      {firstLetter}
-                    </div>
-                  );
-                })()
-              ) : (
-                <div className='flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 text-white text-lg font-semibold shadow-lg ring-2 ring-white'>
-                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0A7 7 0 013 18z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              )}
-            </div>
-            <div className='flex flex-col gap-1'>
-              <div className='flex items-center gap-2'>
-                <span className='text-[14px] font-semibold text-gray-800'>
+      <div className="w-full mx-auto max-w-full overflow-hidden px-2.5 pb-6">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+          <div className="border-b border-gray-200 bg-gradient-to-b from-slate-50/80 to-white px-4 py-5 sm:px-6">
+            <div className="flex items-center gap-4">
+              <div className="relative shrink-0">
+                {editorData?.creator_name || editorData?.created_by || editorData?.user_name || editorData?.author ? (
+                  (() => {
+                    const { firstLetter, bgColor } = titleNameAlpha(editorData?.creator_name || editorData?.created_by || editorData?.user_name || editorData?.author || 'U');
+                    return (
+                      <div
+                        className="flex h-14 w-14 items-center justify-center rounded-2xl text-lg font-semibold text-white shadow-md ring-2 ring-white"
+                        style={{ backgroundColor: bgColor || '#6366f1' }}
+                      >
+                        {firstLetter}
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-400 to-slate-600 text-lg font-semibold text-white shadow-md ring-2 ring-white">
+                    <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0A7 7 0 013 18z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-800 sm:text-base">
                   {editorData?.creator_name || editorData?.created_by || editorData?.user_name || editorData?.author || 'Unknown User'}
-                </span>
-              </div>
-              <div className='flex items-center gap-2 text-[12px] text-gray-600'>
-                <FaClock className='text-gray-500' />
-                <span>{editorData.last_updated ? formatDateDMY(editorData.last_updated) : 'N/A'}</span>
-                <span className='text-gray-400'>•</span>
-                <span>{editorData.last_updated ? formatTimestampToTime(editorData.last_updated) : 'N/A'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className='px-10 editor-note-content pb-0'>
-          <RenderEditorContent
-            data={blocks}
-          />
-        </div>
-
-        {/* Display attachments if any exist */}
-        {attachments && attachments.length > 0 && (
-          <div className='px-10'>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Attachments:</h4>
-            <div className='grid grid-cols-6 gap-3'>
-              {attachments.map((file, i) => (
-                <div key={i} className="text-center">
-                  {renderFilePreview(file, i)}
-                  <p className="text-xs mt-1 truncate w-[100px]">{file.file_name || file.FILE_NAME || file.name || 'Unknown file'}</p>
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
+                  <FaClock className="shrink-0 text-slate-400" />
+                  <span>{editorData.last_updated ? formatDateDMY(editorData.last_updated) : 'N/A'}</span>
+                  <span className="text-slate-300">·</span>
+                  <span>{editorData.last_updated ? formatTimestampToTime(editorData.last_updated) : 'N/A'}</span>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        )}
+
+          <div className="editor-note-content px-4 py-6 sm:px-8 sm:py-8">
+            <RenderEditorContent data={blocks} />
+          </div>
+
+          {attachments && attachments.length > 0 && (
+            <div className="border-t border-gray-200 bg-slate-50/40 px-4 py-4 sm:px-8 sm:py-8">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-slate-500 shadow-sm ring-1 ring-gray-200">
+                  <FaPaperclip className="h-4 w-4" aria-hidden />
+                </span>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-800">Attachments</h4>
+                  <p className="text-xs text-slate-500">Click a file to download</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
+                {attachments.map((file, i) => (
+                  <motion.button
+                    type="button"
+                    key={i}
+                    whileHover={{ y: -1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    className="group flex w-full flex-col items-center rounded-lg border border-gray-200 bg-white p-2 text-center shadow-sm transition hover:border-gray-300 hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    title={`Download ${file.file_name || file.FILE_NAME || file.name || 'file'}`}
+                    onClick={() => handleDownloadFile(file)}
+                  >
+                    <div className="relative inline-block">
+                      {renderFilePreview(file, i, true)}
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-md bg-black/0 transition-colors duration-150 group-hover:bg-black/10" />
+                    </div>
+                    <p
+                      className="mt-1.5 line-clamp-2 w-full max-w-full break-all text-center text-[10px] leading-snug text-slate-600 group-hover:text-slate-900"
+                      title={file.file_name || file.FILE_NAME || file.name || 'Unknown file'}
+                    >
+                      {file.file_name || file.FILE_NAME || file.name || 'Unknown file'}
+                    </p>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </>
   )

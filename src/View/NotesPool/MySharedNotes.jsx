@@ -16,7 +16,7 @@ import UpdateNoteData from "./UpdateNoteData";
 import EditorData from "./EditorData";
 import useStore from "../../Store/store";
 import { MdEditDocument } from "react-icons/md";
-import { NoteSkeleton } from "./NotesPoolSkeletons";
+import { NoteSkeleton, NoteViewSkeleton } from "./NotesPoolSkeletons";
 
 const MySharedNotes = (props) => {
   const { notes: notesFromProps, noteBookTitle, noteBookID, onBack } = props;
@@ -91,7 +91,7 @@ const MySharedNotes = (props) => {
                 <FaBook className="text-lg" />
             </span>
             <div>
-                <span className="text-xl font-bold text-gray-800">{noteBookTitle}</span>
+                <span className="text-xl font-bold text-gray-800" title={noteBookTitle ? String(noteBookTitle) : undefined}>{noteBookTitle}</span>
                 <p className="text-xs text-gray-500">Managing shared notes</p>
             </div>
           </div>
@@ -135,6 +135,7 @@ const MySharedNotes = (props) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
+                title={ele.note_title ? String(ele.note_title) : undefined}
                 className="relative flex flex-col justify-between w-full h-[220px] rounded-2xl bg-white border border-gray-100 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-blue-100 group overflow-hidden"
                 onClick={() => handleNoteHandler(ele)}
               >
@@ -248,7 +249,13 @@ const MySharedNotes = (props) => {
           handleOpen={toggleShowNote}
           title={addNoteValue.note_title}
           footer={false}
-          compo={<EditorData editorData={editorData} />}
+          compo={
+            addNoteValue.viewNoteLoading ? (
+              <NoteViewSkeleton />
+            ) : (
+              <EditorData editorData={editorData} />
+            )
+          }
         />
       )}
 

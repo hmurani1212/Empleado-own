@@ -1,5 +1,16 @@
 import React from 'react';
 
+/** Inline spinner + label for share modal lists (employees, etc.) */
+export const NotesPoolInlineSpinner = ({ label = 'Loading…' }) => (
+  <div className="flex items-center gap-2 py-1 text-[#698592] text-[12px]">
+    <div
+      className="h-4 w-4 shrink-0 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin"
+      aria-hidden
+    />
+    <span>{label}</span>
+  </div>
+);
+
 export const NotebookSkeleton = () => {
   return (
     <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-5 w-full">
@@ -82,6 +93,31 @@ export const NoteSkeleton = () => {
     </div>
   );
 };
+
+/** Skeleton for the view-note dialog body while note content is loading */
+export const NoteViewSkeleton = () => (
+  <div className="w-full min-h-[280px] animate-pulse space-y-4 p-1">
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="h-10 w-10 rounded-full bg-gray-200" />
+      <div className="flex-1 space-y-2 min-w-[120px]">
+        <div className="h-3 bg-gray-200 rounded w-1/3" />
+        <div className="h-3 bg-gray-200 rounded w-1/4" />
+      </div>
+    </div>
+    <div className="space-y-2 pt-2">
+      <div className="h-3 bg-gray-200 rounded w-full" />
+      <div className="h-3 bg-gray-200 rounded w-5/6" />
+      <div className="h-3 bg-gray-200 rounded w-4/5" />
+      <div className="h-3 bg-gray-200 rounded w-full" />
+      <div className="h-3 bg-gray-200 rounded w-3/4" />
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-4 border-t border-gray-100">
+      <div className="h-16 bg-gray-100 rounded-lg" />
+      <div className="h-16 bg-gray-100 rounded-lg" />
+      <div className="h-16 bg-gray-100 rounded-lg hidden sm:block" />
+    </div>
+  </div>
+);
 
 export const StarredNoteSkeleton = () => {
   return (

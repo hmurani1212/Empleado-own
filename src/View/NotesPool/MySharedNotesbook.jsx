@@ -22,6 +22,7 @@ const MySharedNotesBook = () => {
   const {
     mySharednotebooks,
     mySharednotebookCount,
+    gettingMySharedNoteBooks,
     noteBookID,
     toggleMenuValue,
     openMenuValue,
@@ -42,8 +43,12 @@ const MySharedNotesBook = () => {
   } = useMyShareNoteHandler();
 
   useEffect(() => {
-    console.log("my shared notebooks", mySharednotebooks);
-  }, [mySharednotebooks]);
+    // On hard refresh, this route can mount without tab-click dispatch.
+    // Ensure we fetch the list so the skeleton doesn't get stuck.
+    if (mySharednotebooks == null) {
+      gettingMySharedNoteBooks?.();
+    }
+  }, [mySharednotebooks, gettingMySharedNoteBooks]);
 
   return (
     <>
@@ -96,6 +101,7 @@ const MySharedNotesBook = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
+                    title={ele.notebook_name ? String(ele.notebook_name) : undefined}
                     className="group relative flex flex-col justify-between w-full min-h-[140px] rounded-2xl bg-white border border-gray-100 p-5 cursor-pointer transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 hover:border-blue-100"
                     onClick={() => handleNotes(ele, false)}
                   >

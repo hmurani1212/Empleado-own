@@ -169,7 +169,7 @@ const empDashboardViewModel = (set, get) => ({
                         phone: dbData?.employee_data?.contacts?.[1]?.contact || '',
                         working_from: new Date(dbData?.employee_data?.join_date * 1000).toLocaleDateString() || '',
                         join_date: dbData?.employee_data?.join_date || 0,
-                        mobile_attendance: dbData?.employee_data?.mobile_attendance,
+                        web_attendance: dbData?.employee_attendance?.field_value,
                         web_attendance_status: dbData?.employee_data?.web_attendance_status,
                         designation_name: dbData?.employee_data?.designation_name|| '',
                         dob: dbData?.employee_data?.dob || '',

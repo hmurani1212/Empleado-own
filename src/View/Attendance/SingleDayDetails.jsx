@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import useStore from '../../Store/store'
 import { showToast } from '../../Components/Toaster/Toaster'
 import attendanceApi from '../../Model/Data/Attendance/Attendance'
@@ -15,6 +15,62 @@ import {
   LogIn,
   LogOut,
 } from 'lucide-react'
+import { IoOpenOutline } from 'react-icons/io5'
+import { MdPhoneIphone } from 'react-icons/md'
+import CustomDialog from '../../Components/CustomDialog/CustomDialog'
+
+const findGeoByType = (row, type) => {
+  const list = row?.geo_coordinates
+  if (!Array.isArray(list) || list.length === 0) return null
+  const match = list.find((g) => String(g?.type || '').toLowerCase() === String(type).toLowerCase())
+  if (!match) return null
+  const lat = match?.lat ?? match?.latitude
+  const lng = match?.lng ?? match?.longitude
+  if (lat == null || lng == null) return null
+  const latNum = Number(lat)
+  const lngNum = Number(lng)
+  if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return null
+  return { lat: latNum, lng: lngNum }
+}
+
+const parseGeoPoint = (entry) => {
+  if (!entry) return null
+  const lat = Number(entry.lat ?? entry.latitude)
+  const lng = Number(entry.lng ?? entry.longitude ?? entry.lang)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  return { lat, lng }
+}
+
+/**
+ * Individual report uses GEO_LOG[] aligned with timings[]:
+ * timings[0]=in1, timings[1]=out1, timings[2]=in2, …
+ * Match by entry_time === timings[i], else fall back to GEO_LOG[i].
+ */
+const getGeoLogForTimingIndex = (row, timingsIndex) => {
+  const timings = row?.timings
+  const log = row?.GEO_LOG
+  if (!Array.isArray(timings) || timingsIndex < 0 || timingsIndex >= timings.length) return null
+  if (!Array.isArray(log) || log.length === 0) return null
+  const ts = timings[timingsIndex]
+  const byTime = log.find((e) => Number(e.entry_time) === Number(ts))
+  const entry = byTime ?? log[timingsIndex]
+  return parseGeoPoint(entry)
+}
+
+/** Prefer GEO_LOG for the pair slot, then legacy geo_coordinates in_/out_ types. */
+const getGeoForPair = (row, pairIndex) => {
+  if (row?.manual_changed) return { in: null, out: null }
+  const inSlot = pairIndex * 2
+  const outSlot = pairIndex * 2 + 1
+  const fromLogIn = getGeoLogForTimingIndex(row, inSlot)
+  const fromLogOut = getGeoLogForTimingIndex(row, outSlot)
+  const fromTypeIn = findGeoByType(row, `in_${pairIndex + 1}`)
+  const fromTypeOut = findGeoByType(row, `out_${pairIndex + 1}`)
+  return {
+    in: fromLogIn || fromTypeIn,
+    out: fromLogOut || fromTypeOut,
+  }
+}
 
 const SingleDayDetails = (props) => {
   const { singleDayService, addMoreInput, updateSingleDayData, onDataRefreshed, searchingEmpValue, attendanceData } = props
@@ -27,6 +83,31 @@ const SingleDayDetails = (props) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [dataUpdateKey, setDataUpdateKey] = useState(0)
   const [userSubmitted, setUserSubmitted] = useState(false)
+  const [geoMapOpen, setGeoMapOpen] = useState(false)
+  const [geoMapPoint, setGeoMapPoint] = useState(null)
+
+  const openGeoMap = (geo) => {
+    if (!geo || geo.lat == null || geo.lng == null) return
+    setGeoMapPoint({ lat: geo.lat, lng: geo.lng })
+    setGeoMapOpen(true)
+  }
+
+  const closeGeoMap = () => {
+    setGeoMapOpen(false)
+    setGeoMapPoint(null)
+  }
+
+  /** Prefer live row from attendance store (includes GEO_LOG) when date matches */
+  const dayRowForGeo = useMemo(() => {
+    const currentDateString = data?.date_string
+    if (currentDateString && attendanceData?.attendanceAttr?.attendance) {
+      const fresh = attendanceData.attendanceAttr.attendance.find(
+        (d) => d.date_string === currentDateString
+      )
+      if (fresh) return fresh
+    }
+    return data
+  }, [data, attendanceData])
 
   const hasTimings = data?.timings && data.timings.length > 0
 
@@ -291,7 +372,9 @@ const SingleDayDetails = (props) => {
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4 font-poppins">Today&apos;s Summary</p>
               {/* Time Pairs Row */}
               <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
-                {timePairs.map((pair, idx) => (
+                {timePairs.map((pair, idx) => {
+                  const { in: inGeo, out: outGeo } = getGeoForPair(dayRowForGeo, idx)
+                  return (
                   <motion.div
                     key={idx}
                     variants={itemVariants}
@@ -302,16 +385,40 @@ const SingleDayDetails = (props) => {
                     <div className="flex items-center gap-2">
                       <LogIn className="w-4 h-4 text-blue-500 shrink-0" aria-hidden />
                       <span className="text-sm text-slate-600">In{timePairs.length > 1 ? ` ${idx + 1}` : ''}:</span>
-                      <span className="text-sm font-semibold text-slate-900">{formatTimeDisplay(pair.in)}</span>
+                      <span className="text-sm font-semibold text-slate-900 inline-flex items-center gap-1">
+                        {formatTimeDisplay(pair.in)}
+                        {inGeo && (
+                          <button
+                            type="button"
+                            title="View check-in location"
+                            className="p-0.5 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+                            onClick={() => openGeoMap(inGeo)}
+                          >
+                            <MdPhoneIphone className="w-[15px] h-[15px]" aria-hidden />
+                          </button>
+                        )}
+                      </span>
                     </div>
                     <span className="text-slate-300">→</span>
                     <div className="flex items-center gap-2">
                       <LogOut className="w-4 h-4 text-amber-500 shrink-0" aria-hidden />
                       <span className="text-sm text-slate-600">Out{timePairs.length > 1 ? ` ${idx + 1}` : ''}:</span>
-                      <span className="text-sm font-semibold text-slate-900">{formatTimeDisplay(pair.out)}</span>
+                      <span className="text-sm font-semibold text-slate-900 inline-flex items-center gap-1">
+                        {formatTimeDisplay(pair.out)}
+                        {outGeo && (
+                          <button
+                            type="button"
+                            title="View check-out location"
+                            className="p-0.5 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+                            onClick={() => openGeoMap(outGeo)}
+                          >
+                            <MdPhoneIphone className="w-[15px] h-[15px]" aria-hidden />
+                          </button>
+                        )}
+                      </span>
                     </div>
                   </motion.div>
-                ))}
+                )})}
               </div>
               {/* Hours Stats Row */}
               <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-slate-100">
@@ -390,7 +497,9 @@ const SingleDayDetails = (props) => {
           >
             <div className="flex-1 overflow-y-auto customScroll pr-1 -mr-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4 font-poppins">Time Entries</p>
-              {timePairs.map((pair, index) => (
+              {timePairs.map((pair, index) => {
+                const { in: geoInRow, out: geoOutRow } = getGeoForPair(dayRowForGeo, index)
+                return (
                 <motion.div
                   key={index}
                   variants={itemVariants}
@@ -415,27 +524,31 @@ const SingleDayDetails = (props) => {
                   <div className="p-5 space-y-4">
                     <div className="flex items-center gap-3">
                       <label className="text-sm font-medium text-slate-600 w-16 shrink-0">In {index + 1}</label>
-                      <input
-                        type="time"
-                        value={pair.in}
-                        onChange={(e) => handleTimeChange(index, 'in', e.target.value)}
-                        className="flex-1 min-w-0 text-sm text-slate-800 rounded-xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 px-4 py-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
-                        aria-label={`In time ${index + 1}`}
-                      />
+                      <div className="flex flex-1 min-w-0 items-center gap-2">
+                        <input
+                          type="time"
+                          value={pair.in}
+                          onChange={(e) => handleTimeChange(index, 'in', e.target.value)}
+                          className="flex-1 min-w-0 text-sm text-slate-800 rounded-xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 px-4 py-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
+                          aria-label={`In time ${index + 1}`}
+                        />
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <label className="text-sm font-medium text-slate-600 w-16 shrink-0">Out {index + 1}</label>
-                      <input
-                        type="time"
-                        value={pair.out}
-                        onChange={(e) => handleTimeChange(index, 'out', e.target.value)}
-                        className="flex-1 min-w-0 text-sm text-slate-800 rounded-xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 px-4 py-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
-                        aria-label={`Out time ${index + 1}`}
-                      />
+                      <div className="flex flex-1 min-w-0 items-center gap-2">
+                        <input
+                          type="time"
+                          value={pair.out}
+                          onChange={(e) => handleTimeChange(index, 'out', e.target.value)}
+                          className="flex-1 min-w-0 text-sm text-slate-800 rounded-xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50/80 px-4 py-2.5 shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
+                          aria-label={`Out time ${index + 1}`}
+                        />
+                      </div>
                     </div>
                   </div>
                 </motion.div>
-              ))}
+              )})}
 
               <motion.div variants={itemVariants} className="flex justify-center py-3">
                 <motion.button
@@ -498,6 +611,42 @@ const SingleDayDetails = (props) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CustomDialog
+        openDialog={geoMapOpen}
+        handleOpen={closeGeoMap}
+        title="Location"
+        size="xl"
+        footer={true}
+        bodyClassName="!p-0"
+        compo={
+          geoMapPoint ? (
+            <div className="relative w-full bg-gradient-to-b from-slate-100 to-slate-200/80">
+              <a
+                className="absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/95 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-[0_4px_14px_-2px_rgba(0,0,0,0.12)] backdrop-blur-sm transition hover:bg-white hover:shadow-md cursor-pointer"
+                href={`https://www.google.com/maps?q=${encodeURIComponent(`${geoMapPoint.lat},${geoMapPoint.lng}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                title="Open in Google Maps"
+              >
+                Open in Maps
+                <IoOpenOutline className="text-[15px]" />
+              </a>
+              <div className="overflow-hidden rounded-b-2xl border-t border-slate-200/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6)]">
+                <iframe
+                  title="Attendance location map"
+                  className="block w-full min-h-[min(70vh,520px)] h-[min(70vh,520px)] border-0"
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(`${geoMapPoint.lat},${geoMapPoint.lng}`)}&z=16&output=embed`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 text-[13px] text-slate-600">Location not available.</div>
+          )
+        }
+      />
     </div>
   )
 }

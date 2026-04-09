@@ -18,6 +18,9 @@ const CutNote = (props) => {
                     options = {addNoteValue?.notebookList?.map((ele)=> ({value:ele.id, label:ele.notebook_title}))}
                     cStyle = {false}
                     onChangeHandler = {(select)=> handleSelectCutNotebook(select, 'cutNotebook_id')}
+                    isLoading={!!addNoteValue?.notebookListLoading}
+                    loadingMessage={() => 'Loading notebooks…'}
+                    disabled={!!addNoteValue?.notebookListLoading || !!addNoteValue?.loading}
 
                     value={addNoteValue?.cutNotebook_id}
 

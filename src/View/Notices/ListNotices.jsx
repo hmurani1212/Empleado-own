@@ -68,6 +68,8 @@ const ListNotices = () => {
     getAllDepartmentsNotices,
     noticesPagination,
     getFilterNotice,
+    departmentsLoading,
+    departmentsLoadedForBranchId,
   } = useNotice();
 
   const { triggerRefs } = useDropdownService();
@@ -212,6 +214,14 @@ const ListNotices = () => {
 
   const years = getAllYears();
 
+  const isFilterBranchDropdownLoading =
+    Boolean(departmentsLoading) &&
+    (!Array.isArray(filterNoticeValue?.branchesList) || filterNoticeValue.branchesList.length === 0);
+
+  const isFilterDepartmentDropdownLoading =
+    Boolean(departmentsLoading) &&
+    (!Array.isArray(filterNoticeValue?.departmentList) || filterNoticeValue.departmentList.length === 0);
+
   return (
     <>
       <div className="flex flex-col gap-6 w-full h-full relative">
@@ -223,7 +233,9 @@ const ListNotices = () => {
                 placeHolderTitle="Filter by Branch"
                 value={filterNoticeValue?.branch_id}
                 options={
-                  Array.isArray(filterNoticeValue?.branchesList)
+                  isFilterBranchDropdownLoading
+                    ? []
+                    : Array.isArray(filterNoticeValue?.branchesList)
                     ? filterNoticeValue.branchesList.map((branch) => ({
                         value: branch.id,
                         label: branch.branch_name,
@@ -234,6 +246,9 @@ const ListNotices = () => {
                 onMenuOpen={getAllDepartmentsNotices}
                 customStyles={false}
                 thinScrollbar={true}
+                menuLoading={isFilterBranchDropdownLoading}
+                menuLoadingLabel="Loading branches..."
+                hideControlLoadingIndicator
               />
             </div>
 
@@ -242,7 +257,9 @@ const ListNotices = () => {
                 placeHolderTitle="Filter by Department"
                 value={filterNoticeValue?.dept_id}
                 options={
-                  Array.isArray(filterNoticeValue?.departmentList)
+                  isFilterDepartmentDropdownLoading
+                    ? []
+                    : Array.isArray(filterNoticeValue?.departmentList)
                     ? filterNoticeValue.departmentList.map((dept) => ({
                         value: dept.id,
                         label: dept.name,
@@ -252,6 +269,9 @@ const ListNotices = () => {
                 onChangeHandler={(opt) => handleFilterChange(opt, "dept_id")}
                 customStyles={false}
                 thinScrollbar={true}
+                menuLoading={isFilterDepartmentDropdownLoading}
+                menuLoadingLabel="Loading departments..."
+                hideControlLoadingIndicator
               />
             </div>
 
@@ -531,6 +551,8 @@ const ListNotices = () => {
               handleNewNotice={handleNewNotice}
               handleAddNoticeBranch={handleAddNoticeBranch}
               loading={loading}
+              departmentsLoading={departmentsLoading}
+              departmentsLoadedForBranchId={departmentsLoadedForBranchId}
             />
           }
         />

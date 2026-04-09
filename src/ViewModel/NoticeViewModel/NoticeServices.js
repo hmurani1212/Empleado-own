@@ -19,6 +19,8 @@ const useNotice = () => {
     const noticesFilterBranches = useStore((state) => state.noticesFilterBranches)
     const noticesDepartment = useStore((state) => state.noticesDepartment)
     const filterDepartmentsNotices = useStore ((state)=> state.filterDepartmentsNotices)
+    const departmentsLoading = useStore((state) => state.departmentsLoading)
+    const departmentsLoadedForBranchId = useStore((state) => state.departmentsLoadedForBranchId)
     const allNoticesList = useStore ((state)=> state.allNoticesList)
     const getAllNoticesList = useStore ((state) => state.getAllNoticesList)
     const noticeMount = useStore ((state) => state.noticeMount)
@@ -114,9 +116,11 @@ const useNotice = () => {
     const [employeeOptions, setEmployeeOptions] = useState([]);
     // Full list for current department; search filters this on the frontend (no API on type)
     const [employeeOptionsFull, setEmployeeOptionsFull] = useState([]);
+    const [employeesLoading, setEmployeesLoading] = useState(false);
 
     // Function to fetch employees from selected department (called once when department is selected)
     const fetchEmployeesByDepartment = async (deptId) => {
+        setEmployeesLoading(true);
         setEmployeeOptionsFull([]);
         setEmployeeOptions([]);
         const deptIdRaw = deptId?.value !== undefined ? deptId.value : deptId;
@@ -140,6 +144,8 @@ const useNotice = () => {
         } catch (error) {
             setEmployeeOptions([]);
             setEmployeeOptionsFull([]);
+        } finally {
+            setEmployeesLoading(false);
         }
     };
 
@@ -459,24 +465,51 @@ const useNotice = () => {
         const resData = response.data 
 
         if(response.status === 200 && resData.STATUS === "SUCCESSFUL"){
+            // API returns branch/department ids as DB_DATA.branch and DB_DATA.department
+            const branchIdRaw = resData.DB_DATA.branch ?? resData.DB_DATA.branch_id ?? null;
+            const deptIdRaw = resData.DB_DATA.department ?? resData.DB_DATA.deptt_id ?? null;
+
             setAddNoticeValue((prevState)=>({
                 ...prevState,
                 show:true,
                 id: resData.DB_DATA.id,
                 title: resData.DB_DATA.title,
                 notice: resData.DB_DATA.description,
-                branch_id: resData.DB_DATA.branch_id || resData.DB_DATA.branch_name || '',
-                deptt_id: resData.DB_DATA.deptt_id || resData.DB_DATA.department || '',
+                // Temporarily store raw ids; we will resolve to {value,label} after lists load
+                branch_id: branchIdRaw ?? '',
+                deptt_id: deptIdRaw ?? '',
                 emp_id: resData.DB_DATA.emp_id || '',
                 send_sms_notice: resData.DB_DATA.send_sms_notice || false,
                 send_email_notice: resData.DB_DATA.send_email_notice || false,
             }))
             
             // Ensure branches and departments for this branch are loaded for the edit form
-            const branchId = resData.DB_DATA.branch_id ?? resData.DB_DATA.branch_name;
-            if (branchId !== undefined && branchId !== null) {
+            if (branchIdRaw !== undefined && branchIdRaw !== null) {
                 await getBranchesOnly();
-                await getDepartmentsByBranch(branchId);
+                await getDepartmentsByBranch(branchIdRaw);
+
+                // Resolve ids to react-select option objects so the edit form shows the selected names
+                const afterBranchesLoad = useStore.getState();
+                const branchObj = afterBranchesLoad.noticesBranches?.find((b) => String(b.id) === String(branchIdRaw));
+                const branchOption = branchObj
+                    ? { value: branchObj.id === '0' ? 0 : branchObj.id, label: branchObj.branch_name }
+                    : (branchIdRaw === 0 || String(branchIdRaw) === '0')
+                        ? { value: 0, label: 'All Branches' }
+                        : null;
+
+                const afterDeptsLoad = useStore.getState();
+                const deptObj = afterDeptsLoad.filterDepartmentsNotices?.find((d) => String(d.id) === String(deptIdRaw));
+                const deptOption = deptObj
+                    ? { value: deptObj.id === '0' ? 0 : deptObj.id, label: deptObj.name }
+                    : (deptIdRaw === 0 || String(deptIdRaw) === '0')
+                        ? { value: 0, label: 'All Departments' }
+                        : null;
+
+                setAddNoticeValue((prevState)=>({
+                    ...prevState,
+                    branch_id: branchOption ?? prevState.branch_id,
+                    deptt_id: deptOption ?? prevState.deptt_id,
+                }))
             }
             
         }
@@ -512,13 +545,15 @@ const useNotice = () => {
         }
 
         // Add branch_id if provided
-        if(addNoticeValue.branch_id !== undefined) {
-            editNoticeData.branch_id = addNoticeValue.branch_id === '0' ? 0 : addNoticeValue.branch_id;
+        const branchVal = addNoticeValue.branch_id?.value !== undefined ? addNoticeValue.branch_id.value : addNoticeValue.branch_id;
+        if(branchVal !== undefined) {
+            editNoticeData.branch_id = (branchVal === 0 || String(branchVal) === '0') ? 0 : branchVal;
         }
 
         // Add department_id if provided
-        if(addNoticeValue.deptt_id !== undefined) {
-            editNoticeData.deptt_id = addNoticeValue.deptt_id === '0' ? 0 : addNoticeValue.deptt_id;
+        const deptVal = addNoticeValue.deptt_id?.value !== undefined ? addNoticeValue.deptt_id.value : addNoticeValue.deptt_id;
+        if(deptVal !== undefined) {
+            editNoticeData.deptt_id = (deptVal === 0 || String(deptVal) === '0') ? 0 : deptVal;
         }
 
         // Add employee_id if provided
@@ -536,10 +571,25 @@ const useNotice = () => {
                 // Refresh the notices list to show updated data
                 getAllNoticesList({ page: 1, limit: 10 }, true, false);
             } else {
-                showToast(`${response.data.ERROR_DESCRIPTION}`, 'error');
+                const errorCode = response?.data?.ERROR_CODE;
+                const errorDesc = response?.data?.ERROR_DESCRIPTION;
+                if (errorCode === 'VTAPP-015' && errorDesc) {
+                    showToast(errorDesc, 'error');
+                } else {
+                    showToast(`${errorDesc || 'Failed to update notice'}`, 'error');
+                }
             }    
         }catch(err) {
-            console.log(err)
+            const errorData = err?.response?.data;
+            const errorCode = errorData?.ERROR_CODE;
+            const errorDesc = errorData?.ERROR_DESCRIPTION;
+            if (errorCode === 'VTAPP-015' && errorDesc) {
+                showToast(errorDesc, 'error');
+            } else if (errorDesc) {
+                showToast(errorDesc, 'error');
+            } else {
+                showToast('An error occurred while updating the notice', 'error');
+            }
         }finally {
             setLoading(false)
         }
@@ -642,7 +692,10 @@ const useNotice = () => {
     handleSelectFilterNotice,
     resetFilters,
     noticesPagination,
-    getFilterNotice
+    getFilterNotice,
+    departmentsLoading,
+    departmentsLoadedForBranchId,
+    employeesLoading
 }
 
 }

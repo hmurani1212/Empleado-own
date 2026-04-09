@@ -2,8 +2,12 @@ import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, ThemeProvider }
 import React from 'react'
 import { IoClose } from "react-icons/io5";
 
+/** Default dialog width tier when `size` is omitted — keeps modal dialogs visually consistent app-wide */
+const DEFAULT_DIALOG_SIZE = 'lg'
+
 const CustomDialog = (props) => {
-  const { openDialog , handleOpen, title, compo, handleConfirm, size, showBtns, confirmBtn, switchBtn=false, footer=true, outsidePress=true, backgroundColor, headerClassName, bodyClassName} = props
+  const { openDialog , handleOpen, title, compo, handleConfirm, size: sizeProp = DEFAULT_DIALOG_SIZE, showBtns, confirmBtn, switchBtn=false, footer=true, outsidePress=true, backgroundColor, headerClassName, bodyClassName, scrollableBody = false} = props
+  const size = sizeProp
   
   // Check if size contains custom CSS classes
   const isCustomSize = size && (size.includes('h-[') || size.includes('w-['))
@@ -36,6 +40,7 @@ const CustomDialog = (props) => {
       open={openDialog} 
       handler={handleOpen} 
       size={dialogSize} 
+      className={scrollableBody && compo ? '!flex !flex-col !max-h-[min(95dvh,calc(100dvh-0.5rem))] !overflow-hidden' : undefined}
       animate={{
         mount: { scale: 1, y: 0, opacity: 1 },
         unmount: { scale: 0.96, y: -20, opacity: 0 },
@@ -70,7 +75,13 @@ const CustomDialog = (props) => {
             <IoClose className="w-5 h-5" />
           </button>
           </DialogHeader>
-        <DialogBody className={`customScroll overflow-y-auto overflow-x-hidden text-slate-700 bg-gradient-to-b from-slate-100/80 via-slate-50/60 to-slate-100/80 ${compo ? 'max-h-[calc(100vh-180px)] p-4' : 'min-h-[auto]'} ${bodyClassName || ''}`}>
+        <DialogBody className={`customScroll overflow-x-hidden text-slate-700 bg-gradient-to-b from-slate-100/80 via-slate-50/60 to-slate-100/80 ${
+          scrollableBody && compo
+            ? '!flex-1 !min-h-0 !overflow-y-auto !p-0'
+            : compo
+              ? 'max-h-[calc(100vh-180px)] overflow-y-auto p-4'
+              : 'min-h-[auto]'
+        } ${bodyClassName || ''}`}>
           {compo}
         </DialogBody>
         {footer &&

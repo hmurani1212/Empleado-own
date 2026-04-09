@@ -8,6 +8,7 @@ import {
   gettingEmployesServices,
 } from "../../services/__frequentApiServices";
 import getEmployeesList from "../EmployeeViewModel/Employees";
+import { normalizeMySharedNotebooksFromApi, buildSharingPermission } from "../../services/__notesPoolServices";
 
 const useNoteBookHandler = () => {
   const updateNoteBook = useStore((state) => state.updateNoteBook);
@@ -43,13 +44,15 @@ const useNoteBookHandler = () => {
     loading: false,
     showSubDept: [],
     empDepartment: [],
-    empDepartment_id: [],
+    empDepartment_id: null,
     empBranches: [],
-    empBranches_id: [],
+    empBranches_id: null,
     empsList: [],
     emp_id: [],
     notebook_name: "",
     textToCopy: "",
+    /** True while getMySharedNotebooks / notebook list for the shared-pool picker is in flight */
+    loadingMySharedNotebooks: false,
   });
 
 
@@ -155,7 +158,16 @@ const useNoteBookHandler = () => {
       const response = await notesPoolApi.updateNoteBook(apiData);
       const responseData = response.data;
       if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-        updateNoteBook(responseData.DB_DATA);
+        // Build the update payload from known local values so the store update
+        // is reliable even when the API response uses _id instead of id, or
+        // returns an incomplete / differently-shaped object.
+        updateNoteBook({
+          ...(responseData.DB_DATA || {}),
+          id: notesValue.id,
+          _id: notesValue.id,
+          notebook_id: notesValue.id,
+          notebook_title: notesValue.name,
+        });
         showToast("Notebook Updated Successfully", "success");
         handleDrawerToggle();
       } else {
@@ -210,6 +222,10 @@ const useNoteBookHandler = () => {
   const handleChangeShareNotebook = (e) => {
     const { name, value } = e.target;
 
+    if (name === "type" && parseInt(value, 10) === 1) {
+      void gettingNotebookList();
+    }
+
     setShareNotebookValue((prevState) => {
       let newState = { ...prevState };
 
@@ -232,18 +248,35 @@ const useNoteBookHandler = () => {
             : [...prevState.allowPermission, value],
         };
       } else if (name === "shareWith") {
-        // Clear other arrays when 'shareWith' is changed
+        // Clear other arrays when 'shareWith' is changed (null for react-select single-value fields)
         newState = {
           ...newState,
-          empBranches_id: [],
-          empDepartment_id: [],
+          empBranches_id: null,
+          empDepartment_id: null,
+          emp_id: [],
           [name]: value,
         };
       } else if (name === "empBranches_id") {
-        newState = {
-          ...newState,
-          [name]: [...prevState.empBranches_id, value],
-        };
+        {
+          const rawVal = value;
+          const prevRaw = prevState.empBranches_id;
+          let prev = [];
+          if (Array.isArray(prevRaw)) prev = [...prevRaw];
+          else if (prevRaw != null && typeof prevRaw === "object" && prevRaw.value != null)
+            prev = [prevRaw.value];
+          else if (prevRaw != null && prevRaw !== "") prev = [prevRaw];
+          const coerced =
+            typeof rawVal === "string" && rawVal !== "" && !Number.isNaN(Number(rawVal))
+              ? Number(rawVal)
+              : rawVal;
+          const exists = prev.some((x) => x === coerced || String(x) === String(rawVal));
+          newState = {
+            ...newState,
+            [name]: exists
+              ? prev.filter((x) => x !== coerced && String(x) !== String(rawVal))
+              : [...prev, coerced],
+          };
+        }
       } else if (name === "empDepartment_id") {
         newState = {
           ...newState,
@@ -266,42 +299,63 @@ const useNoteBookHandler = () => {
   };
 
   const gettingNotebookList = async () => {
+    setShareNotebookValue((prev) => ({
+      ...prev,
+      loadingMySharedNotebooks: true,
+    }));
     try {
-      // Get shared notebooks for the dropdown
       const sharedNotebooksResponse = await notesPoolApi.getMySharedNotebooks();
       const sharedNotebooksData = sharedNotebooksResponse.data;
-      
-      // Get other data (branches, departments, etc.)
-      const response = await notesPoolApi.getNotebooksList();
-      const responseData = response.data;
-      
-      if (sharedNotebooksResponse.status === 200 && sharedNotebooksData.STATUS === "SUCCESSFUL" &&
-          response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-        const dbData = responseData.DB_DATA;
-       
-        // Use shared notebooks if available, otherwise fallback to regular notebooks
-        const sharedNotebooks = Array.isArray(sharedNotebooksData.DB_DATA) ? sharedNotebooksData.DB_DATA : [];
-        const regularNotebooks = Array.isArray(dbData.shared_notebooks) ? dbData.shared_notebooks : [];
-        const finalNotebookList = sharedNotebooks.length > 0 ? sharedNotebooks : regularNotebooks;
-        
-        setShareNotebookValue((prevState) => ({
-          ...prevState,
-          notebookList: finalNotebookList,
-          branches: dbData.branch,
-          empBranches: dbData.branch,
-          departments: dbData.dept,
-          empDepartment: dbData.dept,
-        }));
-      } else {
-        setShareNotebookValue((prevState) => ({
-          ...prevState,
-          notebookList: [], 
-        }));
+
+      let finalNotebookList = [];
+      if (
+        sharedNotebooksResponse.status === 200 &&
+        sharedNotebooksData.STATUS === "SUCCESSFUL"
+      ) {
+        finalNotebookList = normalizeMySharedNotebooksFromApi(sharedNotebooksData);
       }
+
+      let branchesEtc = {};
+      try {
+        const response = await notesPoolApi.getNotebooksList();
+        const responseData = response.data;
+        if (
+          response.status === 200 &&
+          responseData.STATUS === "SUCCESSFUL" &&
+          responseData.DB_DATA
+        ) {
+          const dbData = responseData.DB_DATA;
+          branchesEtc = {
+            branches: dbData.branch,
+            empBranches: dbData.branch,
+            departments: dbData.dept,
+            empDepartment: dbData.dept,
+          };
+          if (finalNotebookList.length === 0) {
+            const regularNotebooks = Array.isArray(dbData.shared_notebooks)
+              ? dbData.shared_notebooks
+              : [];
+            finalNotebookList = regularNotebooks;
+          }
+        }
+      } catch (inner) {
+        console.error("getNotebooksList (share modal):", inner);
+      }
+
+      setShareNotebookValue((prevState) => ({
+        ...prevState,
+        notebookList: finalNotebookList,
+        mySharedNotebooks: finalNotebookList,
+        ...branchesEtc,
+        loadingMySharedNotebooks: false,
+      }));
     } catch (err) {
+      console.error("gettingNotebookList:", err);
       setShareNotebookValue((prevState) => ({
         ...prevState,
         notebookList: [],
+        mySharedNotebooks: [],
+        loadingMySharedNotebooks: false,
       }));
     }
   };
@@ -309,6 +363,14 @@ const useNoteBookHandler = () => {
   const handleSelectShareNote = async (select, field) => {
     
     if (field === "empBranches_id") {
+      if (shareNotebookValue.shareWith !== "employee") {
+        setShareNotebookValue((prevState) => ({
+          ...prevState,
+          empBranches_id: select,
+          empDepartment_id: null,
+        }));
+        return;
+      }
       try {
         const data = await gettingDepartmentsServices(select.value);
         setShareNotebookValue((prevState) => ({
@@ -359,15 +421,29 @@ const useNoteBookHandler = () => {
         return false;
       }
       
-      // Validate based on shareWith selection
+      // Validate based on shareWith selection (checkbox arrays or react-select { value, label })
+      const hasBranch = (v) => {
+        if (v == null) return false;
+        if (Array.isArray(v)) return v.length > 0;
+        return v.value != null && v.value !== "";
+      };
+      const hasDept = (v) => {
+        if (v == null) return false;
+        if (Array.isArray(v)) return v.length > 0;
+        return v.value != null && v.value !== "";
+      };
       if (shareWith === "branch") {
-        if (!empBranches_id || empBranches_id.length === 0) {
-          showToast("Please select at least one branch", "error");
+        if (!hasBranch(empBranches_id)) {
+          showToast("Please select a branch", "error");
           return false;
         }
       } else if (shareWith === "dept") {
-        if (!empDepartment_id || empDepartment_id.length === 0) {
-          showToast("Please select at least one department", "error");
+        if (!hasBranch(empBranches_id)) {
+          showToast("Please select a branch", "error");
+          return false;
+        }
+        if (!hasDept(empDepartment_id)) {
+          showToast("Please select a department", "error");
           return false;
         }
       } else if (shareWith === "employee") {
@@ -386,22 +462,29 @@ const useNoteBookHandler = () => {
 
   // Function to fetch my shared notebooks
   const fetchMySharedNotebooks = async () => {
+    setShareNotebookValue((prev) => ({
+      ...prev,
+      loadingMySharedNotebooks: true,
+    }));
     try {
       const response = await notesPoolApi.getMySharedNotebooks();
       const responseData = response.data;
       
       if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-        setShareNotebookValue((prevState) => {
-          return {
-            ...prevState,
-            mySharedNotebooks: responseData.DB_DATA.shared_notebooks || [],
-          };
-        });
+        const list = normalizeMySharedNotebooksFromApi(responseData);
+        setShareNotebookValue((prevState) => ({
+          ...prevState,
+          mySharedNotebooks: list,
+          notebookList: list,
+          loadingMySharedNotebooks: false,
+        }));
       } else {
         console.error("Failed to fetch shared notebooks")
+        setShareNotebookValue((prev) => ({ ...prev, loadingMySharedNotebooks: false }));
       }
     } catch (error) {
       console.error("Error fetching my shared notebooks:", error)
+      setShareNotebookValue((prev) => ({ ...prev, loadingMySharedNotebooks: false }));
     }
   };
 
@@ -435,21 +518,22 @@ const useNoteBookHandler = () => {
             showToast(error, "error");
           }
         } else {
-          // Transform permissions array to object with values of 1
-          const permissionsObject = {};
-          shareNotebookValue.allowPermission.forEach(permission => {
-            permissionsObject[permission] = 1;
-          });
+          const scopeIds = (v) => {
+            if (v == null) return v;
+            if (Array.isArray(v)) return v;
+            if (typeof v === "object" && v.value != null) return [v.value];
+            return v;
+          };
 
           const apiDataAdd = {
             notebook_id: id,
             operation_type: operation_type,
             notebook_type: "new_notebook",
             new_notebook_name: shareNotebookValue.notebook_name,
-            ...permissionsObject,
+            sharing_permission: buildSharingPermission(shareNotebookValue.allowPermission),
             name_dept_branch: shareNotebookValue.shareWith,
-            branch: shareNotebookValue.empBranches_id,
-            dept: shareNotebookValue.empDepartment_id,
+            branch: scopeIds(shareNotebookValue.empBranches_id),
+            dept: scopeIds(shareNotebookValue.empDepartment_id),
             members: shareNotebookValue.emp_id,
           };
 

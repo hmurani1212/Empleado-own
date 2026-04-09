@@ -153,11 +153,11 @@ const PoliciesList = (props) => {
 
                 <td className="p-4">
                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                    policy.status === '0' 
+                    policy.status === '0' || policy.status === 'EXPIRED'
                       ? 'bg-red-50 text-red-600 border border-red-100' 
-                      : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                      : 'bg-green-100/70 text-green-600/70 border border-green-300'
                   }`}>
-                    {policy.status === '0' ? 'Inactive' : 'Active'}
+                    {policy.status === '0' || policy.status === 'EXPIRED' ? 'Expired' : 'Active'}
                   </span>
                 </td>
 

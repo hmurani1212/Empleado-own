@@ -38,6 +38,20 @@
         /* Adjust the size as needed */
     }
 
+    /* Share Notebook modal: vertical scroll + breathing room below the header border (dvh = mobile browser chrome) */
+    .notes-pool-share-dialog-body {
+        flex: 1 1 auto;
+        min-height: 0 !important;
+        max-height: min(92dvh, calc(100dvh - 88px)) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        scrollbar-gutter: stable;
+        overscroll-behavior: contain;
+        padding-top: 1.5rem !important;
+        padding-left: 1.25rem !important;
+        padding-right: 1.25rem !important;
+    }
+
     .sideMenu::-webkit-scrollbar-thumb {
         background-color: #AAAAAA !important;
         width: 6px !important;

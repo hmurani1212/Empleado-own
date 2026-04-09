@@ -1400,6 +1400,32 @@ const employeeViewModel = (set, get) => ({
             return { success: false, error: error.message || 'Failed to send reporting email' }
         }
     },
+
+    isSavingExcelHeading: false,
+    setExcelHeading: async (payload) => {
+        set({ isSavingExcelHeading: true })
+        try {
+            const response = await employeesApi.setExcelHeading(payload)
+            const data = response.data
+            if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
+                set({ isSavingExcelHeading: false })
+                return {
+                    success: true,
+                    message: data.MESSAGE || data.DB_DATA?.MESSAGE || 'Excel heading saved successfully!',
+                }
+            }
+            set({ isSavingExcelHeading: false })
+            return { success: false, error: data.ERROR_DESCRIPTION || 'Failed to save Excel heading' }
+        } catch (error) {
+            set({ isSavingExcelHeading: false })
+            const msg =
+                error.response?.data?.ERROR_DESCRIPTION ||
+                error.message ||
+                'Failed to save Excel heading'
+            return { success: false, error: msg }
+        }
+    },
+
     get_bank_type_fn: async (emailData) => {
         // set({ isSavingReportingEmail: true })
         try {

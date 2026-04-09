@@ -12,7 +12,7 @@ import useNoteHandler from "../../ViewModel/NotesPoolViewModel/NoteHandler";
 import EditorData from "./EditorData";
 import { MdEditDocument } from "react-icons/md";
 
-import { StarredNoteSkeleton } from "./NotesPoolSkeletons";
+import { StarredNoteSkeleton, NoteViewSkeleton } from "./NotesPoolSkeletons";
 
 const StarredNotes = () => {
   const [loading, setLoading] = useState(true);
@@ -109,6 +109,7 @@ const StarredNotes = () => {
             return (
               <div
                 key={i}
+                title={noteTitle}
                 className="border-[1px] border-[#3DA5F4] rounded-[10px] flex flex-col justify-between w-full justify-self-start max-w-[190px] h-[190px] cursor-pointer bg-white p-2"
                 onClick={() => {
                   // Ensure the note object has the correct structure for handleNoteHandler
@@ -220,11 +221,16 @@ const StarredNotes = () => {
               </div>
             );
           })
-          : (<div className="w-full flex items-center justify-center py-10">
-            <span className="text-[#474747] text-[14px] font-medium font-Urbanist">
-              No notebook exist
-            </span>
-          </div>)}
+          : (
+            <div className="col-span-full flex flex-col justify-center items-center py-20 w-full bg-white rounded-2xl border border-dashed border-gray-200">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <FaBook className="text-gray-300 text-2xl" />
+              </div>
+              <span className="text-gray-500 text-sm font-medium">
+                No starred notes found.
+              </span>
+            </div>
+          )}
         </div>
         )}
 
@@ -236,7 +242,13 @@ const StarredNotes = () => {
           handleOpen={toggleShowNote}
           title={addNoteValue.note_title}
           footer={false}
-          compo={<EditorData editorData={editorData} />}
+          compo={
+            addNoteValue.viewNoteLoading ? (
+              <NoteViewSkeleton />
+            ) : (
+              <EditorData editorData={editorData} />
+            )
+          }
         />
       )}
 

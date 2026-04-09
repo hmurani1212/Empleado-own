@@ -15,12 +15,12 @@ import { MdEditDocument } from 'react-icons/md'
 import AddEditNote from './AddEditNote'
 import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer'
 import Editor from './Editor'
-import { sharednotesMenuList } from '../../services/__notesPoolServices'
+import { sharednotesMenuList, isSharingPermissionGranted } from '../../services/__notesPoolServices'
 import useDropdownService from '../../services/__dropDownHoverService'
 import notesPoolApi from '../../Model/Data/NotesPool/NotesPool'
 import { showToast } from '../../Components/Toaster/Toaster'
 
-import { NoteSkeleton } from "./NotesPoolSkeletons";
+import { NoteSkeleton, NoteViewSkeleton } from "./NotesPoolSkeletons";
 
 const SharedNotebookNotes = ({ notebook, onBack }) => {
   const [selectedNote, setSelectedNote] = useState(null)
@@ -38,8 +38,10 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
   const { starredNotes, handleStarClick, isStarred, initializeStarredNotes, isStarredNotesInitialized } = useStore()
 
   const { 
-    editorData, 
+    editorData,
+    addNoteValue: noteHandlerAddNoteValue,
     handleNoteHandler, 
+    toggleShowNote,
     editorValue, 
     toggleEditNote,
     handleAddNotesData,
@@ -84,19 +86,12 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
     handleStarClick(note, e)
   }
 
-  const hasNotesAdditionPermission = () => {
-    if (!preservedPermissions) return false;
-    return preservedPermissions?.allow_notes_addition === 1 || 
-           preservedPermissions?.allow_notes_addition === '1' || 
-           preservedPermissions?.allow_notes_addition === true;
-  }
+  const hasNotesAdditionPermission = () =>
+    preservedPermissions ? isSharingPermissionGranted(preservedPermissions.allow_notes_addition) : false
 
-  const hasWritePermission = () => {
-    if (!preservedPermissions) return false;
-    return preservedPermissions?.allow_view === 1 || 
-           preservedPermissions?.allow_view === '1' || 
-           preservedPermissions?.allow_view === true;
-  }
+  /** Note-level Edit menu: requires allow_edit, not merely allow_view. */
+  const hasEditSharedNotePermission = () =>
+    preservedPermissions ? isSharingPermissionGranted(preservedPermissions.allow_edit) : false
 
   const handleAddNoteClick = () => {
     setShowAddNoteDrawer(true);
@@ -183,7 +178,7 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
                 <FaBook className='text-lg' />
             </span>
             <div>
-                <span className='text-xl font-bold text-gray-800'>{notebook?.notebook_name}</span>
+                <span className='text-xl font-bold text-gray-800' title={notebook?.notebook_name ? String(notebook.notebook_name) : undefined}>{notebook?.notebook_name}</span>
                 <p className="text-xs text-gray-500">Shared Notebook</p>
             </div>
           </div>
@@ -244,6 +239,7 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
+                title={note.note_title ? String(note.note_title) : undefined}
                 className="relative flex flex-col justify-between w-full h-[220px] rounded-2xl bg-white border border-gray-100 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-blue-100 group overflow-hidden"
                 onClick={() => handleNoteClick(note)}
               >
@@ -272,7 +268,7 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
                       </motion.div>
 
                       {/* More Menu */}
-                      {hasWritePermission() && (
+                      {hasEditSharedNotePermission() && (
                         <div
                         ref={(el) => (triggerRefs.current[index] = el)}
                         onMouseEnter={() => toggleMenuValue(index, true)}
@@ -361,10 +357,19 @@ const SharedNotebookNotes = ({ notebook, onBack }) => {
         <CustomDialog
           openDialog={showNoteDialog}
           size="xxl"
-          handleOpen={() => setShowNoteDialog(false)}
+          handleOpen={() => {
+            setShowNoteDialog(false);
+            toggleShowNote();
+          }}
           title={selectedNote.note_title}
           footer={false}
-          compo={<EditorData editorData={editorData} />}
+          compo={
+            noteHandlerAddNoteValue.viewNoteLoading ? (
+              <NoteViewSkeleton />
+            ) : (
+              <EditorData editorData={editorData} />
+            )
+          }
         />
       )}
 

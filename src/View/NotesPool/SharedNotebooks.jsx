@@ -10,16 +10,18 @@ import { MenuItem, Typography } from '@material-tailwind/react';
 import useDropdownService from '../../services/__dropDownHoverService';
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
-import { sharedNotebookMenuList } from '../../services/__notesPoolServices';
+import { sharedNotebookMenuList, isSharingPermissionGranted } from '../../services/__notesPoolServices';
 import useSharedNotebookHandler from '../../ViewModel/NotesPoolViewModel/SharedNotebookHandler';
 import CustomDialog from '../../Components/CustomDialog/CustomDialog';
 import ShareNoteBook from './ShareNoteBook';
-
+import { showToast } from '../../Components/Toaster/Toaster';
 import { NotebookSkeleton } from './NotesPoolSkeletons';
+import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
+import { FaTrash } from "react-icons/fa6";
 
 const SharedNotebooks = () => {
   const location = useLocation();
-  const { sharednotebooks, sharednotebookCount, toggleMenuValue, openMenuValue } = useNotesPoolServices()
+  const { sharednotebooks, sharednotebookCount, gettingSharedNoteBooks, toggleMenuValue, openMenuValue } = useNotesPoolServices()
   const [selectedNotebook, setSelectedNotebook] = useState(null)
   const [searchValue, setSearchValue] = useState('')
   const { getDropdownPosition, triggerRefs } = useDropdownService()
@@ -36,9 +38,22 @@ const SharedNotebooks = () => {
     handleCopytoClipboardMouseLeave,
     copied,
     mySharedNotebooks,
+    handleDownloadNotebook,
+    deleteValue,
+    handleDeleteSharedNotebookMenuClick,
+    toggleDeleteSharedNotebookDialog,
+    deleteSharedNotebookConfirmation,
   } = useSharedNotebookHandler();
 
   const isLoading = !sharednotebooks;
+
+  useEffect(() => {
+    // On hard refresh, this route can mount without tab-click dispatch.
+    // Ensure we fetch the list so the skeleton doesn't get stuck.
+    if (location.pathname === '/notespool/sharednotebooks' && sharednotebooks == null) {
+      gettingSharedNoteBooks?.();
+    }
+  }, [location.pathname, sharednotebooks, gettingSharedNoteBooks]);
 
   // Reset selectedNotebook when navigating to Shared Notebooks route
   useEffect(() => {
@@ -51,28 +66,55 @@ const SharedNotebooks = () => {
   }, [location.pathname, location.state]);
 
   const handleNotebookClick = (notebook) => {
-    setSelectedNotebook(notebook)
-  }
+    const permissions = notebook?.shared_links?.[0]?.permissions || {};
+    const allowView = permissions.allow_view;
+    if (allowView === 0 || allowView === '0' || allowView === false) {
+      showToast('You do not have permission to view this notebook', 'error');
+      return;
+    }
+    setSelectedNotebook(notebook);
+  };
 
   const handleBackToList = () => {
     setSelectedNotebook(null)
   }
+
+  /** Card menu: Share and Download only, each shown when the API grants that permission. */
+  const getMenuItems = (notebook) => {
+    const permissions = notebook?.shared_links?.[0]?.permissions || {};
+    const base = sharedNotebookMenuList.filter((item) =>
+      isSharingPermissionGranted(permissions[item.permKey])
+    );
+    return [
+      ...base,
+      { id: 2, name: "Delete", icon: <FaTrash className="text-red-500" /> },
+    ];
+  };
+
+  /** Whether the current user is allowed to view (open) this notebook. */
+  const canView = (notebook) => {
+    const permissions = notebook?.shared_links?.[0]?.permissions || {};
+    // If allow_view is explicitly 0 / '0' / false → blocked; otherwise allow
+    const val = permissions.allow_view;
+    if (val === 0 || val === '0' || val === false) return false;
+    return true;
+  };
 
   const handleMenuItemClick = (notebook, menuItem) => {
     switch (menuItem.id) {
       case 1: // Share
         handleShareMenuClick(notebook);
         break;
+      case 2: // Delete
+        handleDeleteSharedNotebookMenuClick(notebook);
+        break;
+      case 3: // Download
+        handleDownloadNotebook(notebook);
+        break;
       default:
         break;
     }
-  }
-
-  // Check if notebook has sharing permission
-  const hasSharePermission = (notebook) => {
-    const permissions = notebook?.shared_links?.[0]?.permissions;
-    return permissions?.allow_sharing === 1 || permissions?.allow_sharing === '1' || permissions?.allow_sharing === true;
-  }
+  };
 
   const filteredNotebooks = sharednotebooks?.filter(notebook => 
     notebook.notebook_name?.toLowerCase().includes(searchValue.toLowerCase())
@@ -136,6 +178,7 @@ const SharedNotebooks = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
+                title={ele.notebook_name ? String(ele.notebook_name) : undefined}
                 className="group relative flex flex-col justify-between w-full min-h-[140px] rounded-2xl bg-white border border-gray-100 p-5 cursor-pointer transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1 hover:border-blue-100"
                 onClick={() => handleNotebookClick(ele)}
               >
@@ -161,7 +204,7 @@ const SharedNotebooks = () => {
                     </div>
 
                     <div className='flex justify-end'>
-                      {hasSharePermission(ele) && (
+                      {getMenuItems(ele).length > 0 && (
                         <div 
                           ref={(el) => (triggerRefs.current[i] = el)}
                           onMouseEnter={() => toggleMenuValue(i, true)} 
@@ -185,7 +228,7 @@ const SharedNotebooks = () => {
                                 `}
                             >
                                 <ul className="flex w-full flex-col p-1.5">
-                                  {sharedNotebookMenuList.map((menuItem) => (
+                                  {getMenuItems(ele).map((menuItem) => (
                                     <MenuItem 
                                       key={menuItem.id}
                                       className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors"
@@ -234,6 +277,17 @@ const SharedNotebooks = () => {
         </div>
       )}
 
+      {deleteValue?.confirm && (
+        <ConfirmationDialog
+          openDialog={deleteValue.confirm}
+          handleOpen={toggleDeleteSharedNotebookDialog}
+          handleConfirm={deleteSharedNotebookConfirmation}
+          title="Delete Confirmation"
+          message="Are you sure you want to remove this shared notebook?"
+          loading={deleteValue.loading}
+        />
+      )}
+
       {/* Share Notebook Dialog */}
       {shareNotebookValue.show && (
         <CustomDialog
@@ -243,8 +297,8 @@ const SharedNotebooks = () => {
           footer={false}
           outsidePress={false}
           size="lg"
-          // Keep scroll so submit button stays reachable; allow select menu to overflow horizontally
-          bodyClassName="!overflow-x-visible !pb-12"
+          scrollableBody
+          bodyClassName="notes-pool-share-dialog-body !pb-4"
           compo={
             <ShareNoteBook
               handleChangeShareNotebook={handleChangeShareNotebook}

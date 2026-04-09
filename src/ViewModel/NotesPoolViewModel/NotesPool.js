@@ -1,6 +1,42 @@
 import { useState } from "react";
 import notesPoolApi from "../../Model/Data/NotesPool/NotesPool"
 
+/**
+ * Core natural-sort comparator for two title strings.
+ * Splits on digit boundaries and compares text segments case-insensitively
+ * while digit segments are compared as integers.
+ * Guarantees "Chapter 0" < "Chapter 0.1" < "Chapter 1.9" < "Chapter 1.19" < "Chapter 7.1"
+ * regardless of browser locale or decimal-separator conventions.
+ */
+const naturalCmp = (ta, tb) => {
+    const DIGIT_RE = /(\d+)/;
+    const ax = (ta ?? '').trim().split(DIGIT_RE);
+    const bx = (tb ?? '').trim().split(DIGIT_RE);
+    const len = Math.max(ax.length, bx.length);
+    for (let i = 0; i < len; i++) {
+        const ai = ax[i] ?? '';
+        const bi = bx[i] ?? '';
+        if (i % 2 === 1) {
+            const diff = parseInt(ai, 10) - parseInt(bi, 10);
+            if (diff !== 0) return diff;
+        } else {
+            const diff = ai.toLowerCase().localeCompare(bi.toLowerCase());
+            if (diff !== 0) return diff;
+        }
+    }
+    return 0;
+};
+
+/** Sort notes by note_title using natural ordering. */
+const sortByTitle = (arr) =>
+    [...arr].sort((a, b) => naturalCmp(a.note_title, b.note_title));
+
+/** Sort notebooks by notebook_name (falls back to notebook_title) using natural ordering. */
+const sortNotebooksByName = (arr) =>
+    [...arr].sort((a, b) =>
+        naturalCmp(a.notebook_name || a.notebook_title, b.notebook_name || b.notebook_title)
+    );
+
 const notesPoolViewModel = (set, get) => ({
     
     notebooks :null,
@@ -36,13 +72,20 @@ const notesPoolViewModel = (set, get) => ({
         try {
             const response = await notesPoolApi.getNotebooks()
             const data = response.data
-            const notebooks = data.DB_DATA;
 
             if(response.status === 200 && data.STATUS === "SUCCESSFUL"){
-                set({notebooks : data.DB_DATA})
-                set({notebooksCopy : data.DB_DATA})
-                set({notebookCount: data.total_notebooks})
-            
+                // Normalize every notebook so ele.id is always populated (API may return _id only)
+                const raw = Array.isArray(data.DB_DATA) ? data.DB_DATA : [];
+                const normalized = raw.map((nb) => ({
+                    ...nb,
+                    id: nb?.id || nb?._id || nb?.notebook_id,
+                    notebook_title: nb?.notebook_title || nb?.name || nb?.notebook_name || '',
+                }));
+                set({
+                    notebooks: normalized,
+                    notebooksCopy: normalized,
+                    notebookCount: data.total_notebooks,
+                })
             }
         } catch(err){
             console.log(err)
@@ -55,7 +98,8 @@ const notesPoolViewModel = (set, get) => ({
 
             if(response.status === 200 && data.STATUS === "SUCCESSFUL"){
                 
-                const sharedNotebooksArray = Array.isArray(data.DB_DATA.shared_notebooks) ? data.DB_DATA.shared_notebooks : [];
+                const raw = Array.isArray(data.DB_DATA.shared_notebooks) ? data.DB_DATA.shared_notebooks : [];
+                const sharedNotebooksArray = sortNotebooksByName(raw);
                 
                 set({mySharednotebooks : sharedNotebooksArray})
                 set({mySharednotebooksCopy : sharedNotebooksArray})
@@ -74,7 +118,7 @@ const notesPoolViewModel = (set, get) => ({
             const data = response.data
 
             if(response.status === 200 && data.STATUS === "SUCCESSFUL"){
-                const sharedNotebooksArray = data.DB_DATA?.shared_notebooks || []
+                const sharedNotebooksArray = sortNotebooksByName(data.DB_DATA?.shared_notebooks || [])
                 const totalNotebooks = data.DB_DATA?.total_notebooks || 0
                 
                 set({sharednotebooks : sharedNotebooksArray})
@@ -99,7 +143,7 @@ const notesPoolViewModel = (set, get) => ({
             const responseData = response.data
             if (get().noteBookID !== id) return
             if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-                const list = responseData.DB_DATA?.notes ?? []
+                const list = sortByTitle(responseData.DB_DATA?.notes ?? [])
                 set({
                     notes: list,
                     notesCopy: list,
@@ -130,9 +174,10 @@ const notesPoolViewModel = (set, get) => ({
             const responseData = response.data
             if (get().noteBookID !== id) return
             if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+                const sortedNotes = sortByTitle(responseData.DB_DATA.notes ?? [])
                 set({
-                    mySharednotebookNotes: responseData.DB_DATA.notes,
-                    mySharednotebookNotesCopy: responseData.DB_DATA,
+                    mySharednotebookNotes: sortedNotes,
+                    mySharednotebookNotesCopy: sortedNotes,
                     noteBookTitle: responseData.notebook_name,
                     notebookNotesLoading: false,
                 })
@@ -162,7 +207,7 @@ const notesPoolViewModel = (set, get) => ({
 
             if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
                 const notesData = responseData.DB_DATA?.notes || responseData.DB_DATA || []
-                const notes = Array.isArray(notesData) ? notesData : []
+                const notes = sortByTitle(Array.isArray(notesData) ? notesData : [])
                 set({sharedNotebookNotes : notes})
                 set({sharedNotebookNotesCopy : notes})
                 set({noteBookID: notebookId})
@@ -196,12 +241,23 @@ const notesPoolViewModel = (set, get) => ({
     },
 
     updateNoteBook:(data)=>{
+        // Resolve the incoming notebook ID from any possible field name
+        const incomingId = data?.id || data?._id || data?.notebook_id;
+        // Prefer the title from the known update payload fields
+        const newTitle = data?.notebook_title || data?.name || data?.notebook_name;
+        const applyUpdate = (ele) => {
+            const eleId = ele?.id || ele?._id || ele?.notebook_id;
+            // Compare as strings to avoid number/string type mismatch
+            if (String(eleId) === String(incomingId)) {
+                // Merge into existing record so we preserve fields the API omits
+                return { ...ele, ...data, notebook_title: newTitle || ele.notebook_title };
+            }
+            return ele;
+        };
         set({
-            notebooks: get().notebooks?.map((ele) => ele.id === data.id ? data : ele),
-            notebooksCopy: get().notebooksCopy?.map((ele) => ele.id === data.id ? data : ele)
-
-        })
-        // set({notebookCount: get().notebookCount + 1})
+            notebooks: get().notebooks?.map(applyUpdate),
+            notebooksCopy: get().notebooksCopy?.map(applyUpdate),
+        });
     },
     newNoteBook:(data)=>{
         const normalized = {
@@ -251,8 +307,8 @@ const notesPoolViewModel = (set, get) => ({
             const currentNotes = Array.isArray(get().notes) ? get().notes : [];
             const currentNotesCopy = Array.isArray(get().notesCopy) ? get().notesCopy : [];
             set({
-                notes: [noteData, ...currentNotes],
-                notesCopy: [noteData, ...currentNotesCopy],
+                notes: sortByTitle([noteData, ...currentNotes]),
+                notesCopy: sortByTitle([noteData, ...currentNotesCopy]),
             });
         }
 
@@ -487,6 +543,32 @@ const notesPoolViewModel = (set, get) => ({
             mySharednotebooks: filteredMySharednotebooks,
             mySharednotebooksCopy: filteredMySharednotebooksCopy,
         })
+    },
+
+    /** Remove a notebook from "Shared with me" list (delete shared link). */
+    sharedNotebookDelete: (id) => {
+        const current = get().sharednotebooks;
+        const currentCopy = get().sharednotebooksCopy;
+
+        const filtered = Array.isArray(current)
+            ? current.filter((ele) => {
+                const notebookId = ele?._id || ele?.id || ele?.shared_notebook_id || ele?.notebook_id;
+                return String(notebookId) !== String(id);
+            })
+            : [];
+
+        const filteredCopy = Array.isArray(currentCopy)
+            ? currentCopy.filter((ele) => {
+                const notebookId = ele?._id || ele?.id || ele?.shared_notebook_id || ele?.notebook_id;
+                return String(notebookId) !== String(id);
+            })
+            : [];
+
+        set({
+            sharednotebooks: filtered,
+            sharednotebooksCopy: filteredCopy,
+            sharednotebookCount: filteredCopy.length,
+        });
     },
 
     organizationNotes: [],

@@ -285,7 +285,7 @@ const CreateNew = () => {
             <CustomButton 
               title={stepsValue.isLastStep ? 'Submit Policy' : 'Next Step'} 
               onClick={stepsValue.isLastStep ? handlePolicySubmit : handleNext} 
-              className={`px-8 ${stepsValue.isLastStep ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20' : 'bg-bgBlue hover:bg-blue-600 shadow-blue-500/20'}`}
+              className="px-8 !text-white !bg-bgBlue hover:!bg-blue-600 shadow-blue-500/20"
             />
           </div>
         </div>

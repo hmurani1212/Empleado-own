@@ -1381,6 +1381,15 @@ const employeesApi = {
         })
     },
 
+    /** Excel export header text per branch; branch_id 0 = all branches */
+    setExcelHeading: function (data) {
+        return axiosInstancecoremodule.request({
+            method: 'POST',
+            url: '/api/v1/employees/org/set_excel_heading',
+            data: data
+        })
+    },
+
     // Save employee asset
     saveEmployeeAsset: function (data) {
         return axiosInstancecoremodule.request({

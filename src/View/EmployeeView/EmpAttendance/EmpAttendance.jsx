@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import CustomSelect from '../../../Components/CustomSelect/CustomSelect'
 import { Typography, Card, CardBody, Chip, Progress, IconButton, Tooltip } from '@material-tailwind/react'
 import useEmpAttendanceServices from '../../../ViewModel/EmpViewModel/EmpAttendanceViewModel/EmpAttendanceServices'
@@ -8,6 +8,8 @@ import { FaCheck, FaExclamation, FaXmark, FaCalendarCheck, FaClock } from 'react
 import { IoTimeOutline, IoCalendarOutline, IoFingerPrintOutline } from "react-icons/io5";
 import { getAllMonths, getAllYears } from '../../../services/__appServicesData'
 import { motion } from 'framer-motion'
+import CustomDialog from '../../../Components/CustomDialog/CustomDialog'
+import SingleAttendanceView from '../EmpDashboard/SingleAttendanceView'
 
 const tableHeader = [
   "Date", "Attendance Status", "Earned Hours", "Expected Hours", "Arrival Status", "Action"
@@ -17,6 +19,7 @@ const EmpAttendance = () => {
 
   const { gettingEmpAttendanceData, empAttendancData, selectedValue, handleSelectAttendance, handleMobileBaseAttendance } = useEmpAttendanceServices();
   const { empDashboardData, gettingEmpDashboardData } = useEmpDashboard();
+  const [singleAttendance, setSingleAttendance] = useState({ show: false, data: null })
   
   // Single fetch on mount and when month/year change; guard against empty params
   useEffect(() => {
@@ -37,9 +40,11 @@ const EmpAttendance = () => {
   const lastPolicy = attendanceDetails?.last_policy
   const workingDays = lastPolicy?.working_days || [];
   const personalInfo = empAttendancData?.personal_info
-  const webAttendance = empDashboardData?.section1?.mobile_attendance;
+  const webAttendance = empDashboardData?.section1?.web_attendance;
   const workingStatus = empDashboardData?.section2?.working_status;
   const loginTime = empDashboardData?.section2?.login_time;
+  const toggleSingleAttendance = () => setSingleAttendance((prev) => ({ ...prev, show: !prev.show }))
+  const openSingleAttendance = (row) => setSingleAttendance({ show: true, data: row });
 
   // Utility function to calculate duration
   function getDuration(starting_time, closing_time) {
@@ -92,12 +97,13 @@ const EmpAttendance = () => {
   };
 
   return (
-    <motion.div 
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className='flex flex-col gap-6 p-4 md:p-6 min-h-screen bg-gray-50/50 font-poppins'
-    >
+    <>
+      <motion.div 
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className='flex flex-col gap-6 p-4 md:p-6 min-h-screen bg-gray-50/50 font-poppins'
+      >
       {/* Header */}
       <motion.div variants={itemVariants} className='flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-gray-100'>
         <div>
@@ -108,10 +114,15 @@ const EmpAttendance = () => {
             <div className='bg-brand-50 text-brand-600 px-4 py-2 rounded-xl text-sm font-semibold'>
                 {getFormattedDate()}
             </div>
-            {webAttendance !== 0 && (
+            {webAttendance === "ENABLED" && (
               <button
-                className="bg-brand-500 text-white py-2 px-6 rounded-xl text-sm font-bold shadow-md shadow-brand-500/20 hover:bg-brand-600 transition-all active:scale-95 flex items-center gap-2"
-                onClick={() => handleMobileBaseAttendance({ user_id: personalInfo?.emp_id })}
+                className="bg-brand-500 text-white py-2 px-6 rounded-xl text-sm cursor-pointer font-bold shadow-md shadow-brand-500/20 hover:bg-brand-600 transition-all active:scale-95 flex items-center gap-2"
+                onClick={() =>
+                  handleMobileBaseAttendance({
+                    user_id: personalInfo?.emp_id,
+                    action: workingStatus === 'Duty Time' ? 'checkout' : 'checkin',
+                  })
+                }
               >
                 <IoFingerPrintOutline className="text-lg" /> {workingStatus === 'Duty Time' ? 'Check Out' : 'Check In'}
               </button>
@@ -262,7 +273,16 @@ const EmpAttendance = () => {
                                     const fillPercentage = Math.min((earned / expected) * 100, 100);
 
                                     return (
-                                        <tr key={index} className="hover:bg-gray-50/50 transition-colors">
+                                        <tr
+                                          key={index}
+                                          className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                          onClick={() =>
+                                            openSingleAttendance({
+                                              ...ele,
+                                              calendar_date: formatDateDMY(ele?.date),
+                                            })
+                                          }
+                                        >
                                             <td className="py-3 px-6 text-sm font-semibold text-gray-700">
                                                 {formatDateDMY(ele?.date)}
                                             </td>
@@ -345,7 +365,22 @@ const EmpAttendance = () => {
             </div>
         </Card>
       </motion.div>
-    </motion.div>
+      </motion.div>
+
+    {singleAttendance.show && (
+      <CustomDialog
+        openDialog={singleAttendance.show}
+        handleOpen={toggleSingleAttendance}
+        backgroundColor="#3DA5F4"
+        border={false}
+        compo={<SingleAttendanceView data={singleAttendance.data} />}
+        title={`Details of ${singleAttendance?.data?.calendar_date || ''}`}
+        outsidePress={false}
+        footer={false}
+        size="h-[40vh] w-[500px]"
+      />
+    )}
+    </>
   )
 }
 

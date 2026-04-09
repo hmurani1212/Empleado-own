@@ -279,11 +279,11 @@ function Dashboard() {
             <span className="text-2xl font-bold text-gray-800 tracking-tight">
               Dashboard
             </span>
-            <p className="text-sm text-gray-500 mt-1">Welcome back, here's what's happening today.</p>
+            <p className="text-xs text-gray-500 mt-1">Welcome back, here's what's happening today.</p>
           </div>
           <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-lg border border-gray-200">
             <div className="flex gap-2 items-center px-2">
-              <span className="text-xs font-semibold text-brand-500 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-brand-500 tracking-wide font-poppins normal-case">
                 Filter Statistics
               </span>
               <div className="group relative inline-block">
@@ -417,7 +417,7 @@ function Dashboard() {
               <h3 className="text-lg font-bold text-gray-800">
                 Attendance Overview
               </h3>
-              <span className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200 whitespace-nowrap w-fit">Last 7 Days</span>
+              <span className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200 whitespace-nowrap w-fit">Last 7 Days</span>
             </div>
             <div className="h-[350px] w-full">
                <LineChart />

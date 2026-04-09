@@ -114,7 +114,7 @@ const EditorFileUpload = (props) => {
             </Popover>
             <motion.span
               whileHover={{ scale: 1.2 }}
-              className="absolute -top-[9px] -right-[7px] bg-red-500 p-[4px] rounded-full border-2 border-white text-white text-[12px] cursor-pointer"
+              className="absolute -top-[9px] -right-[7px] bg-red-500 p-[4px] rounded-full border-2 border-gray-200 text-white text-[12px] cursor-pointer"
               onClick={() => handleRemoveFile(file, addNoteValue, index)}
             >
               <HiXMark />
@@ -159,7 +159,7 @@ const EditorFileUpload = (props) => {
           </Popover>
             <motion.span
               whileHover={{ scale: 1.2 }}
-              className="absolute -top-[9px] -right-[7px] bg-red-500 p-[4px] rounded-full border-2 border-white text-white text-[12px] cursor-pointer"
+              className="absolute -top-[9px] -right-[7px] bg-red-500 p-[4px] rounded-full border-2 border-gray-200 text-white text-[12px] cursor-pointer"
               onClick={() => handleRemoveFile(index)}
             >
               <HiXMark />
@@ -180,13 +180,7 @@ const EditorFileUpload = (props) => {
         onClick={handleClick}
         onDrop={(e) => handleDrop(e, addNoteValue)}
         onDragOver={(e) => e.preventDefault()}
-        style={{
-          border: "2px dashed #ccc",
-          padding: "20px",
-          borderRadius: "4px",
-          textAlign: "center",
-          cursor: "pointer",
-        }}
+        className="group cursor-pointer rounded-xl border-2 border-dashed border-gray-200 bg-gradient-to-b from-slate-50/80 to-white px-6 py-10 text-center transition hover:border-gray-300 hover:bg-slate-50/50"
       >
         <input
           type="file"
@@ -196,7 +190,10 @@ const EditorFileUpload = (props) => {
           className="hidden"
           id="file-input"
         />
-        <p>Drop files here to upload or click to select</p>
+        <p className="text-sm font-medium text-slate-600 group-hover:text-slate-800">
+          Drop files here or <span className="text-slate-700 underline decoration-gray-300 underline-offset-2">browse</span>
+        </p>
+        <p className="mt-1 text-xs text-slate-400">Images, PDFs, and documents</p>
       </div>
     </>
   );

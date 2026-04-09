@@ -8,6 +8,14 @@ import {
   gettingEmployeeNoteBookList,
   gettingEmployesServices,
 } from "../../services/__frequentApiServices";
+import { normalizeMySharedNotebooksFromApi, buildSharingPermission } from "../../services/__notesPoolServices";
+import { serializeEditorContentForLegacyBackend } from "../../services/__notesPoolEditorContent";
+import {
+  extractUploadedAttachmentRows,
+  mergeAttachmentListsForUpdate,
+  filterAttachmentsForNoteUpdatePayload,
+} from "../../services/__notesPoolAttachments";
+import { isNotesPoolLooseSuccess } from "../../services/__notesPoolApi";
 import { NotepadTextDashedIcon } from "lucide-react";
 
 /** Extract plain text from block.data.text (string or rich-text object). */
@@ -48,6 +56,7 @@ const useNoteHandler = () => {
     note_id: null,
     delete: false,
     loading: false,
+    notebookListLoading: false,
     notebook_id: "",
     note_title: "",
     show: false,
@@ -59,6 +68,7 @@ const useNoteHandler = () => {
     notebookList: [],
     cutNotebook_id: null,
     titleOnlyEdit: false,
+    viewNoteLoading: false,
   });
 
   const [shareNoteValue, setShareNoteValue] = useState({
@@ -82,13 +92,14 @@ const useNoteHandler = () => {
     loading: false,
     showSubDept: [],
     empDepartment: [],
-    empDepartment_id: [],
+    empDepartment_id: null,
     empBranches: [],
-    empBranches_id: [],
+    empBranches_id: null,
     empsList: [],
     emp_id: [],
     notebook_name: "",
     textToCopy: "",
+    loadingMySharedNotebooks: false,
   });
 
   const handleConfirmToggleNote = () => {
@@ -140,6 +151,9 @@ const useNoteHandler = () => {
       showNoteBook: false,
       update: false,
       show: true,
+      note_title: "",
+      note_id: null,
+      titleOnlyEdit: false,
     }));
   }
 
@@ -182,7 +196,6 @@ const useNoteHandler = () => {
         }));
         break;
       case 6:
-        gettingNotebookList();
         setShareNoteValue((prevState) => ({
           ...prevState,
           type: 1,
@@ -190,9 +203,7 @@ const useNoteHandler = () => {
           show: true,
           note_name: data.note_title,
         }));
-        setTimeout(() => {
-            fetchMySharedNotebooks();
-        }, 100);
+        void gettingNotebookList();
         break;
       default:
         break;
@@ -200,6 +211,7 @@ const useNoteHandler = () => {
   };
 
   async function gettingNBList() {
+    setAddNoteValue((prev) => ({ ...prev, notebookListLoading: true }));
     try {
       const data = await gettingEmployeeNoteBookList();
       
@@ -207,11 +219,13 @@ const useNoteHandler = () => {
         setAddNoteValue((prevState) => ({
           ...prevState,
           notebookList: data.DB_DATA,
+          notebookListLoading: false,
         }));
       } else {
         setAddNoteValue((prevState) => ({
           ...prevState,
           notebookList: [],
+          notebookListLoading: false,
         }));
       }
     } catch (error) {
@@ -219,6 +233,7 @@ const useNoteHandler = () => {
       setAddNoteValue((prevState) => ({
         ...prevState,
         notebookList: [],
+        notebookListLoading: false,
       }));
     }
   }
@@ -306,6 +321,9 @@ const useNoteHandler = () => {
     setAddNoteValue((prevState) => ({
       ...prevState,
       show: false,
+      update: false,
+      note_title: "",
+      note_id: null,
       titleOnlyEdit: false,
     }));
   }
@@ -346,7 +364,8 @@ const useNoteHandler = () => {
       note_title: addNoteValue.note_title,
       note_id: addNoteValue.note_id || addNoteValue.id || addNoteValue._id,
       tags: editorValue.tags.map(tag => tag.label || tag.name),
-      editor_content: editorValue.editorContent,
+      operation: "update_note_content",
+      editor_content: serializeEditorContentForLegacyBackend(editorValue.editorContent),
     };
 
     setAddNoteValue((prevState) => ({
@@ -440,6 +459,7 @@ const useNoteHandler = () => {
     setAddNoteValue((prevState) => ({
       ...prevState,
       showNote: false,
+      viewNoteLoading: false,
     }));
   };
 
@@ -447,6 +467,14 @@ const useNoteHandler = () => {
 
   const handleNoteHandler = async (data) => {
     const note_id = data.notes_id || data.id || data._id || data.note_id;
+    setEditorData({});
+    setAddNoteValue((prevState) => ({
+      ...prevState,
+      showNote: true,
+      viewNoteLoading: true,
+      note_title: data.note_title || "",
+    }));
+
     const apiData = { id: note_id };
 
     try {
@@ -519,16 +547,27 @@ const useNoteHandler = () => {
         setEditorData(editorData);
         setAddNoteValue((prevState) => ({
           ...prevState,
-          showNote: true,
+          viewNoteLoading: false,
           note_title: data.note_title,
         }));
       } else {
         setEditorData({});
+        setAddNoteValue((prevState) => ({
+          ...prevState,
+          showNote: false,
+          viewNoteLoading: false,
+        }));
         const errorData = responseData.ERROR_DESCRIPTION;
         showToast(errorData, "error");
       }
     } catch (err) {
       console.error("View note error:", err);
+      setEditorData({});
+      setAddNoteValue((prevState) => ({
+        ...prevState,
+        showNote: false,
+        viewNoteLoading: false,
+      }));
       showToast("Failed to load note content", "error");
     }
   };
@@ -638,7 +677,8 @@ const useNoteHandler = () => {
             author: creatorName,
             noteHeader: {
               note_title: dbData.note_title || "",
-              note_id: noteId
+              note_id: noteId,
+              id: noteId,
             },
             show: true,
         }));
@@ -745,17 +785,16 @@ const useNoteHandler = () => {
       String(tag.label || tag.name || tag).trim()
     ).filter(tag => tag.length > 0); // Remove empty tags
     
-    // Normalize editor_content to table format: { time (ms), blocks, version } as JSON string
+    // Legacy PHP Empleado expects nested JSON: { "editor_content": "<stringified EditorJS {time,blocks,version}>" }
     let editorContentForApi = data.editor_content ?? data.editorContent;
-    if (editorContentForApi != null && typeof editorContentForApi === "object") {
-      const timeMs = (editorContentForApi.time != null && editorContentForApi.time > 9999999999) ? editorContentForApi.time : Date.now();
-      const normalized = {
-        time: timeMs,
-        blocks: editorContentForApi.blocks ?? [],
-        version: editorContentForApi.version ?? "2.31.0",
-      };
-      editorContentForApi = JSON.stringify(normalized);
+    if (typeof editorContentForApi === "string") {
+      try {
+        editorContentForApi = JSON.parse(editorContentForApi);
+      } catch {
+        editorContentForApi = { blocks: [], time: Date.now(), version: "2.31.0" };
+      }
     }
+    editorContentForApi = serializeEditorContentForLegacyBackend(editorContentForApi);
     
     // Fix: Use the correct data structure from the UI
     const apiData = {
@@ -767,11 +806,12 @@ const useNoteHandler = () => {
       notebook_title: data.notebook_title || data.noteHeader?.notebook_title || '',
       editor_content: editorContentForApi,
       tags: tagsForDB, // Send as array of strings
-      // Filter out images from attachments payload as they are now inline in editor_content
-      attachements: (data.attachements || data.attachments || []).filter(file => {
-        const mimeType = file.FILE_MIME || file.type || file.mimeType || file.mime_type || file.file_type;
-        return !mimeType?.startsWith('image/');
-      }),
+      attachements: filterAttachmentsForNoteUpdatePayload(
+        mergeAttachmentListsForUpdate(
+          data.attachements || data.attachments,
+          editorValue.attachements
+        )
+      ),
     };
     
     console.log("Updating note with data:", apiData);
@@ -785,11 +825,12 @@ const useNoteHandler = () => {
       const response = await notesPoolApi.updateNote(apiData);
       const responseData = await response.data;
       
-      if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+      if (isNotesPoolLooseSuccess(response.status, responseData)) {
         toggleEditorNote();
         showToast("Note Updated Successfully", "success");
       } else {
-        const apiError = responseData.ERROR_DESCRIPTION;
+        const apiError =
+          responseData?.ERROR_DESCRIPTION || "Failed to update note";
         showToast(apiError, "error");
       }
     } catch (err) {
@@ -816,15 +857,28 @@ const useNoteHandler = () => {
     }));
   };
 
-  const handleFileChange = (e, data) => {
-    const selectedFiles = Array.from(e.target.files);
-    uploadFiles(selectedFiles, data);
+  const handleFileChange = async (e, data) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    if (!selectedFiles.length) return null;
+    return uploadFiles(selectedFiles, data);
   };
+
+  const resolveNoteIdForUpload = (data) =>
+    data?.note_id ?? data?.noteHeader?.note_id ?? data?.noteHeader?.id ?? data?.id ?? data?._id;
+
   const handleRemoveFile = async (file, data, index) => {
+    const fileId = file?.id || file?.ID || file?.file_id || file?.FILE_ID;
+    // Pending local File objects (not yet uploaded) — remove from UI only
+    if (!fileId && (file instanceof File || (typeof file?.name === "string" && !file?.REC_ID && !file?.rec_id))) {
+      setEditorValue((prevState) => ({
+        ...prevState,
+        attachements: (prevState.attachements || []).filter((_, i) => i !== index),
+      }));
+      return;
+    }
 
     // Handle different file object structures
-    const noteId = data.noteHeader?.id || data.note_id || data.id || data._id;
-    const fileId = file.id || file.ID || file.file_id || file.FILE_ID; // Use the primary key from notes_attachment table
+    const noteId = data?.noteHeader?.note_id ?? data?.noteHeader?.id ?? data?.note_id ?? data?.id ?? data?._id;
     const fileName = file.FILE_NAME || file.file_name;
 
     if (!noteId) {
@@ -877,38 +931,49 @@ const useNoteHandler = () => {
     }));
   };
   const uploadFiles = async (filesToUpload, data) => {
+    if (!filesToUpload?.length) return null;
+
+    const noteId = resolveNoteIdForUpload(data);
+    if (!noteId) {
+      showToast("Cannot upload attachment: note ID is missing", "error");
+      return null;
+    }
 
     const formData = new FormData();
     filesToUpload.forEach((file) => {
-      formData.append("file", file); // Append each file individually
+      formData.append("file", file);
     });
-    formData.append("note_id", data.note_id); // Add note_id to formData
+    formData.append("note_id", noteId);
     formData.append("operation", "upload_attachment");
 
     try {
-      const response = await notesPoolApi.uploadNoteAttachemnt(
-        formData,
-        (progress) => {
-          setUploadProgress((prevProgress) => ({
-            ...prevProgress,
-            [filesToUpload[0].name]: progress,
-          }));
-        }
-      );
-      const responseData = response.data;
-      if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-        setEditorValue((prevState) => ({
-          ...prevState,
-          attachements: [...prevState.attachements, responseData.INSERTED_DATA],
+      const response = await notesPoolApi.uploadNoteAttachemnt(formData, (progress) => {
+        setUploadProgress((prevProgress) => ({
+          ...prevProgress,
+          [filesToUpload[0].name]: progress,
         }));
-      } else {
-        const errorDescp = responseData.ERROR_DESCRIPTION;
-        showToast(errorDescp, "error");
+      });
+      const responseData = response.data;
+      if (isNotesPoolLooseSuccess(response.status, responseData)) {
+        const newItems = extractUploadedAttachmentRows(responseData);
+        let merged = null;
+        setEditorValue((prevState) => {
+          const prev = prevState.attachements || [];
+          merged = [...prev, ...newItems];
+          return { ...prevState, attachements: merged };
+        });
+        setUploadProgress({});
+        return merged;
       }
-      setUploadProgress({}); // Reset progress after upload completes
+      const errorDescp = responseData?.ERROR_DESCRIPTION;
+      showToast(errorDescp || "Upload failed", "error");
+      setUploadProgress({});
+      return null;
     } catch (error) {
       console.error("Upload failed:", error);
-      setUploadProgress({}); // Reset progress on error
+      showToast("Failed to upload attachment", "error");
+      setUploadProgress({});
+      return null;
     }
   };
 
@@ -921,6 +986,10 @@ const useNoteHandler = () => {
 
   const handleChangeShareNote = (e) => {
     const { name, value } = e.target;
+
+    if (name === "type" && parseInt(value, 10) === 1) {
+      void gettingNotebookList();
+    }
 
     setShareNoteValue((prevState) => {
       let newState = { ...prevState };
@@ -946,15 +1015,32 @@ const useNoteHandler = () => {
       } else if (name === "shareWith") {
         newState = {
           ...newState,
-          empBranches_id: [],
-          empDepartment_id: [],
+          empBranches_id: null,
+          empDepartment_id: null,
+          emp_id: [],
           [name]: value,
         };
       } else if (name === "empBranches_id") {
-        newState = {
-          ...newState,
-          [name]: [...prevState.empBranches_id, value],
-        };
+        {
+          const rawVal = value;
+          const prevRaw = prevState.empBranches_id;
+          let prev = [];
+          if (Array.isArray(prevRaw)) prev = [...prevRaw];
+          else if (prevRaw != null && typeof prevRaw === "object" && prevRaw.value != null)
+            prev = [prevRaw.value];
+          else if (prevRaw != null && prevRaw !== "") prev = [prevRaw];
+          const coerced =
+            typeof rawVal === "string" && rawVal !== "" && !Number.isNaN(Number(rawVal))
+              ? Number(rawVal)
+              : rawVal;
+          const exists = prev.some((x) => x === coerced || String(x) === String(rawVal));
+          newState = {
+            ...newState,
+            [name]: exists
+              ? prev.filter((x) => x !== coerced && String(x) !== String(rawVal))
+              : [...prev, coerced],
+          };
+        }
       } else if (name === "empDepartment_id") {
         newState = {
           ...newState,
@@ -977,43 +1063,63 @@ const useNoteHandler = () => {
   };
 
   const gettingNotebookList = async () => {
-    try {      
-      // Get shared notebooks for the dropdown
+    setShareNoteValue((prev) => ({
+      ...prev,
+      loadingMySharedNotebooks: true,
+    }));
+    try {
       const sharedNotebooksResponse = await notesPoolApi.getMySharedNotebooks();
       const sharedNotebooksData = sharedNotebooksResponse.data;
-      
-      // Get other data (branches, departments, etc.)
-      const response = await notesPoolApi.getNotebooksList();
-      const responseData = response.data;
-      
-      if (sharedNotebooksResponse.status === 200 && sharedNotebooksData.STATUS === "SUCCESSFUL" &&
-          response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-        const dbData = responseData.DB_DATA;
-        
-        // Use shared notebooks if available, otherwise fallback to regular notebooks
-        const sharedNotebooks = Array.isArray(sharedNotebooksData.DB_DATA) ? sharedNotebooksData.DB_DATA : [];
-        const regularNotebooks = Array.isArray(dbData.shared_notebooks) ? dbData.shared_notebooks : [];
-        const finalNotebookList = sharedNotebooks.length > 0 ? sharedNotebooks : regularNotebooks;
-        
-        setShareNoteValue((prevState) => ({
-          ...prevState,
-          notebookList: finalNotebookList,
-          branches: dbData.branch,
-          empBranches: dbData.branch,
-          departments: dbData.dept,
-          empDepartment: dbData.dept,
-        }));
-        
-      } else {
-        setShareNoteValue((prevState) => ({
-          ...prevState,
-          notebookList: [], // Set empty array if API fails
-        }));
+
+      let finalNotebookList = [];
+      if (
+        sharedNotebooksResponse.status === 200 &&
+        sharedNotebooksData.STATUS === "SUCCESSFUL"
+      ) {
+        finalNotebookList = normalizeMySharedNotebooksFromApi(sharedNotebooksData);
       }
-    } catch (err) {
+
+      let branchesEtc = {};
+      try {
+        const response = await notesPoolApi.getNotebooksList();
+        const responseData = response.data;
+        if (
+          response.status === 200 &&
+          responseData.STATUS === "SUCCESSFUL" &&
+          responseData.DB_DATA
+        ) {
+          const dbData = responseData.DB_DATA;
+          branchesEtc = {
+            branches: dbData.branch,
+            empBranches: dbData.branch,
+            departments: dbData.dept,
+            empDepartment: dbData.dept,
+          };
+          if (finalNotebookList.length === 0) {
+            const regularNotebooks = Array.isArray(dbData.shared_notebooks)
+              ? dbData.shared_notebooks
+              : [];
+            finalNotebookList = regularNotebooks;
+          }
+        }
+      } catch (inner) {
+        console.error("getNotebooksList (share note modal):", inner);
+      }
+
       setShareNoteValue((prevState) => ({
         ...prevState,
-        notebookList: [], // Set empty array on error
+        notebookList: finalNotebookList,
+        mySharedNotebooks: finalNotebookList,
+        ...branchesEtc,
+        loadingMySharedNotebooks: false,
+      }));
+    } catch (err) {
+      console.error("gettingNotebookList:", err);
+      setShareNoteValue((prevState) => ({
+        ...prevState,
+        notebookList: [],
+        mySharedNotebooks: [],
+        loadingMySharedNotebooks: false,
       }));
     }
   };
@@ -1021,6 +1127,14 @@ const useNoteHandler = () => {
   const handleSelectShareNote = async (select, field) => {
     
     if (field === "empBranches_id") {
+      if (shareNoteValue.shareWith !== "employee") {
+        setShareNoteValue((prevState) => ({
+          ...prevState,
+          empBranches_id: select,
+          empDepartment_id: null,
+        }));
+        return;
+      }
       try {
         const data = await gettingDepartmentsServices(select.value);
         setShareNoteValue((prevState) => ({
@@ -1177,15 +1291,28 @@ const useNoteHandler = () => {
         return false;
       }
       
-      // Validate based on shareWith selection
+      const hasBranch = (v) => {
+        if (v == null) return false;
+        if (Array.isArray(v)) return v.length > 0;
+        return v.value != null && v.value !== "";
+      };
+      const hasDept = (v) => {
+        if (v == null) return false;
+        if (Array.isArray(v)) return v.length > 0;
+        return v.value != null && v.value !== "";
+      };
       if (shareWith === "branch") {
-        if (!empBranches_id || empBranches_id.length === 0) {
-          showToast("Please select at least one branch", "error");
+        if (!hasBranch(empBranches_id)) {
+          showToast("Please select a branch", "error");
           return false;
         }
       } else if (shareWith === "dept") {
-        if (!empDepartment_id || empDepartment_id.length === 0) {
-          showToast("Please select at least one department", "error");
+        if (!hasBranch(empBranches_id)) {
+          showToast("Please select a branch", "error");
+          return false;
+        }
+        if (!hasDept(empDepartment_id)) {
+          showToast("Please select a department", "error");
           return false;
         }
       } else if (shareWith === "employee") {
@@ -1204,22 +1331,29 @@ const useNoteHandler = () => {
 
   // Function to fetch my shared notebooks
   const fetchMySharedNotebooks = async () => {
+    setShareNoteValue((prev) => ({
+      ...prev,
+      loadingMySharedNotebooks: true,
+    }));
     try {
       const response = await notesPoolApi.getMySharedNotebooks();
       const responseData = response.data;
       
       if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
-        setShareNoteValue((prevState) => {
-          return {
-            ...prevState,
-            mySharedNotebooks: responseData.DB_DATA.shared_notebooks || [],
-          };
-        });
+        const list = normalizeMySharedNotebooksFromApi(responseData);
+        setShareNoteValue((prevState) => ({
+          ...prevState,
+          mySharedNotebooks: list,
+          notebookList: list,
+          loadingMySharedNotebooks: false,
+        }));
       } else {
         console.error("Failed to fetch shared notebooks for notes:", responseData);
+        setShareNoteValue((prev) => ({ ...prev, loadingMySharedNotebooks: false }));
       }
     } catch (error) {
       console.error("Error fetching my shared notebooks for notes:", error);
+      setShareNoteValue((prev) => ({ ...prev, loadingMySharedNotebooks: false }));
     }
   };
 
@@ -1255,21 +1389,22 @@ const useNoteHandler = () => {
             }));
           }
         } else {
-          // Transform permissions array to object with values of 1
-          const permissionsObject = {};
-          shareNoteValue.allowPermission.forEach(permission => {
-            permissionsObject[permission] = 1;
-          });
+          const scopeIds = (v) => {
+            if (v == null) return v;
+            if (Array.isArray(v)) return v;
+            if (typeof v === "object" && v.value != null) return [v.value];
+            return v;
+          };
 
           const apiDataAdd = {
             note_id: id,
             operation_type: operation_type,
             notebook_type: "new_notebook",
             new_notebook_name: shareNoteValue.notebook_name,
-            ...permissionsObject,
+            sharing_permission: buildSharingPermission(shareNoteValue.allowPermission),
             name_dept_branch: shareNoteValue.shareWith,
-            branch: shareNoteValue.empBranches_id,
-            dept: shareNoteValue.empDepartment_id,
+            branch: scopeIds(shareNoteValue.empBranches_id),
+            dept: scopeIds(shareNoteValue.empDepartment_id),
             members: shareNoteValue.emp_id,
           };
 
