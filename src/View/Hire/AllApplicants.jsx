@@ -203,7 +203,12 @@ const AllApplicants = () => {
           <CustomButton className="bg-[#8bc9f8]" title="Back" onClick={handleBackVacancies}>
             Back
           </CustomButton>
-          <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank">
+          {/* <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank">
+            <Button className="bg-[#0ACF97] capitalize p-3  font-medium">
+              Career Page
+            </Button>
+          </Link> */}
+          <Link to={`https://hiring.veevotech.com/company/${org_id}/veevo-tech`} target="_blank">
             <Button className="bg-[#0ACF97] capitalize p-3  font-medium">
               Career Page
             </Button>
@@ -256,8 +261,8 @@ const AllApplicants = () => {
                   className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                   value={
                     filters.vacancy_id !== undefined &&
-                    filters.vacancy_id !== null &&
-                    filters.vacancy_id !== ""
+                      filters.vacancy_id !== null &&
+                      filters.vacancy_id !== ""
                       ? String(filters.vacancy_id)
                       : ""
                   }

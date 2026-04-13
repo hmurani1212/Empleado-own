@@ -107,11 +107,16 @@ const Hire = ({ data }) => {
 
         {/* Tooba */}
         {/* Career Page */}
-        <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank" className="w-full sm:w-auto">
+        {/* <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank" className="w-full sm:w-auto">
           <Button className="bg-[#0ACF97] capitalize p-2 font-medium w-full sm:w-auto">
             Career Page
           </Button>
-        </Link>
+        </Link> */}
+        <Link to={`https://hiring.veevotech.com/company/${org_id}/veevo-tech`} target="_blank">
+            <Button className="bg-[#0ACF97] capitalize p-3  font-medium">
+              Career Page
+            </Button>
+          </Link>
       </div>
 
       <div className="flex flex-col gap-2 pb-3 mt-[20px]">
