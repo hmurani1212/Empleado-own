@@ -14,10 +14,13 @@ import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { FaEye, FaEllipsisV, FaEnvelope, FaUser } from "react-icons/fa";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import AcceptanceConfirmationModal from "./AcceptanceConfirmationModal";
+import useStore from "../../Store/store";
+import { ApplicantsTableSkeleton } from "./HireSkeletons";
 
 const Accepted = () => {
   const { handleNavigateView } = useHire();
   const { get_applicants_data } = useHire_2();
+  const allApplicantsLoading = useStore((state) => state.allApplicantsLoading);
   const accpetData = [
     "Candidate",
     "Applied For",
@@ -86,7 +89,9 @@ const Accepted = () => {
                 </thead>
 
                 <tbody>
-                  {get_applicants_data?.length > 0 ? (
+                  {allApplicantsLoading ? (
+                    <ApplicantsTableSkeleton rows={8} colCount={6} />
+                  ) : get_applicants_data?.length > 0 ? (
                     get_applicants_data?.map((hire, index) => {
                       const isLast = index === get_applicants_data.length - 1;
                       const classes = isLast
@@ -209,7 +214,7 @@ const Accepted = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={9} className="text-center py-4">
+                      <td colSpan={6} className="text-center py-4">
                         <Typography
                           variant="small"
                           color="blue-gray"

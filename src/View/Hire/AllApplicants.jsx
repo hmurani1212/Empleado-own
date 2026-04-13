@@ -187,8 +187,6 @@ const AllApplicants = () => {
 
   const token_data = getUserData();
 
-  console.log('what is the testttt', token_data)
-
   let org_id;
   if (token_data !== undefined) {
     org_id = token_data?.org_id

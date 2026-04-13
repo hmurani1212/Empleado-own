@@ -8,6 +8,7 @@ import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { getContentByLabel } from "../../services/getContentService";
 import { SettingsSkeleton } from "./PayrollSkeletons";
 import { getOrganizationData, getUserData } from "../../Authentication/jwt_decode";
+// OLD (incoming): import { getUserData } from "../../Authentication/jwt_decode";
 import payrollApi from "../../Model/Data/Payroll/Payroll";
 
 const SettingPayroll = () => {
@@ -153,6 +154,7 @@ const SettingPayroll = () => {
 
   const fetchOrgSettingsAndFillForm = useCallback(async (branchId, sectionType) => {
     const org_id = resolveOrgId();
+    // OLD (incoming): const userData = getUserData(); const org_id = userData?.org_id ?? 0;
     if (!org_id) return;
     setSettingsLoading(true);
     setOrgSettingId(null);
@@ -226,6 +228,7 @@ const SettingPayroll = () => {
     } else if (ORG_SETTINGS_SECTIONS.includes(activeSection)) {
       setOrgSettingId(null);
     }
+    // OLD (incoming): also called fetchOrgSettingsAndFillForm here — centralized in useEffect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection]);
 
@@ -273,6 +276,7 @@ const SettingPayroll = () => {
       if (!ORG_SETTINGS_SECTIONS.includes(activeSection)) {
         setOrgSettingId(null);
       }
+      // OLD (incoming): if (org sections) fetchOrgSettingsAndFillForm(value.value, section); else setOrgSettingId(null)
     }
   };
 
@@ -1551,7 +1555,6 @@ const SettingPayroll = () => {
               Configure statutory deductions and payroll defaults
             </p>
           </div>
-
           <div className="space-y-2">
             {navigationItems.map((item) => {
               const isActive = activeSection === item.id;
@@ -1574,7 +1577,7 @@ const SettingPayroll = () => {
             })}
           </div>
         </div>
-        {/* OLD (incoming merge): sidebar mistakenly contained form content overlay + renderFormContent() */}
+        {/* OLD (incoming): duplicate form block lived here between sidebar and right column (max-w-2xl + renderFormContent). */}
 
         {/* Right Column - Content Area */}
         <div className="flex flex-col bg-[#FCFDFE]">

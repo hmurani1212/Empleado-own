@@ -1,5 +1,5 @@
 import { Typography, Progress, Button, Menu, MenuHandler, MenuList, MenuItem } from "@material-tailwind/react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import {
   FaEye,
   FaEdit,
@@ -102,7 +102,7 @@ const EmployeeGoals = () => {
     }));
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (goalsValue.performance.length === 0) {
       gettingPRCSelect();
     }
@@ -296,7 +296,7 @@ const EmployeeGoals = () => {
             <div className="flex items-center gap-4">
                <div className="w-64">
                  <CustomSelect
-                    placeHolderTitle="Select Review Cycle"
+                    placeHolderTitle={goalsValue.performanceListLoading ? "Loading cycles..." : "Select Review Cycle"}
                     value={goalsValue.performance_id}
                     options={goalsValue.performance?.map((ele) => ({
                       value: ele._id,
@@ -304,6 +304,8 @@ const EmployeeGoals = () => {
                     }))}
                     onChangeHandler={handleSelectGoals}
                     customStyles={false}
+                    menuLoading={goalsValue.performanceListLoading}
+                    menuLoadingLabel="Loading review cycles..."
                   />
                </div>
             </div>
@@ -535,6 +537,8 @@ const EmployeeGoals = () => {
             ) : (
               <AddEditGoal
                 performance={goalsValue.performance}
+                performanceListLoading={goalsValue.performanceListLoading}
+                employeesLoading={addGoalValue.employeesLoading}
                 handleSelectGoals={handleSelectGoals}
                 addGoalValue={addGoalValue}
                 handleChangeAddGoal={handleChangeAddGoal}
@@ -547,6 +551,7 @@ const EmployeeGoals = () => {
         title={addGoalValue.show ? (addGoalValue.view ? "View Goal" : addGoalValue.update ? "Edit Goal" : "Add Goal") : ""}
         closeDrawer={addGoalValue.show ? toggleAddGoal : () => {}}
         widthSize={addGoalValue.show ? (addGoalValue.view ? 760 : 550) : 550}
+        widthSize={620}
       />
 
       <ConfirmationDialog

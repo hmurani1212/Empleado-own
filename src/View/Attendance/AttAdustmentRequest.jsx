@@ -27,9 +27,26 @@ function formatTimeDisplay(val) {
   return String(val);
 }
 
+const TIME_ADJ_REQUEST_TABLE_COLS = 7;
+
+const TimeAdjustmentRequestTableBodySkeleton = () => (
+  <>
+    {[1, 2, 3, 4, 5, 6, 7, 8].map((row) => (
+      <tr key={row} className="animate-pulse">
+        {Array.from({ length: TIME_ADJ_REQUEST_TABLE_COLS }).map((_, col) => (
+          <td key={col} className="px-6 py-4 whitespace-nowrap">
+            <div className="h-4 bg-gray-100 rounded-md max-w-[160px]" />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
+
 const AttAdustmentRequest = () => {
   const {
     requestData,
+    requestAdjListLoading,
     requestPagination,
     handleDetailRequest,
     gettingRequestAdj,
@@ -243,9 +260,11 @@ const AttAdustmentRequest = () => {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100">
-                  <AnimatePresence>
-                  {requestData.length > 0 ? (
-                    requestData.map((ele, index) => {
+                  {requestAdjListLoading ? (
+                    <TimeAdjustmentRequestTableBodySkeleton />
+                  ) : requestData.length > 0 ? (
+                    <AnimatePresence>
+                    {requestData.map((ele, index) => {
                       return (
                         <motion.tr 
                           key={ele._id || index}
@@ -316,7 +335,8 @@ const AttAdustmentRequest = () => {
                           </td>
                         </motion.tr>
                       );
-                    })
+                    })}
+                    </AnimatePresence>
                   ) : (
                     <tr>
                       <td colSpan={7} className="p-12 text-center">
@@ -330,13 +350,12 @@ const AttAdustmentRequest = () => {
                       </td>
                     </tr>
                   )}
-                  </AnimatePresence>
                 </tbody>
               </table>
             </div>
 
             {/* Pagination Footer */}
-            {requestData.length > 0 && (() => {
+            {!requestAdjListLoading && requestData.length > 0 && (() => {
               const paginationData = getPaginationData();
               return paginationData.totalPages >= 1 && (
                 <div className="border-t border-gray-100 bg-gray-50/50 p-4 flex items-center justify-between">

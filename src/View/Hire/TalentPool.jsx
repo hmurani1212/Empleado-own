@@ -5,6 +5,7 @@ import { FaEye } from "react-icons/fa";
 import { format } from "date-fns";
 import useStore from "../../Store/store";
 import { useTalentPoolServices } from "../../ViewModel/HireViewModel2/hireServices_2";
+import { TalentPoolTableSkeleton } from "./HireSkeletons";
 
 const TalentPool = () => {
   const { getTalentPoolData, resetTalentPool } = useTalentPoolServices();
@@ -82,6 +83,13 @@ const TalentPool = () => {
     // Cleanup on unmount
     return () => {
       resetTalentPool();
+    };
+  }, []);
+
+  useEffect(() => {
+    useStore.setState({ allApplicantsLoading: false });
+    return () => {
+      useStore.setState({ allApplicantsLoading: true });
     };
   }, []);
 
@@ -294,7 +302,7 @@ const TalentPool = () => {
 
         <div className="pr-2">
           {talentPoolLoading && currentPage === 1 ? (
-            <div className="text-center py-4">Loading...</div>
+            <TalentPoolTableSkeleton rows={8} />
           ) : talentPoolError ? (
             <div className="text-center py-4 text-red-500">
               {talentPoolError}

@@ -35,6 +35,15 @@ import useAuthReady from "../../hooks/useAuthReady";
 import { useLiveBiometricDevices } from "../../hooks/useLiveBiometricDevices";
 import { showToast } from "../../Components/Toaster/Toaster";
 import { getUserData, getDecodedToken } from "../../Authentication/jwt_decode";
+import {
+  DashboardBirthdaysListSkeleton,
+  DashboardMeetGreetTableSkeleton,
+  DashboardHolidaysTableSkeleton,
+  DashboardStatCardsSkeleton,
+  DashboardProgressCardsSkeleton,
+  DashboardAttendanceOverviewSkeleton,
+  DashboardTurnaroundGenderSkeleton,
+} from "./DashboardSkeletons";
 
 ChartJS.register(
   CategoryScale,
@@ -248,6 +257,10 @@ function Dashboard() {
     // Dashboard count data and admin dashboard data are available
   }, [dashboardCountData, adminDashboardData]);
 
+  /** Until admin API returns, counts would render as 0 (fallbacks). Show skeletons instead. */
+  const showAdminDashboardSkeleton =
+    adminDashboardLoading || adminDashboardData == null;
+
   return (
     <>
       <style>
@@ -316,100 +329,108 @@ function Dashboard() {
         {/* Stats Grid */}
         <div className="flex flex-col gap-6">
           {/* Top Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {dashboardCustomData.map((ele) => (
-              <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} key={ele.id}>
-                <Card
-                  className={`p-4 h-[120px] flex justify-center rounded-2xl shadow-card border-none overflow-hidden relative`}
-                  style={{ background: ele.bgColor }}
-                >
-                  {/* Background decoration */}
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl"></div>
-                  
-                  <CardBody className="flex items-center h-full gap-3 relative z-10 p-0">
-                    <div>
-                      <span
-                        className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm text-xl text-white shadow-inner [&_svg]:w-6 [&_svg]:h-6"
-                      >
-                        {ele.icon}
-                      </span>
-                    </div>
-                    <div className="flex-1 flex flex-col text-white min-w-0">
-                      <span className="text-2xl font-bold tracking-tight">
-                        {ele.count}
-                      </span>
-                      <span className="text-xs md:text-sm font-medium opacity-90 leading-tight break-words" title={ele.title}>
-                        {ele.title === 'Total Departments & Sub Departments' ? (
-                          <>Total Departments<br />& Sub Dep</>
-                        ) : (
-                          ele.title
-                        )}
-                      </span>
-                    </div>
-                  </CardBody>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Progress Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {dashboardCountData.map((ele, index) => {
-              const width = ele.percentCount
-                ? (ele.percentCount / dashboardCustomData[0].count) * 100
-                : 0;
-              const maxPercent = dashboardCountData?.[3]?.count || 0;
-              const current = dashboardCustomData?.[0]?.count || 0;
-
-              const widthLimit = (current / maxPercent) * 100 || 0;
-              return (
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} key={ele.id}>
+          {showAdminDashboardSkeleton ? (
+            <DashboardStatCardsSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {dashboardCustomData.map((ele) => (
+                <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} key={ele.id}>
                   <Card
-                    className="p-4 h-[120px] rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 border border-gray-100 cursor-pointer bg-white"
-                    onClick={() => handleDashboardCountClick(ele)}
+                    className={`p-4 h-[120px] flex justify-center rounded-2xl shadow-card border-none overflow-hidden relative`}
+                    style={{ background: ele.bgColor }}
                   >
-                    <CardBody className="w-full h-full flex flex-col justify-between p-0">
-                      <div className="w-full flex items-start justify-between">
-                        <div className="flex flex-col min-w-0 pr-2">
-                          <span className="text-xs md:text-sm font-medium text-gray-500 whitespace-nowrap truncate" title={ele.title}>
-                            {ele.title}
-                          </span>
-                          <span className="text-xl md:text-2xl font-bold text-gray-800 mt-1">
-                            {ele.count}
-                          </span>
-                        </div>
-                        <div 
-                          className="p-2 rounded-lg bg-opacity-10"
-                          style={{ backgroundColor: `${ele.bgColor}20` }} 
+                    {/* Background decoration */}
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl"></div>
+                    
+                    <CardBody className="flex items-center h-full gap-3 relative z-10 p-0">
+                      <div>
+                        <span
+                          className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm text-xl text-white shadow-inner [&_svg]:w-6 [&_svg]:h-6"
                         >
-                          <span
-                            className="text-xl"
-                            style={{ color: ele.bgColor }}
-                          >
-                            {ele.icon}
-                          </span>
-                        </div>
+                          {ele.icon}
+                        </span>
                       </div>
-
-                      <div className="flex flex-col gap-1.5 mt-2">
-                        <div className="bg-gray-100 rounded-full h-2 w-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${index === 3 ? widthLimit : width}%` }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                            className="h-full rounded-full shadow-sm"
-                            style={{
-                              backgroundColor: ele.bgColor,
-                            }}
-                          />
-                        </div>
+                      <div className="flex-1 flex flex-col text-white min-w-0">
+                        <span className="text-2xl font-bold tracking-tight">
+                          {ele.count}
+                        </span>
+                        <span className="text-xs md:text-sm font-medium opacity-90 leading-tight break-words" title={ele.title}>
+                          {ele.title === 'Total Departments & Sub Departments' ? (
+                            <>Total Departments<br />& Sub Dep</>
+                          ) : (
+                            ele.title
+                          )}
+                        </span>
                       </div>
                     </CardBody>
                   </Card>
                 </motion.div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
+
+          {/* Progress Cards */}
+          {showAdminDashboardSkeleton ? (
+            <DashboardProgressCardsSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {dashboardCountData.map((ele, index) => {
+                const width = ele.percentCount
+                  ? (ele.percentCount / dashboardCustomData[0].count) * 100
+                  : 0;
+                const maxPercent = dashboardCountData?.[3]?.count || 0;
+                const current = dashboardCustomData?.[0]?.count || 0;
+
+                const widthLimit = (current / maxPercent) * 100 || 0;
+                return (
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} key={ele.id}>
+                    <Card
+                      className="p-4 h-[120px] rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 border border-gray-100 cursor-pointer bg-white"
+                      onClick={() => handleDashboardCountClick(ele)}
+                    >
+                      <CardBody className="w-full h-full flex flex-col justify-between p-0">
+                        <div className="w-full flex items-start justify-between">
+                          <div className="flex flex-col min-w-0 pr-2">
+                            <span className="text-xs md:text-sm font-medium text-gray-500 whitespace-nowrap truncate" title={ele.title}>
+                              {ele.title}
+                            </span>
+                            <span className="text-xl md:text-2xl font-bold text-gray-800 mt-1">
+                              {ele.count}
+                            </span>
+                          </div>
+                          <div 
+                            className="p-2 rounded-lg bg-opacity-10"
+                            style={{ backgroundColor: `${ele.bgColor}20` }} 
+                          >
+                            <span
+                              className="text-xl"
+                              style={{ color: ele.bgColor }}
+                            >
+                              {ele.icon}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5 mt-2">
+                          <div className="bg-gray-100 rounded-full h-2 w-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${index === 3 ? widthLimit : width}%` }}
+                              transition={{ duration: 1, ease: "easeOut" }}
+                              className="h-full rounded-full shadow-sm"
+                              style={{
+                                backgroundColor: ele.bgColor,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Charts Section */}
           <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
@@ -419,38 +440,46 @@ function Dashboard() {
               </h3>
               <span className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200 whitespace-nowrap w-fit">Last 7 Days</span>
             </div>
-            <div className="h-[350px] w-full">
-               <LineChart />
-            </div>
+            {showAdminDashboardSkeleton ? (
+              <DashboardAttendanceOverviewSkeleton />
+            ) : (
+              <div className="h-[350px] w-full">
+                <LineChart />
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
-              <CardBody className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-bold text-gray-800">Employees Turnaround</h3>
-                  <p className="text-sm text-gray-500">Monthly hiring vs attrition</p>
-                </div>
-                <div className="h-64 w-full flex items-center justify-center">
-                  <Bar
-                    data={turnaroundChartData}
-                    options={turnaroundChartOptions}
-                  />
-                </div>
-              </CardBody>
-            </Card>
-            <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
-              <CardBody className="p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-bold text-gray-800">Gender Distribution</h3>
-                  <p className="text-sm text-gray-500">Active employment ratio</p>
-                </div>
-                <div className="h-64 w-full flex items-center justify-center">
-                  <Pie data={genderRatioData} options={genderRatioOptions} />
-                </div>
-              </CardBody>
-            </Card>
-          </div>
+          {showAdminDashboardSkeleton ? (
+            <DashboardTurnaroundGenderSkeleton />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+                <CardBody className="p-6">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold text-gray-800">Employees Turnaround</h3>
+                    <p className="text-sm text-gray-500">Monthly hiring vs attrition</p>
+                  </div>
+                  <div className="h-64 w-full flex items-center justify-center">
+                    <Bar
+                      data={turnaroundChartData}
+                      options={turnaroundChartOptions}
+                    />
+                  </div>
+                </CardBody>
+              </Card>
+              <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+                <CardBody className="p-6">
+                  <div className="mb-6">
+                    <h3 className="text-lg font-bold text-gray-800">Gender Distribution</h3>
+                    <p className="text-sm text-gray-500">Active employment ratio</p>
+                  </div>
+                  <div className="h-64 w-full flex items-center justify-center">
+                    <Pie data={genderRatioData} options={genderRatioOptions} />
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+          )}
 
           {/* Tables Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -515,9 +544,7 @@ function Dashboard() {
                   <span className="text-gray-800 font-bold text-base">Upcoming Birthdays</span>
                 </div>
                 {adminDashboardLoading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
-                  </div>
+                  <DashboardBirthdaysListSkeleton />
                 ) : upcommingBirthdays && upcommingBirthdays.length > 0 ? (
                   <div className="h-80 overflow-y-auto meet-greet-scrollbar">
                     <ul className="py-2">
@@ -583,8 +610,8 @@ function Dashboard() {
                   <span className="text-gray-800 font-bold text-base">New Joiners - Meet & Greet</span>
                 </div>
                 {adminDashboardLoading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+                  <div className="h-80 overflow-auto customScroll">
+                    <DashboardMeetGreetTableSkeleton />
                   </div>
                 ) : oldEmployeesData.length > 0 ? (
                   <div className="h-80 overflow-auto customScroll">
@@ -636,8 +663,8 @@ function Dashboard() {
                   <span className="text-gray-800 font-bold text-base">Upcoming Holidays</span>
                 </div>
                 {adminDashboardLoading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+                  <div className="h-80 overflow-auto customScroll">
+                    <DashboardHolidaysTableSkeleton />
                   </div>
                 ) : upcommingHolidays && upcommingHolidays.length > 0 ? (
                   <div className="h-80 overflow-auto customScroll">

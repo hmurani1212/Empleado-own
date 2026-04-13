@@ -14,6 +14,8 @@ const debounce = (mainFunction, delay) => {
 const applicationsViewModel = (set, get) => ({
 
     applicationsList: [],
+    /** True while list API is in flight (filters, pagination, reset) — use for table skeleton */
+    applicationsTableLoading: false,
     applicationsMount: false,
     lastApplicationId: '',
     applicationEmpList: [],
@@ -21,6 +23,7 @@ const applicationsViewModel = (set, get) => ({
 
 
     gettingApplicationsList: async () => {
+        set({ applicationsTableLoading: true })
         try {
             const response = await applicationApi.getLeavesGroup({})
             const resData = response.data
@@ -31,11 +34,14 @@ const applicationsViewModel = (set, get) => ({
             }
         } catch (err) {
             set({ applicationsList: [] })
+        } finally {
+            set({ applicationsTableLoading: false })
         }
     },
 
     // New function for filtered applications
     gettingFilteredApplicationsList: async (filters = {}) => {
+        set({ applicationsTableLoading: true })
         // Only pass filters that have actual values
         const data = {};
 
@@ -80,9 +86,6 @@ const applicationsViewModel = (set, get) => ({
             const response = await applicationApi.getLeavesGroup(data)
             const resData = response.data
             if (response.status === 200 && resData.STATUS === "SUCCESSFUL") {
-                const currentState = get();
-                const currentData = currentState.applicationsList?.data || [];
-
                 // Always replace data (no more "load more" - use Next/Previous instead)
                 set({
                     applicationsList: resData.DB_DATA,
@@ -94,6 +97,8 @@ const applicationsViewModel = (set, get) => ({
 
         } catch (err) {
             set({ applicationsList: [] })
+        } finally {
+            set({ applicationsTableLoading: false })
         }
     },
 

@@ -5,7 +5,8 @@ module.exports = withMT({
     extend: {
       fontFamily: {
         poppins: ['Poppins', 'sans-serif'],
-        inter: ['Inter', 'sans-serif'], // Adding Inter for body text if needed
+        inter: ['Inter', 'sans-serif'],
+        urbanist: ['Urbanist', 'sans-serif'],
       },
       colors: {
         // Brand Colors

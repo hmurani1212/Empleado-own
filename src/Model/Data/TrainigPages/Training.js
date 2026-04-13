@@ -1,4 +1,4 @@
-import { traininginstancemodeule } from "../../base";
+import { traininginstancemodeule, axiosFormDataTransformRequest } from "../../base";
 
 const tarining_data = {
     getTrainigDate: function (data = {}) {
@@ -144,7 +144,7 @@ const tarining_data = {
             method: 'POST',
             url: '/api/make_url',
             data: formData,
-            headers: { 'Content-Type': 'multipart/form-data' }
+            transformRequest: [axiosFormDataTransformRequest],
         })
     },
 

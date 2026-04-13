@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import useHRPolicies from '../../ViewModel/HRPoliciesViewModel/HRPoliciesServices'
 import { formatTimestamp } from '../Branches/utils'
-import formatTime from '../../services/__hrPoliciesServices'
+import formatTime, { isHrPolicyInactive } from '../../services/__hrPoliciesServices'
 import CustomCard from './CustomCard';
 import { HiOutlineDocumentText } from "react-icons/hi";
 
@@ -43,10 +43,10 @@ const ViewPolicy = () => {
                     <div className="flex flex-col border-b border-gray-50 pb-2">
                         <span className="text-xs text-gray-500 font-poppins mb-1">Policy Status</span>
                         <span className={`text-sm font-medium font-poppins inline-flex items-center gap-1.5 ${
-                            viewPolicy.status === '0' ? 'text-red-500' : 'text-emerald-500'
+                            isHrPolicyInactive(viewPolicy.status) ? 'text-red-500' : 'text-emerald-500'
                         }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${viewPolicy.status === '0' ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
-                            {viewPolicy.status === '0' ? 'Expired / Inactive' : 'Active'}
+                            <span className={`w-1.5 h-1.5 rounded-full ${isHrPolicyInactive(viewPolicy.status) ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
+                            {isHrPolicyInactive(viewPolicy.status) ? 'Expired / Inactive' : 'Active'}
                         </span>
                     </div>
 

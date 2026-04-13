@@ -102,3 +102,17 @@ export const earlyArivalData = [
     {id:1, title:'Actual Time'},
     {id:2, title:'Shift Time'},
 ]
+
+/**
+ * Inactive / expired policy detection — aligned with list view and API variants:
+ * status may be number 0, string "0", or "EXPIRED" (see PoliciesList).
+ */
+export function isHrPolicyInactive(status) {
+    if (status === null || status === undefined) return false
+    if (status === 0 || status === '0') return true
+    if (typeof status === 'string') {
+        const u = status.trim().toUpperCase()
+        return u === 'EXPIRED' || u === 'INACTIVE'
+    }
+    return false
+}

@@ -79,7 +79,7 @@ function ApplicationsLists() {
 
   // Pagination Handlers
   const handlePageChange = async (newPage) => {
-    if (isLoadingMore) return;
+    if (isLoadingMore || applicationsTableLoading) return;
     setIsLoadingMore(true);
     try {
       const filters = getCurrentFilters();
@@ -104,8 +104,8 @@ function ApplicationsLists() {
 
   const data = ['Emp ID', 'Name', 'Subject', 'Apply For', 'Submission Date', 'Status', 'Action']
 
-  const { applicationsList, gettingApplicationsList, gettingFilteredApplicationsList } = useApplication()
-  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, Get_All_Employeefn, Get_All_Employee, orgLogo, getOrgLogo } = useEmployees()
+  const { applicationsList, applicationsTableLoading, gettingApplicationsList, gettingFilteredApplicationsList } = useApplication()
+  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, branchesLoading, departmentsLoading, Get_All_Employeefn, Get_All_Employee, getAllEmployeeLoading, orgLogo, getOrgLogo } = useEmployees()
   const { application_data, isLoadingApplicationDetails, getFormDetailsByTypeRef } = useInboxServives()
 
   const isLeaveApplication = (app) =>
@@ -202,25 +202,32 @@ function ApplicationsLists() {
 
     const filters = { page: 1 };
     if (selectedOption == null) {
-      gettingApplicationsList();
+      await gettingApplicationsList();
       return;
     }
-       const branchVal = selectedOption.value === '0' || selectedOption.value === 0 ? 0 : selectedOption.value;
-       filters.branch = branchVal;
-       
-    await gettingSubBranches(branchVal);
-       if (branchVal !== 0) {
-         setSelectedDepartment(null);
-       } else {
-         setSelectedDepartment({ value: 0, label: 'All Departments' });
-      // Do not set filters.deptt when All Branches - API should receive branch_id=0 only, not dep_id
-       }
-       
-       if (selectedStatus?.value) filters.status = selectedStatus.value;
-       gettingFilteredApplicationsList(filters);
+    const branchVal = selectedOption.value === '0' || selectedOption.value === 0 ? 0 : selectedOption.value;
+    filters.branch = branchVal;
+
+    useStore.setState({ applicationsTableLoading: true });
+    try {
+      await gettingSubBranches(branchVal);
+    } catch (e) {
+      console.error(e);
+      useStore.setState({ applicationsTableLoading: false });
+      return;
+    }
+
+    if (branchVal !== 0) {
+      setSelectedDepartment(null);
+    } else {
+      setSelectedDepartment({ value: 0, label: 'All Departments' });
+    }
+
+    if (selectedStatus?.value) filters.status = selectedStatus.value;
+    await gettingFilteredApplicationsList(filters);
   };
 
-  const handleDepartmentChange = (selectedOption) => {
+  const handleDepartmentChange = async (selectedOption) => {
     setSelectedDepartment(selectedOption);
     setSelectedEmployee(null);
 
@@ -233,16 +240,16 @@ function ApplicationsLists() {
     }
     if (selectedStatus?.value) filters.status = selectedStatus.value;
 
-    gettingFilteredApplicationsList(filters);
+    await gettingFilteredApplicationsList(filters);
   };
 
-  const handleStatusChange = (selectedOption) => {
+  const handleStatusChange = async (selectedOption) => {
     setSelectedStatus(selectedOption);
     setSelectedEmployee(null);
 
     const filters = getCurrentFilters();
     if (selectedOption?.value) filters.status = selectedOption.value;
-    gettingFilteredApplicationsList(filters);
+    await gettingFilteredApplicationsList(filters);
   };
 
   const handleEmployeeChange = async (selectedOption) => {
@@ -522,6 +529,11 @@ function ApplicationsLists() {
                   ]}
                   onChangeHandler={handleBranchChange}
                   customStyles={false}
+                  isLoading={branchesLoading}
+                  menuLoading={branchesLoading}
+                  menuLoadingLabel="Loading branches..."
+                  loadingMessage={() => 'Loading branches...'}
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
                 />
               </div>
                 <div className="w-full min-w-0">
@@ -534,6 +546,12 @@ function ApplicationsLists() {
                   ]}
                   onChangeHandler={handleDepartmentChange}
                   customStyles={false}
+                  isLoading={departmentsLoading}
+                  menuLoading={departmentsLoading}
+                  menuLoadingLabel="Loading departments..."
+                  loadingMessage={() => 'Loading departments...'}
+                  disabled={branchesLoading}
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
                 />
               </div>
                 <div className="w-full min-w-0">
@@ -560,6 +578,11 @@ function ApplicationsLists() {
                   isSearchable={true}
                   isClearable={true}
                   customStyles={false}
+                  isLoading={getAllEmployeeLoading}
+                  menuLoading={getAllEmployeeLoading}
+                  menuLoadingLabel="Loading employees..."
+                  loadingMessage={() => 'Loading employees...'}
+                  menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
                 />
               </div>
               </div>
@@ -614,7 +637,7 @@ function ApplicationsLists() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {initialLoading ? (
+                  {initialLoading || applicationsTableLoading ? (
                     Array.from({ length: 8 }).map((_, index) => <SkeletonRow key={index} />)
                   ) : displayedList && displayedList.length > 0 ? (
                     displayedList.map((ele, index) => (
@@ -681,7 +704,7 @@ function ApplicationsLists() {
               </table>
 
               {/* Pagination */}
-              {applicationsList?.data && applicationsList.data.length > 0 && (() => {
+              {applicationsList?.data && applicationsList.data.length > 0 && !applicationsTableLoading && !initialLoading && (() => {
                   const paginationData = getPaginationData();
                   if (paginationData.totalPages <= 1) return null;
                   
@@ -689,7 +712,7 @@ function ApplicationsLists() {
                     <div className="w-full flex justify-center items-center gap-2 mt-6 mb-2">
                         <button
                             onClick={() => handlePageChange(paginationData.currentPage - 1)}
-                            disabled={paginationData.currentPage === 1 || isLoadingMore}
+                            disabled={paginationData.currentPage === 1 || isLoadingMore || applicationsTableLoading}
                             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
                             ‹
@@ -715,7 +738,7 @@ function ApplicationsLists() {
                                     <button
                                         key={idx}
                                         onClick={() => typeof page === 'number' && handlePageChange(page)}
-                                        disabled={page === '...' || isLoadingMore}
+                                        disabled={page === '...' || isLoadingMore || applicationsTableLoading}
                                         className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
                                             page === currentPage 
                                             ? 'bg-bgBlue text-white shadow-md shadow-blue-500/20' 
@@ -732,7 +755,7 @@ function ApplicationsLists() {
 
                         <button
                             onClick={() => handlePageChange(paginationData.currentPage + 1)}
-                            disabled={paginationData.currentPage === paginationData.totalPages || isLoadingMore}
+                            disabled={paginationData.currentPage === paginationData.totalPages || isLoadingMore || applicationsTableLoading}
                             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         >
                             ›

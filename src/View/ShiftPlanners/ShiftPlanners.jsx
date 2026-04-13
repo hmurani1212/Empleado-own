@@ -1,22 +1,83 @@
-import { Card, CardBody } from "@material-tailwind/react";
 import React, { useEffect } from "react";
-import { FaClock, FaPlus } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import useShiftManagement from "../../ViewModel/ShiftManagementViewModel/ShiftManagementServices";
 import ShiftCards from "./ShiftCards";
 import TeamCards from "./TeamCards";
 import TeamMemberCard from "./TeamMemberCard";
-import CustomButton from "../../Components/CustomButton/CustomButton";
 import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import RotatorSetting from "./RotatorSetting";
-import { motion } from "framer-motion";
 import noResult from "../../assets/employee_side_images/no record found.gif";
+import {
+  PlannerSidebarSkeleton,
+  PlannerMainShiftsSkeleton,
+  PlannerMainTeamsSkeleton,
+  PlannerMainMembersSkeleton,
+} from "./ShiftPlannersSkeletons";
+
+const PlannerSidebar = ({
+  widthClass,
+  loadingPlannersList,
+  allShiftData,
+  selectedShift,
+  handlePlannerSwitch,
+  handleCreateNewShift,
+}) => (
+  <div
+    className={`flex flex-col ${widthClass} w-full bg-[#F8F9FA] rounded-[10px] h-[500px]`}
+  >
+    {loadingPlannersList ? (
+      <PlannerSidebarSkeleton />
+    ) : (
+      <>
+        <div className="flex justify-between items-center bg-white drop-shadow-sm rounded-tl-[10px] px-4 py-2 h-[50spx]">
+          <span className="text-[14px] font-medium font-Urbanist text-[#474747]">
+            All Planners
+          </span>
+
+          <button
+            className="cursor-pointer flex items-center gap-2 hover:underline text-[#474747] font-Urbanist text-[12px] font-normal"
+            onClick={handleCreateNewShift}
+          >
+            Add new Planner
+            <div className="bg-bgBlue rounded-xl p-2">
+              <FaPlus className="text-[16px] text-white" />
+            </div>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 pl-2 py-2 flex-1 min-h-0 overflow-y-auto">
+          {allShiftData?.map((ele, i) => (
+            <div
+              className={`relative py-1  hover:bg-gray-100 rounded-tl-full rounded-bl-full ${
+                selectedShift?.id === ele.id
+                  ? "bg-white rounded-tl-full rounded-bl-full"
+                  : ""
+              }`}
+              onClick={() => handlePlannerSwitch(ele)}
+              key={i}
+            >
+              <div className="shadow-none cursor-pointer rounded-[5px] w-full">
+                <div className="py-2 px-6 text-[14px] font-Urbanist font-medium text-[#616161]">
+                  {ele.name || ele.planner_name}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
+    )}
+  </div>
+);
 
 const ShiftPlanners = () => {
   const {
     allShiftData,
     allRotatorStatus,
-    gettingShifts,
     gettingAllShift,
+    loadingPlannersList,
+    loadingPlannerShifts,
+    loadingShiftTeams,
+    loadingShiftTeamMembers,
     getAllBranchesShift,
     teamMember,
     handleCreateNewShift,
@@ -80,43 +141,14 @@ const ShiftPlanners = () => {
             <div>
               <div className="flex lg:flex-nowrap flex-wrap w-full">
                 {/* Left panel */}
-                <div className={`flex flex-col lg:w-1/3 w-full bg-[#F8F9FA] rounded-[10px] h-[500px]`}>
-                  <div className="flex justify-between items-center bg-white drop-shadow-sm rounded-tl-[10px] px-4 py-2 h-[50spx]">
-                    <span className="text-[14px] font-medium font-Urbanist text-[#474747]">
-                      All Planners
-                    </span>
-
-                    <button
-                      className="cursor-pointer flex items-center gap-2 hover:underline text-[#474747] font-Urbanist text-[12px] font-normal"
-                      onClick={handleCreateNewShift}
-                    >
-                      Add new Planner
-                      <div className="bg-bgBlue rounded-xl p-2">
-                        <FaPlus className="text-[16px] text-white" />
-                      </div>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 pl-2 py-2 flex-1 overflow-y-auto">
-                    {allShiftData?.map((ele, i) => (
-                      <div
-                        className={`relative py-1  hover:bg-gray-100 rounded-tl-full rounded-bl-full ${
-                          selectedShift?.id === ele.id
-                            ? "bg-white rounded-tl-full rounded-bl-full"
-                            : ""
-                        }`}
-                        onClick={() => handlePlannerSwitch(ele)}
-                        key={i}
-                      >
-                        <div className="shadow-none cursor-pointer rounded-[5px] w-full">
-                          <div className="py-2 px-6 text-[14px] font-Urbanist font-medium text-[#616161]">
-                            {ele.name || ele.planner_name}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <PlannerSidebar
+                  widthClass="lg:w-1/3"
+                  loadingPlannersList={loadingPlannersList}
+                  allShiftData={allShiftData}
+                  selectedShift={selectedShift}
+                  handlePlannerSwitch={handlePlannerSwitch}
+                  handleCreateNewShift={handleCreateNewShift}
+                />
 
                 {/* Right panel */}
                 <div className="w-full flex flex-col h-[500px] overflow-hidden">
@@ -161,7 +193,9 @@ const ShiftPlanners = () => {
                     <div className="p-4">
                       <div className="">
                         <div className="flex gap-6">
-                          {allShiftTeams.length > 0 ? (
+                          {loadingShiftTeams ? (
+                            <PlannerMainTeamsSkeleton />
+                          ) : allShiftTeams.length > 0 ? (
                             <TeamCards
                               display={"flex flex-col gap-4"}
                               allShiftTeams={allShiftTeams}
@@ -184,7 +218,9 @@ const ShiftPlanners = () => {
                               </span>
                             </div>
                             <div className="flex-1">
-                              {allTeamMembers.length > 0 ? (
+                              {loadingShiftTeamMembers ? (
+                                <PlannerMainMembersSkeleton />
+                              ) : allTeamMembers.length > 0 ? (
                                 <TeamMemberCard
                                   display={"flex flex-wrap gap-4"}
                                   allTeamMembers={allTeamMembers}
@@ -240,43 +276,14 @@ const ShiftPlanners = () => {
             <div>
               <div className="flex lg:flex-nowrap flex-wrap gap-4 w-full">
                 {/* Left panel */}
-                <div className="flex flex-col lg:w-1/3 w-full bg-[#F8F9FA] rounded-[10px] h-[500px]">
-                  <div className="flex justify-between items-center bg-white drop-shadow-sm rounded-tl-[10px] px-4 py-2 h-[50spx]">
-                    <span className="text-[14px] font-medium font-Urbanist text-[#474747]">
-                      All Planners
-                    </span>
-
-                    <button
-                      className="cursor-pointer flex items-center gap-2 hover:underline text-[#474747] font-Urbanist text-[12px] font-normal"
-                      onClick={handleCreateNewShift}
-                    >
-                      Add new Planner
-                      <div className="bg-bgBlue rounded-xl p-2">
-                        <FaPlus className="text-[16px] text-white" />
-                      </div>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 pl-2 py-2 overflow-y-auto">
-                    {allShiftData?.map((ele, i) => (
-                      <div
-                        className={`relative py-1 hover:bg-gray-100 rounded-tl-full rounded-bl-full ${
-                          selectedShift?.id === ele.id
-                            ? "bg-white rounded-tl-full rounded-bl-full"
-                            : ""
-                        }`}
-                        onClick={() => handlePlannerSwitch(ele)}
-                        key={i}
-                      >
-                        <div className="shadow-none cursor-pointer rounded-[5px] w-full">
-                          <div className="py-2 px-6 text-[14px] font-Urbanist font-medium text-[#616161]">
-                            {ele.name || ele.planner_name}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <PlannerSidebar
+                  widthClass="lg:w-1/3"
+                  loadingPlannersList={loadingPlannersList}
+                  allShiftData={allShiftData}
+                  selectedShift={selectedShift}
+                  handlePlannerSwitch={handlePlannerSwitch}
+                  handleCreateNewShift={handleCreateNewShift}
+                />
 
                 {/* Right panel */}
                 <div className="w-full flex flex-col max-h-[500px] overflow-hidden">
@@ -313,7 +320,9 @@ const ShiftPlanners = () => {
 
                   <div className="flex overflow-y-auto p-4 space-x-4">
                     <div className="flex flex-col gap-4">
-                      {shiftPlannersData.length > 0 ? (
+                      {loadingPlannerShifts ? (
+                        <PlannerMainShiftsSkeleton />
+                      ) : shiftPlannersData.length > 0 ? (
                         <ShiftCards
                           display="flex flex-col gap-4"
                           shiftPlannersData={shiftPlannersData}
@@ -337,7 +346,9 @@ const ShiftPlanners = () => {
                         </span>
                       </div>
                       <div className="flex-1">
-                        {allShiftTeams.length > 0 ? (
+                        {loadingShiftTeams ? (
+                          <PlannerMainTeamsSkeleton />
+                        ) : allShiftTeams.length > 0 ? (
                           <TeamCards
                             display={"flex flex-wrap gap-4"}
                             allShiftTeams={allShiftTeams}
@@ -384,43 +395,14 @@ const ShiftPlanners = () => {
           ) : selectedShift ? (
             <div className="flex lg:flex-nowrap flex-wrap gap-4">
               {/* Left panel */}
-              <div className="flex flex-col lg:w-1/3 w-full bg-[#F8F9FA] rounded-[10px] h-[500px]">
-                <div className="flex justify-between items-center bg-white drop-shadow-sm rounded-tl-[10px] px-4 py-2 h-[50spx]">
-                  <span className="text-[14px] font-medium font-Urbanist text-[#474747]">
-                    All Planners
-                  </span>
-
-                  <button
-                    className="cursor-pointer flex items-center gap-2 hover:underline text-[#474747] font-Urbanist text-[12px] font-normal"
-                    onClick={handleCreateNewShift}
-                  >
-                    Add new Planner
-                    <div className="bg-bgBlue rounded-xl p-2">
-                      <FaPlus className="text-[16px] text-white" />
-                    </div>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 pl-2 py-2 overflow-y-auto">
-                  {allShiftData?.map((ele, i) => (
-                    <div
-                      className={`relative py-1 hover:bg-gray-100 rounded-tl-full rounded-bl-full ${
-                        selectedShift?.id === ele.id
-                          ? "bg-white rounded-tl-full rounded-bl-full"
-                          : ""
-                      }`}
-                      onClick={() => handlePlannerSwitch(ele)}
-                      key={i}
-                    >
-                      <div className="shadow-none cursor-pointer rounded-[5px] w-full">
-                        <div className="py-2 px-6 text-[14px] font-Urbanist font-medium text-[#616161]">
-                          {ele.name || ele.planner_name}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <PlannerSidebar
+                widthClass="lg:w-1/3"
+                loadingPlannersList={loadingPlannersList}
+                allShiftData={allShiftData}
+                selectedShift={selectedShift}
+                handlePlannerSwitch={handlePlannerSwitch}
+                handleCreateNewShift={handleCreateNewShift}
+              />
 
               {/* Right panel */}
               <div className="w-full h-[500px] flex flex-col overflow-hidden">
@@ -448,7 +430,9 @@ const ShiftPlanners = () => {
 
                 {/* Content – scrolls ONLY if needed */}
                 <div className="flex-1 overflow-y-auto p-4">
-                  {shiftPlannersData.length > 0 ? (
+                  {loadingPlannerShifts ? (
+                    <PlannerMainShiftsSkeleton />
+                  ) : shiftPlannersData.length > 0 ? (
                     <ShiftCards
                       display="flex flex-col gap-4"
                       shiftPlannersData={shiftPlannersData}
@@ -468,41 +452,14 @@ const ShiftPlanners = () => {
           ) : (
             <div className="flex lg:flex-nowrap flex-wrap gap-4">
               {/* Left panel */}
-              <div className="flex flex-col lg:w-1/4 w-full bg-[#F8F9FA] rounded-[10px] h-[500px]">
-                <div className="flex justify-between items-center bg-white drop-shadow-sm rounded-tl-[10px] px-4 py-2 h-[50px]">
-                  <span className="text-[14px] font-medium font-Urbanist text-[#474747]">
-                    All Planners
-                  </span>
-                  <button
-                    className="cursor-pointer flex items-center gap-2 hover:underline text-[#474747] font-Urbanist text-[12px] font-normal"
-                    onClick={handleCreateNewShift}
-                  >
-                    Add new Planner{" "}
-                    <div className="bg-bgBlue rounded-xl p-2">
-                      <FaPlus className="text-[16px] text-white" />
-                    </div>
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 pl-2 py-2 overflow-y-auto">
-                  {allShiftData?.map((ele, i) => (
-                    <div
-                      className={`relative py-1 hover:bg-gray-100 rounded-tl-full rounded-bl-full ${
-                        selectedShift?.id === ele.id
-                          ? "bg-white rounded-tl-full rounded-bl-full"
-                          : ""
-                      }`}
-                      onClick={() => handlePlannerSwitch(ele)}
-                      key={i}
-                    >
-                      <div className="shadow-none cursor-pointer rounded-[5px] w-full">
-                        <div className="py-2 px-6 text-[14px] font-Urbanist font-medium text-[#616161]">
-                          {ele.name || ele.planner_name}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <PlannerSidebar
+                widthClass="lg:w-1/4"
+                loadingPlannersList={loadingPlannersList}
+                allShiftData={allShiftData}
+                selectedShift={selectedShift}
+                handlePlannerSwitch={handlePlannerSwitch}
+                handleCreateNewShift={handleCreateNewShift}
+              />
 
               {/* Right panel - No Planner Selected */}
               <div className="flex-1 bg-white rounded-[10px] flex items-center justify-center">

@@ -6,9 +6,27 @@ import { Typography } from "@material-tailwind/react";
 import useSocket from "../../Components/useSocket/useSocket";
 import { showToast } from "../../Components/Toaster/Toaster";
 import { formatTimestampToDate } from "../../services/__dateTimeServices";
+const ARCHIVE_TABLE_COLS = 7;
+
+/** Skeleton rows for ATT Report Archive table (matches Branch … Download columns). */
+const AttReportArchiveTableBodySkeleton = () => (
+  <>
+    {[1, 2, 3, 4, 5, 6].map((row) => (
+      <tr key={row} className="border-b border-[#F2F2F9] animate-pulse">
+        {Array.from({ length: ARCHIVE_TABLE_COLS }).map((_, col) => (
+          <td key={col} className="p-4 text-center">
+            <div className="h-4 bg-gray-100 rounded-md w-full max-w-[140px] mx-auto" />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
+
 // import useBranches  from "....."
 const AttReportArchive = () => {
-  const { allAttArchiveReport, gettingAttReportArchive } = useAttendance();
+  const { allAttArchiveReport, attArchiveReportLoading, gettingAttReportArchive } =
+    useAttendance();
   const navigate = useNavigate();
   const { socketIoRef } = useSocket();
 
@@ -117,7 +135,10 @@ const AttReportArchive = () => {
               </thead>
 
               <tbody>
-                {allAttArchiveReport.map((ele, index) => {
+                {attArchiveReportLoading ? (
+                  <AttReportArchiveTableBodySkeleton />
+                ) : (
+                  allAttArchiveReport.map((ele, index) => {
                   const isLast = index === allAttArchiveReport.length - 1;
                   const classes = isLast
                     ? "p-4 text-center"
@@ -197,7 +218,8 @@ const AttReportArchive = () => {
                       </td>
                     </tr>
                   );
-                })}
+                })
+                )}
               </tbody>
             </table>
           </div>

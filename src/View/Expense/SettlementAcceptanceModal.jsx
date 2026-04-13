@@ -7,7 +7,7 @@ import { FaPlus, FaTrash } from 'react-icons/fa';
 
 const SettlementAcceptanceModal = ({ closeModal }) => {
   // Get employee data from expense service
-  const { allEmployees, employeesLoading, addExpense, loading } = useExpenseService();
+  const { allEmployees, employeesLoading, addExpense, addExpenseLoading } = useExpenseService();
   
   const [formData, setFormData] = useState({
     deductionType: 'oneTime', // 'oneTime' or 'installments'
@@ -397,6 +397,7 @@ const SettlementAcceptanceModal = ({ closeModal }) => {
             options={employees}
             onChangeHandler={(selectedOption) => handleSelectChange(selectedOption, 'employee')}
             customStyles={false}
+            menuLoading={employeesLoading}
             isLoading={employeesLoading}
             isDisabled={employeesLoading}
           />
@@ -620,9 +621,9 @@ const SettlementAcceptanceModal = ({ closeModal }) => {
           size="md"
           className="bg-blue-500 text-white border-0 shadow-sm hover:bg-blue-600 px-8 py-2 rounded-lg"
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={addExpenseLoading}
         >
-          {loading ? 'Submitting...' : 'Submit'}
+          {addExpenseLoading ? 'Submitting...' : 'Submit'}
         </Button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { Typography, Badge, Button, IconButton } from "@material-tailwind/react";
-import React, { useEffect, useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
+import { BiSearch } from "react-icons/bi";
 import { FaThumbsUp, FaThumbsDown, FaTrophy } from "react-icons/fa";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import useFeedbackServices from "../../ViewModel/PerformnaceViewModel/feedbackServices";
@@ -64,9 +65,10 @@ const Feedback = () => {
     setSelectedFeedbackForComments(null);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     gettingFeedback();
-  }, [gettingFeedback]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount: load feedback table once
+  }, []);
 
   const renderQuickFeedbackForm = () => (
     <div className="bg-white rounded-lg p-6 shadow-lg">
@@ -87,7 +89,9 @@ const Feedback = () => {
           value={selectedPerformance}
           options={performanceList}
           onChangeHandler={handlePerformanceSelect}
-          isDisabled={isSubmitting || performanceLoading}
+          isDisabled={isSubmitting}
+          menuLoading={performanceLoading}
+          menuLoadingLabel="Loading performances..."
         />
       </div>
 
@@ -156,7 +160,9 @@ const Feedback = () => {
             value={selectedEmployee}
             options={employees}
             onChangeHandler={handleEmployeeSelect}
-            isDisabled={isSubmitting || !selectedPerformance || employeesLoading}
+            isDisabled={isSubmitting || !selectedPerformance}
+            menuLoading={Boolean(selectedPerformance) && employeesLoading}
+            menuLoadingLabel="Loading employees..."
           />
         </div>
       </div>
@@ -202,6 +208,26 @@ const Feedback = () => {
       {showQuickFeedback ? (
         renderQuickFeedbackForm()
       ) : (
+        <>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-4">
+          <div className="relative w-full sm:max-w-md sm:ml-auto">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <BiSearch className="text-gray-400 text-lg" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search feedback by employee..."
+              value={feedbackValue.searchText}
+              onChange={(e) => handleSearchFeedback(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400 text-gray-700"
+            />
+            {feedbackLoading && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" />
+              </div>
+            )}
+          </div>
+        </div>
         <div className="bg-white rounded-xl shadow-card p-1 border border-gray-100 overflow-hidden">
           <div className="relative w-full min-h-[calc(100vh-200px)] overflow-auto scrollbarHidden">
             <table className="min-w-full table-fixed text-center border-collapse">
@@ -238,6 +264,9 @@ const Feedback = () => {
                       </td>
                       <td className="px-4 py-4">
                         <div className="h-4 bg-gray-100 rounded w-full max-w-[120px] mx-auto" />
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-4 bg-gray-100 rounded w-full max-w-[160px] mx-auto" />
                       </td>
                     </tr>
                   ))}
@@ -409,6 +438,7 @@ const Feedback = () => {
             </div>
           )}
         </div>
+        </>
       )}
 
       {/* Comments Modal - styled like Rate Competency modal */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Typography,
@@ -15,7 +15,6 @@ import {
     Option,
     Textarea,
     Radio,
-    Spinner,
 } from "@material-tailwind/react";
 import {
     FaArrowLeft,
@@ -52,6 +51,7 @@ import {
     FaChartLine,
     FaEye,
     FaCamera,
+    FaUpload,
 } from "react-icons/fa";
 // import FaTimes from "react-icons/fa";
 import { BsPersonGear } from "react-icons/bs";
@@ -76,9 +76,25 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { showToast } from "../../Components/Toaster/Toaster";
 import useStore from "../../Store/store";
 import { formatTimestampToDate } from "../../services/__dateTimeServices";
-import { format, parse, isValid } from "date-fns";
+import {
+    format,
+    parse,
+    isValid,
+    parseISO,
+    startOfDay,
+    differenceInYears,
+    differenceInCalendarDays,
+    differenceInMonths,
+    addYears,
+    addMonths,
+    isAfter,
+} from "date-fns";
 import { convertToYMD } from "../../services/EmpServices";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
+import {
+    EmployeeProfileInitialPageSkeleton,
+    EmployeeProfileTabContentSkeleton,
+} from "./AdminEmployeeProfileSkeletons";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
 import useDashboard from "../../ViewModel/DashboardViewModel/DashboardServices";
@@ -86,7 +102,242 @@ import useAttendance from "../../ViewModel/AttendanceViewModel/AttendanceService
 import useLocations from '../../ViewModel/LocationsViewModel/LocationsServices';
 import trainingApi from "../../Model/Data/TrainigPages/Training";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
-import staticCountryList from "../../View/country/country_list";
+import staticCountryList from "../../services/country/country_list";
+import {
+    getCapitalForCountry,
+    matchCityRowToCapital,
+} from "../../services/country/country_capitals";
+import hireApi from "../../Model/Data/Hire/Hire";
+import {
+    formatNicForCountryDisplay,
+    formatNicInputValue,
+    getNicMaxInputLength,
+} from "../../services/country/country_nic_formats";
+
+/** Maps API marital values (numeric codes, typos, casing) to Select option labels. */
+function normalizeMaritalStatusForSelect(raw) {
+    const allowed = ["Single", "Married", "Divorced", "Widowed", "Other"];
+    if (raw === null || raw === undefined || raw === "") {
+        return "Single";
+    }
+    if (typeof raw === "number" && !Number.isNaN(raw)) {
+        if (raw === 0) return "Single";
+        if (raw === 1) return "Married";
+        if (raw === 2) return "Other";
+    }
+    const s = String(raw).trim();
+    if (/^\d+$/.test(s)) {
+        return normalizeMaritalStatusForSelect(parseInt(s, 10));
+    }
+    const hit = allowed.find((opt) => opt.toLowerCase() === s.toLowerCase());
+    if (hit) return hit;
+    return "Single";
+}
+
+/** Basic info update API: Single → 0, Married → 1, Other → 2 (and Divorced/Widowed → 2). */
+function maritalStatusSelectLabelToApiCode(label) {
+    const s = (label == null ? "" : String(label)).trim();
+    const lower = s.toLowerCase();
+    if (lower === "single") return 0;
+    if (lower === "married") return 1;
+    if (lower === "other") return 2;
+    if (lower === "divorced" || lower === "widowed") return 2;
+    return 0;
+}
+
+/** Profile module: empty / null / literal "N/A" / "null" strings → `--` */
+function formatProfileDisplay(raw) {
+    if (raw === null || raw === undefined) return "--";
+    const s = String(raw).trim();
+    if (s === "") return "--";
+    const lower = s.toLowerCase();
+    if (
+        lower === "null" ||
+        lower === "undefined" ||
+        lower === "n/a" ||
+        lower === "na" ||
+        lower === "blank"
+    ) {
+        return "--";
+    }
+    return s;
+}
+
+/** Basic Information overview — same rules as {@link formatProfileDisplay} */
+function formatBasicInfoDisplay(raw) {
+    return formatProfileDisplay(raw);
+}
+
+/** Parse DOB from profile API for overview display */
+function parseOverviewDob(raw) {
+    if (raw == null || raw === "") return null;
+    const s = String(raw).trim();
+    if (s === "0" || s.toLowerCase() === "null") return null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        const d = parseISO(s.slice(0, 10));
+        if (isValid(d)) return startOfDay(d);
+    }
+    try {
+        const d1 = parse(s, "dd/MM/yyyy", new Date());
+        if (isValid(d1)) return startOfDay(d1);
+    } catch {
+        /* ignore */
+    }
+    try {
+        const d2 = parse(s, "MM/dd/yyyy", new Date());
+        if (isValid(d2)) return startOfDay(d2);
+    } catch {
+        /* ignore */
+    }
+    if (/^\d+$/.test(s)) {
+        const n = parseInt(s, 10);
+        if (n > 0) {
+            const d = new Date(n > 1e10 ? n : n * 1000);
+            if (isValid(d)) return startOfDay(d);
+        }
+    }
+    const d = new Date(s);
+    return isValid(d) ? startOfDay(d) : null;
+}
+
+/** True when API / state has a real domicile file URL (not the string "null"). */
+function isTruthyDomicileUrl(v) {
+    if (v == null) return false;
+    const s = String(v).trim();
+    if (!s || s.toLowerCase() === "null") return false;
+    return true;
+}
+
+/** Safe gender 0 / 1 / 2 for Basic Info form (avoids NaN from parseInt(null)). */
+function parseGenderForBasicForm(basicInfo, employeeData) {
+    const raw =
+        basicInfo?.gender ??
+        employeeData?.gender ??
+        employeeData?.employee?.gender;
+    if (raw === undefined || raw === null || raw === "") return 1;
+    const n = parseInt(String(raw), 10);
+    if (Number.isNaN(n)) return 1;
+    if (n === 0) return 0;
+    if (n === 1) return 1;
+    if (n === 2) return 2;
+    return 1;
+}
+
+const BASIC_INFO_BLOOD_OPTIONS = [
+    "A+",
+    "A-",
+    "B+",
+    "B-",
+    "AB+",
+    "AB-",
+    "O+",
+    "O-",
+    "NOT APPLICABLE",
+];
+
+/** e.g. "01 Jan, 2026" and "(12 Year's, 07 Month's, 12 Day's, Old)" */
+function getAgeYearMonthDay(birth, today) {
+    if (!isValid(birth) || !isValid(today)) {
+        return { years: 0, months: 0, days: 0 };
+    }
+    const b = startOfDay(birth);
+    const t = startOfDay(today);
+    let years = differenceInYears(t, b);
+    let cursor = addYears(b, years);
+    if (isAfter(cursor, t)) {
+        years -= 1;
+        cursor = addYears(b, years);
+    }
+    let months = differenceInMonths(t, cursor);
+    let cursor2 = addMonths(cursor, months);
+    if (isAfter(cursor2, t)) {
+        months -= 1;
+        cursor2 = addMonths(cursor, months);
+    }
+    const days = differenceInCalendarDays(t, cursor2);
+    return { years, months, days };
+}
+
+function getDobFormattedLines(raw) {
+    try {
+        const birth = parseOverviewDob(raw);
+        if (!birth) {
+            return { line1: "--", line2: null };
+        }
+        const line1 = format(birth, "dd MMM, yyyy");
+        const today = startOfDay(new Date());
+        const { years, months, days } = getAgeYearMonthDay(birth, today);
+        const yStr = String(years);
+        const mStr = String(months).padStart(2, "0");
+        const dStr = String(days).padStart(2, "0");
+        const line2 = `(${yStr} Year's, ${mStr} Month's, ${dStr} Day's, Old)`;
+        return { line1, line2 };
+    } catch {
+        return { line1: "--", line2: null };
+    }
+}
+
+/** Human-readable filename from a domicile / file URL (last path segment, decoded). */
+function getDomicileFilenameFromUrl(urlString) {
+    if (!urlString || typeof urlString !== "string") return "";
+    const s = urlString.trim().split(/[?#]/)[0];
+    try {
+        const u = new URL(s);
+        const last = u.pathname.split("/").filter(Boolean).pop();
+        if (last) return decodeURIComponent(last.replace(/\+/g, " "));
+    } catch {
+        /* relative or invalid URL */
+    }
+    const seg = s.split("/").filter(Boolean).pop();
+    if (seg) {
+        try {
+            return decodeURIComponent(seg.replace(/\+/g, " "));
+        } catch {
+            return seg;
+        }
+    }
+    return "";
+}
+
+function sanitizeDownloadFilename(name) {
+    const n = (name || "document").trim() || "document";
+    return n.replace(/[/\\?%*:|"<>]/g, "_").slice(0, 180);
+}
+
+/** Download file: blob fetch when CORS allows, else anchor with download fallback. */
+async function triggerFileDownloadByUrl(url, preferredFilename) {
+    const href = String(url || "").trim();
+    if (!href) return;
+    const baseName = sanitizeDownloadFilename(
+        (preferredFilename && String(preferredFilename).trim()) ||
+            getDomicileFilenameFromUrl(href) ||
+            "domicile"
+    );
+    try {
+        const res = await fetch(href, { mode: "cors", credentials: "omit" });
+        if (!res.ok) throw new Error("fetch failed");
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = baseName;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+    } catch {
+        const a = document.createElement("a");
+        a.href = href;
+        a.setAttribute("download", baseName);
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
 import EmployeeOfficialInfo from "./EmployeeOfficialInfo";
 import ChangeReportingManager from "./ChangeReportingManager";
 import EmployeeAcademics from "./EmployeeAcademics";
@@ -99,7 +350,6 @@ import EmployeeDuties from "./EmployeeDuties";
 import AddingPrivileges from "../../View/Dashoboard/AddingPrivileges";
 import usePriviligesService from "../../ViewModel/EmployeeViewModel/PreviligesService";
 import employeesApi from "../../Model/Data/Employees/Employees";
-import { Link } from "react-router-dom";
 import { File_BASE_URL } from "../../Model/BaseUri";
 import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../utils/imageUrlUtils";
 import ProfileImageUpload from "../../Components/ProfileImageUpload/ProfileImageUpload";
@@ -306,6 +556,9 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     //// console.log('what is the data at this point', employeeData?.module_privileges)
 
     const [loading, setLoading] = useState(true);
+    /** Per-tab async section fetch (Attendance, Documents, Salary, …) — shows skeleton in main panel */
+    const [tabSectionLoading, setTabSectionLoading] = useState({});
+    const [accelerateTabLoading, setAccelerateTabLoading] = useState(false);
     const [expandedSections, setExpandedSections] = useState({
         officialInfo: true,
         reportingManager: false,
@@ -441,7 +694,15 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     const [filteredCountries, setFilteredCountries] = useState([]);
     const [dateOfBirthFocused, setDateOfBirthFocused] = useState(false);
     const [countryFocused, setCountryFocused] = useState(false);
+    const [cityFocused, setCityFocused] = useState(false);
+    const [citiesForProfileLoading, setCitiesForProfileLoading] = useState(false);
+    /** Cities for basic-info drawer only (avoids stale global hire City_data / wrong country). */
+    const [basicInfoCityList, setBasicInfoCityList] = useState([]);
     const countrySelectRef = useRef(null);
+    const citySelectRef = useRef(null);
+    const basicInfoCitiesFetchSeq = useRef(0);
+    const countriesRef = useRef([]);
+    const pendingCapitalDefaultRef = useRef(null);
     const [assetForm, setAssetForm] = useState({
         assetName: "",
         handoverDate: null,
@@ -529,6 +790,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         getEmployeeRecentRecords,
     } = useAttendance();
     const { countries, getAllCountries } = useLocations();
+    countriesRef.current = countries;
 
     // Ref to track if attendance records have been fetched for current drawer session
     const attendanceRecordsFetched = useRef(false);
@@ -702,10 +964,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
 
     // Fetch accelerate performance data when Accelerate Performance tab is clicked
     useEffect(() => {
-        if (activeTab === 9 && employeeId) {
-            // Accelerate Performance is tab index 9
-            // console.log('Fetching accelerate performance data for employee:', employeeId);
-            getAllAccelerate(employeeId);
+        if (activeTab === 9 && employeeId && getAllAccelerate) {
+            setAccelerateTabLoading(true);
+            Promise.resolve(getAllAccelerate(employeeId)).finally(() => {
+                setAccelerateTabLoading(false);
+            });
         }
     }, [activeTab, employeeId, getAllAccelerate]);
 
@@ -716,14 +979,19 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         if (activeTab === 1 && employeeId && gettingEmpProfileAttendance) {
             if (!attendanceTabFetchedRef.current) {
                 attendanceTabFetchedRef.current = true;
-                gettingEmpProfileAttendance(employeeId).then((data) => {
-                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.attendence) {
-                        setEmployeeData((prev) => ({
-                            ...prev,
-                            attendence: data.DB_DATA.attendence,
-                        }));
-                    }
-                });
+                setTabSectionLoading((prev) => ({ ...prev, 1: true }));
+                gettingEmpProfileAttendance(employeeId)
+                    .then((data) => {
+                        if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.attendence) {
+                            setEmployeeData((prev) => ({
+                                ...prev,
+                                attendence: data.DB_DATA.attendence,
+                            }));
+                        }
+                    })
+                    .finally(() => {
+                        setTabSectionLoading((prev) => ({ ...prev, 1: false }));
+                    });
             }
         } else if (activeTab !== 1) {
             attendanceTabFetchedRef.current = false;
@@ -737,14 +1005,19 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         if (activeTab === 3 && employeeId && gettingEmpProfileDocuments) {
             if (!documentsTabFetchedRef.current) {
                 documentsTabFetchedRef.current = true;
-                gettingEmpProfileDocuments(employeeId).then((data) => {
-                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.employee_documents) {
-                        setEmployeeData((prev) => ({
-                            ...prev,
-                            employee_documents: data.DB_DATA.employee_documents,
-                        }));
-                    }
-                });
+                setTabSectionLoading((prev) => ({ ...prev, 3: true }));
+                gettingEmpProfileDocuments(employeeId)
+                    .then((data) => {
+                        if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA?.employee_documents) {
+                            setEmployeeData((prev) => ({
+                                ...prev,
+                                employee_documents: data.DB_DATA.employee_documents,
+                            }));
+                        }
+                    })
+                    .finally(() => {
+                        setTabSectionLoading((prev) => ({ ...prev, 3: false }));
+                    });
             }
         } else if (activeTab !== 3) {
             documentsTabFetchedRef.current = false;
@@ -758,14 +1031,19 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         if (activeTab === 4 && employeeId && gettingEmpProfileSalarySettings) {
             if (!salarySettingsTabFetchedRef.current) {
                 salarySettingsTabFetchedRef.current = true;
-                gettingEmpProfileSalarySettings(employeeId).then((data) => {
-                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
-                        setEmployeeData((prev) => ({
-                            ...prev,
-                            Salary_Settings: data.DB_DATA.Salary_Settings,
-                        }));
-                    }
-                });
+                setTabSectionLoading((prev) => ({ ...prev, 4: true }));
+                gettingEmpProfileSalarySettings(employeeId)
+                    .then((data) => {
+                        if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                            setEmployeeData((prev) => ({
+                                ...prev,
+                                Salary_Settings: data.DB_DATA.Salary_Settings,
+                            }));
+                        }
+                    })
+                    .finally(() => {
+                        setTabSectionLoading((prev) => ({ ...prev, 4: false }));
+                    });
             }
         } else if (activeTab !== 4) {
             salarySettingsTabFetchedRef.current = false;
@@ -779,14 +1057,19 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         if (activeTab === 5 && employeeId && gettingEmpProfileLeaveBalance) {
             if (!leaveBalanceTabFetchedRef.current) {
                 leaveBalanceTabFetchedRef.current = true;
-                gettingEmpProfileLeaveBalance(employeeId).then((data) => {
-                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
-                        setEmployeeData((prev) => ({
-                            ...prev,
-                            leave_balanace: data.DB_DATA.leave_balanace,
-                        }));
-                    }
-                });
+                setTabSectionLoading((prev) => ({ ...prev, 5: true }));
+                gettingEmpProfileLeaveBalance(employeeId)
+                    .then((data) => {
+                        if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                            setEmployeeData((prev) => ({
+                                ...prev,
+                                leave_balanace: data.DB_DATA.leave_balanace,
+                            }));
+                        }
+                    })
+                    .finally(() => {
+                        setTabSectionLoading((prev) => ({ ...prev, 5: false }));
+                    });
             }
         } else if (activeTab !== 5) {
             leaveBalanceTabFetchedRef.current = false;
@@ -800,14 +1083,19 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         if (activeTab === 6 && employeeId && gettingEmpProfileChecklist) {
             if (!checklistTabFetchedRef.current) {
                 checklistTabFetchedRef.current = true;
-                gettingEmpProfileChecklist(employeeId).then((data) => {
-                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
-                        setEmployeeData((prev) => ({
-                            ...prev,
-                            emp_checklist: data.DB_DATA.emp_checklist,
-                        }));
-                    }
-                });
+                setTabSectionLoading((prev) => ({ ...prev, 6: true }));
+                gettingEmpProfileChecklist(employeeId)
+                    .then((data) => {
+                        if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                            setEmployeeData((prev) => ({
+                                ...prev,
+                                emp_checklist: data.DB_DATA.emp_checklist,
+                            }));
+                        }
+                    })
+                    .finally(() => {
+                        setTabSectionLoading((prev) => ({ ...prev, 6: false }));
+                    });
             }
         } else if (activeTab !== 6) {
             checklistTabFetchedRef.current = false;
@@ -916,45 +1204,51 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         if (activeTab === 7 && employeeId && gettingEmpProfileModulePrivileges) {
             if (!modulePrivilegesTabFetchedRef.current) {
                 modulePrivilegesTabFetchedRef.current = true;
-                gettingEmpProfileModulePrivileges(employeeId).then((data) => {
-                    if (data?.STATUS !== "SUCCESSFUL" || !data?.DB_DATA) return;
-                    const db = data.DB_DATA;
-                    const hasLegacyList = Array.isArray(db.module_privileges);
-                    const hasRoll =
-                        db.roll_response?.STATUS === "SUCCESSFUL" &&
-                        Array.isArray(db.roll_response?.DB_DATA) &&
-                        db.roll_response.DB_DATA.length > 0;
-                    if (!hasLegacyList && !hasRoll) return;
+                setTabSectionLoading((prev) => ({ ...prev, 7: true }));
+                gettingEmpProfileModulePrivileges(employeeId)
+                    .then((data) => {
+                        if (data?.STATUS !== "SUCCESSFUL" || !data?.DB_DATA) return;
+                        const db = data.DB_DATA;
+                        const hasLegacyList = Array.isArray(db.module_privileges);
+                        const hasRoll =
+                            db.roll_response?.STATUS === "SUCCESSFUL" &&
+                            Array.isArray(db.roll_response?.DB_DATA) &&
+                            db.roll_response.DB_DATA.length > 0;
+                        if (!hasLegacyList && !hasRoll) return;
 
-                    const norm = normalizeModulePrivilegesDbData(db);
-                    setEmployeeData((prev) => ({
-                        ...prev,
-                        module_privileges: norm.modulePrivilegesSource,
-                        user_roles_table_rows: norm.rows,
-                        privileges_block: norm.privilegeBlock,
-                    }));
-                    const first =
-                        norm.privilegeBlock ||
-                        (Array.isArray(norm.modulePrivilegesSource) && norm.modulePrivilegesSource[0]);
-                    if (first) {
-                        setPrivilegesForm((prev) => {
-                            let nextPriv =
-                                first.one_id_roll != null && first.one_id_roll !== ""
-                                    ? String(first.one_id_roll)
-                                    : first.privileges != null
-                                      ? legacyPrivilegesToOneIdRollString(first.privileges)
-                                      : prev.privilege;
-                            if (String(nextPriv) === String(ONE_ID_ROLL.EMPLOYEE)) {
-                                nextPriv = "";
-                            }
-                            return {
-                                ...prev,
-                                privilege: nextPriv,
-                                ipFilter: first.ip_filter ?? prev.ipFilter,
-                            };
-                        });
-                    }
-                });
+                        const norm = normalizeModulePrivilegesDbData(db);
+                        setEmployeeData((prev) => ({
+                            ...prev,
+                            module_privileges: norm.modulePrivilegesSource,
+                            user_roles_table_rows: norm.rows,
+                            privileges_block: norm.privilegeBlock,
+                        }));
+                        const first =
+                            norm.privilegeBlock ||
+                            (Array.isArray(norm.modulePrivilegesSource) && norm.modulePrivilegesSource[0]);
+                        if (first) {
+                            setPrivilegesForm((prev) => {
+                                let nextPriv =
+                                    first.one_id_roll != null && first.one_id_roll !== ""
+                                        ? String(first.one_id_roll)
+                                        : first.privileges != null
+                                          ? legacyPrivilegesToOneIdRollString(first.privileges)
+                                          : prev.privilege;
+                                if (String(nextPriv) === String(ONE_ID_ROLL.EMPLOYEE)) {
+                                    nextPriv = "";
+                                }
+                                return {
+                                    ...prev,
+                                    privilege: nextPriv,
+                                    ipFilter: first.ip_filter ?? prev.ipFilter,
+                                };
+                            });
+                            // OLD (incoming): setPrivilegesForm((prev) => ({ ...prev, privilege, ipFilter })) without EMPLOYEE roll -> ""
+                        }
+                    })
+                    .finally(() => {
+                        setTabSectionLoading((prev) => ({ ...prev, 7: false }));
+                    });
             }
         } else if (activeTab !== 7) {
             modulePrivilegesTabFetchedRef.current = false;
@@ -968,14 +1262,19 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         if (activeTab === 8 && employeeId && gettingEmpProfileRepetitiveDuties) {
             if (!repetitiveDutiesTabFetchedRef.current) {
                 repetitiveDutiesTabFetchedRef.current = true;
-                gettingEmpProfileRepetitiveDuties(employeeId).then((data) => {
-                    if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
-                        setEmployeeData((prev) => ({
-                            ...prev,
-                            Repetitive_Duties: data.DB_DATA.Repetitive_Duties,
-                        }));
-                    }
-                });
+                setTabSectionLoading((prev) => ({ ...prev, 8: true }));
+                gettingEmpProfileRepetitiveDuties(employeeId)
+                    .then((data) => {
+                        if (data?.STATUS === "SUCCESSFUL" && data?.DB_DATA) {
+                            setEmployeeData((prev) => ({
+                                ...prev,
+                                Repetitive_Duties: data.DB_DATA.Repetitive_Duties,
+                            }));
+                        }
+                    })
+                    .finally(() => {
+                        setTabSectionLoading((prev) => ({ ...prev, 8: false }));
+                    });
             }
         } else if (activeTab !== 8) {
             repetitiveDutiesTabFetchedRef.current = false;
@@ -1067,26 +1366,17 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     ]);
 
     const getMaritalStatusLabel = (status) => {
-        // Handle null, undefined, or empty values
-        if (status === null || status === undefined || status === "") {
-            return "N/A";
+        if (status === null || status === undefined) return "--";
+        const s = String(status).trim();
+        if (s === "") return "--";
+        const statusNum = Number(s);
+        if (!Number.isNaN(statusNum) && /^\d+$/.test(s)) {
+            if (statusNum === 0) return "Single";
+            if (statusNum === 1) return "Married";
+            if (statusNum === 2) return "Other";
+            return "--";
         }
-
-        // Convert to number for comparison (handles both string "0" and number 0)
-        const statusNum = Number(status);
-
-        // Map numeric values to text labels
-        if (statusNum === 0) return "Single";
-        if (statusNum === 2) return "Married";
-        if (statusNum === 3) return "Other";
-
-        // If it's already a valid string label, return as is
-        if (typeof status === "string" && isNaN(statusNum)) {
-            return status;
-        }
-
-        // For any other numeric value or invalid input, return "N/A"
-        return "N/A";
+        return normalizeMaritalStatusForSelect(status);
     };
     // Ref to track if HR policies have been fetched for this drawer session
     const hrPoliciesFetched = useRef(false);
@@ -1155,11 +1445,13 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
 
     ////console.log('employeeData data is exist in this place', employeeData)
 
-    // Populate form when employee data is available
+    // Populate form when employee data is available (do not reset while Basic Info drawer is open — avoids wiping domicile upload / in-progress edits when profile refresh completes).
     useEffect(() => {
-        if (employeeData) {
-            // Get nationality from basic_information first, then from employeeData
-            const basicInfo = employeeData?.basic_information || {};
+        if (!employeeData || openBasicInfoDrawer) {
+            return;
+        }
+        // Get nationality from basic_information first, then from employeeData
+        const basicInfo = employeeData?.basic_information || {};
             const nationalityValue =
                 basicInfo?.nationality ||
                 basicInfo?.country ||
@@ -1177,9 +1469,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             : null;
 
                 if (countryId !== null) {
-                    // Use API countries if available, otherwise fall back to static list
                     const countryList =
-                        countries.length > 0 ? countries : staticCountryList;
+                        countriesRef.current.length > 0
+                            ? countriesRef.current
+                            : staticCountryList;
                     const foundCountry = countryList.find(
                         (c) => c.id === countryId || c.id === String(countryId)
                     );
@@ -1212,14 +1505,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     employeeData?.f_name ||
                     employeeData?.employee?.f_name ||
                     "",
-                gender:
-                    basicInfo?.gender !== undefined
-                        ? parseInt(basicInfo?.gender)
-                        : employeeData?.gender !== undefined
-                            ? parseInt(employeeData?.gender)
-                            : employeeData?.employee?.gender !== undefined
-                                ? parseInt(employeeData?.employee?.gender)
-                                : 1,
+                gender: parseGenderForBasicForm(basicInfo, employeeData),
                 dateOfBirth: dobFromAPI,
                 bloodGroup:
                     basicInfo?.blood_group ||
@@ -1236,19 +1522,24 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     employeeData?.disability ||
                     employeeData?.employee?.disability ||
                     "",
-                maritalStatus:
-                    basicInfo?.marital_status ||
-                    employeeData?.marital_status ||
-                    employeeData?.employee?.marital_status ||
-                    "Single",
-                nicPassport:
+                maritalStatus: normalizeMaritalStatusForSelect(
+                    basicInfo?.marital_status ??
+                        basicInfo?.martial_status ??
+                        employeeData?.marital_status ??
+                        employeeData?.martial_status ??
+                        employeeData?.employee?.marital_status ??
+                        employeeData?.employee?.martial_status
+                ),
+                nicPassport: formatNicForCountryDisplay(
                     basicInfo?.nic ||
-                    basicInfo?.passport_no ||
-                    employeeData?.nic ||
-                    employeeData?.employee?.nic ||
-                    employeeData?.passport ||
-                    employeeData?.employee?.passport ||
-                    "",
+                        basicInfo?.passport_no ||
+                        employeeData?.nic ||
+                        employeeData?.employee?.nic ||
+                        employeeData?.passport ||
+                        employeeData?.employee?.passport ||
+                        "",
+                    nationalityName
+                ),
                 domicile:
                     basicInfo?.domicile ||
                     employeeData?.domicile ||
@@ -1268,19 +1559,16 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             });
 
             // Set domicile file URL if it exists
-            if (
+            const domFromApi =
                 basicInfo?.domicile ||
                 employeeData?.domicile ||
-                employeeData?.employee?.domicile
-            ) {
-                setDomicileFileUrl(
-                    basicInfo?.domicile ||
-                    employeeData?.domicile ||
-                    employeeData?.employee?.domicile
-                );
+                employeeData?.employee?.domicile;
+            if (isTruthyDomicileUrl(domFromApi)) {
+                setDomicileFileUrl(String(domFromApi).trim());
             }
-        }
-    }, [employeeData, countries]);
+        // countriesRef is updated each render — do not depend on `countries` here or
+        // the form resets when the country list loads, wiping in-drawer edits (e.g. city).
+    }, [employeeData, openBasicInfoDrawer]);
 
     // Refresh form data when drawer opens to ensure latest data is shown
     useEffect(() => {
@@ -1304,9 +1592,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             : null;
 
                 if (countryId !== null) {
-                    // Use API countries if available, otherwise fall back to static list
                     const countryList =
-                        countries.length > 0 ? countries : staticCountryList;
+                        countriesRef.current.length > 0
+                            ? countriesRef.current
+                            : staticCountryList;
                     const foundCountry = countryList.find(
                         (c) => c.id === countryId || c.id === String(countryId)
                     );
@@ -1339,14 +1628,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     employeeData?.f_name ||
                     employeeData?.employee?.f_name ||
                     "",
-                gender:
-                    basicInfo?.gender !== undefined
-                        ? parseInt(basicInfo?.gender)
-                        : employeeData?.gender !== undefined
-                            ? parseInt(employeeData?.gender)
-                            : employeeData?.employee?.gender !== undefined
-                                ? parseInt(employeeData?.employee?.gender)
-                                : 1,
+                gender: parseGenderForBasicForm(basicInfo, employeeData),
                 dateOfBirth: dobFromAPI,
                 bloodGroup:
                     basicInfo?.blood_group ||
@@ -1363,19 +1645,24 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     employeeData?.disability ||
                     employeeData?.employee?.disability ||
                     "",
-                maritalStatus:
-                    basicInfo?.marital_status ||
-                    employeeData?.marital_status ||
-                    employeeData?.employee?.marital_status ||
-                    "Single",
-                nicPassport:
+                maritalStatus: normalizeMaritalStatusForSelect(
+                    basicInfo?.marital_status ??
+                        basicInfo?.martial_status ??
+                        employeeData?.marital_status ??
+                        employeeData?.martial_status ??
+                        employeeData?.employee?.marital_status ??
+                        employeeData?.employee?.martial_status
+                ),
+                nicPassport: formatNicForCountryDisplay(
                     basicInfo?.nic ||
-                    basicInfo?.passport_no ||
-                    employeeData?.nic ||
-                    employeeData?.employee?.nic ||
-                    employeeData?.passport ||
-                    employeeData?.employee?.passport ||
-                    "",
+                        basicInfo?.passport_no ||
+                        employeeData?.nic ||
+                        employeeData?.employee?.nic ||
+                        employeeData?.passport ||
+                        employeeData?.employee?.passport ||
+                        "",
+                    nationalityName
+                ),
                 domicile:
                     basicInfo?.domicile ||
                     employeeData?.domicile ||
@@ -1395,19 +1682,15 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             });
 
             // Set domicile file URL if it exists
-            if (
+            const domFromApiDrawer =
                 basicInfo?.domicile ||
                 employeeData?.domicile ||
-                employeeData?.employee?.domicile
-            ) {
-                setDomicileFileUrl(
-                    basicInfo?.domicile ||
-                    employeeData?.domicile ||
-                    employeeData?.employee?.domicile
-                );
+                employeeData?.employee?.domicile;
+            if (isTruthyDomicileUrl(domFromApiDrawer)) {
+                setDomicileFileUrl(String(domFromApiDrawer).trim());
             }
         }
-    }, [openBasicInfoDrawer, employeeData, countries]);
+    }, [openBasicInfoDrawer, employeeData]);
 
     // Fetch countries and refresh employee data when basic info drawer opens
     useEffect(() => {
@@ -1442,21 +1725,91 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         gettingEmployeeById,
     ]);
 
-    // Filter countries based on search
+    // Filter countries based on search (API list or static list so search works before API returns)
     useEffect(() => {
-        if (countries.length > 0) {
-            if (countrySearch.trim() === "") {
-                setFilteredCountries(countries);
-            } else {
-                const filtered = countries.filter((country) =>
-                    country.country_name
-                        .toLowerCase()
-                        .includes(countrySearch.toLowerCase())
-                );
-                setFilteredCountries(filtered);
-            }
+        const source =
+            countries.length > 0 ? countries : staticCountryList;
+        if (countrySearch.trim() === "") {
+            setFilteredCountries(source);
+        } else {
+            const filtered = source.filter((country) =>
+                country.country_name
+                    .toLowerCase()
+                    .includes(countrySearch.toLowerCase())
+            );
+            setFilteredCountries(filtered);
         }
     }, [countrySearch, countries]);
+
+    // Cities for Update Basic Information — local fetch per country (no shared hire store list)
+    useEffect(() => {
+        if (!openBasicInfoDrawer) {
+            setCitiesForProfileLoading(false);
+            setBasicInfoCityList([]);
+            pendingCapitalDefaultRef.current = null;
+            return;
+        }
+        if (!basicInfoForm.nationality) {
+            setBasicInfoCityList([]);
+            return;
+        }
+        const list =
+            countriesRef.current.length > 0
+                ? countriesRef.current
+                : staticCountryList;
+        const sel = list.find((c) => c.country_name === basicInfoForm.nationality);
+        if (!sel?.id) {
+            setCitiesForProfileLoading(false);
+            setBasicInfoCityList([]);
+            return;
+        }
+        const seq = ++basicInfoCitiesFetchSeq.current;
+        const nationalityLocked = basicInfoForm.nationality;
+        const applyCapitalForCountry = pendingCapitalDefaultRef.current;
+        setCitiesForProfileLoading(true);
+
+        (async () => {
+            try {
+                const response = await hireApi.getCitiesByCountry(sel.id);
+                const data = response?.data;
+                const rows =
+                    response?.status === 200 &&
+                    data?.STATUS === "SUCCESSFUL" &&
+                    Array.isArray(data.DB_DATA)
+                        ? data.DB_DATA
+                        : [];
+                if (seq !== basicInfoCitiesFetchSeq.current) return;
+                setBasicInfoCityList(rows);
+
+                const shouldApplyCapital =
+                    applyCapitalForCountry &&
+                    applyCapitalForCountry === nationalityLocked;
+
+                if (shouldApplyCapital) {
+                    const cap = getCapitalForCountry(nationalityLocked);
+                    const cityPick = cap
+                        ? matchCityRowToCapital(rows, cap)
+                        : null;
+                    pendingCapitalDefaultRef.current = null;
+                    if (cityPick) {
+                        setBasicInfoForm((prev) =>
+                            prev.nationality === nationalityLocked
+                                ? { ...prev, city: cityPick }
+                                : prev
+                        );
+                    }
+                }
+            } catch {
+                if (seq === basicInfoCitiesFetchSeq.current) {
+                    setBasicInfoCityList([]);
+                }
+            } finally {
+                if (seq === basicInfoCitiesFetchSeq.current) {
+                    setCitiesForProfileLoading(false);
+                }
+            }
+        })();
+    }, [openBasicInfoDrawer, basicInfoForm.nationality]);
 
     // Handle CustomSelect focus detection
     useEffect(() => {
@@ -1465,12 +1818,22 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 countrySelectRef.current &&
                 !countrySelectRef.current.contains(event.target)
             ) {
-                // Check if click is on react-select menu
                 const reactSelectMenu = document.querySelector(
                     '.country-select-wrapper [class*="menu"]'
                 );
                 if (!reactSelectMenu || !reactSelectMenu.contains(event.target)) {
                     setCountryFocused(false);
+                }
+            }
+            if (
+                citySelectRef.current &&
+                !citySelectRef.current.contains(event.target)
+            ) {
+                const cityMenu = document.querySelector(
+                    '.city-select-wrapper [class*="menu"]'
+                );
+                if (!cityMenu || !cityMenu.contains(event.target)) {
+                    setCityFocused(false);
                 }
             }
         };
@@ -1481,6 +1844,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 countrySelectRef.current.contains(event.target)
             ) {
                 setCountryFocused(true);
+            }
+            if (
+                citySelectRef.current &&
+                citySelectRef.current.contains(event.target)
+            ) {
+                setCityFocused(true);
             }
         };
 
@@ -1503,6 +1872,29 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             [field]: value,
         }));
     };
+
+    const handleNicPassportBasicInfoChange = (e) => {
+        const v = e.target.value;
+        setBasicInfoForm((prev) => ({
+            ...prev,
+            nicPassport: formatNicInputValue(v, prev.nationality),
+        }));
+    };
+
+    const basicInfoCityOptions = useMemo(() => {
+        const rows = Array.isArray(basicInfoCityList) ? basicInfoCityList : [];
+        const mapped = rows
+            .map((c) => ({
+                value: String(c.city_name ?? c.name ?? "").trim(),
+                label: c.city_name ?? c.name ?? "",
+            }))
+            .filter((o) => o.value);
+        const cur = (basicInfoForm.city || "").trim();
+        if (cur && !mapped.some((o) => o.value === cur)) {
+            return [...mapped, { value: cur, label: cur }];
+        }
+        return mapped;
+    }, [basicInfoCityList, basicInfoForm.city]);
 
     // Salary Settings Form Handler
     const handleSalarySettingsChange = (field, value) => {
@@ -2206,7 +2598,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     };
 
     const handleDomicileFileUpload = async (event) => {
-        const file = event.target.files[0];
+        const input = event?.target;
+        const file = input?.files?.[0];
         if (!file) return;
 
         // Validate file type (optional - you can add more validation)
@@ -2218,12 +2611,14 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         ];
         if (!allowedTypes.includes(file.type)) {
             showToast("Please upload a valid file (JPEG, PNG, or PDF)", "error");
+            if (input) input.value = "";
             return;
         }
 
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             showToast("File size should be less than 5MB", "error");
+            if (input) input.value = "";
             return;
         }
 
@@ -2231,29 +2626,51 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             setIsUploadingFile(true);
             setDomicileFile(file);
 
+            // `/api/make_url` expects the same shape as other elephant uploads (see Training.js uploadFileToElephant).
             const formData = new FormData();
-            formData.append("file", file);
+            formData.append("operation", "store_file");
+            // Third arg = filename so the part is not treated as an empty blob on some stacks
+            formData.append("file", file, file.name || "upload");
+            formData.append("device_id", "abc123");
+            formData.append("latitude", "34.123");
+            formData.append("longitude", "71.123");
 
             const response = await trainingApi.uploadFileToElephant(formData);
-            const responseData = response.data;
+            const responseData = response?.data;
 
-            if (responseData.STATUS === "SUCCESSFUL") {
-                setDomicileFileUrl(responseData.FILE_URL);
+            const statusOk =
+                responseData &&
+                (responseData.STATUS === "SUCCESSFUL" ||
+                    responseData.status === "SUCCESSFUL");
+            const rawUrl =
+                responseData?.FILE_URL ??
+                responseData?.file_url ??
+                responseData?.data?.FILE_URL;
+            const fileUrl =
+                rawUrl != null && String(rawUrl).trim() !== ""
+                    ? String(rawUrl).trim()
+                    : "";
+
+            if (statusOk && fileUrl) {
+                setDomicileFileUrl(fileUrl);
                 showToast("File uploaded successfully", "success");
             } else {
+                setDomicileFile(null);
                 showToast("Failed to upload file", "error");
             }
         } catch (error) {
             console.error("Error uploading file:", error);
+            setDomicileFile(null);
             showToast("Failed to upload file", "error");
         } finally {
             setIsUploadingFile(false);
+            if (input) input.value = "";
         }
     };
 
     // Get display name for role (supports user_roles.role_name or module_privileges.privileges)
     const getRoleDisplayName = (role) => {
-        if (!role) return "N/A";
+        if (!role) return "--";
         if (role.role_name) return role.role_name;
         const p = role.privileges;
         if (p === "0" || p === 0) return "Employee";
@@ -2884,8 +3301,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 return;
             }
 
-            // Find country ID from countries API
-            const selectedCountry = countries.find(
+            // Find country ID (API list or static fallback)
+            const countryListForSubmit =
+                countries.length > 0 ? countries : staticCountryList;
+            const selectedCountry = countryListForSubmit.find(
                 (c) => c.country_name === basicInfoForm.nationality
             );
             const countryId = selectedCountry ? selectedCountry.id : null;
@@ -2926,6 +3345,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 }
             }
 
+            const maritalStatusCode = maritalStatusSelectLabelToApiCode(
+                basicInfoForm.maritalStatus
+            );
+
             const payload = {
                 name: basicInfoForm.name.trim(),
                 f_name: basicInfoForm.fatherName.trim(),
@@ -2934,7 +3357,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 blood_group: basicInfoForm.bloodGroup || null,
                 religion: basicInfoForm.religion.trim() || null,
                 disability: basicInfoForm.disability.trim() || null,
-                marital_status: basicInfoForm.maritalStatus || null,
+                marital_status: maritalStatusCode,
                 nic: basicInfoForm.nicPassport.trim() || null,
                 passport: basicInfoForm.nicPassport.trim() || null,
                 domicile: domicileFileUrl || null, // Use file URL instead of text
@@ -2976,7 +3399,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             blood_group: basicInfoForm.bloodGroup,
                             religion: basicInfoForm.religion,
                             disability: basicInfoForm.disability,
-                            marital_status: basicInfoForm.maritalStatus,
+                            marital_status: maritalStatusCode,
                             nic: basicInfoForm.nicPassport,
                             passport: basicInfoForm.nicPassport,
                             domicile: domicileFileUrl,
@@ -3065,17 +3488,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     ];
 
     if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-                <Spinner className="h-10 w-10 text-brand-500" />
-                <Typography variant="h6" color="gray" className="font-normal">
-                    Loading employee profile...
-                </Typography>
-                <Typography variant="small" color="gray" className="font-normal">
-                    Please wait while we fetch the data
-                </Typography>
-            </div>
-        );
+        return <EmployeeProfileInitialPageSkeleton />;
     }
 
     // if (!employeeData) {
@@ -3100,7 +3513,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 <div className="px-4 py-3 flex justify-between items-center bg-brand-50 rounded-t-lg border-b border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
+                        className="font-semibold text-xs sm:text-sm text-brand-500"
                     >
                         Basic Information
                     </Typography>
@@ -3119,74 +3532,95 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* First Row: Date of Birth, Father Name, Gender */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                <FaCalendar className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaCalendar className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
                                     variant="small"
                                     color="gray"
-                                    className="font-normal text-xs"
+                                    className="font-normal text-[11px]"
                                 >
                                     Date of Birth
                                 </Typography>
-                                <Typography
-                                    variant="small"
-                                    className="font-semibold font-Urbanist text-sm sm:text-sm text-gray-900 mt-1 break-words"
-                                >
-                                    {employeeData?.basic_information?.dob ||
-                                        employeeData?.dob ||
-                                        "N/A"}
-                                </Typography>
+                                <div className="mt-1 min-w-0">
+                                    {(() => {
+                                        const dobRaw =
+                                            employeeData?.basic_information?.dob ??
+                                            employeeData?.dob;
+                                        const { line1, line2 } =
+                                            getDobFormattedLines(dobRaw);
+                                        return (
+                                            <>
+                                                <Typography
+                                                    variant="small"
+                                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 break-words block"
+                                                >
+                                                    {line1}
+                                                </Typography>
+                                                {line2 ? (
+                                                    <Typography
+                                                        variant="small"
+                                                        className="font-normal font-Urbanist text-[9px] sm:text-[10px] text-gray-600 mt-0.5 block leading-snug break-words"
+                                                    >
+                                                        {line2}
+                                                    </Typography>
+                                                ) : null}
+                                            </>
+                                        );
+                                    })()}
+                                </div>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaUsers className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
                                     variant="small"
                                     color="gray"
-                                    className="font-normal text-xs"
+                                    className="font-normal text-[11px]"
                                 >
                                     Father Name
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-xs sm:text-sm text-gray-900 mt-1 break-words"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
                                 >
-                                    {employeeData?.basic_information?.f_name ||
-                                        employeeData?.f_name ||
-                                        "N/A"}
+                                    {formatBasicInfoDisplay(
+                                        employeeData?.basic_information?.f_name ??
+                                            employeeData?.f_name
+                                    )}
                                 </Typography>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaUsers className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
                                     variant="small"
                                     color="gray"
-                                    className="font-normal text-xs"
+                                    className="font-normal text-[11px]"
                                 >
                                     Gender
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-xs sm:text-sm text-gray-900 mt-1 break-words"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
                                 >
                                     {(() => {
                                         const gender =
-                                            employeeData?.basic_information?.gender ||
+                                            employeeData?.basic_information
+                                                ?.gender ??
                                             employeeData?.gender;
-                                        return gender === "1"
-                                            ? "Male"
-                                            : gender === "0"
-                                                ? "Female"
-                                                : employeeData?.gender || "N/A";
+                                        if (gender === "1" || gender === 1)
+                                            return "Male";
+                                        if (gender === "0" || gender === 0)
+                                            return "Female";
+                                        return formatBasicInfoDisplay(gender);
                                     })()}
                                 </Typography>
                             </div>
@@ -3199,20 +3633,20 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* Second Row: Nationality, City, Domicile */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                <FaMapMarkerAlt className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaMapMarkerAlt className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
                                     variant="small"
                                     color="gray"
-                                    className="font-normal text-xs"
+                                    className="font-normal text-[11px]"
                                 >
                                     Nationality
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-xs sm:text-sm text-gray-900 mt-1 break-words"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
                                 >
                                     {(() => {
                                         // Get nationality value from basic_information or employeeData
@@ -3241,71 +3675,109 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     (c) =>
                                                         c.id === countryId || c.id === String(countryId)
                                                 );
-                                                return foundCountry ? foundCountry.country_name : "N/A";
+                                                return formatBasicInfoDisplay(
+                                                    foundCountry
+                                                        ? foundCountry.country_name
+                                                        : null
+                                                );
                                             }
                                         }
 
-                                        // Return as is if already a country name
-                                        return nationalityValue || "N/A";
+                                        return formatBasicInfoDisplay(
+                                            nationalityValue
+                                        );
                                     })()}
                                 </Typography>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                <FaCity className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaCity className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
                                     variant="small"
                                     color="gray"
-                                    className="font-normal text-xs"
+                                    className="font-normal text-[11px]"
                                 >
                                     City
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-xs sm:text-sm text-gray-900 mt-1 break-words"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
                                 >
-                                    {employeeData?.basic_information?.city ||
-                                        employeeData?.city ||
-                                        "N/A"}
+                                    {formatBasicInfoDisplay(
+                                        employeeData?.basic_information?.city ??
+                                            employeeData?.city
+                                    )}
                                 </Typography>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                <FaFileContract className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaFileContract className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <Typography
                                     variant="small"
                                     color="gray"
-                                    className="font-normal text-xs"
+                                    className="font-normal text-[11px]"
                                 >
                                     Domicile
                                 </Typography>
-                                <Typography
-                                    variant="small"
-                                    className="font-semibold font-Urbanist text-xs sm:text-sm text-gray-900 mt-1 break-words"
-                                >
+                                <div className="mt-1 min-w-0">
                                     {(() => {
                                         const domicile =
-                                            employeeData?.basic_information?.domicile ||
-                                            employeeData?.domicile;
-                                        return domicile != null ? (
-                                            <Link
-                                                to={domicile}
-                                                target="_blank"
-                                                className="underline decoration-sky-500"
+                                            employeeData?.basic_information
+                                                ?.domicile ||
+                                            employeeData?.domicile ||
+                                            "";
+                                        const trimmed = String(domicile).trim();
+                                        const hasDomicile =
+                                            trimmed &&
+                                            trimmed.toLowerCase() !== "null";
+                                        if (hasDomicile) {
+                                            const fileLabel =
+                                                employeeData?.basic_information
+                                                    ?.domicile_original_name ||
+                                                employeeData?.basic_information
+                                                    ?.domicile_file_name ||
+                                                getDomicileFilenameFromUrl(
+                                                    trimmed
+                                                ) ||
+                                                trimmed
+                                                    .split("/")
+                                                    .filter(Boolean)
+                                                    .pop() ||
+                                                "Domicile file";
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    title={fileLabel}
+                                                    onClick={() =>
+                                                        triggerFileDownloadByUrl(
+                                                            trimmed,
+                                                            fileLabel
+                                                        )
+                                                    }
+                                                    className="inline-flex max-w-full min-w-0 items-center justify-center rounded-md border border-brand-200 bg-brand-50 px-3 py-1.5 text-left text-[11px] font-semibold text-brand-600 hover:bg-brand-100"
+                                                >
+                                                    <span className="truncate">
+                                                        {fileLabel}
+                                                    </span>
+                                                </button>
+                                            );
+                                        }
+                                        return (
+                                            <Typography
+                                                variant="small"
+                                                className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-0 block"
                                             >
-                                                View
-                                            </Link>
-                                        ) : (
-                                            "N/A"
+                                                --
+                                            </Typography>
                                         );
                                     })()}
-                                </Typography>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3314,38 +3786,77 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="border-t border-dashed border-gray-300 my-3 sm:my-4"></div>
 
                     {/* Third Row: Religion, Marital Status, Blood Group */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                            <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center flex-shrink-0">
-                                <FaShieldAlt className="text-lg" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaShieldAlt className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
-                            <div>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Religion</p>
-                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.religion || employeeData?.religion || "N/A"}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                            <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center flex-shrink-0">
-                                <FaHeart className="text-lg" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Marital Status</p>
-                                <p className="text-sm font-bold text-gray-800 mt-0.5">
-                                    {getMaritalStatusLabel(
-                                        employeeData?.basic_information?.marital_status ??
-                                        employeeData?.marital_status ??
-                                        null
+                            <div className="min-w-0 flex-1">
+                                <Typography
+                                    variant="small"
+                                    color="gray"
+                                    className="font-normal text-[11px]"
+                                >
+                                    Religion
+                                </Typography>
+                                <Typography
+                                    variant="small"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
+                                >
+                                    {formatBasicInfoDisplay(
+                                        employeeData?.basic_information?.religion ??
+                                            employeeData?.religion
                                     )}
-                                </p>
+                                </Typography>
                             </div>
                         </div>
-                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                            <div className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
-                                <FaHeart className="text-lg" />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaHeart className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
-                            <div>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Blood Group</p>
-                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.blood_group || employeeData?.blood_group || "N/A"}</p>
+                            <div className="min-w-0 flex-1">
+                                <Typography
+                                    variant="small"
+                                    color="gray"
+                                    className="font-normal text-[11px]"
+                                >
+                                    Marital Status
+                                </Typography>
+                                <Typography
+                                    variant="small"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
+                                >
+                                    {getMaritalStatusLabel(
+                                        employeeData?.basic_information
+                                            ?.marital_status ??
+                                            employeeData?.marital_status ??
+                                            null
+                                    )}
+                                </Typography>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaHeart className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <Typography
+                                    variant="small"
+                                    color="gray"
+                                    className="font-normal text-[11px]"
+                                >
+                                    Blood Group
+                                </Typography>
+                                <Typography
+                                    variant="small"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
+                                >
+                                    {formatBasicInfoDisplay(
+                                        employeeData?.basic_information
+                                            ?.blood_group ??
+                                            employeeData?.blood_group
+                                    )}
+                                </Typography>
                             </div>
                         </div>
                     </div>
@@ -3353,33 +3864,78 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     {/* Dashed Separator */}
                     <div className="border-t border-dashed border-gray-300 my-3 sm:my-4"></div>
 
-                    {/* Fourth Row: Disability, Passport/NIC #, NTN # */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                            <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">
-                                <FaUserShield className="text-lg" />
+                    {/* Fourth Row: Disability, Passport/NIC #, Address */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaUserShield className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
-                            <div>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Disability</p>
-                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.disability || employeeData?.disability || "N/A"}</p>
+                            <div className="min-w-0 flex-1">
+                                <Typography
+                                    variant="small"
+                                    color="gray"
+                                    className="font-normal text-[11px]"
+                                >
+                                    Disability
+                                </Typography>
+                                <Typography
+                                    variant="small"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
+                                >
+                                    {formatBasicInfoDisplay(
+                                        employeeData?.basic_information
+                                            ?.disability ??
+                                            employeeData?.disability
+                                    )}
+                                </Typography>
                             </div>
                         </div>
-                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                            <div className="w-10 h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center flex-shrink-0">
-                                <FaPassport className="text-lg" />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaPassport className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
-                            <div>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Passport/NIC #</p>
-                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.passport_no || employeeData?.passport_no || employeeData?.nic || "N/A"}</p>
+                            <div className="min-w-0 flex-1">
+                                <Typography
+                                    variant="small"
+                                    color="gray"
+                                    className="font-normal text-[11px]"
+                                >
+                                    Passport/NIC #
+                                </Typography>
+                                <Typography
+                                    variant="small"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
+                                >
+                                    {formatBasicInfoDisplay(
+                                        employeeData?.basic_information
+                                            ?.passport_no ??
+                                            employeeData?.passport_no ??
+                                            employeeData?.nic
+                                    )}
+                                </Typography>
                             </div>
                         </div>
-                        <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-500 flex items-center justify-center flex-shrink-0">
-                                <FaIdCard className="text-lg" />
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <FaIdCard className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             </div>
-                            <div>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">NTN #</p>
-                                <p className="text-sm font-bold text-gray-800 mt-0.5">{employeeData?.basic_information?.ntn_no || employeeData?.ntn || "N/A"}</p>
+                            <div className="min-w-0 flex-1">
+                                <Typography
+                                    variant="small"
+                                    color="gray"
+                                    className="font-normal text-[11px]"
+                                >
+                                    Address
+                                </Typography>
+                                <Typography
+                                    variant="small"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1 break-words"
+                                >
+                                    {formatBasicInfoDisplay(
+                                        employeeData?.basic_information?.ntn_no ??
+                                            employeeData?.ntn
+                                    )}
+                                </Typography>
                             </div>
                         </div>
                     </div>
@@ -3424,7 +3980,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     />
                                     <Typography
                                         variant="small"
-                                        className={`font-semibold text-sm ${employeeData?.basic_information?.status === "1"
+                                        className={`font-semibold text-[11px] sm:text-xs ${employeeData?.basic_information?.status === "1"
                                             ? "text-gray-600"
                                             : "text-gray-600"
                                             }`}
@@ -3483,7 +4039,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <th className="px-2 sm:px-3 py-2 text-left w-[20%] min-w-0">
                                                         <Typography
                                                             variant="small"
-                                                            className="font-semibold font-Urbanist text-sm text-gray-700 break-words"
+                                                            className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-700 break-words"
                                                         >
                                                             Type
                                                         </Typography>
@@ -3491,7 +4047,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <th className="px-2 sm:px-3 py-2 text-left w-[18%] min-w-0">
                                                         <Typography
                                                             variant="small"
-                                                            className="font-semibold text-sm text-gray-700 break-words"
+                                                            className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-700 break-words"
                                                         >
                                                             Title
                                                         </Typography>
@@ -3499,7 +4055,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <th className="px-2 sm:px-3 py-2 text-left min-w-0 break-words" style={{ width: '42%' }}>
                                                         <Typography
                                                             variant="small"
-                                                            className="font-semibold text-sm text-gray-700 break-words"
+                                                            className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-700 break-words"
                                                         >
                                                             Detail
                                                         </Typography>
@@ -3507,7 +4063,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <th className="px-2 sm:px-3 py-2 text-left w-[20%] min-w-0">
                                                         <Typography
                                                             variant="small"
-                                                            className="font-semibold text-sm text-gray-700"
+                                                            className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-700"
                                                         >
                                                             Action
                                                         </Typography>
@@ -3520,25 +4076,32 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                         <td className="px-2 sm:px-3 py-2 align-top min-w-0">
                                                             <Typography
                                                                 variant="small"
-                                                                className="font-normal text-sm text-gray-900 break-words"
+                                                                className="font-normal text-[11px] sm:text-xs text-gray-900 break-words"
                                                             >
-                                                                {contact.contact_type || "N/A"}
+                                                                {formatProfileDisplay(
+                                                                    contact.contact_type
+                                                                )}
                                                             </Typography>
                                                         </td>
                                                         <td className="px-2 sm:px-3 py-2 align-top min-w-0">
                                                             <Typography
                                                                 variant="small"
-                                                                className="font-normal text-sm text-gray-900 break-words"
+                                                                className="font-normal text-[11px] sm:text-xs text-gray-900 break-words"
                                                             >
-                                                                {contact.contact_title || contact.contact_type || "N/A"}
+                                                                {formatProfileDisplay(
+                                                                    contact.contact_title ||
+                                                                        contact.contact_type
+                                                                )}
                                                             </Typography>
                                                         </td>
                                                         <td className="px-2 sm:px-3 py-2 align-top min-w-0" style={{ wordBreak: 'break-word' }}>
                                                             <Typography
                                                                 variant="small"
-                                                                className="font-normal text-sm text-gray-900 break-words"
+                                                                className="font-normal text-[11px] sm:text-xs text-gray-900 break-words"
                                                             >
-                                                                {contact.contact || "N/A"}
+                                                                {formatProfileDisplay(
+                                                                    contact.contact
+                                                                )}
                                                             </Typography>
                                                         </td>
                                                         <td className="px-2 sm:px-3 py-2 align-top min-w-0">
@@ -3567,7 +4130,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 ) : (
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-Urbanist text-sm text-gray-900 break-words"
+                                        className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 break-words"
                                     >
                                         No contact information available
                                     </Typography>
@@ -3588,7 +4151,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 <div className="bg-brand-50 rounded-t-lg px-4 py-3 flex justify-between items-center border-b border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
+                        className="font-semibold text-xs sm:text-sm text-brand-500"
                     >
                         Attendance Setting
                     </Typography>
@@ -3666,7 +4229,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                 >
                                     {employeeData?.attendence?.policyData?.policy_name ||
                                         employeeData?.employee?.hr_policy ||
@@ -3688,7 +4251,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                 >
                                     {employeeData?.attendence?.bioRegistration ||
                                         employeeData?.employee?.bio_id ||
@@ -3710,7 +4273,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                 >
                                     {employeeData?.attendence?.policyData?.id ||
                                         employeeData?.employee?.hr_policy ||
@@ -3739,7 +4302,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                 >
                                     {employeeData?.attendence?.team?.name || "-"}
                                 </Typography>
@@ -3759,7 +4322,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                 >
                                     {employeeData?.attendence?.Working_shift_name || "-"}
                                 </Typography>
@@ -3779,7 +4342,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </Typography>
                                 <Typography
                                     variant="small"
-                                    className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                    className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                 >
                                     {employeeData?.attendence?.planner_name || "-"}
                                 </Typography>
@@ -3973,11 +4536,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-Urbanist text-sm leading-none text-gray-900 mt-1"
+                                        className="font-semibold font-Urbanist text-[11px] sm:text-xs leading-none text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.emp_id ||
-                                            employeeData?.emp_id?.id ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.emp_id ||
+                                                employeeData?.emp_id?.id
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -3996,7 +4560,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold font-Urbanist text-sm leading-none text-gray-900 mt-1"
+                                        className="font-semibold font-Urbanist text-[11px] sm:text-xs leading-none text-gray-900 mt-1"
                                     >
                                         {employeeData?.Official_Info?.employment_status ||
                                             "Permanent"}
@@ -4017,9 +4581,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.tage?.[0]?.tag_name || "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.tage?.[0]?.tag_name
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4044,7 +4610,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className={`font-semibold font-urbanist text-sm mt-1 ${employeeData?.Official_Info?.eobi === "1"
+                                        className={`font-semibold font-urbanist text-[11px] sm:text-xs mt-1 ${employeeData?.Official_Info?.eobi === "1"
                                             ? "text-green-500"
                                             : "text-red-500"
                                             }`}
@@ -4067,7 +4633,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className={`font-semibold font-Urbanist text-sm mt-1 ${employeeData?.Official_Info?.provident_fund === "1"
+                                        className={`font-semibold font-Urbanist text-[11px] sm:text-xs mt-1 ${employeeData?.Official_Info?.provident_fund === "1"
                                             ? "text-green-500"
                                             : "text-red-500"
                                             }`}
@@ -4092,7 +4658,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className={`font-semibold font-Urbanist text-sm mt-1 ${employeeData?.Official_Info?.social_security > 0
+                                        className={`font-semibold font-Urbanist text-[11px] sm:text-xs mt-1 ${employeeData?.Official_Info?.social_security > 0
                                             ? "text-green-500"
                                             : "text-red-500"
                                             }`}
@@ -4124,7 +4690,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className={`font-semibold font-Urbanist text-sm mt-1 ${employeeData?.Official_Info?.insurance === "1"
+                                        className={`font-semibold font-Urbanist text-[11px] sm:text-xs mt-1 ${employeeData?.Official_Info?.insurance === "1"
                                             ? "text-green-500"
                                             : "text-red-500"
                                             }`}
@@ -4149,7 +4715,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className={`font-semibold font-Urbanist text-sm mt-1 ${employeeData?.Official_Info?.health_benefits === "1"
+                                        className={`font-semibold font-Urbanist text-[11px] sm:text-xs mt-1 ${employeeData?.Official_Info?.health_benefits === "1"
                                             ? "text-green-500"
                                             : "text-red-500"
                                             }`}
@@ -4174,13 +4740,14 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.designation ||
-                                            employeeData?.designationObj?.title ||
-                                            employeeData?.Official_Info?.designationObj?.title ||
-                                            employeeData?.employee?.designationObj?.title ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.designation ||
+                                                employeeData?.designationObj?.title ||
+                                                employeeData?.Official_Info?.designationObj?.title ||
+                                                employeeData?.employee?.designationObj?.title
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4205,11 +4772,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-urbanist text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.branch?.branch_name ||
-                                            employeeData?.employee?.branch?.branch_name ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.branch?.branch_name ||
+                                                employeeData?.employee?.branch?.branch_name
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4227,11 +4795,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-Urbanist  text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.department?.name ||
-                                            employeeData?.employee?.department?.name ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.department?.name ||
+                                                employeeData?.employee?.department?.name
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4249,13 +4818,15 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.join_date
-                                            ? formatTimestampToDate(
-                                                employeeData.Official_Info.join_date
-                                            )
-                                            : "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.join_date
+                                                ? formatTimestampToDate(
+                                                      employeeData.Official_Info.join_date
+                                                  )
+                                                : null
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4280,7 +4851,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-Urbanist text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
                                         Not Defined
                                     </Typography>
@@ -4300,7 +4871,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className={`font-semibold font-Urbanist text-sm mt-1 ${employeeData?.Official_Info?.job_exit_date === 0 ||
+                                        className={`font-semibold font-Urbanist text-[11px] sm:text-xs mt-1 ${employeeData?.Official_Info?.job_exit_date === 0 ||
                                             !employeeData?.Official_Info?.job_exit_date
                                             ? "text-gray-900"
                                             : "text-red-500"
@@ -4392,11 +4963,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-urbanist text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.branch?.branch_name ||
-                                            employeeData?.employee?.branch?.branch_name ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.branch?.branch_name ||
+                                                employeeData?.employee?.branch?.branch_name
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4414,11 +4986,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-urbanist text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.department?.name ||
-                                            employeeData?.employee?.department?.name ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.department?.name ||
+                                                employeeData?.employee?.department?.name
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4436,11 +5009,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-urbanist text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.designationObj?.title ||
-                                            employeeData?.employee?.designationObj?.title ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.designationObj?.title ||
+                                                employeeData?.employee?.designationObj?.title
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4458,15 +5032,17 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     </Typography>
                                     <Typography
                                         variant="small"
-                                        className="font-semibold font-urbanist text-sm text-gray-900 mt-1"
+                                        className="font-semibold font-urbanist text-[11px] sm:text-xs text-gray-900 mt-1"
                                     >
-                                        {employeeData?.Official_Info?.join_date
-                                            ? formatTimestampToDate(
-                                                employeeData.Official_Info.join_date
-                                            )
-                                            : formatTimestampToDate(
-                                                employeeData?.employee?.join_date
-                                            ) || "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.join_date
+                                                ? formatTimestampToDate(
+                                                      employeeData.Official_Info.join_date
+                                                  )
+                                                : formatTimestampToDate(
+                                                      employeeData?.employee?.join_date
+                                                  )
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4481,8 +5057,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="pt-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaUsers className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 </div>
 
                                 <div className="min-w-0">
@@ -4496,17 +5072,18 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold text-sm break-words"
+                                        className="font-semibold text-[11px] sm:text-xs break-words"
                                     >
-                                        {employeeData?.Official_Info?.branch?.branch_name ||
-                                            employeeData?.employee?.branch?.branch_name ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.branch?.branch_name ||
+                                                employeeData?.employee?.branch?.branch_name
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <FaBuilding className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaBuilding className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4519,17 +5096,18 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold text-sm break-words"
+                                        className="font-semibold text-[11px] sm:text-xs break-words"
                                     >
-                                        {employeeData?.Official_Info?.department?.name ||
-                                            employeeData?.employee?.department?.name ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.department?.name ||
+                                                employeeData?.employee?.department?.name
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <FaUserTie className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaUserTie className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4542,17 +5120,18 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold text-sm break-words"
+                                        className="font-semibold text-[11px] sm:text-xs break-words"
                                     >
-                                        {employeeData?.Official_Info?.designationObj?.title ||
-                                            employeeData?.employee?.designationObj?.title ||
-                                            "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.designationObj?.title ||
+                                                employeeData?.employee?.designationObj?.title
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <FaCalendar className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaCalendar className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4565,21 +5144,23 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold text-sm break-words"
+                                        className="font-semibold text-[11px] sm:text-xs break-words"
                                     >
-                                        {employeeData?.Official_Info?.join_date
-                                            ? formatTimestampToDate(
-                                                employeeData.Official_Info.join_date
-                                            )
-                                            : formatTimestampToDate(
-                                                employeeData?.employee?.join_date
-                                            ) || "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.join_date
+                                                ? formatTimestampToDate(
+                                                      employeeData.Official_Info.join_date
+                                                  )
+                                                : formatTimestampToDate(
+                                                      employeeData?.employee?.join_date
+                                                  )
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <FaClock className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaClock className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4592,15 +5173,17 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold text-sm break-words"
+                                        className="font-semibold text-[11px] sm:text-xs break-words"
                                     >
-                                        {employeeData?.Official_Info?.join_date
-                                            ? formatTimestampToDate(
-                                                employeeData.Official_Info.join_date
-                                            )
-                                            : formatTimestampToDate(
-                                                employeeData?.employee?.join_date
-                                            ) || "N/A"}
+                                        {formatProfileDisplay(
+                                            employeeData?.Official_Info?.join_date
+                                                ? formatTimestampToDate(
+                                                      employeeData.Official_Info.join_date
+                                                  )
+                                                : formatTimestampToDate(
+                                                      employeeData?.employee?.join_date
+                                                  )
+                                        )}
                                     </Typography>
                                 </div>
                             </div>
@@ -4615,8 +5198,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="pt-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaUsers className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4629,15 +5212,15 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold text-sm break-words"
+                                        className="font-semibold text-[11px] sm:text-xs break-words"
                                     >
                                         {employeeData?.Official_Info?.employment_status || "Join"}
                                     </Typography>
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <FaCalendar className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaCalendar className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4650,7 +5233,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold text-sm break-words"
+                                        className="font-semibold text-[11px] sm:text-xs break-words"
                                     >
                                         {employeeData?.Official_Info?.join_date
                                             ? formatTimestampToDate(
@@ -4663,8 +5246,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <FaCalendar className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaCalendar className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4677,7 +5260,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold text-sm break-words"
+                                        className="font-semibold text-[11px] sm:text-xs break-words"
                                     >
                                         {employeeData?.Official_Info?.join_date
                                             ? formatTimestampToDate(
@@ -4692,8 +5275,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </div>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                    <FaShieldAlt className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                    <FaShieldAlt className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 </div>
                                 <div className="min-w-0">
                                     <Typography
@@ -4706,7 +5289,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Typography
                                         variant="small"
                                         color="blue-gray"
-                                        className="font-semibold text-sm break-words"
+                                        className="font-semibold text-[11px] sm:text-xs break-words"
                                     >
                                         --
                                     </Typography>
@@ -4722,7 +5305,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 content: (
                     <div className="flex flex-row gap-2 items-center">
                         <div className="w-9 h-9 sm:w-10 sm:h-10 mt-2 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                            <FaUsers className="text-brand-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <FaUsers className="text-brand-500 w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         </div>
                         <div className="pt-4">
                             <Typography variant="small" color="gray" className="font-semibold text-sm front-urbanist text-gray-900">
@@ -4790,8 +5373,23 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         );
     };
 
-    // Helper function to render grid item with icon
-    const renderGridItem = (label, value, icon) => {
+    // Helper function to render grid item with icon (`compact` matches Overview Basic Information field sizing)
+    const renderGridItem = (label, value, icon, compact = false) => {
+        if (compact) {
+            return (
+                <div className="group flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-brand-50/50 transition-colors border border-transparent hover:border-brand-100">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center flex-shrink-0 [&_svg]:w-3.5 [&_svg]:h-3.5 sm:[&_svg]:w-4 sm:[&_svg]:h-4">
+                        {icon || <FaUsers className="text-[11px] sm:text-xs" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <p className="font-normal text-[11px] text-gray-500">{label}</p>
+                        <p className="font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-900 mt-0.5 break-words">
+                            {formatProfileDisplay(value)}
+                        </p>
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="group flex items-start gap-4 p-3 rounded-xl hover:bg-brand-50/50 transition-all duration-300 border border-transparent hover:border-brand-100">
                 <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-sm">
@@ -4799,7 +5397,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide group-hover:text-brand-400 transition-colors">{label}</p>
-                    <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{value || "--"}</p>
+                    <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{formatProfileDisplay(value)}</p>
                 </div>
             </div>
         );
@@ -5773,7 +6371,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
 
         // Format date from timestamp
         const formatDateFromTimestamp = (timestamp) => {
-            if (!timestamp || timestamp === 0) return "N/A";
+            if (!timestamp || timestamp === 0) return "--";
             return formatTimestampToDate(timestamp);
         };
 
@@ -5787,9 +6385,9 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     >
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center">
-                                <FaFileAlt className="text-sm" />
+                                <FaFileAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
-                            <h3 className="font-bold text-gray-800 text-lg">
+                            <h3 className="font-semibold text-xs sm:text-sm text-brand-500">
                                 {salarySettings?.["Salary Template Name"] || "Salary Template Name"}
                             </h3>
                         </div>
@@ -5848,17 +6446,22 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             }`}
                     >
                         <div className="p-6">
+                            {/* Single 3-column grid so row 2 aligns with row 1 (sequential flow, not 2-wide justify stretch) */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {renderGridItem("Basic Pay", formatNumber(salarySettings?.["Basic Pay"]), <FaCodeBranch className="text-lg" />)}
-                                {renderGridItem("Overtime Rate", salarySettings?.["Overtime Rate"] || "0/hour", <MdBarChart className="text-lg" />)}
-                                {renderGridItem("Mode of payment", salarySettings?.["Mode of payment"] || "N/A", <FaMoneyBills className="text-lg" />)}
-                            </div>
-
-                            <div className="border-t border-dashed border-gray-200 my-6"></div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {renderGridItem("Ex-Gratia on overtime", salarySettings?.["Ex-Gratia on overtime"] || "No", <FaUsers className="text-lg" />)}
-                                {renderGridItem("Gratuity", salarySettings?.["Gratuity"] || "No", <FaTrophy className="text-lg" />)}
+                                {renderGridItem("Basic Pay", formatNumber(salarySettings?.["Basic Pay"]), <FaCodeBranch className="text-lg" />, true)}
+                                {renderGridItem("Overtime Rate", salarySettings?.["Overtime Rate"] || "0/hour", <MdBarChart className="text-lg" />, true)}
+                                {renderGridItem(
+                                    "Mode of payment",
+                                    salarySettings?.["Mode of payment"],
+                                    <FaMoneyBills className="text-lg" />,
+                                    true
+                                )}
+                                <div
+                                    className="col-span-full border-t border-dashed border-gray-200 my-1 md:my-0"
+                                    aria-hidden
+                                />
+                                {renderGridItem("Ex-Gratia on overtime", salarySettings?.["Ex-Gratia on overtime"] || "No", <FaUsers className="text-lg" />, true)}
+                                {renderGridItem("Gratuity", salarySettings?.["Gratuity"] || "No", <FaTrophy className="text-lg" />, true)}
                             </div>
                         </div>
                     </div>
@@ -5872,9 +6475,9 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     >
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center">
-                                <CiBank className="text-sm font-bold" />
+                                <CiBank className="w-3.5 h-3.5 sm:w-4 sm:h-4 font-bold" />
                             </div>
-                            <h3 className="font-bold text-gray-800 text-lg">Bank account info</h3>
+                            <h3 className="font-semibold text-xs sm:text-sm text-brand-500">Bank account info</h3>
                         </div>
                         <div className="flex items-center gap-3">
                             <Button
@@ -5942,15 +6545,15 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     >
                         <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {renderGridItem("Bank", bankInfo?.Bank || "-", <CiBank className="text-lg" />)}
-                                {renderGridItem("Branch", bankInfo?.Branch || "-", <FaCodeBranch className="text-lg" />)}
-                                {renderGridItem("Branch Code", bankInfo?.["Branch Code"] || "-", <FaCodeBranch className="text-lg" />)}
+                                {renderGridItem("Bank", bankInfo?.Bank || "-", <CiBank className="text-lg" />, true)}
+                                {renderGridItem("Branch", bankInfo?.Branch || "-", <FaCodeBranch className="text-lg" />, true)}
+                                {renderGridItem("Branch Code", bankInfo?.["Branch Code"] || "-", <FaCodeBranch className="text-lg" />, true)}
                             </div>
                             <div className="border-t border-dashed border-gray-200 my-6"></div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {renderGridItem("Account Type", (bankInfo?.["Account Type"] === 0 || !bankInfo?.["Account Type"]) ? "-" : bankInfo?.["Account Type"], <FaUsers className="text-lg" />)}
-                                {renderGridItem("Account Title", bankInfo?.["Account Title"] || "-", <FaUsers className="text-lg" />)}
-                                {renderGridItem("Account No", bankInfo?.["Account No"] || "0", <FaUsers className="text-lg" />)}
+                                {renderGridItem("Account Type", (bankInfo?.["Account Type"] === 0 || !bankInfo?.["Account Type"]) ? "-" : bankInfo?.["Account Type"], <FaUsers className="text-lg" />, true)}
+                                {renderGridItem("Account Title", bankInfo?.["Account Title"] || "-", <FaUsers className="text-lg" />, true)}
+                                {renderGridItem("Account No", bankInfo?.["Account No"] || "0", <FaUsers className="text-lg" />, true)}
                             </div>
                         </div>
                     </div>
@@ -5964,9 +6567,9 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     >
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center">
-                                <FaMoneyBills className="text-sm" />
+                                <FaMoneyBills className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
-                            <h3 className="font-bold text-gray-800 text-lg">Net Salary</h3>
+                            <h3 className="font-semibold text-xs sm:text-sm text-brand-500">Net Salary</h3>
                         </div>
                         <div className="text-brand-500">
                             <FaChevronDown
@@ -5984,21 +6587,21 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     >
                         <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {renderGridItem("Increments", formatNumber(netSalary?.Increments), <FaChartLine className="text-lg" />)}
-                                {renderGridItem("Incentives", formatNumber(netSalary?.Incentives), <FaChartLine className="text-lg" />)}
-                                {renderGridItem("Deductions", formatNumber(netSalary?.Deductions), <FaChartLine className="text-lg" />)}
+                                {renderGridItem("Increments", formatNumber(netSalary?.Increments), <FaChartLine className="text-lg" />, true)}
+                                {renderGridItem("Incentives", formatNumber(netSalary?.Incentives), <FaChartLine className="text-lg" />, true)}
+                                {renderGridItem("Deductions", formatNumber(netSalary?.Deductions), <FaChartLine className="text-lg" />, true)}
                             </div>
                             <div className="border-t border-dashed border-gray-200 my-6"></div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {renderGridItem("EOBI", (netSalary?.EOBI === "No" || !netSalary?.EOBI) ? "0" : netSalary?.EOBI, <FaUsers className="text-lg" />)}
-                                {renderGridItem("Provident Fund", (netSalary?.["Provident Fund"] === "0" || !netSalary?.["Provident Fund"]) ? "No" : netSalary?.["Provident Fund"], <FaUsers className="text-lg" />)}
-                                <div className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                                    <div className="w-10 h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center flex-shrink-0">
-                                        <FaMoneyBills className="text-lg" />
+                                {renderGridItem("EOBI", (netSalary?.EOBI === "No" || !netSalary?.EOBI) ? "0" : netSalary?.EOBI, <FaUsers className="text-lg" />, true)}
+                                {renderGridItem("Provident Fund", (netSalary?.["Provident Fund"] === "0" || !netSalary?.["Provident Fund"]) ? "No" : netSalary?.["Provident Fund"], <FaUsers className="text-lg" />, true)}
+                                <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-green-50 text-green-500 flex items-center justify-center flex-shrink-0">
+                                        <FaMoneyBills className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Net Salary Excluding Attendance deduction</p>
-                                        <p className="text-sm font-bold text-green-600 mt-0.5 break-words">{formatNumber(netSalary?.["Net Salary Excluding Attendance deduction"])}</p>
+                                        <p className="font-normal text-[11px] text-gray-500">Net Salary Excluding Attendance deduction</p>
+                                        <p className="font-semibold font-Urbanist text-[11px] sm:text-xs text-green-600 mt-0.5 break-words">{formatNumber(netSalary?.["Net Salary Excluding Attendance deduction"])}</p>
                                     </div>
                                 </div>
                             </div>
@@ -6014,9 +6617,9 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     >
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-500 flex items-center justify-center">
-                                <FaListUl className="text-sm" />
+                                <FaListUl className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </div>
-                            <h3 className="font-bold text-gray-800 text-lg">Allowances/Deductions</h3>
+                            <h3 className="font-semibold text-xs sm:text-sm text-brand-500">Allowances/Deductions</h3>
                         </div>
                         <div className="text-brand-500">
                             <FaChevronDown
@@ -6037,11 +6640,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 <table className="w-full table-fixed">
                                     <thead>
                                         <tr className="bg-gray-50 border-b border-gray-100">
-                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Title</th>
-                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Type</th>
-                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Amount</th>
-                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Recurring</th>
-                                            <th className="text-left py-3 px-4 w-1/5 text-xs font-bold text-gray-500 uppercase tracking-wide">Date/Duration</th>
+                                            <th className="text-left py-2.5 px-3 sm:px-4 w-1/5 font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-700">Title</th>
+                                            <th className="text-left py-2.5 px-3 sm:px-4 w-1/5 font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-700">Type</th>
+                                            <th className="text-left py-2.5 px-3 sm:px-4 w-1/5 font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-700">Amount</th>
+                                            <th className="text-left py-2.5 px-3 sm:px-4 w-1/5 font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-700">Recurring</th>
+                                            <th className="text-left py-2.5 px-3 sm:px-4 w-1/5 font-semibold font-Urbanist text-[11px] sm:text-xs text-gray-700">Date/Duration</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
@@ -6049,20 +6652,24 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                             <>
                                                 {incentives.map((item, index) => (
                                                     <tr key={`incentive-${index}`}>
-                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-900 break-words">{item.title || "N/A"}</Typography></td>
-                                                        <td className="py-3 px-4"><span className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium">Incentive</span></td>
-                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-900">{formatNumber(item.amount)}</Typography></td>
-                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-700">{item.re_occuring || "N/A"}</Typography></td>
-                                                        <td className="py-3 px-4"><Typography variant="small" className="text-sm text-gray-700 break-words">{item.start_date_formatted ? `${item.start_date_formatted}${item.end_date_formatted ? ` - ${item.end_date_formatted}` : ""}` : "N/A"}</Typography></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><Typography variant="small" className="font-normal text-[11px] sm:text-xs text-gray-900 break-words">{formatProfileDisplay(item.title)}</Typography></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-green-50 text-green-700 text-[10px] sm:text-[11px] font-medium">Incentive</span></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><Typography variant="small" className="font-normal text-[11px] sm:text-xs text-gray-900">{formatNumber(item.amount)}</Typography></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><Typography variant="small" className="font-normal text-[11px] sm:text-xs text-gray-700">{formatProfileDisplay(item.re_occuring)}</Typography></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><Typography variant="small" className="font-normal text-[11px] sm:text-xs text-gray-700 break-words">{item.start_date_formatted
+                                                        ? `${item.start_date_formatted}${item.end_date_formatted ? ` - ${item.end_date_formatted}` : ""}`
+                                                        : "--"}</Typography></td>
                                                     </tr>
                                                 ))}
                                                 {deductions.map((item, index) => (
                                                     <tr key={`deduction-${index}`}>
-                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-900 break-words">{item.title || "N/A"}</Typography></td>
-                                                        <td className="py-3 px-4"><span className="inline-flex items-center px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium">Deduction</span></td>
-                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-900">{formatNumber(item.amount)}</Typography></td>
-                                                        <td className="py-3 px-4"><Typography variant="small" className="font-medium text-sm text-gray-700">{item.re_occuring || "N/A"}</Typography></td>
-                                                        <td className="py-3 px-4"><Typography variant="small" className="text-sm text-gray-700 break-words">{item.start_date_formatted ? `${item.start_date_formatted}${item.end_date_formatted ? ` - ${item.end_date_formatted}` : ""}` : "N/A"}</Typography></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><Typography variant="small" className="font-normal text-[11px] sm:text-xs text-gray-900 break-words">{formatProfileDisplay(item.title)}</Typography></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-red-50 text-red-700 text-[10px] sm:text-[11px] font-medium">Deduction</span></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><Typography variant="small" className="font-normal text-[11px] sm:text-xs text-gray-900">{formatNumber(item.amount)}</Typography></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><Typography variant="small" className="font-normal text-[11px] sm:text-xs text-gray-700">{formatProfileDisplay(item.re_occuring)}</Typography></td>
+                                                        <td className="py-2.5 px-3 sm:px-4"><Typography variant="small" className="font-normal text-[11px] sm:text-xs text-gray-700 break-words">{item.start_date_formatted
+                                                        ? `${item.start_date_formatted}${item.end_date_formatted ? ` - ${item.end_date_formatted}` : ""}`
+                                                        : "--"}</Typography></td>
                                                     </tr>
                                                 ))}
                                             </>
@@ -6071,7 +6678,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                 <td colSpan="5" className="text-center py-12">
                                                     <div className="flex flex-col items-center justify-center text-gray-400">
                                                         <FaListUl className="text-2xl mb-2 opacity-20" />
-                                                        <p className="text-sm font-medium">No allowances or deductions available</p>
+                                                        <p className="font-medium text-[11px] sm:text-xs text-gray-500">No allowances or deductions available</p>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -6248,7 +6855,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 <div className="bg-brand-50 mb-6 rounded-lg px-4 py-3 w-full flex justify-between items-center border border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
+                        className="font-semibold text-xs sm:text-sm text-brand-500"
                     >
                         Checklist
                     </Typography>
@@ -6356,10 +6963,14 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                         className="bg-gray-50 border-b border-gray-100"
                                     >
                                         <td className="px-4 py-3 text-gray-900">
-                                            {asset["Asset Name"] || asset.asset_name || "N/A"}
+                                            {formatProfileDisplay(
+                                                asset["Asset Name"] || asset.asset_name
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-gray-700">
-                                            {asset["Asset Detail"] || asset.asset_detail || "N/A"}
+                                            {formatProfileDisplay(
+                                                asset["Asset Detail"] || asset.asset_detail
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-gray-700">
                                             {asset["Returnable"] === "1" || asset.returnable === "1"
@@ -6372,10 +6983,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                 : "Not returned"}
                                         </td>
                                         <td className="px-4 py-3 text-gray-700">
-                                            {asset["Issue date"] ||
-                                                asset.issue_date ||
-                                                asset.handover_date ||
-                                                "N/A"}
+                                            {formatProfileDisplay(
+                                                asset["Issue date"] ||
+                                                    asset.issue_date ||
+                                                    asset.handover_date
+                                            )}
                                         </td>
                                         <td className="px-4 py-3">
                                             <button
@@ -6433,7 +7045,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 <div className="bg-brand-50 mb-6 rounded-lg px-4 py-3 w-full flex justify-between items-center border border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
+                        className="font-semibold text-xs sm:text-sm text-brand-500"
                     >
                         Account & Privileges
                     </Typography>
@@ -6832,7 +7444,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 <div className="bg-brand-50 rounded-lg px-4 py-3 w-full flex gap-2 items-center border border-brand-100">
                     <Typography
                         variant="h6"
-                        className="font-semibold text-sm sm:text-[15px] text-brand-500"
+                        className="font-semibold text-xs sm:text-sm text-brand-500"
                     >
                         Repetitive Duties
                     </Typography>
@@ -6912,32 +7524,34 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                 <Typography
                                                     className="text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist font-semibold text-sm"
                                                 >
-                                                    {duty.title || "N/A"}
+                                                    {formatProfileDisplay(duty.title)}
                                                 </Typography>
                                             </td>
                                             <td className={classes}>
                                                 <Typography
                                                     className="text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist font-Urbanist font-semibold text-sm"
                                                 >
-                                                    {duty.repetition_unit || "N/A"}
+                                                    {formatProfileDisplay(duty.repetition_unit)}
                                                 </Typography>
                                             </td>
                                             <td className={classes}>
                                                 <Typography
                                                     className="text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist font-Urbanist font-semibold text-sm"
                                                 >
-                                                    {duty.repetition_duration || "N/A"}
+                                                    {formatProfileDisplay(duty.repetition_duration)}
                                                 </Typography>
                                             </td>
                                             <td className={classes}>
                                                 <Typography
                                                     className="text-[clamp(12px,0.9vw,14px)] text-[#474747] font-Urbanist font-Urbanist font-semibold text-sm"
                                                 >
-                                                    {duty.effective_from
-                                                        ? new Date(
-                                                            duty.effective_from * 1000
-                                                        ).toLocaleDateString()
-                                                        : "N/A"}
+                                                    {formatProfileDisplay(
+                                                        duty.effective_from
+                                                            ? new Date(
+                                                                  duty.effective_from * 1000
+                                                              ).toLocaleDateString()
+                                                            : null
+                                                    )}
                                                 </Typography>
                                             </td>
                                             <td className={classes}>
@@ -7013,7 +7627,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
 
         return (
             <div className="space-y-4">
-                <Typography variant="h5" color="blue-gray" className="mb-4 text-[16px]">
+                <Typography
+                    variant="h6"
+                    className="mb-4 font-semibold text-xs sm:text-sm text-brand-500"
+                >
                     Employee Accelerate Performance
                 </Typography>
 
@@ -7022,10 +7639,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <CardBody className="p-5">
                         <div className="flex items-center gap-4">
                             <div className="flex-1">
-                                <label className="block text-gray-600 font-medium text-xs mb-2">
+                                <label className="block text-gray-600 font-medium text-[11px] sm:text-xs mb-2">
                                     Report Type
                                 </label>
-                                <select className="w-full text-gray-700 text-sm rounded-lg py-2.5 px-4 border border-gray-300 outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-all">
+                                <select className="w-full text-gray-700 text-[11px] sm:text-xs rounded-lg py-2.5 px-4 border border-gray-300 outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-all">
                                     <option value="">Select Report Type</option>
                                     <option value="1">Monthly Report</option>
                                     <option value="2">Date Range Report</option>
@@ -7070,17 +7687,17 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <td className={classes}>
                                                         <Typography
                                                             color="blue-gray"
-                                                            className="text-xs"
-                                                            style={{ fontSize: "12px" }}
+                                                            className="text-[11px] sm:text-xs"
                                                         >
-                                                            {data.emp_data?.dept_name || "N/A"}
+                                                            {formatProfileDisplay(
+                                                                data.emp_data?.dept_name
+                                                            )}
                                                         </Typography>
                                                     </td>
                                                     <td className={classes}>
                                                         <Typography
                                                             color="blue-gray"
-                                                            className="text-xs"
-                                                            style={{ fontSize: "12px" }}
+                                                            className="text-[11px] sm:text-xs"
                                                         >
                                                             {data.total || 0}
                                                         </Typography>
@@ -7088,8 +7705,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <td className={classes}>
                                                         <Typography
                                                             color="blue-gray"
-                                                            className="text-xs"
-                                                            style={{ fontSize: "12px" }}
+                                                            className="text-[11px] sm:text-xs"
                                                         >
                                                             {data.completed || 0}
                                                         </Typography>
@@ -7097,8 +7713,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <td className={classes}>
                                                         <Typography
                                                             color="blue-gray"
-                                                            className="text-xs"
-                                                            style={{ fontSize: "12px" }}
+                                                            className="text-[11px] sm:text-xs"
                                                         >
                                                             {data.closed_completed || 0}
                                                         </Typography>
@@ -7106,8 +7721,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <td className={classes}>
                                                         <Typography
                                                             color="blue-gray"
-                                                            className="text-xs"
-                                                            style={{ fontSize: "12px" }}
+                                                            className="text-[11px] sm:text-xs"
                                                         >
                                                             {data.pending || 0}
                                                         </Typography>
@@ -7115,8 +7729,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <td className={classes}>
                                                         <Typography
                                                             color="blue-gray"
-                                                            className="text-xs"
-                                                            style={{ fontSize: "12px" }}
+                                                            className="text-[11px] sm:text-xs"
                                                         >
                                                             {data.picked || 0}
                                                         </Typography>
@@ -7124,8 +7737,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                     <td className={classes}>
                                                         <Typography
                                                             color="blue-gray"
-                                                            className="text-xs"
-                                                            style={{ fontSize: "12px" }}
+                                                            className="text-[11px] sm:text-xs"
                                                         >
                                                             {data.rating_avg || 0}
                                                         </Typography>
@@ -7138,8 +7750,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                             <td colSpan="7" className="px-4 py-6 text-center">
                                                 <Typography
                                                     color="blue-gray"
-                                                    className="text-sm font-medium"
-                                                    style={{ fontSize: "13px" }}
+                                                    className="font-medium text-[11px] sm:text-xs"
                                                 >
                                                     No data found
                                                 </Typography>
@@ -7156,6 +7767,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     };
 
     const renderTabContent = () => {
+        const sectionFetchLoading =
+            !!tabSectionLoading[activeTab] ||
+            (activeTab === 9 && accelerateTabLoading);
+        if (sectionFetchLoading) {
+            return <EmployeeProfileTabContentSkeleton sectionCards={3} />;
+        }
         switch (activeTab) {
             case 0:
                 return renderOverview();
@@ -7248,9 +7865,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 variant="h4"
                                 className="font-bold text-black text-xl sm:text-2xl"
                             >
-                                {employeeData?.basic_information?.emp_name ||
-                                    employeeData?.employee?.name ||
-                                    "N/A"}
+                                {formatProfileDisplay(
+                                    employeeData?.basic_information?.emp_name ||
+                                        employeeData?.employee?.name
+                                )}
                             </Typography>
                             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                 <Button
@@ -7323,11 +7941,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                             variant="small"
                                             className="font-semibold text-xs sm:text-sm text-gray-900 mt-0.5 break-words"
                                         >
-                                            {employeeData?.Official_Info?.designation ||
-                                                employeeData?.designationObj?.title ||
-                                                employeeData?.Official_Info?.designationObj?.title ||
-                                                employeeData?.employee?.designationObj?.title ||
-                                                "N/A"}
+                                            {formatProfileDisplay(
+                                                employeeData?.Official_Info?.designation ||
+                                                    employeeData?.designationObj?.title ||
+                                                    employeeData?.Official_Info?.designationObj?.title ||
+                                                    employeeData?.employee?.designationObj?.title
+                                            )}
                                         </Typography>
                                     </div>
                                 </div>
@@ -7347,10 +7966,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                             variant="small"
                                             className="font-semibold text-xs sm:text-sm text-gray-900 mt-0.5 break-words"
                                         >
-                                            {employeeData?.department?.name ||
-                                                employeeData?.Official_Info?.department?.name ||
-                                                employeeData?.employee?.department?.name ||
-                                                "N/A"}
+                                            {formatProfileDisplay(
+                                                employeeData?.department?.name ||
+                                                    employeeData?.Official_Info?.department?.name ||
+                                                    employeeData?.employee?.department?.name
+                                            )}
                                         </Typography>
                                     </div>
                                 </div>
@@ -7377,12 +7997,14 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                             variant="small"
                                             className="font-semibold text-xs sm:text-sm text-gray-900 mt-0.5 break-words"
                                         >
-                                            {employeeData?.Official_Info?.contacts &&
-                                                employeeData.Official_Info.contacts.length > 0
-                                                ? employeeData.Official_Info.contacts[
-                                                    employeeData.Official_Info.contacts.length - 1
-                                                ].contact
-                                                : "N/A"}
+                                            {formatProfileDisplay(
+                                                employeeData?.Official_Info?.contacts &&
+                                                    employeeData.Official_Info.contacts.length > 0
+                                                    ? employeeData.Official_Info.contacts[
+                                                          employeeData.Official_Info.contacts.length - 1
+                                                      ].contact
+                                                    : null
+                                            )}
                                         </Typography>
                                     </div>
                                 </div>
@@ -7402,7 +8024,9 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                             variant="small"
                                             className="font-semibold text-xs sm:text-sm text-gray-900 mt-0.5 break-words"
                                         >
-                                            {employeeData?.basic_information?.email || "N/A"}
+                                            {formatProfileDisplay(
+                                                employeeData?.basic_information?.email
+                                            )}
                                         </Typography>
                                     </div>
                                 </div>
@@ -7497,7 +8121,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
 
-                        {/* Gender */}
+                        {/* Gender and CNIC/Passport */}
                         <div className="flex justify-between">
                             <div className="w-[47%]">
                                 <Select
@@ -7523,22 +8147,16 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 </Select>
                             </div>
                             <div className="w-[47%]">
-                                <Select
+                                <Input
                                     color="blue"
-                                    label="Blood Group"
-                                    value={basicInfoForm.bloodGroup}
-                                    onChange={(val) => handleBasicInfoChange("bloodGroup", val)}
-                                >
-                                    {/* <Option value="Please Select Blood Group">Please Select Blood Group</Option> */}
-                                    <Option value="A+">A+</Option>
-                                    <Option value="A-">A-</Option>
-                                    <Option value="B+">B+</Option>
-                                    <Option value="B-">B-</Option>
-                                    <Option value="AB+">AB+</Option>
-                                    <Option value="AB-">AB-</Option>
-                                    <Option value="O+">O+</Option>
-                                    <Option value="O-">O-</Option>
-                                </Select>
+                                    className="!h-11 !rounded-6"
+                                    label="CNIC/Passport #No"
+                                    value={basicInfoForm.nicPassport}
+                                    onChange={handleNicPassportBasicInfoChange}
+                                    maxLength={getNicMaxInputLength(
+                                        basicInfoForm.nationality
+                                    )}
+                                />
                             </div>
                         </div>
 
@@ -7638,20 +8256,36 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         </div>
 
-                        {/* Disability */}
-                        <div className="w-full">
-                            <Textarea
-                                color="blue"
-                                label="Disability (If any)"
-                                value={basicInfoForm.disability}
-                                onChange={(e) =>
-                                    handleBasicInfoChange("disability", e.target.value)
-                                }
-                            />
-                        </div>
-
-                        {/* Marital Status and NIC/Passport */}
+                        {/* Blood Group and Marital Status */}
                         <div className="flex justify-between">
+                            <div className="w-[47%]">
+                                <Select
+                                    color="blue"
+                                    label="Blood Group"
+                                    value={
+                                        BASIC_INFO_BLOOD_OPTIONS.includes(
+                                            basicInfoForm.bloodGroup
+                                        )
+                                            ? basicInfoForm.bloodGroup
+                                            : "NOT APPLICABLE"
+                                    }
+                                    onChange={(val) =>
+                                        handleBasicInfoChange("bloodGroup", val)
+                                    }
+                                >
+                                    <Option value="NOT APPLICABLE">
+                                        NOT APPLICABLE
+                                    </Option>
+                                    <Option value="A+">A+</Option>
+                                    <Option value="A-">A-</Option>
+                                    <Option value="B+">B+</Option>
+                                    <Option value="B-">B-</Option>
+                                    <Option value="AB+">AB+</Option>
+                                    <Option value="AB-">AB-</Option>
+                                    <Option value="O+">O+</Option>
+                                    <Option value="O-">O-</Option>
+                                </Select>
+                            </div>
                             <div className="w-[47%]">
                                 <Select
                                     color="blue"
@@ -7665,39 +8299,13 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Option value="Married">Married</Option>
                                     <Option value="Divorced">Divorced</Option>
                                     <Option value="Widowed">Widowed</Option>
+                                    <Option value="Other">Other</Option>
                                 </Select>
-                            </div>
-                            <div className="w-[47%]">
-                                <Input
-                                    className="!h-11 !rounded-6"
-                                    color="blue"
-                                    label="NIC/Passport"
-                                    value={basicInfoForm.nicPassport}
-                                    onChange={(e) =>
-                                        handleBasicInfoChange("nicPassport", e.target.value)
-                                    }
-                                />
                             </div>
                         </div>
 
-                        {/* Domicile File Upload and Nationality */}
+                        {/* Country and City */}
                         <div className="flex justify-between">
-                            <div className="w-[47%]">
-                                <Input
-                                    className="!h-11 !rounded-6"
-                                    color="blue"
-                                    type="file"
-                                    label="Domicile Document"
-                                    accept=".jpg,.jpeg,.png,.pdf"
-                                    onChange={handleDomicileFileUpload}
-                                    disabled={isUploadingFile}
-                                />
-                                {isUploadingFile && (
-                                    <small className="text-blue-600 text-xs mt-1">
-                                        Uploading file...
-                                    </small>
-                                )}
-                            </div>
                             <div className="w-[47%]">
                                 <div
                                     ref={countrySelectRef}
@@ -7708,9 +8316,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <CustomSelect
                                         placeHolderTitle="Select nationality"
                                         value={
-                                            countries.find(
-                                                (c) => c.country_name === basicInfoForm.nationality
-                                            )
+                                            basicInfoForm.nationality
                                                 ? {
                                                     value: basicInfoForm.nationality,
                                                     label: basicInfoForm.nationality,
@@ -7722,10 +8328,16 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                             label: country.country_name,
                                         }))}
                                         onChangeHandler={(selectedOption) => {
-                                            handleBasicInfoChange(
-                                                "nationality",
-                                                selectedOption ? selectedOption.value : ""
-                                            );
+                                            const name = selectedOption
+                                                ? selectedOption.value
+                                                : "";
+                                            pendingCapitalDefaultRef.current =
+                                                name || null;
+                                            setBasicInfoForm((prev) => ({
+                                                ...prev,
+                                                nationality: name,
+                                                city: "",
+                                            }));
                                             setCountrySearch("");
                                         }}
                                         onHandleSelectSearch={(inputValue) => {
@@ -7742,44 +8354,135 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                         Country
                                     </label>
                                     <style>{`
-                                        .country-select-wrapper > div > div > div {
+                                        .country-select-wrapper > div > div > div,
+                                        .city-select-wrapper > div > div > div {
                                             transition: border-color 0.2s, box-shadow 0.2s;
                                         }
                                         .country-select-focused > div > div > div {
                                             border-color: #3b82f6 !important;
                                             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
                                         }
-                                        .country-select-wrapper > div > div:focus-within > div {
+                                        .country-select-wrapper > div > div:focus-within > div,
+                                        .city-select-wrapper > div > div:focus-within > div {
                                             border-color: #3b82f6 !important;
                                             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
                                         }
                                     `}</style>
                                 </div>
                             </div>
+                            <div className="w-[47%]">
+                                <div
+                                    ref={citySelectRef}
+                                    className={`relative city-select-wrapper ${cityFocused ? "country-select-focused" : ""
+                                        }`}
+                                    onClick={() => setCityFocused(true)}
+                                >
+                                    <CustomSelect
+                                        placeHolderTitle={
+                                            basicInfoForm.nationality
+                                                ? "Select city"
+                                                : "Select country first"
+                                        }
+                                        value={
+                                            basicInfoForm.city
+                                                ? {
+                                                    value: basicInfoForm.city,
+                                                    label: basicInfoForm.city,
+                                                }
+                                                : null
+                                        }
+                                        options={basicInfoCityOptions}
+                                        onChangeHandler={(selectedOption) => {
+                                            handleBasicInfoChange(
+                                                "city",
+                                                selectedOption ? selectedOption.value : ""
+                                            );
+                                        }}
+                                        isSearchable={true}
+                                        isClearable={true}
+                                        disabled={!basicInfoForm.nationality}
+                                        menuLoading={citiesForProfileLoading}
+                                        menuLoadingLabel="Loading cities..."
+                                    />
+                                    <label
+                                        className={`absolute left-3 -top-2.5 text-xs bg-white px-1 pointer-events-none z-10 transition-colors ${cityFocused ? "text-brand-500" : "text-gray-500"
+                                            }`}
+                                    >
+                                        City
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* City and NTN */}
+                        {/* Address and Domicile */}
                         <div className="flex justify-between">
                             <div className="w-[47%]">
                                 <Input
                                     className="!h-11 !rounded-6"
                                     color="blue"
-                                    label="City"
-                                    value={basicInfoForm.city}
-                                    onChange={(e) =>
-                                        handleBasicInfoChange("city", e.target.value)
-                                    }
-                                />
-                            </div>
-                            <div className="w-[47%]">
-                                <Input
-                                    className="!h-11 !rounded-6"
-                                    color="blue"
-                                    label="NTN# (If any)"
+                                    label="Address"
                                     value={basicInfoForm.ntn}
                                     onChange={(e) => handleBasicInfoChange("ntn", e.target.value)}
                                 />
                             </div>
+                            <div className="w-[47%]">
+                                <input
+                                    id="basic-info-domicile-upload"
+                                    type="file"
+                                    className="hidden"
+                                    accept=".jpg,.jpeg,.png,.pdf"
+                                    onChange={handleDomicileFileUpload}
+                                    disabled={isUploadingFile}
+                                />
+                                <div className="relative">
+                                    <label
+                                        htmlFor="basic-info-domicile-upload"
+                                        className={`w-full border rounded-md px-3 !h-11 text-sm flex items-center justify-between gap-2 ${
+                                            isUploadingFile
+                                                ? "cursor-not-allowed bg-blue-gray-50 text-blue-gray-400 border-blue-gray-200"
+                                                : "cursor-pointer bg-white text-blue-gray-700 border-blue-gray-200 hover:border-blue-500"
+                                        }`}
+                                    >
+                                        <span className="flex items-center gap-2 min-w-0 flex-1">
+                                            <FaUpload
+                                                className="text-brand-500 flex-shrink-0"
+                                                size={16}
+                                                aria-hidden
+                                            />
+                                            <span className="truncate text-left">
+                                                {domicileFile?.name
+                                                    ? domicileFile.name
+                                                    : domicileFileUrl
+                                                      ? "Domicile selected"
+                                                      : ""}
+                                            </span>
+                                        </span>
+                                        <span className="text-blue-600 font-medium flex-shrink-0">
+                                            Select File
+                                        </span>
+                                    </label>
+                                    <label className="absolute left-3 -top-2.5 text-xs bg-white px-1 pointer-events-none z-10 text-gray-500">
+                                        Select Domicile
+                                    </label>
+                                </div>
+                                {isUploadingFile && (
+                                    <small className="text-blue-600 text-xs mt-1">
+                                        Uploading file...
+                                    </small>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Disability */}
+                        <div className="w-full">
+                            <Textarea
+                                color="blue"
+                                label="Disability (If any)"
+                                value={basicInfoForm.disability}
+                                onChange={(e) =>
+                                    handleBasicInfoChange("disability", e.target.value)
+                                }
+                            />
                         </div>
 
                         {/* Submit Button */}
@@ -8023,48 +8726,60 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 widthSize={800}
                 compo={
                     <div className="py-6 space-y-6">
-                        {/* HR Policy */}
+                        {/* HR Policy — match Update Basic Information: Material Tailwind Select */}
                         <div>
-                            <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                HR Policy <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                value={attendanceSettingsForm.hrPolicyId ?? ""}
-                                onChange={handleHrPolicyChange}
+                            <Select
+                                color="blue"
+                                label="HR Policy"
+                                required
+                                value={
+                                    attendanceSettingsForm.hrPolicyId != null &&
+                                    attendanceSettingsForm.hrPolicyId !== ""
+                                        ? String(attendanceSettingsForm.hrPolicyId)
+                                        : ""
+                                }
+                                onChange={(val) =>
+                                    handleHrPolicyChange({
+                                        target: { value: val ?? "" },
+                                    })
+                                }
                                 disabled={hrPolicyDropdownLoading}
-                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             >
-                                <option value="">
+                                <Option value="">
                                     {hrPolicyDropdownLoading
                                         ? "Loading policies..."
                                         : "Choose a policy"}
-                                </option>
+                                </Option>
                                 {hrPolicyDropdown &&
                                     hrPolicyDropdown.map((policy) => (
-                                        <option key={policy.id} value={policy.id}>
+                                        <Option
+                                            key={policy.id}
+                                            value={String(policy.id)}
+                                        >
                                             {policy.name}
-                                        </option>
+                                        </Option>
                                     ))}
-                            </select>
+                            </Select>
                         </div>
 
-                        {/* Bio ID */}
+                        {/* Bio ID — match Basic Information Input height/typography */}
                         <div>
-                            <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                Bio ID
-                            </label>
-                            <input
-                                type="text"
-                                value={attendanceSettingsForm.bioId}
+                            <Input
+                                className="!h-11 !rounded-6"
+                                color="blue"
+                                label="Bio ID"
+                                value={attendanceSettingsForm.bioId || ""}
                                 placeholder="Bio ID will be displayed here"
                                 disabled
-                                className="bg-gray-100 border border-gray-300 text-gray-500 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                         </div>
 
                         {/* Last 10 days attendance table */}
                         <div>
-                            <Typography variant="h6" color="blue-gray" className="mb-4">
+                            <Typography
+                                variant="h6"
+                                className="mb-4 font-semibold text-xs sm:text-sm text-brand-500"
+                            >
                                 Last 10 days attendance
                             </Typography>
                             <div className="overflow-x-auto">

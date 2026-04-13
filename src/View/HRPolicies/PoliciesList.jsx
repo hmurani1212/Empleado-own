@@ -5,19 +5,37 @@ import useHRPolicies from '../../ViewModel/HRPoliciesViewModel/HRPoliciesService
 import { FaChevronDown } from "react-icons/fa";
 import { motion } from 'framer-motion';
 import ConfirmationDialog from '../../Components/ConfirmationDialog/ConfirmationDialog';
-import formatTime from '../../services/__hrPoliciesServices';
+import formatTime, { isHrPolicyInactive } from '../../services/__hrPoliciesServices';
 import useDropdownService from '../../services/__dropDownHoverService';
 import { formatDateDMY } from '../../services/__dateTimeServices';
 import { HiOutlineDocumentText } from "react-icons/hi";
 import useStore from '../../Store/store';
+
+/** Payroll pills — same shape as Time Base, distinct light palette */
+function policyPayrollPillClass(payroll) {
+  if (payroll === 1 || payroll === '1') return 'bg-amber-50 text-amber-800 ring-amber-200/80'
+  if (payroll === 2 || payroll === '2') return 'bg-violet-50 text-violet-800 ring-violet-200/80'
+  if (payroll === 3 || payroll === '3') return 'bg-teal-50 text-teal-800 ring-teal-200/80'
+  return 'bg-slate-100 text-slate-600 ring-slate-200/80'
+}
+
+function policyPayrollLabelCell(payroll) {
+  if (payroll === 1 || payroll === '1') return 'Time Base'
+  if (payroll === 2 || payroll === '2') return 'Attendance Base'
+  if (payroll === 3 || payroll === '3') return 'Hourly Base'
+  return 'Unknown'
+}
+
+const listPillSm =
+  'inline-flex items-center justify-center text-center rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ring-1 font-urbanist leading-none'
 
 const SkeletonRow = () => (
   <tr className="animate-pulse border-b border-gray-100">
     <td className="p-4"><div className="h-4 w-12 bg-gray-200 rounded mx-auto"></div></td>
     <td className="p-4"><div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div></td>
     <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-16 bg-gray-200 rounded mx-auto"></div></td>
-    <td className="p-4"><div className="h-4 w-28 bg-gray-200 rounded mx-auto"></div></td>
+    <td className="p-4"><div className="h-6 w-16 rounded-full bg-gray-200 mx-auto" /></td>
+    <td className="p-4"><div className="h-6 w-24 rounded-full bg-gray-200 mx-auto" /></td>
     <td className="p-4"><div className="h-4 w-16 bg-gray-200 rounded mx-auto"></div></td>
     <td className="p-4"><div className="h-4 w-24 bg-gray-200 rounded mx-auto"></div></td>
     <td className="p-4"><div className="h-8 w-20 bg-gray-200 rounded mx-auto"></div></td>
@@ -117,7 +135,7 @@ const PoliciesList = (props) => {
           ))
         ) : allHrpolicies.length > 0 ? (
           allHrpolicies?.map((policy, index) => {
-            
+            const inactive = isHrPolicyInactive(policy.status)
             return (
               <motion.tr 
                 key={index}
@@ -151,22 +169,25 @@ const PoliciesList = (props) => {
                   </div>
                 </td>
 
-                <td className="p-4">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                    policy.status === '0' || policy.status === 'EXPIRED'
-                      ? 'bg-red-50 text-red-600 border border-red-100' 
-                      : 'bg-green-100/70 text-green-600/70 border border-green-300'
-                  }`}>
-                    {policy.status === '0' || policy.status === 'EXPIRED' ? 'Expired' : 'Active'}
-                  </span>
+                <td className="p-4 text-center">
+                  <div className="flex justify-center">
+                    <span
+                      className={`${listPillSm} gap-1.5 shadow-sm ${
+                        inactive ? 'bg-red-50 text-red-800 ring-red-200/80' : 'bg-green-50 text-green-800 ring-green-200/80'
+                      }`}
+                    >
+                      <span className={`inline-flex h-2 w-2 shrink-0 self-center rounded-full ${inactive ? 'bg-red-500' : 'bg-green-500'}`} />
+                      <span className="text-center">{inactive ? 'Expired' : 'Active'}</span>
+                    </span>
+                  </div>
                 </td>
 
-                <td className="p-4">
-                  <Typography className="text-sm text-gray-600 font-poppins">
-                    {policy.payroll === 1 || policy.payroll === '1' ? 'Time Base' :
-                      policy.payroll === 2 || policy.payroll === '2' ? 'Attendance Base' :
-                        policy.payroll === 3 || policy.payroll === '3' ? 'Hourly Base' : 'Unknown'}
-                  </Typography>
+                <td className="p-4 text-center">
+                  <div className="flex justify-center">
+                    <span className={`${listPillSm} ${policyPayrollPillClass(policy.payroll)}`}>
+                      {policyPayrollLabelCell(policy.payroll)}
+                    </span>
+                  </div>
                 </td>
 
                 <td className="p-4">
@@ -274,7 +295,7 @@ const PoliciesList = (props) => {
                   </button>
                 </li>
                 <div className="h-px bg-gray-100 my-1 mx-2" />
-                {policy.status === '0' ? (
+                {isHrPolicyInactive(policy.status) ? (
                   <li className="px-1">
                     <button type="button" className="w-full text-left px-3 py-2 text-xs font-medium text-green-600 hover:bg-green-50 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(3, policy.id, 1)}>
                       Activate

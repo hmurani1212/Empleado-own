@@ -194,14 +194,6 @@ const useDashboard = () => {
             ? col2Series.map((present) => Math.max(total - present, 0))
             : col2Series.map(() => 0)
 
-    const lateComersCumulativeChartData = (() => {
-        let running = 0
-        return lateComersChartData.map((v) => {
-            running += Number(v ?? 0)
-            return running
-        })
-    })()
-
     const empCheckListData = dashboardData.EMPLOYEES_CHECKLIST
     const upcommingBirthdays = adminDashboardData?.UPCOMING_BIRTHDAYS ?? dashboardData?.UPCOMING_BIRTHDAY ?? []
     // console.log('upcommingBirthdays', upcommingBirthdays)
@@ -1033,7 +1025,6 @@ const useDashboard = () => {
         dashboardCountData,
         empLate_absent_labels,
         lateComersChartData,
-        lateComersCumulativeChartData,
         absentEmployeesData,
         presentEmployeesChartData,
         pendingCheckListHeaders,

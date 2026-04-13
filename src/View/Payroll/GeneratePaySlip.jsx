@@ -8,7 +8,7 @@ import PaySlipGenerationSelection from "./PaySlipGenerationSelection";
 import useManagePaySlipGeneration from "../../ViewModel/PayrollViewModel/ManagePaySlipGeneration";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { getContentByLabel } from "../../services/getContentService";
-import { GeneratePayslipSkeleton } from "./PayrollSkeletons";
+import { GeneratePayslipTableBodySkeleton } from "./PayrollSkeletons";
 import { showToast } from "../../Components/Toaster/Toaster";
 
 const empListTableHeader = ["All", "Name", "Designation", "Employee ID", "Salary"];
@@ -54,6 +54,8 @@ const saveSearchFilterToStorage = (searchTerm, typeFilter) => {
 const GeneratePaySlip = () => {
   const {
     branches_payroll,
+    branchesLoaded,
+    departmentMenuLoading,
     managePaySlipState,
     handleSelectManagePaySlip,
   } = useManagePaySlip();
@@ -105,24 +107,6 @@ const GeneratePaySlip = () => {
     setSelectedEmployees,
     generateBulkPayroll,
   } = useManagePaySlipGeneration(managePaySlipState);
-
-  // Restore branch data when component mounts and branch_id is restored from localStorage
-  useEffect(() => {
-    // If branch_id is restored but employees are not loaded, fetch them
-    if (
-      managePaySlipState.branch_id &&
-      (!managePaySlipState.empSalary ||
-        managePaySlipState.empSalary.length === 0)
-    ) {
-      // Re-trigger the branch selection to fetch departments and employees
-      if (managePaySlipState.branch_id.value === "all") {
-        handleSelectManagePaySlip(managePaySlipState.branch_id, "branch_id");
-      } else if (managePaySlipState.branch_id.value) {
-        handleSelectManagePaySlip(managePaySlipState.branch_id, "branch_id");
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount
 
   // Filter and search employees based on multiple criteria
   // Note: Department filtering is now handled by the API, so we don't filter by department client-side
@@ -239,10 +223,6 @@ const GeneratePaySlip = () => {
     }
   };
 
-  if (managePaySlipState.loading) {
-    return <GeneratePayslipSkeleton />;
-  }
-
   return (
     <div className="flex flex-col gap-4 pt-4 lg:px-2 md:px-2 px-0">
       <div className="font-medium text-[18px] text-[#474747] font-Poppins">
@@ -270,6 +250,8 @@ const GeneratePaySlip = () => {
                 handleSelectManagePaySlip(selectedOption, "branch_id")
               }
               customStyles={false}
+              menuLoading={!branchesLoaded}
+              menuLoadingLabel="Loading branches..."
               menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
             />
           </div>
@@ -288,7 +270,8 @@ const GeneratePaySlip = () => {
                 handleSelectManagePaySlip(selectedOption, "department_id");
               }}
               cStyle={true}
-              disabled={!managePaySlipState?.branch_id || managePaySlipState?.branch_id?.value === "all"}
+              menuLoading={departmentMenuLoading}
+              menuLoadingLabel="Loading departments..."
               menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
             />
           </div>
@@ -336,8 +319,7 @@ const GeneratePaySlip = () => {
 
       <div className="bg-white rounded-[10px] p-2 drop-shadow-md">
         <div className="relative w-full overflow-auto customScroll">
-          {(managePaySlipState.branch_id || employeeData.length > 0) && (
-            <table className="min-w-full table-fixed text-center">
+          <table className="min-w-full table-fixed text-center">
                      <colgroup>
     <col style={{ width: '20%' }} />
     <col style={{ width: '20%' }} />
@@ -363,7 +345,10 @@ const GeneratePaySlip = () => {
                             indeterminate={
                               someSelected && !allSelected ? true : undefined
                             }
-                            disabled={employeeData.length === 0}
+                            disabled={
+                              employeeData.length === 0 ||
+                              managePaySlipState.loading
+                            }
                           />
                         )}
                         {head}
@@ -373,7 +358,10 @@ const GeneratePaySlip = () => {
                 </tr>
               </thead>
               <tbody>
-                {employeeData?.map((ele, index) => {
+                {managePaySlipState.loading ? (
+                  <GeneratePayslipTableBodySkeleton />
+                ) : (
+                  employeeData?.map((ele, index) => {
                   const isLast = index === employeeData.length - 1;
                   const classes = isLast
                     ? "px-[clamp(4px,0.8vw,12px)] py-4"
@@ -434,10 +422,10 @@ const GeneratePaySlip = () => {
                       </td>
                     </tr>
                   );
-                })}
+                })
+                )}
               </tbody>
             </table>
-          )}
         </div>
       </div>
 

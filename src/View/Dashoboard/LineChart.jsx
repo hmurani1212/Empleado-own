@@ -127,7 +127,7 @@ const options = {
 
 const LineChart = () => {
 
-const { empLate_absent_labels, absentEmployeesData, lateComersChartData, presentEmployeesChartData, lateComersCumulativeChartData } = useDashboard()
+const { empLate_absent_labels, absentEmployeesData, lateComersChartData, presentEmployeesChartData } = useDashboard()
 
     // Keep raw labels for stable/dynamic chart updates; format only for display (ticks/tooltip).
     const labels = empLate_absent_labels || [];
@@ -163,17 +163,6 @@ const { empLate_absent_labels, absentEmployeesData, lateComersChartData, present
                 tension: 0.35,
                 pointRadius: 2,
                 pointHoverRadius: 5,
-            },
-            {
-                label: 'Late Comers (Cumulative)',
-                data: lateComersCumulativeChartData || [],
-                borderColor: '#d97706',
-                backgroundColor: '#d97706',
-                borderWidth: 2,
-                tension: 0.35,
-                pointRadius: 1,
-                pointHoverRadius: 4,
-                borderDash: [6, 4],
             },
         ],
     }

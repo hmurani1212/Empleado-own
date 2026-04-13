@@ -6,6 +6,10 @@ const hireViewModel = (set, get) => ({
     allVacanciesList_data: [],
     deactiveVacancies: [],
     allApplicants_data: [],
+    /** True until an applicants list fetch finishes; starts true so first paint shows skeleton (not "not found"). */
+    allApplicantsLoading: true,
+    /** True until global hire counts (`get_count_app`) return — drives dashboard stat cards. */
+    hireCountsLoading: true,
     vacancyFilters: [],
     get_city_all_data: [],
     get_count_app_data: [],
@@ -56,6 +60,11 @@ const hireViewModel = (set, get) => ({
 
 
     gettingAllApplicants: async (vacancyId, filters = {}, status = null, location = null) => {
+        set({
+            allApplicantsLoading: true,
+            allApplicants_data: [],
+            rejectedApplicantsLoading: false,
+        })
         try {
             const response = await hireApi.getAllApplicants(vacancyId, filters, status, location)
             const data = response.data
@@ -71,6 +80,8 @@ const hireViewModel = (set, get) => ({
             console.error('Error fetching applications:', error)
             set({ allApplicants_data: [] })
             // showToast('error', 'Failed to fetch applications')
+        } finally {
+            set({ allApplicantsLoading: false })
         }
     },
 
@@ -118,6 +129,7 @@ const hireViewModel = (set, get) => ({
 
 
     get_count_app: async () => {
+        set({ hireCountsLoading: true })
         try {
             const response = await hireApi.get_count_app()
             const data = response.data
@@ -131,6 +143,8 @@ const hireViewModel = (set, get) => ({
             console.error('Error fetching application record:', error)
             set({ get_count_app_data: [] })
             showToast('error', 'Failed to fetch record')
+        } finally {
+            set({ hireCountsLoading: false })
         }
     },
 

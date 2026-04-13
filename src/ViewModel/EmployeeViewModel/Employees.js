@@ -19,7 +19,11 @@ const employeeViewModel = (set, get) => ({
     get_inactive_emp_data: [],
     checkListPageId: '',
     employeeCheckListData: [],
+    /** True while GET employee requirement checklist is in flight */
+    employeeCheckListLoading: false,
     Get_All_Employee: [],
+    /** True while get_all_employee API is in flight (dropdown search employee list) */
+    getAllEmployeeLoading: false,
     getHeaderData: {},
     setHeaderData: (data) => set({ getHeaderData: data }),
     // Signature state and functions
@@ -289,6 +293,7 @@ const employeeViewModel = (set, get) => ({
     },
 
     gettingEmployeeCheckList: async () => {
+        set({ employeeCheckListLoading: true });
         try {
             const response = await employeesApi.getEmployeeCheckList()
             const responseData = response.data;
@@ -301,6 +306,8 @@ const employeeViewModel = (set, get) => ({
 
         } catch (error) {
 
+        } finally {
+            set({ employeeCheckListLoading: false });
         }
     },
     get_inactive_empfn: async () => {
@@ -382,6 +389,7 @@ const employeeViewModel = (set, get) => ({
         if (get().skipGetAllEmployeeOnListPage || employeesListPageRef.current || isListPagePath) {
             return get().Get_All_Employee ?? [];
         }
+        set({ getAllEmployeeLoading: true })
         try {
             const response = await employeesApi.get_all_employeee(dept_id);
             const responseData = response.data;
@@ -395,6 +403,8 @@ const employeeViewModel = (set, get) => ({
         } catch (error) {
             console.error('Error fetching employees:', error)
             return null
+        } finally {
+            set({ getAllEmployeeLoading: false })
         }
     },
 
@@ -549,7 +559,8 @@ const employeeViewModel = (set, get) => ({
             const response = await employeesApi.updateEmployee(employeeId, data)
             const responseData = response.data;
             console.log('Update Employee Response:', responseData)
-            if (responseData.STATUS === "SUCCESSFUL") {
+            const statusRaw = responseData?.STATUS ?? responseData?.status;
+            if (String(statusRaw || "").toUpperCase() === "SUCCESSFUL") {
                 return responseData
             } else {
                 console.error('Failed to update employee:', responseData.ERROR_DESCRIPTION)

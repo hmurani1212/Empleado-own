@@ -10,6 +10,8 @@ import useHireNewVacancy from "../../ViewModel/HireViewModel/HireNewVacancy";
 import { Link } from "react-router-dom";
 import { getUserData } from "../../Authentication/jwt_decode";
 import CustomButton from "../../Components/CustomButton/CustomButton";
+import useStore from "../../Store/store";
+import { HireDashboardCardsSkeleton } from "./HireSkeletons";
 const Hire = ({ data }) => {
   // Console log the props data
   // console.log("Hire component props data:", data?.response?.DB_DATA);
@@ -25,6 +27,7 @@ const Hire = ({ data }) => {
   // console.log("allVacanciesList", allVacanciesList_data.total_applications);
 
   const { createVacancy } = useHireNewVacancy();
+  const hireCountsLoading = useStore((state) => state.hireCountsLoading);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -71,21 +74,25 @@ const Hire = ({ data }) => {
       {/* Match Dashboard stat grid: fluid columns, consistent gap */}
       <div className="w-full py-2 pb-1 text-center">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-5">
-          {hireCardList.map((item, idx) => (
-            <NavLink
-              key={item.id}
-              to={item.link || "#"}
-              className="block w-full min-w-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-              onClick={(e) => handleHireNavClickCards(e, item.link, item.id)}
-            >
-              <CustomCard
-                image={item.imgSrc}
-                title={item.title}
-                backgroundColor={item.legendBg}
-                count={item.count} // Properly mapped values for each card
-              />
-            </NavLink>
-          ))}
+          {hireCountsLoading ? (
+            <HireDashboardCardsSkeleton />
+          ) : (
+            hireCardList.map((item, idx) => (
+              <NavLink
+                key={item.id}
+                to={item.link || "#"}
+                className="block w-full min-w-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                onClick={(e) => handleHireNavClickCards(e, item.link, item.id)}
+              >
+                <CustomCard
+                  image={item.imgSrc}
+                  title={item.title}
+                  backgroundColor={item.legendBg}
+                  count={item.count} // Properly mapped values for each card
+                />
+              </NavLink>
+            ))
+          )}
         </div>
       </div>
 

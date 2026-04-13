@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { flushSync } from "react-dom";
 import {
   Button,
   Checkbox,
@@ -22,7 +23,7 @@ import Calendar from "react-calendar";
 import ExportPayslip from "./ExportPayslip";
 import { useNavigate } from "react-router-dom";
 import payrollApi from "../../Model/Data/Payroll/Payroll";
-import { MakingPaymentsSkeleton } from "./PayrollSkeletons";
+import { MakingPaymentsTableBodySkeleton } from "./PayrollSkeletons";
 
 // Convert salary_month "0126" (MMYY) to "January/2026" - first 2 digits = month, last 2 = year (use current century)
 const formatSalaryMonthFTM = (salaryMonth) => {
@@ -40,6 +41,47 @@ const formatSalaryMonthFTM = (salaryMonth) => {
 // Default "All Branches" option for first load
 const ALL_BRANCHES_OPTION = { value: 0, label: "All Branches" };
 
+const MAKING_PAYMENTS_FILTERS_KEY = "makingPaymentsFilters";
+
+const loadMakingPaymentsDepartment = () => {
+  try {
+    const raw = localStorage.getItem(MAKING_PAYMENTS_FILTERS_KEY);
+    if (!raw) return null;
+    const { department_id } = JSON.parse(raw);
+    if (
+      department_id &&
+      typeof department_id === "object" &&
+      department_id.value !== undefined &&
+      department_id.value !== null
+    ) {
+      return department_id;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+};
+
+const saveMakingPaymentsDepartment = (department) => {
+  try {
+    localStorage.setItem(
+      MAKING_PAYMENTS_FILTERS_KEY,
+      JSON.stringify({ department_id: department })
+    );
+  } catch {
+    /* ignore */
+  }
+};
+
+/** Clear persisted Making Payments filter (department only); branch always defaults to All Branches on load */
+export const clearMakingPaymentsFilters = () => {
+  try {
+    localStorage.removeItem(MAKING_PAYMENTS_FILTERS_KEY);
+  } catch {
+    /* ignore */
+  }
+};
+
 const MakingPayments = () => {
   const navigate = useNavigate();
   const [selectedAll, setSelectedAll] = useState(false);
@@ -48,7 +90,11 @@ const MakingPayments = () => {
     { value: 0, label: "All Departments" },
   ]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [departmentMenuLoading, setDepartmentMenuLoading] = useState(false);
+  /** Table area only — filters stay mounted (avoid full-page skeleton on payslip refetch) */
+  const [tableLoading, setTableLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+  const makingPaymentsFiltersReady = useRef(false);
 
   // Main page filter states
   const [mainFilter, setMainFilter] = useState(null);
@@ -87,10 +133,21 @@ const MakingPayments = () => {
   const getAllBranchesPayroll = useStore(
     (state) => state.getAllBranchesPayroll
   );
+  const branchesLoaded = useStore((state) => state.branchesLoaded);
   const copyBranchesData = useStore((state) => state.copyBranchesData);
   const gettingPayslips = useStore((state) => state.gettingPayslips);
   const payslips = useStore((state) => state.payslips);
-  const payslipsLoaded = useStore((state) => state.payslipsLoaded);
+
+  const fetchPayslipsTable = async (params, forceReload = true) => {
+    flushSync(() => {
+      setTableLoading(true);
+    });
+    try {
+      await gettingPayslips(params, forceReload, false);
+    } finally {
+      setTableLoading(false);
+    }
+  };
   const totalPayslipsCount = useStore((state) => state.totalPayslipsCount);
   const payslipsPagination = useStore((state) => state.payslipsPagination);
   const deletingBulkPayslips = useStore((state) => state.deletingBulkPayslips);
@@ -126,9 +183,6 @@ const MakingPayments = () => {
     });
   };
 
-  useEffect(() => {
-    console.log("employees", employees);
-  }, []);
   const handleRowSelect = (employeeId) => {
     setEmployees((prevEmployees) =>
       prevEmployees.map((emp) =>
@@ -1130,27 +1184,118 @@ const MakingPayments = () => {
     }
   };
 
-  // Load branches and payslips on component mount - All branches + current year (current month)
+  // Persist department only after initial load has applied saved department (avoid wiping localStorage before read)
   useEffect(() => {
-    if (
-      !copyBranchesData ||
-      !Array.isArray(copyBranchesData) ||
-      copyBranchesData.length === 0
-    ) {
-      getAllBranchesPayroll();
-    }
+    if (!makingPaymentsFiltersReady.current) return;
+    saveMakingPaymentsDepartment(selectedDepartment);
+  }, [selectedDepartment]);
 
-    // Reset pagination state
-    setCurrentPageId(0);
-    setAccumulatedEmployees([]);
+  // Load branches, department list for "all branches", optional saved department, then payslips — always branch_id 0 on entry
+  useEffect(() => {
+    let cancelled = false;
 
-    // First load: All branches, no filter - filter by month only when user selects "Specific month"
-    const initialParams = {
-      page: 0,
-      limit: 15,
-      branch_id: 0,
+    const run = async () => {
+      flushSync(() => {
+        setTableLoading(true);
+      });
+
+      setSelectedBranch(ALL_BRANCHES_OPTION);
+
+      if (
+        !copyBranchesData ||
+        !Array.isArray(copyBranchesData) ||
+        copyBranchesData.length === 0
+      ) {
+        await getAllBranchesPayroll();
+      }
+
+      setCurrentPageId(0);
+      setAccumulatedEmployees([]);
+
+      const savedDept = loadMakingPaymentsDepartment();
+
+      setDepartmentMenuLoading(true);
+      let deptsList = [];
+      try {
+        deptsList = await gettingDepartmentsServices(0);
+      } finally {
+        setDepartmentMenuLoading(false);
+      }
+      if (cancelled) return;
+
+      if (!Array.isArray(deptsList)) deptsList = [];
+
+      setDepartments([
+        { value: 0, label: "All Departments" },
+        ...deptsList,
+      ]);
+
+      let deptToUse = null;
+      if (savedDept) {
+        if (savedDept.value === 0 || savedDept.value === "0") {
+          deptToUse = { value: 0, label: "All Departments" };
+        } else if (
+          deptsList.some((d) => String(d.value) === String(savedDept.value))
+        ) {
+          deptToUse = savedDept;
+        }
+      }
+      setSelectedDepartment(deptToUse);
+      makingPaymentsFiltersReady.current = true;
+
+      const params = {
+        page: 0,
+        limit: 15,
+      };
+      if (
+        ALL_BRANCHES_OPTION &&
+        (ALL_BRANCHES_OPTION.value === 0 || ALL_BRANCHES_OPTION.value)
+      ) {
+        params.branch_id = ALL_BRANCHES_OPTION.value;
+      }
+      if (
+        deptToUse &&
+        (deptToUse.value === 0 || deptToUse.value)
+      ) {
+        params.department_id = deptToUse.value;
+      }
+      if (
+        ALL_BRANCHES_OPTION &&
+        deptToUse &&
+        (ALL_BRANCHES_OPTION.value === 0 || ALL_BRANCHES_OPTION.value) &&
+        (deptToUse.value === 0 || deptToUse.value)
+      ) {
+        params.pagination = false;
+        delete params.limit;
+        delete params.page;
+      }
+
+      const filterKeyForComparison = JSON.stringify({
+        ...params,
+        page: undefined,
+      });
+      if (!cancelled) {
+        const st = useStore.getState();
+        if (
+          st.payslipsLoaded &&
+          st.lastPayslipFilters === filterKeyForComparison
+        ) {
+          setTableLoading(false);
+          return;
+        }
+      }
+
+      try {
+        await gettingPayslips(params, false);
+      } finally {
+        setTableLoading(false);
+      }
     };
-    gettingPayslips(initialParams, true); // Force reload to get fresh data
+
+    run();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1424,6 +1569,10 @@ const MakingPayments = () => {
 
   // Handle branch selection - build params with selectedOption so branch_id is sent on first select (state updates are async)
   const handleBranchChange = async (selectedOption) => {
+    flushSync(() => {
+      setTableLoading(true);
+    });
+
     setSelectedBranch(selectedOption);
     setSelectedDepartment(null); // Reset department when branch changes
     setDepartments([{ value: 0, label: "All Departments" }]); // Clear departments list immediately
@@ -1455,6 +1604,7 @@ const MakingPayments = () => {
       selectedOption &&
       (selectedOption.value === 0 || selectedOption.value)
     ) {
+      setDepartmentMenuLoading(true);
       try {
         // Fetch departments for selected branch (0 for all branches)
         const branchId = selectedOption.value === 0 ? 0 : selectedOption.value;
@@ -1465,19 +1615,20 @@ const MakingPayments = () => {
         ]);
 
         // Call API with params that include branch_id (no dependency on state update)
-        await gettingPayslips(params, true);
+        await fetchPayslipsTable(params, true);
       } catch (error) {
         setDepartments([{ value: 0, label: "All Departments" }]);
+      } finally {
+        setDepartmentMenuLoading(false);
       }
     } else {
       // No branch selected - call API without branch_id
-      await gettingPayslips(params, true);
+      await fetchPayslipsTable(params, true);
     }
   };
 
   // Handle department selection
   const handleDepartmentChange = async (selectedOption) => {
-    console.log("Department changed:", selectedOption);
     setSelectedDepartment(selectedOption);
 
     // Reset pagination when filter changes
@@ -1486,7 +1637,7 @@ const MakingPayments = () => {
 
     // Build params with all active filters
     const params = buildFilterParams(false);
-    await gettingPayslips(params, true);
+    await fetchPayslipsTable(params, true);
   };
 
   // Main page filter handlers
@@ -1508,11 +1659,11 @@ const MakingPayments = () => {
     // If clearing the filter, reload with no main filter
     if (!selectedOption || !selectedOption.value) {
       const params = buildFilterParams(false);
-      await gettingPayslips(params, true);
+      await fetchPayslipsTable(params, true);
     } else {
       // All main filters (employee_id, status, specific_month) are handled by backend - reload from API
       const params = buildFilterParams(false);
-      await gettingPayslips(params, true);
+      await fetchPayslipsTable(params, true);
     }
   };
 
@@ -1531,7 +1682,7 @@ const MakingPayments = () => {
     
     // Use date directly - state updates are async, so pass it to avoid stale value
     const params = buildFilterParams(false, undefined, date);
-    await gettingPayslips(params, true);
+    await fetchPayslipsTable(params, true);
   };
 
   const handleYearChange = (year) => {
@@ -1556,7 +1707,7 @@ const MakingPayments = () => {
     
     // Use date directly - state updates are async, so pass it to avoid stale/previous value
     const params = buildFilterParams(false, undefined, date);
-    await gettingPayslips(params, true);
+    await fetchPayslipsTable(params, true);
   };
 
   const handleClearMonthYear = () => {
@@ -1581,7 +1732,7 @@ const MakingPayments = () => {
     
     // Use today directly - state updates are async
     const params = buildFilterParams(false, undefined, today);
-    await gettingPayslips(params, true);
+    await fetchPayslipsTable(params, true);
   };
 
   // Handle employee search via backend API (debounced)
@@ -1591,7 +1742,7 @@ const MakingPayments = () => {
       setCurrentPageId(0);
       setAccumulatedEmployees([]);
       const params = buildFilterParams(false);
-      gettingPayslips(params, true);
+      void fetchPayslipsTable(params, true);
     }, 350);
 
     return () => clearTimeout(timeoutId);
@@ -1633,6 +1784,22 @@ const MakingPayments = () => {
       : []),
   ];
 
+  // Keep displayed branch aligned with options (always "All Branches" by default, never a stale first branch)
+  const resolvedBranchValue = useMemo(() => {
+    const match = branchOptions.find(
+      (o) => String(o.value) === String(selectedBranch?.value)
+    );
+    return match ?? branchOptions[0] ?? ALL_BRANCHES_OPTION;
+  }, [branchOptions, selectedBranch]);
+
+  const resolvedDepartmentValue = useMemo(() => {
+    if (!selectedDepartment) return null;
+    const match = departments.find(
+      (o) => String(o.value) === String(selectedDepartment.value)
+    );
+    return match ?? selectedDepartment;
+  }, [departments, selectedDepartment]);
+
   // const filterOptions = [
   //   { value: 'all', label: 'All' },
   //   { value: 'paid', label: 'Paid' },
@@ -1650,10 +1817,6 @@ const MakingPayments = () => {
     { value: "paid", label: "Paid" },
     { value: "due", label: "Due" },
   ];
-
-  if (!payslipsLoaded) {
-    return <MakingPaymentsSkeleton />;
-  }
 
   return (
     <div className="flex flex-col gap-4 lg:px-2 md:px-2 px-0">
@@ -1675,20 +1838,24 @@ const MakingPayments = () => {
               {/* Branch */}
               <CustomSelect
                 placeHolderTitle="All Branches"
-                value={selectedBranch}
+                value={resolvedBranchValue}
                 options={branchOptions}
                 onChangeHandler={handleBranchChange}
                 customStyles={false}
+                menuLoading={!branchesLoaded}
+                menuLoadingLabel="Loading branches..."
                 menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
               />
 
               {/* Department */}
               <CustomSelect
                 placeHolderTitle="All Departments"
-                value={selectedDepartment}
+                value={resolvedDepartmentValue}
                 options={departments}
                 onChangeHandler={handleDepartmentChange}
                 customStyles={false}
+                menuLoading={departmentMenuLoading}
+                menuLoadingLabel="Loading departments..."
                 menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
               />
 
@@ -1816,7 +1983,9 @@ const MakingPayments = () => {
         {/* Bottom Section: Actions */}
         <div className="bg-gray-50/60 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="font-medium text-gray-700">{employees.length}</span>
+            <span className="font-medium text-gray-700">
+              {tableLoading ? "…" : employees.length}
+            </span>
             <span>records found</span>
           </div>
           
@@ -1896,6 +2065,7 @@ const MakingPayments = () => {
                     color="blue"
                     checked={selectedAll}
                     onChange={handleSelectAll}
+                    disabled={tableLoading || employees.length === 0}
                   />
                 </th>
                 <th className="bg-[#F8F9FA] px-[clamp(4px,0.8vw,12px)] py-4">
@@ -1991,7 +2161,9 @@ const MakingPayments = () => {
               </tr>
             </thead>
             <tbody>
-              {employees.length > 0 ? (
+              {tableLoading ? (
+                <MakingPaymentsTableBodySkeleton />
+              ) : employees.length > 0 ? (
                 employees.map((employee, index) => {
                   const isLast = index === employees.length - 1;
                   const classes = isLast
@@ -2173,7 +2345,7 @@ const MakingPayments = () => {
                 </tr>
               )}
               {/* Pagination row - same pattern as AttAdustmentRequest */}
-              {employees && employees.length > 0 && (() => {
+              {!tableLoading && employees && employees.length > 0 && (() => {
                 const paginationData = getPaginationData();
                 return paginationData.totalPages >= 1 && (
                   <tr>

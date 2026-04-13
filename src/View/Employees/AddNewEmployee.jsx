@@ -201,7 +201,8 @@ const AddNewEmployee = () => {
         } else {
           setLastEnrolledEmployeeIdFallback("N/A");
         }
-        // OLD (incoming merge): used setLastEnrolledEmployeeId — no such setter; last enrolled is derived from adminDashboardData + lastEnrolledEmployeeIdFallback above.
+
+        // OLD (incoming branch): used setLastEnrolledEmployeeId — invalid; last enrolled uses adminDashboardData + lastEnrolledEmployeeIdFallback (see state above).
         // if (data?.STATUS === 'SUCCESSFUL') {
         //   const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
         //   const empId = lastEnrolled?.emp_id;

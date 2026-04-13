@@ -13,8 +13,6 @@ import { PRCActionList } from "../../services/__performanceServices";
 import { FaChevronDown } from "react-icons/fa6";
 import ViewPRC from "./ViewPRC";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
-import { PerformanceTableSkeleton } from "./PerformanceSkeletons";
-
 const PRC = () => {
   const tableHeader = [
     "S.No",
@@ -149,8 +147,9 @@ const PRC = () => {
 
   const isAnyActionMenuOpen = Object.values(openMenuValue || {}).some(Boolean);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     gettingPRCData(1, 10);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount: load PRC list once
   }, []);
 
   return (

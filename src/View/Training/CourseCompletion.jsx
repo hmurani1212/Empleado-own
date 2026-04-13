@@ -14,7 +14,7 @@ import CourseCompletionSkeleton from './CourseCompletionSkeleton'
 const CourseCompletion = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { training_data, getCourseAssignedEmployees } = TrainingService()
+  const { training_data, getCourseAssignedEmployees, isLoadingCourseAssignedEmployees } = TrainingService()
   
   const openDrawer = useStore((state) => state.openDrawer)
   const settingDrawerTitle = useStore((state) => state.settingDrawerTitle)
@@ -27,7 +27,6 @@ const CourseCompletion = () => {
   const [selectedCourseName, setSelectedCourseName] = useState('')
   const [completionData, setCompletionData] = useState([])
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, pages: 1 })
-  const [loading, setLoading] = useState(false)
 
   const courses = training_data?.courses || []
 
@@ -52,7 +51,6 @@ const CourseCompletion = () => {
   }, [selectedCourse])
 
   const fetchCompletionData = async (courseId, page = 1) => {
-    setLoading(true)
     try {
       const result = await getCourseAssignedEmployees(courseId, page, 10)
       
@@ -83,8 +81,6 @@ const CourseCompletion = () => {
       console.error('Error fetching completion data:', error)
       showToast('Failed to fetch completion data', 'error')
       setCompletionData([])
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -312,7 +308,7 @@ const CourseCompletion = () => {
                       </div>
                     </td>
                   </tr>
-                ) : loading ? (
+                ) : isLoadingCourseAssignedEmployees ? (
                   <CourseCompletionSkeleton />
                 ) : filteredData.length > 0 ? (
                   filteredData.map((item, index) => (
@@ -382,7 +378,7 @@ const CourseCompletion = () => {
                   variant='outlined'
                   className='flex items-center gap-2 border-gray-200 text-gray-600 bg-white hover:bg-gray-50'
                   onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1}
+                  disabled={pagination.page === 1 || isLoadingCourseAssignedEmployees}
                 >
                   <FaChevronLeft className='text-[10px]' /> Previous
                 </Button>
@@ -391,7 +387,7 @@ const CourseCompletion = () => {
                   variant='outlined'
                   className='flex items-center gap-2 border-gray-200 text-gray-600 bg-white hover:bg-gray-50'
                   onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.pages}
+                  disabled={pagination.page === pagination.pages || isLoadingCourseAssignedEmployees}
                 >
                   Next <FaChevronRight className='text-[10px]' />
                 </Button>

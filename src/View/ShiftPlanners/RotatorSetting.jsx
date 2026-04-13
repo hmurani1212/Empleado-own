@@ -4,13 +4,14 @@ import { useDrawerWidthPx } from '../../hooks/useDrawerWidthPx'
 import { FaClock } from "react-icons/fa";
 import SubmitButton from '../../Components/SubmitButton/SubmitButton';
 import useShiftManagement from '../../ViewModel/ShiftManagementViewModel/ShiftManagementServices';
+import { RotatorSettingsTableSkeletonRows } from './ShiftPlannersSkeletons';
 
 const RotatorSetting = (props) => {
 
     // Tooba
     // Rotator Settings
     const {allRotatorStatus,allRotatorClock} = props
-    const {changeRotatorSetting, rotatorSettingValues, handleChangeRotator, handleRotatorRadioChange, openRosterDialog, handleRosterDialog, rosterValues, handleRosterChange, handleDownloadRoster, gettingAllShift, allShiftData, isUpdatingRotator, isDownloadingRoster} = useShiftManagement()
+    const {changeRotatorSetting, rotatorSettingValues, handleChangeRotator, handleRotatorRadioChange, openRosterDialog, handleRosterDialog, rosterValues, handleRosterChange, handleDownloadRoster, loadingRotatorSettings, isUpdatingRotator, isDownloadingRoster} = useShiftManagement()
 
     const rosterDrawerWidthPx = useDrawerWidthPx({ customImg: false })
 
@@ -54,7 +55,10 @@ const RotatorSetting = (props) => {
                         </thead>
 
                         <tbody>
-                            {allRotatorStatus.DB_DATA?.map((ele, index) => {
+                            {loadingRotatorSettings ? (
+                              <RotatorSettingsTableSkeletonRows rows={4} />
+                            ) : (
+                            allRotatorStatus?.DB_DATA?.map((ele, index) => {
                                 return(
                                     <tr key={index}>
                                         <td>
@@ -102,7 +106,9 @@ const RotatorSetting = (props) => {
                                         </td>
                                     </tr>
                                 )
-                            })}
+                            })
+                            )
+                            }
                             {/* <tr>
                                 <td>
                                     <Typography

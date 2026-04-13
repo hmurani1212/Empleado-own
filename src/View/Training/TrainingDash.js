@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useLayoutEffect, useState, useRef } from 'react'
 import { Typography, Button, MenuItem } from '@material-tailwind/react'
 import { BiSearch } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
@@ -20,7 +20,7 @@ import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import TrainingSkeleton from './TrainingSkeleton'
 
 const TrainingDash = () => {
-  const { training_data, Training_datefn, delete_course_fn, getCourseCompleteDetails, isLoadingTrainingData } = TrainingService()
+  const { training_data, Training_datefn, delete_course_fn, getCourseCompleteDetails, isLoadingTrainingData, trainingListLoadMoreLoading } = TrainingService()
   const navigate = useNavigate()
 
   // Store original unfiltered courses for client-side filtering
@@ -465,8 +465,16 @@ const TrainingDash = () => {
                                 variant="outlined"
                                 className="flex items-center gap-2 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300 normal-case"
                                 onClick={handleLoadMore}
+                                disabled={trainingListLoadMoreLoading}
                             >
-                                Load More Courses
+                                {trainingListLoadMoreLoading ? (
+                                  <span className="flex items-center gap-2">
+                                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                    Loading…
+                                  </span>
+                                ) : (
+                                  'Load More Courses'
+                                )}
                             </Button>
                         </div>
                     )}

@@ -54,14 +54,15 @@ const performanceViewModel = (set, get) => ({
     },
     feedbackCurrentSearchText: '',
 
-    // Loading states
-    PRCLoading: false,
-    goalsLoading: false,
-    competencyLoading: false,
-    feedbackLoading: false,
+    // Loading states — start true so first paint shows skeletons, not empty states (useEffect runs after paint)
+    PRCLoading: true,
+    goalsLoading: true,
+    competencyLoading: true,
+    feedbackLoading: true,
     subGoalsLoading: false,
     subCompetencyLoading: false,
-    historyLoading: false,
+    historyLoading: true,
+    employeeFeedbackLoading: false,
 
     gettingPRCData: async (page = 1, limit = 10) => {
         set({ PRCLoading: true })
@@ -703,6 +704,7 @@ const performanceViewModel = (set, get) => ({
     },
 
     gettingSubCompetency: async (employeeId) => {
+        set({ subCompetencyLoading: true })
         try {
             const response = await performanceApi.getSubCompetency(employeeId)
             const responseData = response.data
@@ -713,12 +715,15 @@ const performanceViewModel = (set, get) => ({
         } catch (error) {
             console.log(error)
             set({ subComptencyData: [] })
+        } finally {
+            set({ subCompetencyLoading: false })
         }
     },
     deleteSingleCompetency: (id) => {
         set({ subComptencyData: get().subComptencyData?.filter((ele) => ele._id !== id) })
     },
     gettingSubGoals: async (data) => {
+        set({ subGoalsLoading: true })
         try {
             // Use the existing getGoalsByEmployeeId function instead of non-existent getSubGoals
             const response = await performanceApi.getGoalsByEmployeeId(data.employee_id)
@@ -735,6 +740,8 @@ const performanceViewModel = (set, get) => ({
             const err = error.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch sub goals'
             showToast(err, 'error')
             set({ subGoalsData: [] })
+        } finally {
+            set({ subGoalsLoading: false })
         }
     },
 
@@ -852,6 +859,7 @@ const performanceViewModel = (set, get) => ({
 
     // Function to get employee feedback by ID
     gettingFeedbackByEmployeeId: async (employeeId) => {
+        set({ employeeFeedbackLoading: true })
         console.log('Fetching feedback for employee ID:', employeeId)
         try {
             const response = await performanceApi.getEmployeeFeedback(employeeId)
@@ -864,12 +872,16 @@ const performanceViewModel = (set, get) => ({
                     currentEmployeeId: employeeId
                 })
                 console.log('Employee feedback data set successfully:', responseData.DB_DATA)
+            } else {
+                set({ employeeFeedbackData: [], employeeFeedbackDataCopy: [] })
             }
         } catch (err) {
             console.error('Error fetching employee feedback:', err)
             set({ employeeFeedbackData: [] })
             const error = err.response?.data?.ERROR_DESCRIPTION || 'Failed to fetch employee feedback'
             showToast(error, 'error')
+        } finally {
+            set({ employeeFeedbackLoading: false })
         }
     },
 
@@ -878,6 +890,7 @@ const performanceViewModel = (set, get) => ({
         set({
             employeeFeedbackData: [],
             employeeFeedbackDataCopy: [],
+            employeeFeedbackLoading: false,
         })
     },
 

@@ -17,8 +17,23 @@ if (!jwt) {
   jwt = token
 }
 
-
-
+/**
+ * Training (and similar) axios instances default to application/json. For FormData that
+ * prevents the browser from setting multipart/form-data with a boundary — DevTools may show
+ * file as {} and the server receives an empty file. Strip Content-Type so the XHR sets it.
+ */
+export function axiosFormDataTransformRequest(data, headers) {
+  if (typeof FormData !== "undefined" && data instanceof FormData) {
+    if (headers && typeof headers.delete === "function") {
+      headers.delete("Content-Type");
+      headers.delete("content-type");
+    } else if (headers) {
+      delete headers["Content-Type"];
+      delete headers["content-type"];
+    }
+  }
+  return data;
+}
 
 export const axiosInstance = axios.create({
   baseURL: BASE_URL,
