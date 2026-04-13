@@ -29,7 +29,11 @@ const useEmployees = () => {
     const isLeavesPlannerRoute = location?.pathname?.startsWith?.('/leavesPlanner')
     const isPerformanceRoute = location?.pathname?.startsWith?.('/performance')
     const isProfileRoute = location?.pathname === '/profile'
-    const isAttendanceRoute = location?.pathname === '/attendance'
+    const isAttendanceRoute =
+        location?.pathname === '/attendance' ||
+        location?.pathname?.startsWith?.('/attendance/') ||
+        location?.pathname === '/my-attendance' ||
+        location?.pathname?.startsWith?.('/my-attendance/')
     const isExpenseRoute = location?.pathname?.startsWith?.('/expense')
     const isTimeAdjustmentRoute = location?.pathname === '/time-adjustment'
     const isEmployeesListPage = location?.pathname === '/employees/all_employess' || location?.pathname === '/employees'

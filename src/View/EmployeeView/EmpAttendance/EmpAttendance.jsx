@@ -15,7 +15,7 @@ const tableHeader = [
   "Date", "Attendance Status", "Earned Hours", "Expected Hours", "Arrival Status", "Action"
 ]
 
-const EmpAttendance = () => {
+const EmpAttendance = ({ embedded = false }) => {
 
   const { gettingEmpAttendanceData, empAttendancData, selectedValue, handleSelectAttendance, handleMobileBaseAttendance } = useEmpAttendanceServices();
   const { empDashboardData, gettingEmpDashboardData } = useEmpDashboard();
@@ -98,11 +98,15 @@ const EmpAttendance = () => {
 
   return (
     <>
-      <motion.div 
+      <motion.div
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className='flex flex-col gap-6 p-4 md:p-6 min-h-screen bg-gray-50/50 font-poppins'
+        className={
+          embedded
+            ? 'flex flex-col gap-4 font-poppins'
+            : 'flex flex-col gap-6 p-4 md:p-6 min-h-screen bg-gray-50/50 font-poppins'
+        }
       >
       {/* Header */}
       <motion.div variants={itemVariants} className='flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-gray-100'>

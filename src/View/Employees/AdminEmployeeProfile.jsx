@@ -185,6 +185,60 @@ const ONE_ID_ROLL = {
     DEPARTMENT_ADMIN: "25",
 };
 
+/** Static fallback if `/api/v1/oneid-permissions/roles` is empty or fails. */
+const FALLBACK_ONEID_ROLES = [
+    { id: 13, role_name: "Admin" },
+    { id: 14, role_name: "Employee" },
+    { id: 24, role_name: "Branch_Admin" },
+    { id: 25, role_name: "Department_Admin" },
+];
+
+/** Built-in OneID roles: assign with { emp_id, role_id } only — no module privileges UI. */
+const GLOBAL_BUILT_IN_ROLE_NAMES = new Set([
+    "Admin",
+    "Employee",
+    "Branch_Admin",
+    "Department_Admin",
+]);
+
+function getRoleRowByOneIdRollId(oneIdRollStr, optionsList) {
+    const id = String(oneIdRollStr ?? "");
+    return (
+        optionsList.find((r) => String(r.id) === id) ||
+        FALLBACK_ONEID_ROLES.find((r) => String(r.id) === id) ||
+        null
+    );
+}
+
+function isGlobalBuiltInRoleName(roleName) {
+    return GLOBAL_BUILT_IN_ROLE_NAMES.has(String(roleName || "").trim());
+}
+
+/** Privileges dropdown: show delete only for org-defined roles (org_id !== 0). API global roles use org_id 0. */
+function canShowDeleteOnCatalogRoleRow(row) {
+    if (row == null) return false;
+    const orgId = row.org_id;
+    if (orgId === undefined || orgId === null) return false;
+    return Number(orgId) !== 0;
+}
+
+function toastMessageForGlobalRole(roleName) {
+    const n = String(roleName || "").trim();
+    if (n === "Branch_Admin") {
+        return "By allowing this role for this user, they can see the branch where this Branch Admin is assigned.";
+    }
+    if (n === "Department_Admin") {
+        return "By allowing this role for this user, they can see the department where this Department Admin is assigned.";
+    }
+    if (n === "Admin") {
+        return "By allowing this role for this user, they can perform all Super Admin activities in your organization.";
+    }
+    if (n === "Employee") {
+        return "Employee role assigned successfully.";
+    }
+    return "Role assigned successfully.";
+}
+
 /** Legacy privileges 0–3 → one_id_roll string */
 function legacyPrivilegesToOneIdRollString(privileges) {
     const m = { "0": "14", "1": "13", "2": "24", "3": "25" };
@@ -193,14 +247,38 @@ function legacyPrivilegesToOneIdRollString(privileges) {
     return m[k] ?? k;
 }
 
-/** one_id_roll / role_id (13,14,24,25) → remove_previlage body privilege 0–3 */
-function oneIdRollToLegacyRemovePrivilege(n) {
-    const x = Number(n);
-    if (x === 14) return 0;
-    if (x === 13) return 1;
-    if (x === 24) return 2;
-    if (x === 25) return 3;
+/** Legacy privilege index 0–3 → OneID role_id + role_name (same as assign_previlage global roles). */
+function legacyPrivilegeIndexToBuiltinRole(p) {
+    const n = Number(p);
+    if (n === 0) return { role_id: 14, role_name: "Employee" };
+    if (n === 1) return { role_id: 13, role_name: "Admin" };
+    if (n === 2) return { role_id: 24, role_name: "Branch_Admin" };
+    if (n === 3) return { role_id: 25, role_name: "Department_Admin" };
     return null;
+}
+
+/** Base Employee role (OneID 14) — always present; not removable in User Roles, not listed for assign. */
+function isImmutableEmployeeUserRoleRow(item, roleLabel) {
+    const rid = Number(item?.role_id ?? item?.id ?? item?.one_id_roll);
+    if (Number.isFinite(rid) && rid === Number(ONE_ID_ROLL.EMPLOYEE)) return true;
+    const label = String(roleLabel ?? item?.role_name ?? "")
+        .trim()
+        .toLowerCase();
+    if (label === "employee") return true;
+    const priv = item?.privileges;
+    if (priv === "0" || priv === 0) return true;
+    return false;
+}
+
+function isRoleAssignableInPrivilegesDropdown(r) {
+    if (!r) return false;
+    if (String(r.id) === String(ONE_ID_ROLL.EMPLOYEE)) return false;
+    if (String(r.role_name || "")
+        .trim()
+        .toLowerCase() === "employee") {
+        return false;
+    }
+    return true;
 }
 
 const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
@@ -244,9 +322,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         documents: false,
     });
     const [privilegesForm, setPrivilegesForm] = useState({
-        privilege: ONE_ID_ROLL.EMPLOYEE,
+        privilege: "",
         ipFilter: "",
     });
+    /** Rows from GET `/api/v1/oneid-permissions/roles` (DB_DATA); drives Privileges dropdown. */
+    const [oneIdRolesOptions, setOneIdRolesOptions] = useState([]);
+    const [oneIdRolesLoading, setOneIdRolesLoading] = useState(false);
     const [userRoles, setUserRoles] = useState([]);
     // setUserRoles(employeeData?.module_privileges)
     // console.log('1111111111111111', userRoles)
@@ -287,8 +368,21 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     const [roleToDelete, setRoleToDelete] = useState(null);
     const [dutyToDelete, setDutyToDelete] = useState(null);
     const [isDeletingRole, setIsDeletingRole] = useState(false);
+    /** Privileges dropdown: catalog role delete (org role list), separate from assigned-role removal. */
+    const [openCatalogRoleDeleteDialog, setOpenCatalogRoleDeleteDialog] = useState(false);
+    const [catalogRoleToDelete, setCatalogRoleToDelete] = useState(null);
+    const [isDeletingCatalogRole, setIsDeletingCatalogRole] = useState(false);
+    const [privilegesCatalogDropdownOpen, setPrivilegesCatalogDropdownOpen] = useState(false);
+    const [privilegesCatalogSearch, setPrivilegesCatalogSearch] = useState("");
+    const privilegesCatalogDropdownRef = useRef(null);
     const [openEmployeePrivilegesDrawer, setOpenEmployeePrivilegesDrawer] =
         useState(false);
+    const [openAddRoleDrawer, setOpenAddRoleDrawer] = useState(false);
+    const [addRoleForm, setAddRoleForm] = useState({
+        role_name: "",
+        description: "",
+    });
+    const [addRoleSubmitting, setAddRoleSubmitting] = useState(false);
     const [currentEmployeePrivileges, setCurrentEmployeePrivileges] =
         useState(null);
     const [editingAcademicRecord, setEditingAcademicRecord] = useState(null);
@@ -710,6 +804,101 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         }
     }, [activeTab, employeeId, gettingEmpProfileChecklist]);
 
+    // Ref to avoid re-fetching OneID roles list when tab is already shown
+    const oneIdRolesTabFetchedRef = useRef(false);
+
+    const loadOneIdRolesList = useCallback(async () => {
+        setOneIdRolesLoading(true);
+        try {
+            const res = await employeesApi.getOneIdPermissionRoles();
+            const d = res?.data;
+            if (d?.STATUS === "SUCCESSFUL" && Array.isArray(d.DB_DATA)) {
+                const sorted = [...d.DB_DATA].sort((a, b) =>
+                    String(a.role_name || "").localeCompare(
+                        String(b.role_name || ""),
+                        undefined,
+                        { sensitivity: "base" }
+                    )
+                );
+                setOneIdRolesOptions(sorted);
+            } else {
+                setOneIdRolesOptions([]);
+            }
+        } catch (err) {
+            console.error("getOneIdPermissionRoles:", err);
+            setOneIdRolesOptions([]);
+        } finally {
+            setOneIdRolesLoading(false);
+        }
+    }, []);
+
+    // GET oneid-permissions/roles for Privileges dropdown (role_name + id → one_id_roll)
+    useEffect(() => {
+        if (activeTab === 7) {
+            if (!oneIdRolesTabFetchedRef.current) {
+                oneIdRolesTabFetchedRef.current = true;
+                loadOneIdRolesList();
+            }
+        } else if (activeTab !== 7) {
+            oneIdRolesTabFetchedRef.current = false;
+        }
+    }, [activeTab, loadOneIdRolesList]);
+
+    const handleAddRoleClose = useCallback(() => {
+        setOpenAddRoleDrawer(false);
+        setAddRoleForm({ role_name: "", description: "" });
+    }, []);
+
+    const handleAddRoleSubmit = async (e) => {
+        e.preventDefault();
+        const name = addRoleForm.role_name?.trim();
+        if (!name) {
+            showToast("Role name is required", "error");
+            return;
+        }
+        setAddRoleSubmitting(true);
+        try {
+            const res = await employeesApi.createOneIdPermissionRole({
+                role_name: name,
+                description: (addRoleForm.description || "").trim(),
+            });
+            const data = res?.data;
+            if (res.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                const msg =
+                    data.DB_DATA?.message ||
+                    "Role registered successfully";
+                showToast(msg, "success");
+                handleAddRoleClose();
+                await loadOneIdRolesList();
+            } else {
+                showToast(data?.ERROR_DESCRIPTION || "Failed to create role", "error");
+            }
+        } catch (err) {
+            console.error("createOneIdPermissionRole:", err);
+            const msg =
+                err?.response?.data?.ERROR_DESCRIPTION ||
+                err?.message ||
+                "Failed to create role";
+            showToast(msg, "error");
+        } finally {
+            setAddRoleSubmitting(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!privilegesCatalogDropdownOpen) return undefined;
+        const onDocMouseDown = (e) => {
+            if (
+                privilegesCatalogDropdownRef.current &&
+                !privilegesCatalogDropdownRef.current.contains(e.target)
+            ) {
+                setPrivilegesCatalogDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", onDocMouseDown);
+        return () => document.removeEventListener("mousedown", onDocMouseDown);
+    }, [privilegesCatalogDropdownOpen]);
+
     // Ref to avoid re-fetching module privileges when tab is already shown
     const modulePrivilegesTabFetchedRef = useRef(false);
     // Fetch module privileges when user switches to Account Privileges tab; keep key module_privileges same as API
@@ -738,16 +927,22 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         norm.privilegeBlock ||
                         (Array.isArray(norm.modulePrivilegesSource) && norm.modulePrivilegesSource[0]);
                     if (first) {
-                        setPrivilegesForm((prev) => ({
-                            ...prev,
-                            privilege:
+                        setPrivilegesForm((prev) => {
+                            let nextPriv =
                                 first.one_id_roll != null && first.one_id_roll !== ""
                                     ? String(first.one_id_roll)
                                     : first.privileges != null
                                       ? legacyPrivilegesToOneIdRollString(first.privileges)
-                                      : prev.privilege,
-                            ipFilter: first.ip_filter ?? prev.ipFilter,
-                        }));
+                                      : prev.privilege;
+                            if (String(nextPriv) === String(ONE_ID_ROLL.EMPLOYEE)) {
+                                nextPriv = "";
+                            }
+                            return {
+                                ...prev,
+                                privilege: nextPriv,
+                                ipFilter: first.ip_filter ?? prev.ipFilter,
+                            };
+                        });
                     }
                 });
             }
@@ -2046,22 +2241,6 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         }
     };
 
-    // Map role name to remove_previlage privilege 0–3 (legacy); prefer oneIdRollToLegacyRemovePrivilege(role_id) when present
-    const getPrivilegeNumber = (roleName) => {
-        if (roleName == null || roleName === "") return null;
-        const roleMapping = {
-            Employee: 0,
-            Admin: 1,
-            Super_Admin: 1,
-            "Super Admin": 1,
-            Branch_Admin: 2,
-            "Branch Admin": 2,
-            Department_Admin: 3,
-            "Department Admin": 3,
-        };
-        return roleMapping[roleName] !== undefined ? roleMapping[roleName] : null;
-    };
-
     // Get display name for role (supports user_roles.role_name or module_privileges.privileges)
     const getRoleDisplayName = (role) => {
         if (!role) return "N/A";
@@ -2080,7 +2259,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         setOpenDeleteConfirmDialog(true);
     };
 
-    // Handle confirmed role delete
+    // Handle confirmed role delete — remove_previlage requires emp_id, role_id, role_name (same family as assign global).
     const handleConfirmDeleteRole = async () => {
         if (!roleToDelete || !employeeId) {
             return;
@@ -2088,30 +2267,62 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
 
         setIsDeletingRole(true);
         try {
-            let privilegeNumber = null;
-            if (roleToDelete.role_id != null && roleToDelete.role_id !== "") {
-                privilegeNumber = oneIdRollToLegacyRemovePrivilege(roleToDelete.role_id);
-            }
-            if (privilegeNumber === null && roleToDelete.privileges != null && roleToDelete.privileges !== "") {
-                const p = Number(roleToDelete.privileges);
-                if (p >= 0 && p <= 3) {
-                    privilegeNumber = p;
-                } else {
-                    privilegeNumber = oneIdRollToLegacyRemovePrivilege(p);
+            const ridRaw =
+                roleToDelete.role_id ??
+                roleToDelete.id ??
+                roleToDelete.one_id_roll;
+            let roleIdNum =
+                ridRaw != null && ridRaw !== "" ? Number(ridRaw) : NaN;
+
+            let roleNameForApi =
+                roleToDelete.role_name != null &&
+                String(roleToDelete.role_name).trim() !== ""
+                    ? String(roleToDelete.role_name).trim()
+                    : "";
+
+            if (!Number.isFinite(roleIdNum) || roleIdNum <= 0) {
+                const p = roleToDelete.privileges;
+                if (p != null && p !== "") {
+                    const built = legacyPrivilegeIndexToBuiltinRole(p);
+                    if (built) {
+                        roleIdNum = built.role_id;
+                        if (!roleNameForApi) roleNameForApi = built.role_name;
+                    }
                 }
             }
-            if (privilegeNumber === null) {
-                privilegeNumber = getPrivilegeNumber(roleToDelete.role_name);
+
+            if (!roleNameForApi && Number.isFinite(roleIdNum)) {
+                const match = FALLBACK_ONEID_ROLES.find(
+                    (r) => Number(r.id) === roleIdNum
+                );
+                if (match) roleNameForApi = match.role_name;
             }
 
-            if (privilegeNumber === null || Number.isNaN(privilegeNumber)) {
+            if (!roleNameForApi) {
+                const disp = getRoleDisplayName(roleToDelete);
+                if (disp === "Super Admin") roleNameForApi = "Admin";
+                else if (disp === "Branch Admin") roleNameForApi = "Branch_Admin";
+                else if (disp === "Department Admin")
+                    roleNameForApi = "Department_Admin";
+                else roleNameForApi = disp;
+            }
+
+            if (
+                !Number.isFinite(roleIdNum) ||
+                roleIdNum <= 0 ||
+                !String(roleNameForApi || "").trim()
+            ) {
                 showToast("Invalid role", "error");
                 return;
             }
 
             const response = await employeesApi.removeEmployeePrivilege(
                 employeeId,
-                privilegeNumber
+                {
+                    emp_id: Number(employeeId),
+                    role_id: roleIdNum,
+                    role_name: String(roleNameForApi).trim(),
+                }
             );
             const responseData = response.data;
 
@@ -2139,6 +2350,61 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         }
     };
 
+    const handlePrivilegesCatalogDeleteClick = (e, row) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!canShowDeleteOnCatalogRoleRow(row)) return;
+        setPrivilegesCatalogDropdownOpen(false);
+        setCatalogRoleToDelete({
+            id: row.role_id ?? row.id,
+            role_name: row.role_name ?? "",
+        });
+        setOpenCatalogRoleDeleteDialog(true);
+    };
+
+    const handleConfirmDeleteCatalogRole = async () => {
+        if (!catalogRoleToDelete?.id) return;
+        setIsDeletingCatalogRole(true);
+        try {
+            const res = await employeesApi.deleteOneIdPermissionRole(
+                catalogRoleToDelete.id
+            );
+            const data = res?.data;
+            if (res.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                showToast(
+                    data?.DB_DATA?.message ||
+                        `Role "${catalogRoleToDelete.role_name}" deleted successfully`,
+                    "success"
+                );
+                setOpenCatalogRoleDeleteDialog(false);
+                const removedId = String(catalogRoleToDelete.id);
+                setCatalogRoleToDelete(null);
+                if (String(privilegesForm.privilege ?? "") === removedId) {
+                    setPrivilegesForm((prev) => ({
+                        ...prev,
+                        privilege: "",
+                    }));
+                }
+                await loadOneIdRolesList();
+            } else {
+                showToast(
+                    data?.ERROR_DESCRIPTION || "Failed to delete role",
+                    "error"
+                );
+            }
+        } catch (err) {
+            console.error("deleteOneIdPermissionRole:", err);
+            showToast(
+                err?.response?.data?.ERROR_DESCRIPTION ||
+                    err?.message ||
+                    "Failed to delete role",
+                "error"
+            );
+        } finally {
+            setIsDeletingCatalogRole(false);
+        }
+    };
+
     const handleGrantRole = async () => {
         try {
             if (!employeeId) {
@@ -2146,6 +2412,48 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 return;
             }
 
+            const selectedId = String(privilegesForm.privilege ?? "");
+            if (!selectedId || selectedId === String(ONE_ID_ROLL.EMPLOYEE)) {
+                showToast("Select a role to assign", "error");
+                return;
+            }
+            const roleRow = getRoleRowByOneIdRollId(selectedId, oneIdRolesOptions);
+            const roleName = roleRow?.role_name ?? "";
+
+            // Built-in global roles: assign with emp_id + role_id only; show contextual toast (no module drawer).
+            if (roleRow && isGlobalBuiltInRoleName(roleName)) {
+                setIsUpdating(true);
+                try {
+                    const res = await employeesApi.assignGlobalEmployeeRole({
+                        emp_id: Number(employeeId),
+                        role_id: Number(selectedId),
+                        role_name: roleName,
+                    });
+                    const data = res?.data;
+                    if (res.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                        showToast(toastMessageForGlobalRole(roleName), "success");
+                        await refreshProfileSection("privileges");
+                    } else {
+                        showToast(
+                            data?.ERROR_DESCRIPTION || "Failed to assign role",
+                            "error"
+                        );
+                    }
+                } catch (err) {
+                    console.error("assignGlobalEmployeeRole:", err);
+                    showToast(
+                        err?.response?.data?.ERROR_DESCRIPTION ||
+                            err?.message ||
+                            "Failed to assign role",
+                        "error"
+                    );
+                } finally {
+                    setIsUpdating(false);
+                }
+                return;
+            }
+
+            // Custom / org-specific roles: open Employee Privileges and send full payload on save.
             // Check if user already has the selected privilege level
             const selectedPrivilege = privilegesForm.privilege;
             // if (employeeData?.module_privileges && employeeData.module_privileges.length > 0) {
@@ -6037,7 +6345,26 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         </div>
     );
 
-    const renderAccountPrivileges = () => (
+    const renderAccountPrivileges = () => {
+        const rawRolesList =
+            oneIdRolesOptions.length > 0 ? oneIdRolesOptions : FALLBACK_ONEID_ROLES;
+        const baseRolesForSelect =
+            rawRolesList.filter(isRoleAssignableInPrivilegesDropdown);
+        const selectedRollId = String(privilegesForm.privilege ?? "");
+        let privilegeRoleRows = baseRolesForSelect;
+        if (
+            selectedRollId &&
+            selectedRollId !== String(ONE_ID_ROLL.EMPLOYEE) &&
+            !baseRolesForSelect.some((r) => String(r.id) === selectedRollId) &&
+            Number.isFinite(Number(selectedRollId))
+        ) {
+            privilegeRoleRows = [
+                { id: Number(selectedRollId), role_name: `Role (${selectedRollId})` },
+                ...baseRolesForSelect,
+            ];
+        }
+
+        return (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             {/* Account & Privileges Section */}
             <div className="px-4 py-6 mb-4">
@@ -6050,6 +6377,27 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     </Typography>
                 </div>
 
+                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                    <Button
+                        type="button"
+                        size="sm"
+                        className="bg-brand-500 hover:bg-brand-600 text-white shrink-0 w-fit normal-case"
+                        onClick={() => setOpenAddRoleDrawer(true)}
+                    >
+                        Add Role
+                    </Button>
+                    <div className="min-w-0 flex-1 overflow-x-auto">
+                        <Typography
+                            variant="small"
+                            className="font-medium text-xs text-slate-600 whitespace-nowrap"
+                        >
+                            To give dynamic privileges for Empleado modules, you can create your own role.
+                            <br />
+                            Note: if you assign a role to any user and add permissions to it, then all users who have that role will get those permissions.
+                        </Typography>
+                    </div>
+                </div>
+
                 {/* Privileges Form */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
@@ -6059,19 +6407,163 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             className="mb-2 font-normal text-xs"
                         >
                             Privileges
+                            {oneIdRolesLoading ? (
+                                <span className="ml-2 text-brand-500">(loading roles…)</span>
+                            ) : null}
                         </Typography>
-                        <Select
-                            value={privilegesForm.privilege}
-                            onChange={(val) =>
-                                setPrivilegesForm((prev) => ({ ...prev, privilege: val }))
-                            }
-                        // className="border-gray-200"
+                        {/*
+                          Custom dropdown: pick role by name; per-row delete (hidden when role id is 0).
+                          Replaces Material Select so rows can show name + delete without caching issues.
+                        */}
+                        <div
+                            ref={privilegesCatalogDropdownRef}
+                            className="relative w-full"
+                            key={`oneid-assign-${privilegeRoleRows.map((r) => r.id).join("-")}`}
                         >
-                            <Option value={ONE_ID_ROLL.EMPLOYEE}>Employee</Option>
-                            <Option value={ONE_ID_ROLL.ADMIN}>Admin</Option>
-                            <Option value={ONE_ID_ROLL.BRANCH_ADMIN}>Branch_Admin</Option>
-                            <Option value={ONE_ID_ROLL.DEPARTMENT_ADMIN}>Department_Admin</Option>
-                        </Select>
+                            <button
+                                type="button"
+                                className="flex w-full items-center justify-between gap-2 rounded-md border border-blue-gray-100 bg-white px-3 py-2 text-left text-sm text-blue-gray-700 shadow-sm ring-4 ring-transparent transition-all hover:border-blue-gray-200 focus:border-brand-500 focus:outline-none focus:ring-brand-500/20"
+                                onClick={() => {
+                                    setPrivilegesCatalogDropdownOpen((o) => {
+                                        const next = !o;
+                                        if (next) setPrivilegesCatalogSearch("");
+                                        return next;
+                                    });
+                                }}
+                                aria-expanded={privilegesCatalogDropdownOpen}
+                                aria-haspopup="listbox"
+                            >
+                                <span className="min-w-0 flex-1 truncate">
+                                    {(() => {
+                                        const id = String(
+                                            privilegesForm.privilege ?? ""
+                                        );
+                                        if (
+                                            !id ||
+                                            id === String(ONE_ID_ROLL.EMPLOYEE)
+                                        ) {
+                                            return "Select role to assign";
+                                        }
+                                        const row = privilegeRoleRows.find(
+                                            (r) => String(r.id) === id
+                                        );
+                                        return (
+                                            row?.role_name ??
+                                            (id ? `Role (${id})` : "—")
+                                        );
+                                    })()}
+                                </span>
+                                <FaChevronDown
+                                    className={`shrink-0 text-blue-gray-500 transition-transform ${privilegesCatalogDropdownOpen ? "rotate-180" : ""}`}
+                                    size={14}
+                                />
+                            </button>
+                            {privilegesCatalogDropdownOpen ? (
+                                <div
+                                    className="absolute left-0 right-0 z-[100] mt-1 max-h-72 overflow-hidden rounded-md border border-blue-gray-100 bg-white shadow-lg"
+                                    role="listbox"
+                                >
+                                    <div className="border-b border-blue-gray-50 p-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Search roles"
+                                            value={privilegesCatalogSearch}
+                                            onChange={(e) =>
+                                                setPrivilegesCatalogSearch(
+                                                    e.target.value
+                                                )
+                                            }
+                                            className="w-full rounded-md border border-blue-gray-100 bg-white px-2.5 py-1.5 text-sm text-blue-gray-800 placeholder:text-blue-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/30"
+                                        />
+                                    </div>
+                                    <div className="max-h-52 overflow-y-auto py-1">
+                                        {(() => {
+                                            const q = (
+                                                privilegesCatalogSearch || ""
+                                            )
+                                                .trim()
+                                                .toLowerCase();
+                                            const filtered = q
+                                                ? privilegeRoleRows.filter(
+                                                      (r) =>
+                                                          String(
+                                                              r.role_name || ""
+                                                          )
+                                                              .toLowerCase()
+                                                              .includes(q)
+                                                  )
+                                                : privilegeRoleRows;
+                                            if (filtered.length === 0) {
+                                                return (
+                                                    <div className="px-3 py-4 text-center text-xs text-blue-gray-500">
+                                                        No roles match your search
+                                                    </div>
+                                                );
+                                            }
+                                            return filtered.map((r) => (
+                                                <div
+                                                    key={`${r.id}-${r.role_name}`}
+                                                    role="option"
+                                                    aria-selected={
+                                                        String(
+                                                            privilegesForm.privilege ??
+                                                                ""
+                                                        ) === String(r.id)
+                                                    }
+                                                    className="flex items-center gap-2 border-b border-blue-gray-50 px-2 py-1.5 last:border-0 hover:bg-blue-gray-50/80"
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        className="min-w-0 flex-1 truncate text-left text-sm text-blue-gray-800"
+                                                        onClick={() => {
+                                                            setPrivilegesForm(
+                                                                (prev) => ({
+                                                                    ...prev,
+                                                                    privilege:
+                                                                        String(
+                                                                            r.id
+                                                                        ),
+                                                                })
+                                                            );
+                                                            setPrivilegesCatalogDropdownOpen(
+                                                                false
+                                                            );
+                                                            setPrivilegesCatalogSearch(
+                                                                ""
+                                                            );
+                                                        }}
+                                                    >
+                                                        {r.role_name}
+                                                    </button>
+                                                    {canShowDeleteOnCatalogRoleRow(
+                                                        r
+                                                    ) ? (
+                                                        <button
+                                                            type="button"
+                                                            title="Delete role"
+                                                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-red-500 hover:bg-red-50"
+                                                            onClick={(e) =>
+                                                                handlePrivilegesCatalogDeleteClick(
+                                                                    e,
+                                                                    r
+                                                                )
+                                                            }
+                                                        >
+                                                            <FaTimes
+                                                                className="text-red-500"
+                                                                size={12}
+                                                            />
+                                                        </button>
+                                                    ) : (
+                                                        <span className="w-7 shrink-0" aria-hidden />
+                                                    )}
+                                                </div>
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
                     <div>
                         <Typography
@@ -6100,7 +6592,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     disabled={isUpdating}
                     className="bg-blue-600 hover:bg-blue-700 rounded-md"
                 >
-                    {isUpdating ? "Granting..." : "Grant Role"}
+                    {isUpdating ? "Assigning..." : "Assign"}
                 </Button>
             </div>
 
@@ -6203,6 +6695,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                         typeof item.allowedModuleCount === "number"
                                             ? item.allowedModuleCount
                                             : 0;
+                                    const isBaseEmployeeRole =
+                                        isImmutableEmployeeUserRoleRow(
+                                            item,
+                                            roleLabel
+                                        );
                                     return (
                                         <tr key={item.role_id ?? index} className="bg-white border-b border-gray-100">
                                             <td className="px-4 py-3 text-gray-900">{roleLabel}</td>
@@ -6211,14 +6708,21 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                 {n} module{n === 1 ? "" : "s"} enabled
                                             </td>
                                             <td className="px-4 py-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteRole(item)}
-                                                    className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-red-500 hover:bg-red-50 transition-colors"
-                                                    title="Remove"
-                                                >
-                                                    <FaTimes className="text-red-500" size={14} />
-                                                </button>
+                                                {isBaseEmployeeRole ? (
+                                                    <span
+                                                        className="inline-flex h-6 w-6 shrink-0"
+                                                        aria-hidden
+                                                    />
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteRole(item)}
+                                                        className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-red-500 hover:bg-red-50 transition-colors"
+                                                        title="Remove"
+                                                    >
+                                                        <FaTimes className="text-red-500" size={14} />
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -6241,7 +6745,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 </div>
             </div>
         </div>
-    );
+        );
+    };
 
     const renderRepetitiveDuties = () => (
         <div className='bg-white rounded-[10px] p-4 drop-shadow-md z-20'>
@@ -7951,7 +8456,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 loading={isUpdating}
             />
 
-            {/* Delete Role Confirmation Dialog */}
+            {/* Delete Role Confirmation Dialog (remove from employee) */}
             <ConfirmationDialog
                 openDialog={openDeleteConfirmDialog && roleToDelete}
                 handleOpen={() => {
@@ -7962,6 +8467,20 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 message={`Are you sure you want to remove the role "${roleToDelete ? getRoleDisplayName(roleToDelete) : ""}"? This action cannot be undone.`}
                 handleConfirm={handleConfirmDeleteRole}
                 loading={isDeletingRole}
+            />
+
+            {/* Delete catalog role (Privileges dropdown — org role list) */}
+            <ConfirmationDialog
+                openDialog={openCatalogRoleDeleteDialog && !!catalogRoleToDelete}
+                handleOpen={() => {
+                    if (isDeletingCatalogRole) return;
+                    setOpenCatalogRoleDeleteDialog(false);
+                    setCatalogRoleToDelete(null);
+                }}
+                title="Delete role"
+                message="Are you sure you want to delete the role?"
+                handleConfirm={handleConfirmDeleteCatalogRole}
+                loading={isDeletingCatalogRole}
             />
 
             {/* Delete Duty Confirmation Dialog */}
@@ -7993,7 +8512,12 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 currentPrivileges={currentEmployeePrivileges}
                                 onUpdateSuccess={handleRefreshEmployeeData}
                                 privilegeLevel={privilegesForm.privilege}
-                                ipFilter={privilegesForm.ipFilter}
+                                role_name={
+                                    getRoleRowByOneIdRollId(
+                                        String(privilegesForm.privilege ?? ""),
+                                        oneIdRolesOptions
+                                    )?.role_name ?? ""
+                                }
                             />
                         ) : (
                             <div className="flex items-center justify-center h-64">
@@ -8003,6 +8527,75 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                             </div>
                         )}
                     </div>
+                }
+            />
+
+            {/* Add custom OneID role (POST /api/v1/oneid-permissions/roles) */}
+            <PortalDrawer
+                open={openAddRoleDrawer}
+                closeDrawer={handleAddRoleClose}
+                title="Add Role"
+                direction="right"
+                widthSize={510}
+                compo={
+                    <form
+                        onSubmit={handleAddRoleSubmit}
+                        className="p-6 flex flex-col gap-5"
+                    >
+                        <Typography
+                            variant="small"
+                            className="text-slate-600 font-normal leading-relaxed"
+                        >
+                            Create a role name and description. After saving, it appears in the
+                            Privileges list for assignment.
+                        </Typography>
+                        <Input
+                            size="lg"
+                            color="blue"
+                            label="Role name"
+                            value={addRoleForm.role_name}
+                            onChange={(e) =>
+                                setAddRoleForm((prev) => ({
+                                    ...prev,
+                                    role_name: e.target.value,
+                                }))
+                            }
+                            disabled={addRoleSubmitting}
+                            required
+                        />
+                        <Textarea
+                            color="blue"
+                            label="Description"
+                            value={addRoleForm.description}
+                            onChange={(e) =>
+                                setAddRoleForm((prev) => ({
+                                    ...prev,
+                                    description: e.target.value,
+                                }))
+                            }
+                            disabled={addRoleSubmitting}
+                            rows={4}
+                            className="!border-slate-200"
+                        />
+                        <div className="flex gap-3 justify-end pt-2">
+                            <Button
+                                type="button"
+                                variant="outlined"
+                                className="normal-case"
+                                onClick={handleAddRoleClose}
+                                disabled={addRoleSubmitting}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                className="bg-brand-500 hover:bg-brand-600 normal-case"
+                                disabled={addRoleSubmitting}
+                            >
+                                {addRoleSubmitting ? "Saving…" : "Create role"}
+                            </Button>
+                        </div>
+                    </form>
                 }
             />
 

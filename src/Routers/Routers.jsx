@@ -92,7 +92,14 @@ import SubComptency from "../View/Performance/SubComptency";
 import SubGoals from "../View/Performance/SubGoals";
 import useStore from "../Store/store";
 import { getUserData } from "../Authentication/jwt_decode";
-import { isFullAdmin, isBranchAdmin, isDepartmentAdmin } from "../Authentication/roleHelpers";
+import {
+  isFullAdmin,
+  isBranchAdmin,
+  isDepartmentAdmin,
+  usesEmployeeSelfServiceShell,
+} from "../Authentication/roleHelpers";
+import { useEmployeeRolePermissions } from "../hooks/useEmployeeRolePermissions";
+import { buildRoutePermissionAccess } from "../utils/routePermissionAccess";
 import EmpDashboard from "../View/EmployeeView/EmpDashboard/EmpDashboard";
 import EmpAttendance from "../View/EmployeeView/EmpAttendance/EmpAttendance";
 import EmpNotices from "../View/EmployeeView/EmpNotices/EmpNotices";
@@ -105,7 +112,7 @@ import AssessmentPage from "../View/EmployeeView/EmpTraining/AssessmentPage";
 import EmpPayslip from "../View/EmployeeView/EmpPayslip/EmpPayslip";
 import EmpDuties from "../View/EmployeeView/EmpDuties/EmpDuties";
 import EmpPerformance from "../View/EmployeeView/EmpPerformance/EmpPerformance";
-import EmpProfile from "../View/EmployeeView/EmpProfile/EmpProfile";
+import EmployeeProfileAdminMirror from "../View/Profile/EmployeeProfileAdminMirror";
 import EmpExpense from "../View/EmployeeView/EmpExpense/EmpExpense";
 import EditDepartment from "../View/Departments/EditDepartment";
 // import HiringPage from "../View/Career/HiringPage";
@@ -148,6 +155,22 @@ const Routers = () => {
   const canAccessBranches = isAdmin || isBranchAdmin(authRole);
   const canAccessDepartments = isAdmin || isDepartmentAdmin(authRole);
 
+  const { data: rolePermData } = useEmployeeRolePermissions();
+  const perm = buildRoutePermissionAccess(rolePermData?.permissions);
+
+  const showEmployeesAdmin = isAdmin || perm.employees;
+  const canDeptRoutes = canAccessDepartments || perm.departments;
+  const canBranchRoutes = canAccessBranches || perm.branches;
+  const showPayrollAdmin = isAdmin || perm.payroll;
+  const showHrPoliciesAdmin = isAdmin || perm.hrPolicies;
+  const showNoticesAdmin = isAdmin || perm.notices;
+  const showAttendanceAdmin = isAdmin || perm.attendanceAdmin;
+  const showShiftPlanner = isAdmin || perm.shiftPlanner;
+  const showHire = isAdmin || perm.hire;
+  const showApplicationRoutes = isAdmin || perm.application;
+  const showLeavesPlanner = isAdmin || perm.leavesPlanner;
+  const showFormApproval = isAdmin || perm.formApproval;
+
   return (
     <Routes>
       {isLoginRoute ? (
@@ -177,10 +200,8 @@ const Routers = () => {
           ) : (
             <Route exact path="/dashboard" element={<EmployeeDashboard />} />
           )}
-          {!isAdmin && (
-            <Route path="/attendance" element={<EmpAttendance />} />
-          )}
-          {isAdmin && (
+          <Route path="/my-attendance" element={<EmpAttendance />} />
+          {showEmployeesAdmin && (
             <Route path="/employees/" element={<Employees />}>
               <Route path="all_employess" element={<AllEmployess />}>
                 <Route
@@ -197,9 +218,9 @@ const Routers = () => {
             </Route>
           )}
           <Route path="/employee-profile/:employeeId" element={<AdminEmployeeProfile />}></Route>
-          <Route path="employee-payslip/:employeeId" element={<AdminEmployeePayslip />}></Route>
-          {canAccessDepartments && (
-            <Route path="/departments/" element={<DepartmentsMain />}>
+          <Route path="/employee-payslip/:employeeId" element={<AdminEmployeePayslip />}></Route>
+          {canDeptRoutes && (
+            <Route path="/departments" element={<DepartmentsMain />}>
               <Route path="edit/:id" element={<EditDepartment />} />
               <Route path="manageDept/:id" element={<Departments />}>
                 <Route
@@ -218,7 +239,7 @@ const Routers = () => {
             </Route>
           )}
 
-          {canAccessBranches && (
+          {canBranchRoutes && (
             <>
               <Route path="/branches" element={<Branches />} />
               <Route
@@ -239,7 +260,7 @@ const Routers = () => {
             </>
           )}
 
-          {isAdmin && (
+          {showHrPoliciesAdmin && (
             <Route path="/hrpolicies/" element={<HRPolicies />}>
               <Route path="manage_policies" element={<ManagePolicies />}></Route>
               <Route path="create_new" element={<CreateNew />}></Route>
@@ -248,7 +269,7 @@ const Routers = () => {
             </Route>
           )}
 
-          {isAdmin && (
+          {showPayrollAdmin && (
             <>
               <Route path="/payroll" element={<Payroll />}>
                 <Route
@@ -285,7 +306,7 @@ const Routers = () => {
             </>
           )}
 
-          {isAdmin ? (
+          {showNoticesAdmin ? (
             <Route path="/notices/" element={<Notices />}>
               <Route path="list_notices" element={<ListNotices />}></Route>
               <Route path="add_notice" element={<AddNotice />}></Route>
@@ -300,8 +321,8 @@ const Routers = () => {
           {/* Tasks route removed - now redirects to external URL https://accelerate.veevotech.com/ */}
 
           {/* <Route path='/attendance' element={<Attendance />}/> */}
-          {isAdmin && (
-            <Route path="/attendance/" element={<Attendance />}>
+          {showAttendanceAdmin && (
+            <Route path="/attendance" element={<Attendance />}>
               <Route
                 path="individual-attendance"
                 element={<IndividualAttendance />}
@@ -335,9 +356,9 @@ const Routers = () => {
             </Route>
           )}
 
-          {isAdmin && <Route path="/shiftPlanners" element={<ShiftPlanners />} />}
+          {showShiftPlanner && <Route path="/shiftPlanners" element={<ShiftPlanners />} />}
 
-          {isAdmin && (
+          {showHire && (
             <>
               <Route path="/hire/" element={<Hire />}>
                 <Route path="vacancies_list" element={<VacanciesList />}></Route>
@@ -393,7 +414,7 @@ const Routers = () => {
             </>
           )}
 
-          {isAdmin && (
+          {showApplicationRoutes && (
             <Route path="/application/" element={<Application />}>
               <Route
                 path="application_list"
@@ -403,7 +424,7 @@ const Routers = () => {
             </Route>
           )}
 
-          {isAdmin && (
+          {showLeavesPlanner && (
             <Route path="/leavesPlanner" element={<LeavesPlanner />}>
               <Route path="leaves_group" element={<LeavesGroup />}>
                 <Route path="viewLeaves/:id" element={<ViewLeaves />} />
@@ -411,8 +432,7 @@ const Routers = () => {
               <Route path="public_holiday" element={<PublicHoliday />} />
             </Route>
           )}
-          {
-            authRole === "Admin" || "Employee" ? (
+          {isFullAdmin(authRole) || usesEmployeeSelfServiceShell(authRole) ? (
               <Route path="/notespool/" element={<NotesPool />}>
                 <Route path="" element={<Notesbook />} />
                 <Route
@@ -431,9 +451,7 @@ const Routers = () => {
                 />
                 <Route path="sharednotebooks" element={<SharedNotebooks />} />
               </Route>
-            )
-            // <Route path='/notespool' element={<EmpNotices />} />
-          }
+            )}
 
           {isAdmin ? (
             <Route path="/performance/" element={<Performance />}>
@@ -451,7 +469,7 @@ const Routers = () => {
             <Route path="/performance" element={<EmpPerformance />} />
           )}
 
-          {isAdmin && (
+          {showFormApproval && (
             <Route path="/formApproval/" element={<FormApproval />}>
               <Route path="custom_form" element={<CustomForm />}></Route>
               <Route path="approval_flow" element={<ApprovalFlow />}></Route>
@@ -475,7 +493,7 @@ const Routers = () => {
 
           <Route path="/inbox" element={<Inbox />}></Route>
           {!isAdmin && (
-            <Route path="/profile" element={<EmpProfile />} />
+            <Route path="/profile" element={<EmployeeProfileAdminMirror />} />
           )}
           {!isAdmin && (
             <Route path="/expense" element={<EmpExpense />} />

@@ -546,6 +546,7 @@ const EmployeeGoals = () => {
         }
         title={addGoalValue.show ? (addGoalValue.view ? "View Goal" : addGoalValue.update ? "Edit Goal" : "Add Goal") : ""}
         closeDrawer={addGoalValue.show ? toggleAddGoal : () => {}}
+        widthSize={addGoalValue.show ? (addGoalValue.view ? 760 : 550) : 550}
       />
 
       <ConfirmationDialog

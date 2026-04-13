@@ -3,9 +3,18 @@ import React, { useState } from 'react';
 import { customPrivilegesData, customPrivilegesDataSub } from '../../services/EmpServices';
 import employeesApi from '../../Model/Data/Employees/Employees';
 import { showToast } from '../../Components/Toaster/Toaster';
+import { PERMISSION_ID_BY_TAG } from '../../constants/permissionIds';
 
 const AddingPrivileges = (props) => {
-    const { privilegesData, handleAddPrivilegesClose, empId, currentPrivileges, onUpdateSuccess, privilegeLevel, ipFilter } = props;
+    const {
+        privilegesData,
+        handleAddPrivilegesClose,
+        empId,
+        currentPrivileges,
+        onUpdateSuccess,
+        privilegeLevel,
+        role_name: roleNameProp = '',
+    } = props;
 
     const [loading, setLoading] = useState(false)
 
@@ -98,37 +107,78 @@ const AddingPrivileges = (props) => {
         return acc;
     }, { parents: [], children: {} });
 
-    const testingHandle = async() => {
+    const handleUpdatePrivileges = async () => {
         if (!empId) {
             showToast('Employee ID is missing', 'error');
             return;
         }
 
-        // one_id_roll must be backend role ids: 14 = Employee, 13 = Admin, 24 = Branch_Admin, 25 = Department_Admin
-        const ALLOWED_ONE_ID_ROLL = [13, 14, 24, 25];
+        // Custom / non–built-in roles use full module payload; one_id_roll is the role id from OneID roles API.
         const oneIdRoll = parseInt(privilegeLevel, 10);
-        if (!Number.isFinite(oneIdRoll) || !ALLOWED_ONE_ID_ROLL.includes(oneIdRoll)) {
-            showToast('Invalid role selected. Use Employee, Admin, Branch_Admin, or Department_Admin.', 'error');
+        if (!Number.isFinite(oneIdRoll) || oneIdRoll <= 0) {
+            showToast('Invalid role selected.', 'error');
             return;
         }
 
-        // Convert module IDs to integers
-        const module = Object.keys(selectedValues).map(key => parseInt(key, 10));
-        
-        // Build privileges object with integer values
-        const privilegesKeys = {};
-        Object.keys(selectedValues).forEach(key => {
-            const variableName = `privileges_${key}`;
-            privilegesKeys[variableName] = parseInt(selectedValues[key], 10);
+        // Map UI module selections to backend permission IDs (from ids_permission.txt)
+        // Value mapping: "1"=Full, "2"=Read Only, "0"=No Access
+        const MODULE_PERMISSION_TAGS = {
+            1: { full: 'EMPLOYEE_FULL_ACCESS', read: 'EMPLOYEE_READ_ONLY', none: 'EMPLOYEE_NO_ACCESS' },
+            2: { full: 'DEPARTMENT_FULL_ACCESS', read: 'DEPARTMENT_READ_ONLY', none: 'DEPARTMENT_NO_ACCESS' },
+            3: { full: 'HR_POLICIES_FULL_ACCESS', read: 'HR_POLICIES_READ_ONLY', none: 'HR_POLICIES_NO_ACCESS' },
+
+            // Payroll children (Payroll parent is 4 = Allow/Deny only)
+            5: { full: 'PAYROLL_SALARY_TEMPLATES_FULL_ACCESS', read: 'PAYROLL_SALARY_TEMPLATES_READ_ONLY', none: 'PAYROLL_SALARY_TEMPLATES_NO_ACCESS' },
+            6: { full: 'PAYROLL_EMPLOYEES_SALARY_FULL_ACCESS', read: 'PAYROLL_EMPLOYEES_SALARY_READ_ONLY', none: 'PAYROLL_EMPLOYEES_SALARY_NO_ACCESS' },
+            7: { full: 'PAYROLL_PAYSLIPS_MANAGEMENT_FULL_ACCESS', read: 'PAYROLL_PAYSLIPS_MANAGEMENT_READ_ONLY', none: 'PAYROLL_PAYSLIPS_MANAGEMENT_NO_ACCESS' },
+            8: { full: 'PAYROLL_REPORTS_EXPORT_FULL_ACCESS', read: 'PAYROLL_REPORTS_EXPORT_READ_ONLY', none: 'PAYROLL_REPORTS_EXPORT_NO_ACCESS' },
+
+            9: { full: 'NOTICES_FULL_ACCESS', read: 'NOTICES_READ_ONLY', none: 'NOTICES_NO_ACCESS' },
+            10: { full: 'TASKS_FULL_ACCESS', read: 'TASKS_READ_ONLY', none: 'TASKS_NO_ACCESS' },
+
+            // Attendance children (Attendance parent is 11 = Allow/Deny only)
+            12: { full: 'ATTENDANCE_DATA_FULL_ACCESS', read: 'ATTENDANCE_DATA_READ_ONLY', none: 'ATTENDANCE_DATA_NO_ACCESS' },
+            13: { full: 'ATTENDANCE_EXPORT_FULL_ACCESS', read: 'ATTENDANCE_EXPORT_READ_ONLY', none: 'ATTENDANCE_EXPORT_NO_ACCESS' },
+            14: { full: 'BRANCH_WISE_ATTENDANCE_FULL_ACCESS', read: 'BRANCH_WISE_ATTENDANCE_READ_ONLY', none: 'BRANCH_WISE_ATTENDANCE_NO_ACCESS' },
+            15: { full: 'ATTENDANCE_RAW_LOGS_FULL_ACCESS', read: 'ATTENDANCE_RAW_LOGS_READ_ONLY', none: 'ATTENDANCE_RAW_LOGS_NO_ACCESS' },
+
+            16: { full: 'SHIFT_PLANNER_FULL_ACCESS', read: 'SHIFT_PLANNER_READ_ONLY', none: 'SHIFT_PLANNER_NO_ACCESS' },
+            17: { full: 'APPLICATIONS_FULL_ACCESS', read: 'APPLICATIONS_READ_ONLY', none: 'APPLICATIONS_NO_ACCESS' },
+            18: { full: 'LEAVE_PLANNER_FULL_ACCESS', read: 'LEAVE_PLANNER_READ_ONLY', none: 'LEAVE_PLANNER_NO_ACCESS' },
+            19: { full: 'HIRE2_0_FULL_ACCESS', read: 'HIRE2_0_READ_ONLY', none: 'HIRE2_0_NO_ACCESS' },
+            20: { full: 'FORMSANDAPPROVE_FULL_ACCESS', read: 'FORMSANDAPPROVE_READ_ONLY', none: 'FORMSANDAPPROVE_NO_ACCESS' },
+        };
+
+        const permissionIds = [];
+        const missingMappings = [];
+
+        Object.entries(MODULE_PERMISSION_TAGS).forEach(([moduleIdStr, tags]) => {
+            const moduleId = Number(moduleIdStr);
+            const val = selectedValues?.[moduleId] ?? selectedValues?.[String(moduleId)];
+            const v = String(val ?? '1');
+            const tag =
+                v === '1' ? tags.full :
+                    v === '2' ? tags.read :
+                        tags.none;
+            const id = PERMISSION_ID_BY_TAG[tag];
+            if (!id) {
+                missingMappings.push(`${moduleId}:${tag}`);
+                return;
+            }
+            permissionIds.push(id);
         });
 
-        // Prepare API payload (aligns with assign_previlage: empId, one_id_roll, module, privileges_1..20, ip_filter)
+        if (missingMappings.length) {
+            showToast(`Missing permission-id mapping for: ${missingMappings.join(', ')}`, 'error');
+            return;
+        }
+
+        // assign_previlage: empId, one_id_roll, role_name, module (permission ids only)
         const apiData = {
             empId: parseInt(empId, 10),
             one_id_roll: oneIdRoll,
-            module: module,
-            ...privilegesKeys,
-            ip_filter: ipFilter || ''
+            role_name: String(roleNameProp || '').trim(),
+            module: permissionIds,
         };
 
         try{
@@ -243,7 +293,7 @@ const AddingPrivileges = (props) => {
                     <span>Close</span>
                 </Button>
                 <Button 
-                    onClick={testingHandle} 
+                    onClick={handleUpdatePrivileges} 
                     loading={loading}
                     variant="gradient" 
                     color="blue" 

@@ -5,6 +5,7 @@
 
 import { showToast } from '../Components/Toaster/Toaster';
 import { jwtDecode } from 'jwt-decode';
+import { clearReactQueryCache } from '../../queryClient';
 
 class AuthErrorHandler {
     constructor() {
@@ -206,6 +207,7 @@ class AuthErrorHandler {
 
             // Clear auth data
             this.clearAuthData();
+            clearReactQueryCache();
 
             // Redirect to login after a short delay
             setTimeout(() => {
