@@ -2,6 +2,7 @@ import employeesApi from "../../Model/Data/Employees/Employees"
 import departmentsApi from "../../Model/Data/Departments/Departments"
 import { showToast } from "../../Components/Toaster/Toaster"
 import { employeesListPageRef } from "./employeesListPageRef"
+import { clearReactQueryCache } from "../../queryClient"
 
 const employeeViewModel = (set, get) => ({
     allEmployees: [],
@@ -1044,10 +1045,8 @@ const employeeViewModel = (set, get) => ({
             const data = response.data
 
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                // Clear localStorage
+                clearReactQueryCache()
                 localStorage.clear()
-
-                // Clear sessionStorage if used
                 sessionStorage.clear()
 
                 return { success: true, data: data.DB_DATA }
@@ -1055,7 +1054,7 @@ const employeeViewModel = (set, get) => ({
                 return { success: false, error: data.ERROR_DESCRIPTION || 'Logout failed' }
             }
         } catch (error) {
-            // Even if API fails, clear local storage for security
+            clearReactQueryCache()
             localStorage.clear()
             sessionStorage.clear()
 

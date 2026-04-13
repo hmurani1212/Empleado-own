@@ -95,10 +95,8 @@ const employeesApi = {
         if (data.get_all_departments) {
             params.append('get_all_departments', 'true')
         }
-        const query = params.toString()
         return axiosInstancecoremodule.request({
             method: 'GET',
-            url: `/api/v1/departments${query ? `?${query}` : ''}`,
             url: `/api/v1/departments?${params.toString()}`,
         })
     },
@@ -1130,14 +1128,30 @@ const employeesApi = {
         })
     },
 
-    // Remove employee privilege/role
-    removeEmployeePrivilege: function (employeeId, privilege) {
+    /**
+     * Built-in global roles (Admin, Employee, Branch_Admin, Department_Admin):
+     * backend: emp_id, role_id, role_name (no module matrix).
+     */
+    assignGlobalEmployeeRole: function ({ emp_id, role_id, role_name }) {
+        return axiosInstancecoremodule.request({
+            method: 'POST',
+            url: `/api/v1/employee_v2/assign_previlage`,
+            data: { emp_id, role_id, role_name },
+        })
+    },
+
+    /**
+     * Remove employee role — backend expects body like assign global:
+     * { emp_id, role_id, role_name } (role_id = OneID roll id, incl. custom org roles).
+     */
+    removeEmployeePrivilege: function (employeeId, payload) {
         return axiosInstancecoremodule.request({
             method: 'POST',
             url: `/api/v1/employee_v2/remove_previlage/${employeeId}`,
             data: {
-                privilege: privilege
-            }
+                ...payload,
+                emp_id: Number(employeeId),
+            },
         })
     },
 
@@ -1149,6 +1163,34 @@ const employeesApi = {
             params: {
                 emp_id: empId
             }
+        })
+    },
+
+    /** OneID roles for privilege dropdown (role_name + id as one_id_roll). */
+    getOneIdPermissionRoles: function () {
+        return axiosInstancecoremodule.request({
+            method: 'GET',
+            url: `/api/v1/oneid-permissions/roles`,
+        })
+    },
+
+    /** Register a custom OneID role (POST body: role_name, description). */
+    createOneIdPermissionRole: function (data) {
+        return axiosInstancecoremodule.request({
+            method: 'POST',
+            url: `/api/v1/oneid-permissions/roles`,
+            data: {
+                role_name: data.role_name,
+                description: data.description ?? '',
+            },
+        })
+    },
+
+    /** Remove a custom/org OneID role from the catalog (DELETE by role id). */
+    deleteOneIdPermissionRole: function (roleId) {
+        return axiosInstancecoremodule.request({
+            method: 'DELETE',
+            url: `/api/v1/oneid-permissions/role/${roleId}`,
         })
     },
 

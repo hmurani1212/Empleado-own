@@ -1,0 +1,381 @@
+[
+    {
+        "app_id": 10,
+        "permission_tag": "EMPLOYEE_FULL_ACCESS",
+        "permission_label": "Full Employee module access",
+        "description": "Permission is used for full Employee module access: create, edit, delete, and manage employees, including profiles, lists, and the Actions tab.",
+        "module_name": "Employee"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "EMPLOYEE_READ_ONLY",
+        "permission_label": "View Employee module access",
+        "description": "Permission is used to view the employee list table and read-only employee details; the user cannot use the Actions tab or perform create, edit, or delete operations.",
+        "module_name": "Employee"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "EMPLOYEE_NO_ACCESS",
+        "permission_label": "No Employee module access",
+        "description": "Permission means there is no access to the Employee module; the user cannot view the employee list or perform any employee actions.",
+        "module_name": "Employee"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "DEPARTMENT_FULL_ACCESS",
+        "permission_label": "Full Department module access",
+        "description": "Permission is used for full Department module access: create, edit, delete, and manage departments and sub-departments, including lists and the Actions tab.",
+        "module_name": "DEPARTAMENT"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "DEPARTMENT_READ_ONLY",
+        "permission_label": "View Department module access",
+        "description": "Permission is used to view the department list and read-only department details; the user cannot use the Actions tab or perform create, edit, or delete operations.",
+        "module_name": "DEPARTAMENT"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "DEPARTMENT_NO_ACCESS",
+        "permission_label": "No Department module access",
+        "description": "Permission means there is no access to the Department module; the user cannot view department data or perform any department actions.",
+        "module_name": "DEPARTAMENT"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "HR_POLICIES_FULL_ACCESS",
+        "permission_label": "Full HR Policies module access",
+        "description": "Permission is used for full HR Policies access: create, edit, publish, and manage policies, swaps, and related screens including the Actions tab.",
+        "module_name": "HR_POLICIES"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "HR_POLICIES_READ_ONLY",
+        "permission_label": "View HR Policies module access",
+        "description": "Permission is used to view HR policy lists and policy content in read-only mode; the user cannot use the Actions tab or perform create, edit, or delete operations.",
+        "module_name": "HR_POLICIES"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "HR_POLICIES_NO_ACCESS",
+        "permission_label": "No HR Policies module access",
+        "description": "Permission means there is no access to HR Policies; the user cannot view or manage policies.",
+        "module_name": "HR_POLICIES"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_SALARY_TEMPLATES_FULL_ACCESS",
+        "permission_label": "Full Payroll Salary Templates module access",
+        "description": "Permission is used for full salary template access: create, edit, delete, and manage templates and related payroll salary template actions.",
+        "module_name": "PAYROLL_SALARY_TEMPLATES"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_SALARY_TEMPLATES_READ_ONLY",
+        "permission_label": "View Payroll Salary Templates module access",
+        "description": "Permission is used to view salary template lists and template details in read-only mode; the user cannot use the Actions tab or perform create, edit, or delete operations.",
+        "module_name": "PAYROLL_SALARY_TEMPLATES"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_SALARY_TEMPLATES_NO_ACCESS",
+        "permission_label": "No Payroll Salary Templates module access",
+        "description": "Permission means there is no access to Payroll Salary Templates; the user cannot view or manage templates.",
+        "module_name": "PAYROLL_SALARY_TEMPLATES"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_EMPLOYEES_SALARY_FULL_ACCESS",
+        "permission_label": "Full Payroll Employees Salary module access",
+        "description": "Permission is used for full employee salary management: assign, edit, and manage employee salaries, incentives, and deductions as allowed in the module.",
+        "module_name": "PAYROLL_EMPLOYEES_SALARY"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_EMPLOYEES_SALARY_READ_ONLY",
+        "permission_label": "View Payroll Employees Salary module access",
+        "description": "Permission is used to view employee salary lists and salary details in read-only mode; the user cannot use the Actions tab or change salary data.",
+        "module_name": "PAYROLL_EMPLOYEES_SALARY"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_EMPLOYEES_SALARY_NO_ACCESS",
+        "permission_label": "No Payroll Employees Salary module access",
+        "description": "Permission means there is no access to Payroll Employees Salary; the user cannot view or manage employee salary data.",
+        "module_name": "PAYROLL_EMPLOYEES_SALARY"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_PAYSLIPS_MANAGEMENT_FULL_ACCESS",
+        "permission_label": "Full Payroll Payslips Management module access",
+        "description": "Permission is used for full payslip management: generate, edit, publish, and manage payslips and related payroll actions.",
+        "module_name": "PAYROLL_PAYSLIPS_MANAGEMENT"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_PAYSLIPS_MANAGEMENT_READ_ONLY",
+        "permission_label": "View Payroll Payslips Management module access",
+        "description": "Permission is used to view payslip lists and payslip details in read-only mode; the user cannot use the Actions tab or perform payslip management operations.",
+        "module_name": "PAYROLL_PAYSLIPS_MANAGEMENT"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_PAYSLIPS_MANAGEMENT_NO_ACCESS",
+        "permission_label": "No Payroll Payslips Management module access",
+        "description": "Permission means there is no access to Payslips Management; the user cannot view or manage payslips.",
+        "module_name": "PAYROLL_PAYSLIPS_MANAGEMENT"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_REPORTS_EXPORT_FULL_ACCESS",
+        "permission_label": "Full Payroll Reports Export module access",
+        "description": "Permission is used for full payroll reports and export access: run reports, export data, and manage report-related actions.",
+        "module_name": "PAYROLL_REPORTS_EXPORT"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_REPORTS_EXPORT_READ_ONLY",
+        "permission_label": "View Payroll Reports Export module access",
+        "description": "Permission is used to view payroll reports and export listings in read-only mode; the user cannot run destructive exports or use management actions beyond viewing where allowed.",
+        "module_name": "PAYROLL_REPORTS_EXPORT"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "PAYROLL_REPORTS_EXPORT_NO_ACCESS",
+        "permission_label": "No Payroll Reports Export module access",
+        "description": "Permission means there is no access to Payroll Reports Export; the user cannot view or export payroll reports.",
+        "module_name": "PAYROLL_REPORTS_EXPORT"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "NOTICES_FULL_ACCESS",
+        "permission_label": "Full Notices module access",
+        "description": "Permission is used for full Notices access: create, edit, publish, and manage notices and related actions.",
+        "module_name": "NOTICES"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "NOTICES_READ_ONLY",
+        "permission_label": "View Notices module access",
+        "description": "Permission is used to view the notices list and notice content in read-only mode; the user cannot use the Actions tab or create, edit, or delete notices.",
+        "module_name": "NOTICES"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "NOTICES_NO_ACCESS",
+        "permission_label": "No Notices module access",
+        "description": "Permission means there is no access to Notices; the user cannot view or manage notices.",
+        "module_name": "NOTICES"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "TASKS_FULL_ACCESS",
+        "permission_label": "Full Tasks module access",
+        "description": "Permission is used for full Tasks access: create, assign, edit, and manage tasks and related actions.",
+        "module_name": "TASKS"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "TASKS_READ_ONLY",
+        "permission_label": "View Tasks module access",
+        "description": "Permission is used to view the task list and task details in read-only mode; the user cannot use the Actions tab or perform create, edit, or delete operations.",
+        "module_name": "TASKS"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "TASKS_NO_ACCESS",
+        "permission_label": "No Tasks module access",
+        "description": "Permission means there is no access to Tasks; the user cannot view or manage tasks.",
+        "module_name": "TASKS"
+    },
+
+    {
+        "app_id": 10,
+        "permission_tag": "ATTENDANCE_DATA_FULL_ACCESS",
+        "permission_label": "Full Attendance Data module access",
+        "description": "Permission is used for full attendance data access: view, adjust, and manage attendance records and related attendance actions.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "ATTENDANCE_DATA_READ_ONLY",
+        "permission_label": "View Attendance Data module access",
+        "description": "Permission is used to view attendance lists and attendance details in read-only mode; the user cannot use the Actions tab or perform adjustments or edits.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "ATTENDANCE_DATA_NO_ACCESS",
+        "permission_label": "No Attendance Data module access",
+        "description": "Permission means there is no access to attendance data; the user cannot view or manage attendance records.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "ATTENDANCE_EXPORT_FULL_ACCESS",
+        "permission_label": "Full Attendance Export module access",
+        "description": "Permission is used for full attendance export access: generate exports, download files, and manage export-related actions.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "ATTENDANCE_EXPORT_READ_ONLY",
+        "permission_label": "View Attendance Export module access",
+        "description": "Permission is used to view attendance export screens and available export listings in read-only mode; the user cannot use export actions or the Actions tab where they change data.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "ATTENDANCE_EXPORT_NO_ACCESS",
+        "permission_label": "No Attendance Export module access",
+        "description": "Permission means there is no access to Attendance Export; the user cannot view or run attendance exports.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "BRANCH_WISE_ATTENDANCE_FULL_ACCESS",
+        "permission_label": "Full Branch-wise Attendance module access",
+        "description": "Permission is used for full branch-wise attendance access: view and manage branch attendance reports and related actions.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "BRANCH_WISE_ATTENDANCE_READ_ONLY",
+        "permission_label": "View Branch-wise Attendance module access",
+        "description": "Permission is used to view branch-wise attendance tables and reports in read-only mode; the user cannot use the Actions tab or perform management or edit operations.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "BRANCH_WISE_ATTENDANCE_NO_ACCESS",
+        "permission_label": "No Branch-wise Attendance module access",
+        "description": "Permission means there is no access to branch-wise attendance; the user cannot view or manage branch attendance data.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "ATTEANDANCE_RAW_LOGS_FULL_ACCESS",
+        "permission_label": "Full Branch-wise Attendance raw logs module access",
+        "description": "Permission is used for full raw attendance logs access: view, export, and manage raw log data and related actions.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "ATTEANDANCE_RAW_LOGS_READ_ONLY",
+        "permission_label": "View Branch-wise Attendance raw logs module access",
+        "description": "Permission is used to view raw attendance log tables and log details in read-only mode; the user cannot use the Actions tab or perform log management operations.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "ATTEANDANCE_RAW_LOGS_NO_ACCESS",
+        "permission_label": "No Branch-wise Attendance raw logs module access",
+        "description": "Permission means there is no access to raw attendance logs; the user cannot view or manage raw log data.",
+        "module_name": "ATTENDANCE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "SHIFT_PLANNER_FULL_ACCESS",
+        "permission_label": "Full Shift Planner module access",
+        "description": "Permission is used for full Shift Planner access: create, edit, delete, and manage shifts, members, and related planner actions.",
+        "module_name": "SHIFT_PLANNER"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "SHIFT_PLANNER_READ_ONLY",
+        "permission_label": "View Shift Planner module access",
+        "description": "Permission is used to view shift plans and planner lists in read-only mode; the user cannot use the Actions tab or perform create, edit, or delete operations.",
+        "module_name": "SHIFT_PLANNER"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "SHIFT_PLANNER_NO_ACCESS",
+        "permission_label": "No Shift Planner module access",
+        "description": "Permission means there is no access to Shift Planner; the user cannot view or manage shift plans.",
+        "module_name": "SHIFT_PLANNER"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "APPLICATIONS_FULL_ACCESS",
+        "permission_label": "Full Applications module access",
+        "description": "Permission is used for full Applications (leave and similar) access: create, review, approve, and manage applications and related actions.",
+        "module_name": "Applications"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "APPLICATIONS_READ_ONLY",
+        "permission_label": "View Applications module access",
+        "description": "Permission is used to view application lists and application details in read-only mode; the user cannot use the Actions tab or approve, reject, or edit applications unless the UI allows view-only actions.",
+        "module_name": "Applications"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "APPLICATIONS_NO_ACCESS",
+        "permission_label": "No Applications module access",
+        "description": "Permission means there is no access to Applications; the user cannot view or manage applications.",
+        "module_name": "Applications"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "LEAVE_PLANNER_FULL_ACCESS",
+        "permission_label": "Full Leave Planner module access",
+        "description": "Permission is used for full Leave Planner access: manage leave groups, public holidays, leave rules, and related planner actions.",
+        "module_name": "LEAVE_PLANNER"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "LEAVE_PLANNER_READ_ONLY",
+        "permission_label": "View Leave Planner module access",
+        "description": "Permission is used to view leave planner lists, calendars, and settings in read-only mode; the user cannot use the Actions tab or perform create, edit, or delete operations.",
+        "module_name": "LEAVE_PLANNER"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "LEAVE_PLANNER_NO_ACCESS",
+        "permission_label": "No Leave Planner module access",
+        "description": "Permission means there is no access to Leave Planner; the user cannot view or manage leave planner data.",
+        "module_name": "LEAVE_PLANNER"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "HIRE2.0_FULL_ACCESS",
+        "permission_label": "Full HIRE2.0 module access",
+        "description": "Permission is used for full Hiring (HIRE2.0) access: create vacancies, manage applicants, pipelines, and related hiring actions.",
+        "module_name": "HIRE2.0"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "HIRE2.0_READ_ONLY",
+        "permission_label": "View HIRE2.0 module access",
+        "description": "Permission is used to view vacancy lists, applicant lists, and hiring details in read-only mode; the user cannot use the Actions tab or perform create, edit, or hiring workflow actions.",
+        "module_name": "HIRE2.0"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "HIRE2.0_NO_ACCESS",
+        "permission_label": "No HIRE2.0 module access",
+        "description": "Permission means there is no access to HIRE2.0; the user cannot view or manage hiring data.",
+        "module_name": "HIRE2.0"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "FORMSANDAPPROVE_FULL_ACCESS",
+        "permission_label": "Full Forms and Approve module access",
+        "description": "Permission is used for full Forms and Approval Flow access: design forms, configure flows, submit, approve, and manage related actions.",
+        "module_name": "FORMSANDAPPROVE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "FORMSANDAPPROVE_READ_ONLY",
+        "permission_label": "View Forms and Approve module access",
+        "description": "Permission is used to view forms, approval flows, and submissions in read-only mode; the user cannot use the Actions tab or perform approvals or form edits.",
+        "module_name": "FORMSANDAPPROVE"
+    },
+    {
+        "app_id": 10,
+        "permission_tag": "FORMSANDAPPROVE_NO_ACCESS",
+        "permission_label": "No Forms and Approve module access",
+        "description": "Permission means there is no access to Forms and Approve; the user cannot view or manage forms or approvals.",
+        "module_name": "FORMSANDAPPROVE"
+    }
+]

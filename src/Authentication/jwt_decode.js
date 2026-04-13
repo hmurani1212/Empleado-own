@@ -1,4 +1,5 @@
 import { jwtDecode } from 'jwt-decode';
+import { getRoleForUiShell } from './roleHelpers';
 // import React, {useEffect} from 'react';
 // Function to get token from localStorage
 const getToken = () => {
@@ -32,6 +33,8 @@ export const getUserData = () => {
         decoded.scope = "Admin"
     }
 
+    const roleId = decoded.role_id || decoded.scope;
+
     return {
         org_id :Number(decoded?.org_id) || 0,
         org_name : decoded.role_id || decoded.scope || "Admin",
@@ -41,7 +44,8 @@ export const getUserData = () => {
         fullUsername: decoded.user_full_name,
         userEmail: decoded.user_email,
         fullDp: decoded.full_dp,
-        roleId: decoded.role_id || decoded.scope,
+        roleId,
+        uiShellRoleId: getRoleForUiShell(roleId),
         roleDbId: decoded.role_db_id,
         otherPermissions: decoded.other_permissions,
         oneIdRolePermissions: decoded.oneid_role_permissions,

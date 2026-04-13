@@ -2,17 +2,14 @@ import React from 'react'
 import useSideMenu from '../SideMenu/sideMenuServices'
 import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { SidebarTabsContainer, SidebarTabs } from '../SideMenu/data'
-import { getUserData } from '../../Authentication/jwt_decode'
+import { SidebarTabsContainer } from '../SideMenu/data'
+import { useSidebarFilteredTabs } from '../../hooks/useSidebarFilteredTabs'
 
 const SideMenuMobileView = (props) => {
   const { toggleState } = props
   const { handleSideMenuTab } = useSideMenu()
 
-  // Get user role from JWT so mobile menu shows correct tabs (Employee vs Admin)
-  const userData = getUserData()
-  const role = userData?.roleId || 'Employee'
-  const filteredTabs = SidebarTabs.filter((tab) => tab.roles.includes(role))
+  const filteredTabs = useSidebarFilteredTabs()
 
   return (
     <div className='flex w-full'>

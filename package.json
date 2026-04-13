@@ -7,7 +7,9 @@
     "dev": "vite --port 6050",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "create-permissions": "node scripts/create-permissions.mjs",
+    "create-permissions:dry-run": "node scripts/create-permissions.mjs --dry-run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

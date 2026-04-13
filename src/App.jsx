@@ -12,6 +12,7 @@ import SideMenuMobileView from './Components/SideMenuMobileView/SideMenuMobileVi
 import empLogo from './assets/images/empleado-logo.png'
 import { Toaster } from './Components/Toaster/Toaster';
 import GlobalAttendanceReportListener from './Components/GlobalAttendanceReportListener/GlobalAttendanceReportListener';
+import EmployeeRolePermissionsPrefetch from './Components/EmployeeRolePermissionsPrefetch/EmployeeRolePermissionsPrefetch';
 import 'react-calendar/dist/Calendar.css';
 
 const App = () => {
@@ -252,6 +253,7 @@ const App = () => {
 
 
       <div className="print:hidden">
+        {showMainLayout && <EmployeeRolePermissionsPrefetch />}
         {showMainLayout && <Toaster />}
         {!isLogInRoute && <GlobalAttendanceReportListener />}
         <CustomDrawer

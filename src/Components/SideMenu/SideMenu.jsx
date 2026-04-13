@@ -1,26 +1,31 @@
 import React from 'react'
-import { SidebarTabs, SidebarTabsContainer } from './data'
+import { SidebarTabsContainer } from './data'
 import { NavLink, useLocation } from 'react-router-dom'
 import useSideMenu from './sideMenuServices'
 import { motion } from 'framer-motion'
-import { getUserData } from '../../Authentication/jwt_decode'
+import { useSidebarFilteredTabs } from '../../hooks/useSidebarFilteredTabs'
 
 const SideMenu = (props) => {
   const { toggleState } = props
   const { handleSideMenuTab } = useSideMenu()
   const location = useLocation()
-  
-  // Get user role from JWT token
-  const userData = getUserData()
-  const role = userData?.roleId || 'Employee' // Default to Employee if no role found
-  
-  // Filter tabs based on user role
-  const filteredTabs = SidebarTabs.filter(tab => tab.roles.includes(role));
 
-  // Check if a tab should be active: current path must match or be a sub-route of the tab's URL
-  const isTabActive = (tabUrl) => {
+  const filteredTabs = useSidebarFilteredTabs()
+
+  const isTabActive = (tabUrl, tabId) => {
     if (!tabUrl || tabUrl === '#') return false;
     if (tabUrl === '/') return location.pathname === '/';
+    if (tabId === 2 && tabUrl === '/my-attendance') {
+      return (
+        location.pathname === '/my-attendance' ||
+        location.pathname.startsWith('/my-attendance/')
+      );
+    }
+    if (tabId === 10 && tabUrl === '/attendance') {
+      const p = location.pathname;
+      if (p === '/my-attendance' || p.startsWith('/my-attendance')) return false;
+      return p === '/attendance' || p.startsWith('/attendance/');
+    }
     const basePath = '/' + (tabUrl.split('/').filter(Boolean)[0] || '');
     return location.pathname === basePath || location.pathname.startsWith(basePath + '/');
   };
@@ -31,7 +36,7 @@ const SideMenu = (props) => {
         {filteredTabs.map((tab, index) => {
           const containerItem = SidebarTabsContainer.find(item => item.id === tab.id);
           const tabUrl = containerItem ? containerItem.tabUrl : '#';
-          
+
           // Special handling for Tasks - redirect to external URL
           if (tab.id === 9) { // Tasks has id 9
             return (
@@ -64,7 +69,7 @@ const SideMenu = (props) => {
               <NavLink
                 to={tabUrl}
                 className={() => {
-                  const shouldBeActive = isTabActive(tabUrl);
+                  const shouldBeActive = isTabActive(tabUrl, tab.id);
                   const paddingClass = toggleState ? "px-0 justify-center" : "px-4 mx-3";
                   const baseClasses = `relative flex items-center gap-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${paddingClass}`;
                   const activeClasses = "bg-brand-50 text-brand-600 shadow-sm";
@@ -75,7 +80,7 @@ const SideMenu = (props) => {
                 title={toggleState ? tab.tabName : ''}
               >
                 {() => {
-                  const shouldBeActive = isTabActive(tabUrl);
+                  const shouldBeActive = isTabActive(tabUrl, tab.id);
                   return (
                     <>
                       <span className={`transition-colors duration-200 ${shouldBeActive ? 'text-brand-600' : 'text-gray-400 group-hover:text-brand-500'} ${toggleState ? 'text-2xl' : 'text-lg'}`}>

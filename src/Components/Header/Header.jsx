@@ -120,7 +120,11 @@ function Header() {
   const isPerformanceRoute = location.pathname.startsWith("/performance");
   const isFormApprovalRoute = location.pathname.startsWith("/formApproval");
   const isExpenseRoute = location.pathname.startsWith("/expense");
-  const isAttendanceRoute = location.pathname === "/attendance";
+  const isAttendanceRoute =
+    location.pathname === "/attendance" ||
+    location.pathname.startsWith("/attendance/") ||
+    location.pathname === "/my-attendance" ||
+    location.pathname.startsWith("/my-attendance/");
   const isTimeAdjustmentRoute = location.pathname === "/time-adjustment";
   const isProfileRoute = location.pathname === "/profile";
   const isEmployeeTrainingRoute = location.pathname.startsWith("/EmployeeTraining");
