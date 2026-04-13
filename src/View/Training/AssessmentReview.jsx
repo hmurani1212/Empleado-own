@@ -3,6 +3,7 @@ import { Card, CardBody, Typography, Chip, Button } from '@material-tailwind/rea
 import { FaCheckCircle, FaTimesCircle, FaRobot } from 'react-icons/fa'
 import { showToast } from '../../Components/Toaster/Toaster'
 import TrainingService from '../../ViewModel/TraingingViewModel/TrainingService'
+import { TrainingDrawerSpinner, TrainingDrawerOverlay } from './TrainingDrawerLoader'
 
 const AssessmentReview = ({ employeeData, courseId }) => {
   const { getEmployeeResolvedQuestions, isLoadingResolvedQuestions, updateQuestionCorrectness, isUpdatingQuestionCorrectness, aiGradeAssessment, isAiGrading } = TrainingService()
@@ -75,12 +76,7 @@ const AssessmentReview = ({ employeeData, courseId }) => {
 
   if (loading || isLoadingResolvedQuestions) {
     return (
-      <div className='flex flex-col items-center justify-center p-12'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4'></div>
-        <Typography variant='small' className='text-gray-600'>
-          Loading questions...
-        </Typography>
-      </div>
+      <TrainingDrawerSpinner label="Loading assessment…" className="p-12 min-h-[200px]" size="lg" />
     )
   }
 
@@ -110,7 +106,7 @@ const AssessmentReview = ({ employeeData, courseId }) => {
   }
 
   return (
-    <div className='flex flex-col gap-4 p-4'>
+    <div className='relative flex flex-col gap-4 p-4 min-h-[280px]'>
       <div className='flex justify-end mb-2'>
         <Button
           className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700 normal-case text-sm px-4 py-2'
@@ -249,6 +245,7 @@ const AssessmentReview = ({ employeeData, courseId }) => {
           </Card>
         )
       })}
+      <TrainingDrawerOverlay show={isAiGrading} label="AI grading in progress…" />
     </div>
   )
 }

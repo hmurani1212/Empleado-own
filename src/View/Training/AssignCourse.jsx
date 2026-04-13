@@ -4,10 +4,21 @@ import TrainingService from '../../ViewModel/TraingingViewModel/TrainingService'
 import { showToast } from '../../Components/Toaster/Toaster'
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices'
 import SearchReactSelect from '../../Components/CustomSelect/SearchReactSelect'
+import { TrainingDrawerOverlay } from './TrainingDrawerLoader'
 
 const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
   const { Training_datefn, addCourseEmployeeAssignment, assignCourseByBranchDept, isLoadingCourseAssignment } = TrainingService()
-  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, Get_All_Employeefn, Get_All_Employee } = useEmployees()
+  const {
+    empBranches,
+    fetchingAllBranches,
+    gettingSubBranches,
+    dept_subDept,
+    Get_All_Employeefn,
+    Get_All_Employee,
+    getAllEmployeeLoading,
+    branchesLoading,
+    departmentsLoading,
+  } = useEmployees()
   
   const [selectedBranch, setSelectedBranch] = useState(null)
   const [selectedDepartment, setSelectedDepartment] = useState(null)
@@ -234,8 +245,10 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
   }
 
 
+  const assigningBusy = loading || isLoadingCourseAssignment
+
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='relative flex flex-col gap-4 min-h-[280px]'>
       {/* Header */}
       <div className='flex flex-col gap-2'>
         <Typography className='text-[18px] font-semibold text-[#474747]'>
@@ -260,6 +273,8 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
             value={selectedBranch}
             options={branchOptions}
             onChangeHandler={handleBranchChange}
+            menuLoading={branchesLoading}
+            menuLoadingLabel="Loading branches…"
             cStyle={true}
             customStyles={{
               control: (base) => ({
@@ -297,6 +312,8 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
             options={departmentOptions}
             onChangeHandler={handleDepartmentChange}
             isDisabled={!selectedBranch || selectedBranch?.value === null || selectedBranch?.value === undefined}
+            menuLoading={departmentsLoading}
+            menuLoadingLabel="Loading departments…"
             cStyle={true}
             customStyles={{
               control: (base) => ({
@@ -342,6 +359,8 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
                 options={employeeOptions}
                 onChangeHandler={handleEmployeeChange}
                 isMulti={true}
+                menuLoading={getAllEmployeeLoading}
+                menuLoadingLabel="Loading employees…"
                 isDisabled={!selectedDepartment || selectedDepartment?.value === null || selectedDepartment?.value === undefined}
                 cStyle={true}
                 customStyles={{
@@ -426,25 +445,21 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
 
         {/* Submit Button */}
         <div className='mt-4'>
-          {(loading || isLoadingCourseAssignment) ? (
-            <Button
-              className='bg-blue-300 py-[10px] capitalize w-full'
-              loading={true}
-              disabled
-            >
-              Assigning...
-            </Button>
-          ) : (
-            <Button
-              type='submit'
-              className='bg-blue-500 py-[10px] capitalize w-full hover:bg-blue-600'
-              disabled={!selectedBranch || !selectedDepartment || selectedEmployees.length === 0}
-            >
-              Assign Course
-            </Button>
-          )}
+          <Button
+            type='submit'
+            className='bg-blue-500 py-[10px] capitalize w-full hover:bg-blue-600'
+            disabled={
+              assigningBusy ||
+              !selectedBranch ||
+              !selectedDepartment ||
+              selectedEmployees.length === 0
+            }
+          >
+            Assign Course
+          </Button>
         </div>
       </form>
+      <TrainingDrawerOverlay show={assigningBusy} label="Assigning course…" />
     </div>
   )
 }

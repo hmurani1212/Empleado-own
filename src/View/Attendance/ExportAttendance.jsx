@@ -19,7 +19,7 @@ const generateReportRequestId = () => {
   return `att-report-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 
-/** Generate a unique request id for this export so socket event can be matched to this user/session. */
+// OLD duplicate from merge (incoming branch — same implementation):
 // const generateReportRequestId = () => {
 //   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
 //   return `att-report-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
@@ -53,6 +53,9 @@ const ExportAttendance = () => {
       longWaitToastTimeoutRef.current = null
     }
   }
+
+  // OLD (incoming branch) — only DOWNLOAD_WAIT_MS, no long-wait toast / extra refs:
+  // const DOWNLOAD_WAIT_MS = 5 * 60 * 1000
 
   // State for API data (same as BranchWiseListReporting)
   const [empBranches, setEmpBranches] = useState([])
@@ -154,11 +157,13 @@ const ExportAttendance = () => {
         data.request_id != null &&
         pendingReportRequestIdRef.current != null &&
         String(data.request_id) === String(pendingReportRequestIdRef.current)
+      // OLD: const requestIdMatch = data.request_id != null && data.request_id === pendingReportRequestIdRef.current
       const oneIdMatch = data.one_id != null && getDecodedToken()?.oneid != null && String(data.one_id) === String(getDecodedToken().oneid)
       const legacyNoId = pendingReportRequestIdRef.current != null && data.request_id == null && data.one_id == null
 
       if (!requestIdMatch && !oneIdMatch && !legacyNoId) return
       clearAttendanceLongWaitToast()
+      // OLD: (incoming had no clearAttendanceLongWaitToast here)
       if (pendingReportRequestIdRef.current != null) pendingReportRequestIdRef.current = null
       if (downloadTimeoutRef.current) {
         clearTimeout(downloadTimeoutRef.current)
@@ -183,6 +188,11 @@ const ExportAttendance = () => {
       currentExportMetaRef.current = null
       localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
       showToast('Your attendance report is ready! Downloading...', 'success')
+      // OLD (incoming branch):
+      // showToast('Your attendance report is ready! Downloading...', 'success')
+      // setIsDownloading(false)
+      // setIsExporting(false)
+      // setIsSendingEmail(false)
 
       try {
         const link = document.createElement('a')
@@ -485,6 +495,9 @@ const ExportAttendance = () => {
           currentExportMetaRef.current = null
           localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
           clearAttendanceLongWaitToast()
+          // OLD (incoming branch) — minimal timeout body only had:
+          // pendingReportRequestIdRef.current = null
+          // then setIsDownloading(false) + showToast (same as below)
           setIsDownloading(false)
           showToast('Report did not arrive in time. Check Attendance Report Archive or try again.', 'error')
         }, DOWNLOAD_WAIT_MS)
@@ -495,6 +508,7 @@ const ExportAttendance = () => {
         currentExportMetaRef.current = null
         localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
         clearAttendanceLongWaitToast()
+        // OLD (incoming): only pendingReportRequestIdRef.current = null before showToast
         showToast(result.error || 'Failed to schedule report', 'error')
       }
     } catch (error) {
@@ -503,6 +517,7 @@ const ExportAttendance = () => {
       currentExportMetaRef.current = null
       localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
       clearAttendanceLongWaitToast()
+      // OLD (incoming): only pendingReportRequestIdRef.current = null before showToast
       showToast('An error occurred while scheduling the report', 'error')
       setIsDownloading(false)
     } finally {

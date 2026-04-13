@@ -6,11 +6,14 @@ import { createApiKey, executeApiCall } from "../../services/__apiManager"
 const attendanceViewModel = (set, get) => ({
     allLateComers: [],
     allAttArchiveReport: [],
+    attArchiveReportLoading: false,
     attendanceBranches: [],
     attBranchWise: [],
     empListAtt: [],
     individualRequestDetail: [],
     requestData: [],
+    /** True while adjustment requests list is fetching (replace mode); false for load-more append */
+    requestAdjListLoading: false,
     /** Server-side name/ID search for adjustment requests list (Time Adjustment screen); sent as query param `name` */
     requestAdjName: '',
     requestPagination: {
@@ -199,7 +202,7 @@ const attendanceViewModel = (set, get) => ({
     },
 
     gettingAttReportArchive: async () => {
-
+        set({ attArchiveReportLoading: true })
         try {
             const response = await attendanceApi.getAttArchive()
             const data = response.data
@@ -213,6 +216,9 @@ const attendanceViewModel = (set, get) => ({
 
         } catch (error) {
             console.log(error)
+            set({ allAttArchiveReport: [] })
+        } finally {
+            set({ attArchiveReportLoading: false })
         }
     },
 
@@ -262,6 +268,10 @@ const attendanceViewModel = (set, get) => ({
             : loadMore ? currentState.requestPagination.page + 1 : 1
         const shouldAppend = loadMore && pageNumber == null
 
+        if (!shouldAppend) {
+            set({ requestAdjListLoading: true })
+        }
+
         const dataReq = {
             form_label: 'ATT_TIME_ADJUSTMENT',
             getall: 'false',
@@ -299,6 +309,8 @@ const attendanceViewModel = (set, get) => ({
             }
         } catch (error) {
             console.log(error)
+        } finally {
+            set({ requestAdjListLoading: false })
         }
     },
 

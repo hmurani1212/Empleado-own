@@ -4,7 +4,7 @@ import { showToast } from "../../../Components/Toaster/Toaster"
 const empExpenseViewModel = (set, get) => ({
     // State
     expenseList: [],
-    loading: false,
+    loading: true,
     loadingMore: false,
     currentPage: 1,
     hasMoreData: true,

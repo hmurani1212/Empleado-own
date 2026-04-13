@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { Card, CardBody, Typography, Button, Input } from '@material-tailwind/react'
 import { BiSearch } from 'react-icons/bi'
 import { FaBook, FaPlayCircle, FaCheckCircle, FaFileAlt } from 'react-icons/fa'
@@ -11,14 +11,14 @@ const EmployeeTraining = () => {
   const navigate = useNavigate()
   const { 
     employeeTrainingCourses, 
-    loading, 
+    employeeTrainingCoursesLoading, 
     getEmployeeTrainingCourses
   } = useEmpTrainingService()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredCourses, setFilteredCourses] = useState([])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     getEmployeeTrainingCourses()
   }, [])
 
@@ -76,7 +76,7 @@ const EmployeeTraining = () => {
           </div>
         </div>
 
-        {loading ? (
+        {employeeTrainingCoursesLoading ? (
           <EmployeeTrainingSkeleton />
         ) : filteredCourses.length === 0 ? (
           <div className='bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center'>

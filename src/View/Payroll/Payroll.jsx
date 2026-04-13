@@ -7,12 +7,14 @@ import { HiOutlineCurrencyDollar } from "react-icons/hi2";
 const PAYSLIP_GENERATION_OPTIONS_KEY = "payslipGenerationOptions";
 const GENERATE_PAYSLIP_SEARCH_FILTER_KEY = "generatePayrollSearchFilter";
 const GENERATE_PAYSLIP_FILTERS_KEY = "generatePayrollFilters";
+const MAKING_PAYMENTS_FILTERS_KEY = "makingPaymentsFilters";
 
 const clearAllGeneratePayrollData = () => {
   try {
     localStorage.removeItem(PAYSLIP_GENERATION_OPTIONS_KEY);
     localStorage.removeItem(GENERATE_PAYSLIP_SEARCH_FILTER_KEY);
     localStorage.removeItem(GENERATE_PAYSLIP_FILTERS_KEY);
+    localStorage.removeItem(MAKING_PAYMENTS_FILTERS_KEY);
   } catch (error) {
     console.error("Error clearing Generate Payslip data from localStorage:", error);
   }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Card, CardBody, Typography, Textarea } from '@material-tailwind/react';
 import { FaHashtag, FaUser, FaFileAlt, FaEye, FaEllipsisH, FaArrowLeft } from 'react-icons/fa';
+import { PendingApprovalsListSkeleton } from './ExpenseSkeletons';
 
 const PendingApprovalsDrawer = ({ closeDrawer, pendingApprovals = [], pendingApprovalsLoading = false, approveRejectExpense }) => {
   const [showDetailView, setShowDetailView] = useState(false);
@@ -197,10 +198,14 @@ const PendingApprovalsDrawer = ({ closeDrawer, pendingApprovals = [], pendingApp
   // Show loading state
   if (pendingApprovalsLoading) {
     return (
-      <div className="p-4 flex justify-center items-center h-64">
-        <Typography variant="paragraph" className="text-gray-500">
-          Loading pending approvals...
-        </Typography>
+      <div className="p-4 min-h-[280px]">
+        <div className="flex flex-col items-center justify-center gap-3 mb-6">
+          <div className="w-9 h-9 border-2 border-bgBlue border-t-transparent rounded-full animate-spin" />
+          <Typography variant="small" className="text-gray-500 font-poppins">
+            Loading pending approvals…
+          </Typography>
+        </div>
+        <PendingApprovalsListSkeleton rows={3} />
       </div>
     );
   }

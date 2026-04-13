@@ -59,7 +59,8 @@ const useGoalServices = ()=>{
         show:false,
         loading:false,
         searchText:'',
-        searchLoading:false
+        searchLoading:false,
+        performanceListLoading:true,
     })
 
      const [addGoalValue, setAddGoalValue]=useState({
@@ -67,6 +68,7 @@ const useGoalServices = ()=>{
         update:false, 
         pID:null,
         employees:[],
+        employeesLoading:false,
         employee_id:null,
         goal_name:'',
         start_date:'',
@@ -133,6 +135,8 @@ const useGoalServices = ()=>{
 
 
     const gettingPRCSelect = useCallback(async()=>{
+        useStore.setState({ goalsLoading: true })
+        setGoalsValue((prevState)=>({ ...prevState, performanceListLoading: true }))
         try {
             const response = await performanceApi.getPRCForSelect()
             const responseData = response.data 
@@ -148,6 +152,8 @@ const useGoalServices = ()=>{
             }
         } catch (error) {
             console.log(error)
+        } finally {
+            setGoalsValue((prevState)=>({ ...prevState, performanceListLoading: false }))
         }
     }, [gettingGoals])
 
@@ -196,6 +202,8 @@ const useGoalServices = ()=>{
     };
 
     const gettingEmp = async(name)=>{
+        if (!name) return
+        setAddGoalValue((prevState)=>({ ...prevState, employeesLoading: true }))
         try{
             const response = await performanceApi.getEmpGoal(name)
             const responseData = response.data 
@@ -215,6 +223,8 @@ const useGoalServices = ()=>{
             }
         }catch(err){
             console.log(err)
+        } finally {
+            setAddGoalValue((prevState)=>({ ...prevState, employeesLoading: false }))
         }
     }
 
@@ -229,6 +239,7 @@ const useGoalServices = ()=>{
             show:true,
             pID:null,
             employees:[],
+            employeesLoading:false,
             employee_id:null,
             goal_name:'',
             start_date:'',

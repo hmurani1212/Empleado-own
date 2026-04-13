@@ -28,6 +28,7 @@ import * as Yup from "yup";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { getUserData } from "../../Authentication/jwt_decode";
+import useStore from "../../Store/store";
 ///import {Link} from 'react-router-dom'
 const CreateVacancy = () => {
   const [validationErrors, setValidationErrors] = useState({});
@@ -109,6 +110,7 @@ const CreateVacancy = () => {
 
   const { create_vacancy, get_mark_def_data, get_mark_def } =
     useHire_2();
+  const locationsLoading = useStore((state) => state.locationsLoading);
   useEffect(() => {
     get_mark_def();
   }, []);
@@ -796,6 +798,8 @@ const CreateVacancy = () => {
                               isSearchable={true}
                               isClearable={true}
                               customStyles={false}
+                              menuLoading={locationsLoading}
+                              menuLoadingLabel="Loading cities..."
                             />
                             {getFieldError("locations")}
                           </div>

@@ -822,16 +822,20 @@ const ReportForm = ({ reportType, onClose }) => {
               )}
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button — use isLoadingReport (not `loading`, which is department dropdown fetch) */}
             <div className="flex items-end">
               <Button
                 type="submit"
+                loading={isLoadingReport}
                 disabled={
-                  loading || !formData.branch_id || !formData.department_id
+                  loading ||
+                  isLoadingReport ||
+                  !formData.branch_id ||
+                  !formData.department_id
                 }
-                className="bg-bgBlue hover:bg-blue-700 text-white font-medium px-6 h-fit rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-bgBlue hover:bg-blue-700 text-white font-medium px-6 h-fit rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed normal-case flex items-center justify-center min-w-[120px]"
               >
-                {loading ? "Loading..." : "Submit"}
+                SUBMIT
               </Button>
             </div>
           </div>

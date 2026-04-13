@@ -5,6 +5,8 @@ const useExpenseService = () => {
     // Get state and functions from store
     const expenseData = useStore((state) => state.expenseData);
     const loading = useStore((state) => state.loading);
+    const loadMoreLoading = useStore((state) => state.loadMoreLoading);
+    const addExpenseLoading = useStore((state) => state.addExpenseLoading);
     const error = useStore((state) => state.error);
     const pendingApprovals = useStore((state) => state.pendingApprovals);
     const pendingApprovalsLoading = useStore((state) => state.pendingApprovalsLoading);
@@ -171,6 +173,8 @@ const useExpenseService = () => {
         // State
         expenseData,
         loading,
+        loadMoreLoading,
+        addExpenseLoading,
         error,
         pendingApprovals,
         pendingApprovalsLoading,

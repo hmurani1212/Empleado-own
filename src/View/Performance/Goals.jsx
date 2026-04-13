@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useLayoutEffect, useMemo } from "react";
+import React, { useLayoutEffect, useState, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { BiSearch } from "react-icons/bi";
 import CustomButton from "../../Components/CustomButton/CustomButton";
@@ -60,9 +60,10 @@ const Goals = () => {
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     gettingPRCSelect();
-  }, [gettingPRCSelect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount: cycles + goals list
+  }, []);
 
   return (
     <>
@@ -77,7 +78,7 @@ const Goals = () => {
             <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
               <div className="w-full md:w-64">
                 <CustomSelect
-                  placeHolderTitle="Select Cycle"
+                  placeHolderTitle={goalsValue.performanceListLoading ? "Loading cycles..." : "Select Cycle"}
                   value={goalsValue.performance_id}
                   options={[
                     { value: null, label: "All Cycles" },
@@ -90,6 +91,8 @@ const Goals = () => {
                     handleSelectGoals(selectedOption, "performance_id")
                   }
                   customStyles={false}
+                  menuLoading={goalsValue.performanceListLoading}
+                  menuLoadingLabel="Loading review cycles..."
                 />
               </div>
               
@@ -305,6 +308,8 @@ const Goals = () => {
               addGoalValue.show ? (
                 <AddEditGoal
                   performance={goalsValue.performance}
+                  performanceListLoading={goalsValue.performanceListLoading}
+                  employeesLoading={addGoalValue.employeesLoading}
                   handleSelectGoals={handleSelectGoals}
                   addGoalValue={addGoalValue}
                   handleChangeAddGoal={handleChangeAddGoal}

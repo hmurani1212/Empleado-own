@@ -24,7 +24,6 @@ const History = ({
   selectedEmployeeId,
 } = {}) => {
   const [historyData, setHistoryData] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedReviewCycle, setSelectedReviewCycle] = useState("");
   const [searchText, setSearchText] = useState("");
   const [expandedCycles, setExpandedCycles] = useState({});
@@ -77,17 +76,11 @@ const History = ({
   ]);
 
   useEffect(() => {
-    // Update local state when store data changes
     if (isProfileView) {
-      if (employeeHistoryData) {
-        setHistoryData([employeeHistoryData]); // Wrap in array for consistency
-      }
+      setHistoryData(employeeHistoryData ? [employeeHistoryData] : []);
     } else {
-      if (mainHistoryData && mainHistoryData.length > 0) {
-        setHistoryData(mainHistoryData);
-      }
+      setHistoryData(Array.isArray(mainHistoryData) ? mainHistoryData : []);
     }
-    setLoading(false);
   }, [mainHistoryData, employeeHistoryData, isProfileView]);
 
   // Function to display competency progress (already provided percentage)
@@ -139,7 +132,7 @@ const History = ({
     }
   };
 
-  if (loading || historyLoading) {
+  if (historyLoading) {
     return (
       <div className="flex flex-col gap-6 py-2 pb-1">
         <HistorySkeleton />

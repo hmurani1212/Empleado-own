@@ -105,6 +105,7 @@ const usePRCServices = () => {
         allow_competency_custom_employees: [],
         permissionEmployeesOptions: [],
         permissionEmployeesLoading: false,
+        employeesDropdownLoading: false,
         // Who manages competency / goal for this cycle (API: competency_Manage_by, Goal_Manage_by)
         competency_manage_by: 'Admin',
         goal_manage_by: 'Admin',
@@ -175,6 +176,7 @@ const usePRCServices = () => {
             allow_competency_custom_employees: [],
             permissionEmployeesOptions: [],
             permissionEmployeesLoading: false,
+            employeesDropdownLoading: false,
             competency_manage_by: 'Admin',
             goal_manage_by: 'Admin',
         }))
@@ -423,6 +425,8 @@ const usePRCServices = () => {
             const deptValue = select.value === 0 || select.value === '0' ? 0 : select.value;
             const deptIdForApi = deptValue === 0 ? null : deptValue;
 
+            setPRCAddValue((prevState) => ({ ...prevState, employeesDropdownLoading: true }))
+
             let employeeOptions = [];
             try {
                 const response = await employeesApi.get_all_employeee(deptIdForApi);
@@ -445,7 +449,8 @@ const usePRCServices = () => {
                 [field]: select,
                 employees: employeeOptions,
                 emp_id: deptValue === 0 ? { value: 0, label: 'All Employees' } : null,
-                selectedEmp: prevState.selectedEmp ?? [] // Keep selected employees when department changes
+                selectedEmp: prevState.selectedEmp ?? [], // Keep selected employees when department changes
+                employeesDropdownLoading: false,
             }))
         } else if (field === 'emp_id') {
             // Handle "All Employees" option

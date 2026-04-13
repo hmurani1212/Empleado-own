@@ -1,4 +1,4 @@
-import { Inboxinstancemodeule, traininginstancemodeule } from "../../base.js";
+import { Inboxinstancemodeule, traininginstancemodeule, axiosFormDataTransformRequest } from "../../base.js";
 
 const InboxApiData = {
     get_inbox_data: function (page_no = 1, limit = 20) {
@@ -97,7 +97,7 @@ const InboxApiData = {
             method: 'POST',
             url: '/api/make_url',
             data: formData,
-            headers: { 'Content-Type': 'multipart/form-data' }
+            transformRequest: [axiosFormDataTransformRequest],
         })
     },
     

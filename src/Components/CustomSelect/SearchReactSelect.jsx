@@ -2,6 +2,7 @@
 import React from 'react';
 import Select from 'react-select';
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices';
+import { MenuList } from './CustomSelect';
 
 
 const SearchReactSelect = (props) => {
@@ -25,6 +26,10 @@ const SearchReactSelect = (props) => {
     menuPortalTarget,
     menuPosition,
     menuPlacement,
+    menuLoading = false,
+    menuLoadingLabel = 'Loading...',
+    isLoading: legacyMenuLoading,
+    thinScrollbar = false,
   } = props
   const { customStyles: hookCustomStyles } = useEmployees()
     const baseStyles = {
@@ -76,9 +81,19 @@ const SearchReactSelect = (props) => {
     ...baseStyles,
     ...customStylesToUse // Assuming customStyle is an object
   } : baseStyles;
+  const effectiveMenuLoading = Boolean(menuLoading) || Boolean(legacyMenuLoading);
+
   // Components configuration
   const components = {
-    IndicatorSeparator: null
+    IndicatorSeparator: null,
+    MenuList: (menuListProps) => (
+      <MenuList
+        {...menuListProps}
+        menuLoading={effectiveMenuLoading}
+        menuLoadingLabel={menuLoadingLabel}
+        thinScrollbar={thinScrollbar}
+      />
+    ),
   };
   
   // Hide dropdown indicator if requested

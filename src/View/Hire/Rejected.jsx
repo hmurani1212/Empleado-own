@@ -5,9 +5,14 @@ import { FaEye } from "react-icons/fa";
 import { Outlet, useLocation } from "react-router";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { formatTimestamp } from "../Branches/utils";
+import useStore from "../../Store/store";
+import { RejectedTableSkeleton } from "./HireSkeletons";
 const Rejected = () => {
   const { get_rejected_app_data, handleNavigateView } =
     useHire();
+  const rejectedApplicantsLoading = useStore(
+    (state) => state.rejectedApplicantsLoading
+  );
   // const { get_applicants_data } = useHire_2();
 
   //console.log("get_rejected_app_data:", get_rejected_app_data)
@@ -49,7 +54,9 @@ const Rejected = () => {
                 </thead>
 
                 <tbody>
-                  {get_rejected_app_data && get_rejected_app_data.length > 0 ? (
+                  {rejectedApplicantsLoading ? (
+                    <RejectedTableSkeleton rows={8} />
+                  ) : get_rejected_app_data && get_rejected_app_data.length > 0 ? (
                     get_rejected_app_data.map((hire, index) => {
                       const isLast = index === get_rejected_app_data.length - 1;
                       const classes = isLast
@@ -132,9 +139,7 @@ const Rejected = () => {
                     <tr>
                       <td colSpan={6} className="p-4 text-center">
                         <Typography variant="small" color="blue-gray">
-                          {get_rejected_app_data === undefined
-                            ? "Loading rejected applications..."
-                            : "No rejected applications found"}
+                          No rejected applications found
                         </Typography>
                       </td>
                     </tr>

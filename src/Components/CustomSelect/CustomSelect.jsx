@@ -102,7 +102,6 @@ const MenuList = (props) => {
   );
 };
 
-
 const CustomSelect = (props) => {
   const { 
     isTrue,
@@ -128,12 +127,16 @@ const CustomSelect = (props) => {
     isLoading,
     loadingMessage,
     noOptionsMessage: noOptionsMessageProp,
-    hideControlLoadingIndicator = false,
+    /** When true (default), no spinner in the closed control — use `menuLoading` / `isLoading` for in-menu spinner only */
+    hideControlLoadingIndicator = true,
     menuLoading = false,
     menuLoadingLabel = 'Loading...',
     components: userComponents = {},
     ...restProps // Capture any other props to pass through
   } = props
+
+  /** Spinner only inside open menu: combine explicit menuLoading with legacy isLoading prop */
+  const effectiveMenuLoading = Boolean(menuLoading) || Boolean(isLoading)
   // const { customStyles } = useEmployees()
 
   const customStyles = {
@@ -176,8 +179,10 @@ const CustomSelect = (props) => {
       ...base,
       padding: 0,
       margin: 0,
-      caretColor: 'transparent', // Hide the cursor
-      cursor: 'pointer', // Show pointer cursor instead of text cursor
+      // Searchable selects need a visible caret so users can type to filter options
+      ...(isSearchable
+        ? { caretColor: 'auto', cursor: 'text' }
+        : { caretColor: 'transparent', cursor: 'pointer' }),
     }),
     singleValue: base => ({
       ...base,
@@ -280,12 +285,29 @@ const CustomSelect = (props) => {
         hasMore={hasMore}
         loading={loading}
         thinScrollbar={thinScrollbar}
-        menuLoading={menuLoading}
+        menuLoading={effectiveMenuLoading}
         menuLoadingLabel={menuLoadingLabel}
       />
     ),
   };
-  if (hideControlLoadingIndicator) {
+  if (!hideControlLoadingIndicator) {
+    mergedComponents.LoadingIndicator = (indicatorProps) => {
+      if (!indicatorProps.selectProps?.isLoading) return null;
+      return (
+        <div
+          className="flex items-center pr-2 pl-1"
+          aria-live="polite"
+          aria-label="Loading options"
+          {...(indicatorProps.innerProps || {})}
+        >
+          <span
+            className="inline-block h-4 w-4 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin shrink-0"
+            aria-hidden
+          />
+        </div>
+      );
+    };
+  } else {
     mergedComponents.LoadingIndicator = () => null;
   }
 
@@ -312,13 +334,14 @@ const CustomSelect = (props) => {
         isMulti={isMulti}
         filterOption={filterOption}
         menuPortalTarget={menuPortalTarget}
-        isLoading={isLoading}
         loadingMessage={loadingMessage}
         noOptionsMessage={resolvedNoOptionsMessage}
-        {...restProps} // Pass through any other props
+        {...restProps}
+        isLoading={hideControlLoadingIndicator ? false : Boolean(isLoading)}
       />
     </div>
   )
 }
 
-export default CustomSelect
+export { MenuList };
+export default CustomSelect;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useLayoutEffect, useState, useMemo } from 'react'
 import { Typography, Card, CardBody, Chip, IconButton, Button } from '@material-tailwind/react'
 import CustomDrawer from '../../../Components/CustomDrawer/CustomDrawer'
 import AddExpenseForm from './AddExpenseForm'
@@ -57,7 +57,7 @@ const EmpExpense = () => {
         loadMoreExpenses
     } = useStore()
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         gettingExpenseList()
     }, [])
 

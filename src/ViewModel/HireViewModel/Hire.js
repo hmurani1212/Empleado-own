@@ -19,8 +19,12 @@ const hireViewModel = (set, get) => ({
     mountHireList: false,
     allTalentPool: [],
     allCities: [],
+    /** True while `gettingAllLocations` (hiring cities for Create Vacancy) is in flight */
+    locationsLoading: false,
     City_data: [], // Cities by country (Pakistan)
     get_rejected_app_data: [],
+    /** True while `get_rejected_app` request is in flight */
+    rejectedApplicantsLoading: false,
     record_data: [],
 
     viewPending: [],
@@ -304,6 +308,7 @@ const hireViewModel = (set, get) => ({
 
 
     get_rejected_app: async (params = {}) => {
+        set({ rejectedApplicantsLoading: true })
         try {
             const response = await hireApi2.get_rejected_app(params);
             const data = response.data;
@@ -321,6 +326,8 @@ const hireViewModel = (set, get) => ({
         } catch (error) {
             set({ get_rejected_app_data: [] })
             return false;
+        } finally {
+            set({ rejectedApplicantsLoading: false })
         }
     },
 
@@ -380,6 +387,7 @@ const hireViewModel = (set, get) => ({
 
     // Cities list for Create Vacancy (Hiring module)
     gettingAllLocations: async () => {
+        set({ locationsLoading: true })
         try {
             const response = await hireApi.getHiringCities()
             const data = response.data
@@ -392,6 +400,8 @@ const hireViewModel = (set, get) => ({
         } catch (error) {
             console.error('Error fetching cities:', error)
             set({ allCities: [] })
+        } finally {
+            set({ locationsLoading: false })
         }
     },
 

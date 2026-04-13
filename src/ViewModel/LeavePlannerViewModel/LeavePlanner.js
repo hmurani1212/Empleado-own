@@ -13,9 +13,17 @@ const leavesPlannerViewModel = (set, get) => ({
     policiesList: [],
     countriesGoogleForm:[],
     branchesGoogleForm:[],
+    /** Google import drawer: countries + branches from getGoogleForm API */
+    googleFormsLoading: false,
+    /** While departments/branches list is fetching (shared with other leave planner flows) */
+    leavesBranchesLoading: false,
+    /** While HR policies list is fetching for selected branch */
+    googleFormPoliciesLoading: false,
     branchIdPolicy : '',
     policyId : '',
     mountLeave: false,
+    /** True while leave groups table data is fetching (list API or branch filter) */
+    leavesGroupTableLoading: false,
     type:false,
 
     showGoogleForm:false,
@@ -36,7 +44,7 @@ const leavesPlannerViewModel = (set, get) => ({
     },
 
     getLeavesList: async()=>{
-        
+        set({ leavesGroupTableLoading: true })
         try {
             const response = await leavesPlannerApi.getLeavesGroup()
             const data = response.data
@@ -58,6 +66,8 @@ const leavesPlannerViewModel = (set, get) => ({
             }
         } catch(err){
             console.error(err)
+        } finally {
+            set({ leavesGroupTableLoading: false })
         }
 
     },
@@ -82,6 +92,7 @@ const leavesPlannerViewModel = (set, get) => ({
     },
 
     getAllDepartmentsLeaves: async () => {
+        set({ leavesBranchesLoading: true })
         try {
             const response = await departmentsApi.gettingAllDepartments();
             const data = response.data
@@ -91,6 +102,8 @@ const leavesPlannerViewModel = (set, get) => ({
             }
         } catch (err) {
             console.error('Error in getAllDepartmentsLeaves:', err);
+        } finally {
+            set({ leavesBranchesLoading: false })
         }
 
     },
@@ -246,6 +259,7 @@ const leavesPlannerViewModel = (set, get) => ({
 
     getPoliciesList : async(id) => {
         const bid = {branch_id : id}
+        set({ googleFormPoliciesLoading: true })
         try {
             const response = await leavesPlannerApi.hrPoliciesList(bid);
             const respData = response.data;
@@ -261,6 +275,8 @@ const leavesPlannerViewModel = (set, get) => ({
             console.error('Error getting policies list:', error)
             set({policiesList:[]})
             throw error
+        } finally {
+            set({ googleFormPoliciesLoading: false })
         }
     },
     settingLeavePlannerByBranch:(data)=>{
@@ -295,7 +311,7 @@ const leavesPlannerViewModel = (set, get) => ({
     },
 
     gettingGoogleForms: async()=>{
-        
+        set({ googleFormsLoading: true })
         try {
             const response = await leavesPlannerApi.getGoogleForm()
             const data = response.data
@@ -313,6 +329,8 @@ const leavesPlannerViewModel = (set, get) => ({
             console.error("Error in gettingGoogleForms:", err)
             set({countriesGoogleForm: []})
             set({branchesGoogleForm: []})
+        } finally {
+            set({ googleFormsLoading: false })
         }
     },
 

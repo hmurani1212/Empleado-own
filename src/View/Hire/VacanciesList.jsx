@@ -19,6 +19,7 @@ import ConfirmationDialog from "../../Components/ConfirmationDialog/Confirmation
 import useStore from "../../Store/store";
 import { useNavigate } from "react-router";
 import { useDebounce } from "../../services/__debounceServices";
+import { VacanciesListTableSkeleton } from "./HireSkeletons";
 const VacanciesList = () => {
   const {
     handleAllApps,
@@ -124,6 +125,14 @@ const VacanciesList = () => {
   useEffect(() => {
     getVacanciesWithFilters({ page: 1, status: "1" });
   }, []); // Empty dependency array - only run once on mount
+
+  /** Not on applicant list routes — avoid stale "loading" when opening `/hire/vacancies_list`. */
+  useEffect(() => {
+    useStore.setState({ allApplicantsLoading: false });
+    return () => {
+      useStore.setState({ allApplicantsLoading: true });
+    };
+  }, []);
 
   const getMonthShortName = (monthNumber) => {
     const monthNames = [
@@ -278,6 +287,10 @@ const VacanciesList = () => {
 
     window.open(shareUrl, "_blank", "noopener,noreferrer")
   }
+
+  const vacanciesRows = allVacanciesList_data?.vacancies;
+  const showVacanciesSkeleton =
+    loading && (!vacanciesRows || vacanciesRows.length === 0);
 
   // console.log("allVacanciesList_data", allVacanciesList_data.response)
   return (
@@ -447,20 +460,25 @@ const VacanciesList = () => {
                 </tr>
               </thead>
               <tbody>
-                {!allVacanciesList_data?.vacancies || allVacanciesList_data.vacancies.length === 0 ? (
+                {showVacanciesSkeleton ? (
+                  <VacanciesListTableSkeleton
+                    rows={8}
+                    colCount={dataVacancies.length}
+                  />
+                ) : !vacanciesRows || vacanciesRows.length === 0 ? (
                   <tr>
                     <td
                       colSpan={dataVacancies.length}
                       className="p-4 text-center"
                     >
                       <Typography className="text-gray-500">
-                        {loading ? "Loading vacancies..." : "No record found"}
+                        No record found
                       </Typography>
                     </td>
                   </tr>
                 ) : (
-                  allVacanciesList_data?.vacancies?.map((hire, index) => {
-                    const isLast = index === allVacanciesList_data.length - 1;
+                  vacanciesRows.map((hire, index) => {
+                    const isLast = index === vacanciesRows.length - 1;
                     const classes = isLast
                       ? "p-4"
                       : "p-4 border-b border-[#F2F2F9]";

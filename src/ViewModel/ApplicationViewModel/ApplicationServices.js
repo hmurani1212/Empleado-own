@@ -3,6 +3,7 @@ import useStore from "../../Store/store"
 const useApplication = () => {
 
     const applicationsList = useStore((state) => state.applicationsList)
+    const applicationsTableLoading = useStore((state) => state.applicationsTableLoading)
     const applicationsMount = useStore((state) => state.applicationsMount);
     const gettingApplicationsList = useStore((state) => state.gettingApplicationsList);
     const gettingFilteredApplicationsList = useStore((state) => state.gettingFilteredApplicationsList);
@@ -27,7 +28,7 @@ const useApplication = () => {
 
 
     return {
-        appTitles, applicationsList, applicationsMount, handleApplicationsMount, gettingApplicationsList, gettingFilteredApplicationsList, GetSubmitted_AppLi,
+        appTitles, applicationsList, applicationsTableLoading, applicationsMount, handleApplicationsMount, gettingApplicationsList, gettingFilteredApplicationsList, GetSubmitted_AppLi,
         GetSubmitted_AppFn, SubmitApplcationsFn, uploadFileToElephant
     }
 }

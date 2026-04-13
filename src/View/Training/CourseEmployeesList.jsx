@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Typography } from '@material-tailwind/react'
 import TrainingService from '../../ViewModel/TraingingViewModel/TrainingService'
+import { TrainingDrawerSpinner } from './TrainingDrawerLoader'
 
 const CourseEmployeesList = ({ courseId, courseName }) => {
   const { getCourseEmployees, isLoadingCourseEmployees } = TrainingService()
@@ -34,11 +35,7 @@ const CourseEmployeesList = ({ courseId, courseName }) => {
 
   if (loading || isLoadingCourseEmployees) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Typography className="text-[16px] text-gray-500">
-          Loading employees...
-        </Typography>
-      </div>
+      <TrainingDrawerSpinner label="Loading employees…" className="min-h-[200px]" size="lg" />
     )
   }
 

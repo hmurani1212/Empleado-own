@@ -13,6 +13,10 @@ import departmentsApi from '../../Model/Data/Departments/Departments'
 const useShiftManagement = () => {
     const gettingAllShift = useStore((state) => state.gettingAllShift)
     const allShiftData = useStore((state) => state.allShiftData)
+    const loadingPlannersList = useStore((state) => state.loadingPlannersList)
+    const loadingPlannerShifts = useStore((state) => state.loadingPlannerShifts)
+    const loadingShiftTeams = useStore((state) => state.loadingShiftTeams)
+    const loadingShiftTeamMembers = useStore((state) => state.loadingShiftTeamMembers)
     const getAllBranchesShift = useStore((state) => state.getAllBranchesShift)
     const branchesShift = useStore((state) => state.branchesShift)
     const openDrawer = useStore ((state) => state.openDrawer)
@@ -41,6 +45,7 @@ const useShiftManagement = () => {
     const addNewTeam = useStore((state) => state.addNewTeam)
     const allEmployeesDept = useStore((state) => state.allEmployeesDept)
     const employeesPagination = useStore((state) => state.employeesPagination)
+    const loadingDeptEmployees = useStore((state) => state.loadingDeptEmployees)
     const deptEmployeesPlanner = useStore((state) => state.deptEmployeesPlanner)
     const addNewMemberPlanner = useStore((state) => state.addNewMemberPlanner)
     const emptyEmpList = useStore((state) => state.emptyEmpList)
@@ -50,6 +55,7 @@ const useShiftManagement = () => {
     const rotatorSettingsData = useStore((state) => state.rotatorSettingsData)
     const allRotatorClock = useStore((state) => state.allRotatorClock)
     const allRotatorStatus = useStore((state) => state.allRotatorStatus)
+    const loadingRotatorSettings = useStore((state) => state.loadingRotatorSettings)
     const rotatorId = useStore((state) => state.rotatorId)
     const clearAllPlannerData = useStore((state) => state.clearAllPlannerData)
 
@@ -67,6 +73,8 @@ const useShiftManagement = () => {
     const [isAddingMember, setIsAddingMember] = useState(false)
     const [isUpdatingRotator, setIsUpdatingRotator] = useState(false)
     const [isDownloadingRoster, setIsDownloadingRoster] = useState(false)
+    const [loadingBranchesPlanner, setLoadingBranchesPlanner] = useState(false)
+    const [loadingDepartmentsPlanner, setLoadingDepartmentsPlanner] = useState(false)
 
     const [memberId, setMemberId] = useState('')
     const handleDialog = (ele) => {
@@ -366,18 +374,17 @@ const useShiftManagement = () => {
     console.log('Add Memeber', team.id, teamId)
     emptyEmpList()
     openDrawer()
-    fetchingAllBranchesPlanner()
     settingDrawerSize(620)
     settingDrawerTitle('Add New Member')
     settingComponent(<AddMemberForm 
-      teamId = {teamId}
-      teamBranches = {teamBranches}
+      key={`add-member-${Date.now()}`}
     />)
   }
 
   const [teamBranches, setTeamBranches]  = useState([])
 
   const fetchingAllBranchesPlanner = async()=>{
+    setLoadingBranchesPlanner(true)
     try{
         const response = await departmentsApi.gettingAllDepartments()
         console.log('branches response',response)
@@ -389,6 +396,8 @@ const useShiftManagement = () => {
 
     }catch(err){
 
+    } finally {
+        setLoadingBranchesPlanner(false)
     }
 }
 
@@ -419,11 +428,18 @@ const flattenOptions = (data) => {
   return flattenedOptions;
 };
 
-const [dept_subDeptP, setDept_subDeptP] = useState([])
+  const [dept_subDeptP, setDept_subDeptP] = useState([])
+
+  const resetAddMemberForm = () => {
+    setNewMemberValues({ department: null, branch: null, ids: [] })
+    setDept_subDeptP([])
+    emptyEmpList()
+  }
 
 const gettingSubBranchesPlanner = async(id)=>{
   console.log("id", id)
   const data = {branchId: id}
+  setLoadingDepartmentsPlanner(true)
   try{
 
       const response = await departmentsApi.manageDepartments(data.branchId)
@@ -438,6 +454,8 @@ const gettingSubBranchesPlanner = async(id)=>{
       }
   }catch(err){
 
+  } finally {
+      setLoadingDepartmentsPlanner(false)
   }
 }
 
@@ -1008,9 +1026,10 @@ const gettingSubBranchesPlanner = async(id)=>{
   }
 
 
-  return {gettingAllShift, allShiftData, getAllBranchesShift, handleCreateNewShift, branchesShift, mountShift, handleCreatePlanner, plannerValues, handleBranchShift, handleShiftValues, gettingShifts, shiftPlannersData, selectedShift, handleCardClick, handleBackToGrid, handleShiftCard, newShift, allShiftTeams, gettingShiftTeamMembers, allTeamMembers, teamMember, handleTeamCard, openMenuShift,toggleMenuShift, shiftMenu, handleShiftMenu, handleDialog,
-    openDialog, handleDeleteMember, handleAddTeam, handleAddNewTeam, handleChangeTeam, newTeamValues, handleCheckboxChange, handleAddMember, newMemberValues, teamBranches, fetchingAllBranchesPlanner, handleSelectChangePlanner, dept_subDeptP, flattenOptions, allEmployeesDept, employeesPagination, deptEmployeesPlanner, handleAddMemberPlanner, handleCheckEmp, handleNewShift, createNewShift, shiftNewValues, handleChangeShift, handleRotator, handleDialogRotator, openDialogRotator,
-    allRotatorStatus, allRotatorClock, changeRotatorSetting, rotatorSettingValues, handleChangeRotator, handleRotatorRadioChange, openRosterDialog, handleRosterDialog, rosterValues, handleRosterChange, handleDownloadRoster, editMemberValues, availableTeams, handleEditMember, handleEditSelectChange, handleUpdateMember, handleEditCheckboxChange,
+  return {gettingAllShift, allShiftData, loadingPlannersList, loadingPlannerShifts, loadingShiftTeams, loadingShiftTeamMembers, getAllBranchesShift, handleCreateNewShift, branchesShift, mountShift, handleCreatePlanner, plannerValues, handleBranchShift, handleShiftValues, gettingShifts, shiftPlannersData, selectedShift, handleCardClick, handleBackToGrid, handleShiftCard, newShift, allShiftTeams, gettingShiftTeamMembers, allTeamMembers, teamMember, handleTeamCard, openMenuShift,toggleMenuShift, shiftMenu, handleShiftMenu, handleDialog,
+    openDialog, handleDeleteMember, handleAddTeam, handleAddNewTeam, handleChangeTeam, newTeamValues, handleCheckboxChange, handleAddMember, resetAddMemberForm, newMemberValues, teamBranches, fetchingAllBranchesPlanner, handleSelectChangePlanner, dept_subDeptP, flattenOptions, allEmployeesDept, employeesPagination, loadingDeptEmployees, deptEmployeesPlanner, handleAddMemberPlanner, handleCheckEmp, handleNewShift, createNewShift, shiftNewValues, handleChangeShift, handleRotator, handleDialogRotator, openDialogRotator,
+    allRotatorStatus, allRotatorClock, loadingRotatorSettings, changeRotatorSetting, rotatorSettingValues, handleChangeRotator, handleRotatorRadioChange, openRosterDialog, handleRosterDialog, rosterValues, handleRosterChange, handleDownloadRoster, editMemberValues, availableTeams, handleEditMember, handleEditSelectChange, handleUpdateMember, handleEditCheckboxChange,
+    loadingBranchesPlanner, loadingDepartmentsPlanner,
     isCreatingPlanner, isAddingTeam, isCreatingShift, isDeletingMember, isUpdatingMember, isAddingMember, isUpdatingRotator, isDownloadingRoster, clearAllPlannerData, resetNestedStates
    }
 }

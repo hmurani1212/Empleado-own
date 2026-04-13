@@ -13,6 +13,7 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import useStore from "../../Store/store";
 import { showToast } from "../../Components/Toaster/Toaster";
+import { FeedbackSkeleton } from "./PerformanceSkeletons";
 
 const EmployeeSubFeed = ({
   handleCloseProfile,
@@ -21,7 +22,11 @@ const EmployeeSubFeed = ({
   selectedEmployeeId,
 }) => {
   // Get data from store
-  const { employeeFeedbackData, gettingFeedbackByEmployeeId } = useStore();
+  const {
+    employeeFeedbackData,
+    gettingFeedbackByEmployeeId,
+    employeeFeedbackLoading,
+  } = useStore();
 
   // Get URL parameters and navigation
   const params = useParams();
@@ -110,6 +115,14 @@ const EmployeeSubFeed = ({
       minute: "2-digit",
     });
   };
+
+  if (employeeFeedbackLoading) {
+    return (
+      <div className="flex flex-col gap-4 py-2 pb-1">
+        <FeedbackSkeleton />
+      </div>
+    );
+  }
 
   const handleBackToMain = () => {
     console.log(

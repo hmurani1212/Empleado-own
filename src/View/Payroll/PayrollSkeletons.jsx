@@ -327,6 +327,21 @@ export const ExportReportsSkeleton = () => {
     </div>
   );
 };
+/** Table body rows only — use inside <tbody> while payslip rows load (filters stay visible). */
+export const MakingPaymentsTableBodySkeleton = () => (
+  <>
+    {[1, 2, 3, 4, 5, 6].map((row) => (
+      <tr key={row} className="border-b border-[#F2F2F9] h-12 animate-pulse">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((col) => (
+          <td key={col} className="px-4">
+            <div className="h-4 bg-gray-100 rounded w-full mx-auto" />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
+
 /**
  * Skeleton for Making Payments - mirrors filters and table.
  */
@@ -374,15 +389,7 @@ export const MakingPaymentsSkeleton = () => {
               </tr>
             </thead>
             <tbody>
-              {[1, 2, 3, 4, 5, 6].map((row) => (
-                <tr key={row} className="border-b border-[#F2F2F9] h-12">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((col) => (
-                    <td key={col} className="px-4">
-                      <div className="h-4 bg-gray-100 rounded w-full mx-auto" />
-                    </td>
-                  ))}
-                </tr>
-              ))}
+              <MakingPaymentsTableBodySkeleton />
             </tbody>
           </table>
         </div>
@@ -422,7 +429,34 @@ export const ReportResultsSkeleton = () => {
   );
 };
 /**
- * Skeleton for Generate Payslip - mirrors dropdowns, table.
+ * Table body rows only — use inside <tbody> while employee data is loading (filters stay visible).
+ */
+export const GeneratePayslipTableBodySkeleton = () => (
+  <>
+    {[1, 2, 3, 4, 5, 6].map((row) => (
+      <tr key={row} className="border-b border-[#F2F2F9] h-12 animate-pulse">
+        <td className="px-[clamp(4px,0.8vw,12px)] py-4">
+          <div className="h-4 bg-gray-100 rounded w-4 mx-auto" />
+        </td>
+        <td className="px-[clamp(4px,0.8vw,12px)] py-4">
+          <div className="h-4 bg-gray-100 rounded w-24 mx-auto" />
+        </td>
+        <td className="px-[clamp(4px,0.8vw,12px)] py-4">
+          <div className="h-4 bg-gray-100 rounded w-32 mx-auto" />
+        </td>
+        <td className="px-[clamp(4px,0.8vw,12px)] py-4">
+          <div className="h-4 bg-gray-100 rounded w-16 mx-auto" />
+        </td>
+        <td className="px-[clamp(4px,0.8vw,12px)] py-4">
+          <div className="h-4 bg-gray-100 rounded w-20 mx-auto" />
+        </td>
+      </tr>
+    ))}
+  </>
+);
+
+/**
+ * Skeleton for Generate Payslip - mirrors dropdowns, table (legacy full-page placeholder).
  */
 export const GeneratePayslipSkeleton = () => {
   return (
@@ -451,25 +485,7 @@ export const GeneratePayslipSkeleton = () => {
               </tr>
             </thead>
             <tbody>
-              {[1, 2, 3, 4, 5, 6].map((row) => (
-                <tr key={row} className="border-b border-[#F2F2F9] h-12">
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-100 rounded w-4 mx-auto" />
-                  </td>
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-100 rounded w-24 mx-auto" />
-                  </td>
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-100 rounded w-32 mx-auto" />
-                  </td>
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-100 rounded w-16 mx-auto" />
-                  </td>
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-100 rounded w-20 mx-auto" />
-                  </td>
-                </tr>
-              ))}
+              <GeneratePayslipTableBodySkeleton />
             </tbody>
           </table>
         </div>

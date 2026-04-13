@@ -19,6 +19,8 @@ const empTrainingViewModel = (set, get) => ({
     selectedCourse: null,
     assignedQuestions: null,
     loading: false,
+    /** List on My Training page — separate from global `loading` */
+    employeeTrainingCoursesLoading: true,
     error: null,
     
     // Get employee training data
@@ -223,7 +225,7 @@ const empTrainingViewModel = (set, get) => ({
 
     // Get employee training courses (new API)
     getEmployeeTrainingCourses: async (params = {}) => {
-        set({ loading: true, error: null });
+        set({ employeeTrainingCoursesLoading: true, error: null });
         try {
             const response = await empTrainingApi.getEmployeeTrainingCourses(params);
             const respData = response.data;
@@ -232,13 +234,13 @@ const empTrainingViewModel = (set, get) => ({
                 const courses = respData.DB_DATA || [];
                 set({
                     employeeTrainingCourses: courses,
-                    loading: false
+                    employeeTrainingCoursesLoading: false
                 });
                 return { success: true, data: courses };
             } else {
                 set({
                     error: respData.ERROR_DESCRIPTION || 'Failed to fetch training courses',
-                    loading: false
+                    employeeTrainingCoursesLoading: false
                 });
                 showToast(respData.ERROR_DESCRIPTION || 'Failed to fetch training courses', 'error');
                 return { success: false, error: respData.ERROR_DESCRIPTION };
@@ -248,7 +250,7 @@ const empTrainingViewModel = (set, get) => ({
             const errorMessage = error.response?.data?.ERROR_DESCRIPTION || 'An error occurred while fetching training courses';
             set({
                 error: errorMessage,
-                loading: false
+                employeeTrainingCoursesLoading: false
             });
             showToast(errorMessage, 'error');
             return { success: false, error: errorMessage };

@@ -1,4 +1,4 @@
-import axiosInstance, {LeavePlannerinstancemodule, Inboxinstancemodeule, traininginstancemodeule } from "../../base"
+import axiosInstance, {LeavePlannerinstancemodule, Inboxinstancemodeule, traininginstancemodeule, axiosFormDataTransformRequest } from "../../base"
 
 const applicationApi = {
     getLeavesGroup: function (data = {}) {
@@ -68,7 +68,7 @@ const applicationApi = {
             method: 'POST',
             url: '/api/make_url',
             data: formData,
-            headers: { 'Content-Type': 'multipart/form-data' }
+            transformRequest: [axiosFormDataTransformRequest],
         })
     },
 

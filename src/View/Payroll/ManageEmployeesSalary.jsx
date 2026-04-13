@@ -6,7 +6,7 @@ import { IoGrid } from "react-icons/io5";
 import usePayroll from "../../ViewModel/PayrollViewModel/PayrollServices";
 import GridManageEmpSalary from "./GridManageEmpSalary";
 import ManageEmpSalaryList from "./ManageEmpSalaryList";
-import { ManageEmployeesSalarySkeleton, EmployeeSalaryTableSkeleton } from "./PayrollSkeletons";
+import { EmployeeSalaryTableSkeleton } from "./PayrollSkeletons";
 import { gettingDepartmentsServices } from "../../services/__frequentApiServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 
@@ -34,6 +34,9 @@ const ManageEmployeesSalary = () => {
   const [departments, setDepartments] = React.useState([]);
   const [templates, setTemplates] = React.useState([]);
   const [searchValue, setSearchValue] = React.useState("");
+  /** Spinners inside react-select menus while filter options load */
+  const [departmentMenuLoading, setDepartmentMenuLoading] = React.useState(false);
+  const [templateMenuLoading, setTemplateMenuLoading] = React.useState(false);
   // const [departmentsWithEmployees, setDepartmentsWithEmployees] = React.useState({});
 
   useEffect(() => {
@@ -61,6 +64,7 @@ const ManageEmployeesSalary = () => {
   }, []); // Empty dependency array - only run once on mount
 
   const fetchTemplatesByBranchDept = async (branchId, deptId) => {
+    setTemplateMenuLoading(true);
     try {
       const response = await payrollApi.getSalaryTemp(
         branchId,
@@ -78,6 +82,8 @@ const ManageEmployeesSalary = () => {
       }
     } catch (error) {
       setTemplates([]);
+    } finally {
+      setTemplateMenuLoading(false);
     }
   };
 
@@ -126,30 +132,22 @@ const ManageEmployeesSalary = () => {
           // Error handling
         }
 
+        const branchIdForDept = val === 0 ? 0 : val;
+        setDepartmentMenuLoading(true);
         try {
-          const branchId = val === 0 ? 0 : val;
-          const departmentsData = await gettingDepartmentsServices(branchId);
-          if (departmentsData && departmentsData.length > 0) {
-            // const employeeDeptMap = {};
-            // departmentsData.forEach((dept) => {
-            //   if (dept.employees && dept.employees.length > 0) {
-            //     dept.employees.forEach((emp) => {
-            //       employeeDeptMap[emp.id] = dept.id;
-            //     });
-            //   }
-            // });
-            // setDepartmentsWithEmployees(employeeDeptMap);
-          }
+          const departmentsData = await gettingDepartmentsServices(branchIdForDept);
           setDepartments(departmentsData || []);
         } catch (error) {
           setDepartments([]);
+        } finally {
+          setDepartmentMenuLoading(false);
         }
 
+        setTemplateMenuLoading(true);
         try {
-          const branchId = val === 0 ? 0 : parseInt(val);
-          // When All Branches is selected, also send deptt_id=0 for All Departments
+          const branchIdNum = val === 0 ? 0 : parseInt(val);
           const response = await payrollApi.getSalaryTemp(
-            branchId,
+            branchIdNum,
             "",
             0,
             1000,
@@ -163,6 +161,8 @@ const ManageEmployeesSalary = () => {
           }
         } catch (error) {
           setTemplates([]);
+        } finally {
+          setTemplateMenuLoading(false);
         }
       } else {
         // Get template_id from filters if template is selected, otherwise null
@@ -237,10 +237,10 @@ const ManageEmployeesSalary = () => {
         (filters.branch.id === 0 ||
           (filters.branch.id && filters.branch.id !== ""))
       ) {
+        setTemplateMenuLoading(true);
         try {
           const branchId =
             filters.branch.id === 0 ? 0 : parseInt(filters.branch.id);
-          // When All Departments is selected, send deptt_id=0
           const response = await payrollApi.getSalaryTemp(
             branchId,
             "",
@@ -256,6 +256,8 @@ const ManageEmployeesSalary = () => {
           }
         } catch (error) {
           setTemplates([]);
+        } finally {
+          setTemplateMenuLoading(false);
         }
       }
     } else if (field === "template") {
@@ -326,9 +328,6 @@ const ManageEmployeesSalary = () => {
 
   return (
     <>
-      {!branchesLoaded ? (
-        <ManageEmployeesSalarySkeleton />
-      ) : (
         <div className="flex flex-col gap-4 lg:px-2 md:px-2 px-0">
           <div className="font-medium text-[16px] text-[#474747] font-Poppins">
             Manage Employees Salary
@@ -343,6 +342,8 @@ const ManageEmployeesSalary = () => {
                 </label>
                 <CustomSelect
                   placeHolderTitle="Filter by Branch"
+                  menuLoading={!branchesLoaded}
+                  menuLoadingLabel="Loading branches..."
                   value={
                     filters.branch?.id !== undefined &&
                     filters.branch?.id !== null &&
@@ -376,6 +377,8 @@ const ManageEmployeesSalary = () => {
                 </label>
                 <CustomSelect
                   placeHolderTitle="Filter by Department"
+                  menuLoading={departmentMenuLoading}
+                  menuLoadingLabel="Loading departments..."
                   value={
                     filters.department?.id !== undefined &&
                     filters.department?.id !== null &&
@@ -409,6 +412,8 @@ const ManageEmployeesSalary = () => {
                 </label>
                 <CustomSelect
                   placeHolderTitle="Salary Template"
+                  menuLoading={templateMenuLoading}
+                  menuLoadingLabel="Loading salary templates..."
                   value={
                     filters.template?.id
                       ? {
@@ -541,7 +546,6 @@ const ManageEmployeesSalary = () => {
             <GridManageEmpSalary allEmpSalary={filteredEmployees} />
           )}
         </div>
-      )}
     </>
   );
 };

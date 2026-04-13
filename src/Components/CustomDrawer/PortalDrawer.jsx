@@ -9,7 +9,6 @@ const PortalDrawer = (props) => {
   /** `widthSize` kept in API for compatibility; width is always the shared 47vw (see `useDrawerWidthPx`). */
   const drawerWidthPx = useDrawerWidthPx({ widthSize: _widthSize, customImg: false })
   const [shouldRender, setShouldRender] = useState(!!open)
-  const [isToastVisible, setIsToastVisible] = useState(false)
   
   // Unmount closed drawers to avoid "stuck" side panel on resize/zoom.
   // Keep it mounted briefly so Material Tailwind can remove its overlay cleanly.
@@ -22,41 +21,17 @@ const PortalDrawer = (props) => {
     return () => clearTimeout(t)
   }, [open])
 
-  // Track toast presence to avoid accidental drawer close while interacting with toasts
-  useEffect(() => {
-    const checkForToasts = () => {
-      const toasts = document.querySelectorAll('.Toastify__toast');
-      setIsToastVisible(toasts.length > 0);
-    };
-
-    checkForToasts();
-    const interval = setInterval(checkForToasts, 100);
-    return () => clearInterval(interval);
-  }, []);
-
   // No aggressive overlay cleanup on close - it was removing critical DOM nodes
   // (e.g. app root or portal container) and causing a blank white page.
   // The Drawer receives open={false} and should clean up its own overlay.
 
-  const handleDrawerClose = (e) => {
-    if (isToastVisible) {
-      e?.preventDefault?.();
-      e?.stopPropagation?.();
-      return;
-    }
+  const handleDrawerClose = () => {
     closeDrawer?.();
   };
 
-  // Always render Drawer with open prop so it can properly remove overlay on close.
-  // Returning null when !open caused the overlay to stay (whitening the screen).
-  const drawerStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    ...(zIndex != null && { zIndex }),
-  };
+  // Do not force full-viewport `style` on <Drawer> — it breaks Material Tailwind’s internal
+  // overlay/panel layout so backdrop click and onClose often never complete (drawer “stuck”).
+  const drawerZStyle = zIndex != null ? { zIndex } : undefined;
 
   if (!shouldRender) return null
 
@@ -72,10 +47,14 @@ const PortalDrawer = (props) => {
     <Drawer 
       open={open} 
       onClose={handleDrawerClose}
+      dismissible={true}
       className="flex flex-col overflow-hidden h-full bg-white shadow-2xl border-l border-gray-300"
       placement={direction}
       size={drawerWidthPx}
-      style={drawerStyle}
+      style={drawerZStyle}
+      overlayProps={{
+        className: "fixed inset-0 bg-black/40 z-[9998]",
+      }}
     >
       <div className="shrink-0 border-b border-gray-200 bg-gradient-to-b from-white to-slate-50/50 px-4 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_0_rgba(255,255,255,0.9)]">
         <div className="flex items-center justify-between">
@@ -87,6 +66,7 @@ const PortalDrawer = (props) => {
             </Typography>
           )}
           <button
+            type="button"
             onClick={handleDrawerClose}
             className="p-2 -m-2 rounded-lg text-slate-500 hover:text-red-500 hover:bg-slate-100 flex justify-center items-center transition-all duration-200"
             title="Close"
@@ -96,7 +76,7 @@ const PortalDrawer = (props) => {
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden customDrwerScroll px-4 pb-4">
-        {open ? compo : null}
+        {shouldRender ? compo : null}
       </div>
     </Drawer>
     </>,

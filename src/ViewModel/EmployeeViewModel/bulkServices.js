@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 import useStore from "../../Store/store"
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { formatDateYMD } from "../../services/__dateTimeServices";
-import countryData from "../../View/country/country_list";
+import countryData from "../../services/country/country_list";
 
 const useBulkService = () => {
     const gettingCountries = useStore((state) => state.gettingCountries)

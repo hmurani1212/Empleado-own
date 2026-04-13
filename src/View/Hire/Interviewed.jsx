@@ -17,6 +17,8 @@ import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import ReInterview from "./ReInterview";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { formatTimestampToDate } from "../../services/__dateTimeServices";
+import useStore from "../../Store/store";
+import { ApplicantsTableSkeleton } from "./HireSkeletons";
 const Interviewed = () => {
   const shortlistData = [
     "Applicant Name",
@@ -80,6 +82,7 @@ const Interviewed = () => {
   } = useHire();
 
   const { get_applicants_data } = useHire_2();
+  const allApplicantsLoading = useStore((state) => state.allApplicantsLoading);
   const location = useLocation();
   // console.log("get_applicants_data", get_applicants_data);
   return (
@@ -110,7 +113,9 @@ const Interviewed = () => {
                 </thead>
 
                 <tbody>
-                  {get_applicants_data?.length > 0 ? (
+                  {allApplicantsLoading ? (
+                    <ApplicantsTableSkeleton rows={8} colCount={9} />
+                  ) : get_applicants_data?.length > 0 ? (
                     get_applicants_data?.map((hire, index) => {
                       const isLast = index === get_applicants_data.length - 1;
                       const classes = isLast
