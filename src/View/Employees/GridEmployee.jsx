@@ -85,7 +85,16 @@ function InfoRow({ icon: Icon, label, value, valueClassName = '' }) {
 }
 
 const GridEmployee = (props) => {
-    const { empListData, loading: loadingProp, paginationData, onNextPage, onPreviousPage, onGoToPage, currentStatus } = props;
+    const {
+        empListData,
+        loading: loadingProp,
+        paginationData,
+        onNextPage,
+        onPreviousPage,
+        onGoToPage,
+        currentStatus,
+        readOnlyEmployeeList,
+    } = props;
     
     const [openMenuValue, setOpenMenuValue] = useState({});
     
@@ -159,6 +168,7 @@ const GridEmployee = (props) => {
                         >
                             <div className="h-1 w-full bg-gradient-to-r from-[#3DA5F4] via-[#5B8DEF] to-[#6366f1]" aria-hidden />
                             <CardBody className="p-0">
+                            {!readOnlyEmployeeList && (
                             <div className="flex justify-end px-3 pt-2 relative action-menu-container">
                                 <span 
                                     className="text-slate-400 text-xl cursor-pointer rounded-lg p-1 hover:bg-slate-100 hover:text-slate-600 transition-colors"
@@ -202,6 +212,7 @@ const GridEmployee = (props) => {
                                     </div>
                                 )}
                             </div>
+                            )}
 
                             <div className="px-4 pb-4 pt-0 flex flex-col items-center">
                                 <div className="relative mb-3">
@@ -397,7 +408,7 @@ const GridEmployee = (props) => {
             )}
 
             {/* Salary Details Drawer */}
-            {salaryDetailsValue?.show && (
+            {!readOnlyEmployeeList && salaryDetailsValue?.show && (
                 <PortalDrawer
                     open={salaryDetailsValue.show}
                     compo={

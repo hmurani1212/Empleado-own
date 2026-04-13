@@ -15,6 +15,7 @@ import { showToast } from '../../Components/Toaster/Toaster'
 import { getUserData, getOrganizationData } from '../../Authentication/jwt_decode'
 import employeesApi from '../../Model/Data/Employees/Employees'
 import CustomSelect from '../../Components/CustomSelect/CustomSelect'
+import { useEmployeesModuleAccess } from '../../hooks/useEmployeesModuleAccess'
 
 // Custom Branch Select Component with Animations
 const CustomBranchSelect = ({ label, value, options = [], onChange, onOpen }) => {
@@ -109,6 +110,8 @@ const CustomBranchSelect = ({ label, value, options = [], onChange, onOpen }) =>
 };
 
 const AllEmployess = () => {
+    const { readOnlyEmployeeList } = useEmployeesModuleAccess()
+    const isReadOnlyTable = readOnlyEmployeeList === true
     const { allEmployees, employeesListLoading, empMount, getAllDepartments, handleFilterChange, handleFilterDeptChange,
         handleListToggle, handleGridToggle, listView, handleChangeEmployees, empStatus, handleStatusFilter, handelAlphabetSearch, alphaIndex,
         toggleMenuValue, openMenuValue, getEmployeesWithFilters, paginationData, goToNextPage, goToPreviousPage, goToPage,
@@ -289,6 +292,7 @@ const AllEmployess = () => {
                     </div>
 
                     <div className='flex items-center gap-3 w-full xl:w-auto justify-end mt-4 xl:mt-0'>
+                        {!isReadOnlyTable && (
                          <Button 
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg shadow-none normal-case font-medium text-sm transition-all ${
                                 allEmployees?.STATUS === "ERROR" || !allEmployees?.employees?.length || isExporting
@@ -301,6 +305,7 @@ const AllEmployess = () => {
                             {isExporting ? 'Exporting...' : 'Export Excel'}
                             <TbFileExport className='text-lg'/>
                         </Button>
+                        )}
                         <div className='flex bg-gray-100 p-1 rounded-lg border border-gray-200'>
                             <button 
                                 className={`p-2 rounded-md transition-all ${listView ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
@@ -372,6 +377,7 @@ const AllEmployess = () => {
                         onPreviousPage={goToPreviousPage}
                         onGoToPage={goToPage}
                         currentStatus={selectedStatus}
+                        readOnlyEmployeeList={isReadOnlyTable}
                     />
                 </motion.div> 
                 :
@@ -389,6 +395,7 @@ const AllEmployess = () => {
                         onPreviousPage={goToPreviousPage}
                         onGoToPage={goToPage}
                         currentStatus={selectedStatus}
+                        readOnlyEmployeeList={isReadOnlyTable}
                     />
                 </motion.div>
             }

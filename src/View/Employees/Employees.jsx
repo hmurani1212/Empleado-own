@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
 import { Outlet, useNavigate } from "react-router";
 import { NavLink, useLocation } from "react-router-dom";
@@ -7,9 +7,15 @@ import EmployeesBulkWrapper from "./EmployeesBulkWrapper";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import { use } from "react";
 import { employeesListPageRef } from "../../ViewModel/EmployeeViewModel/employeesListPageRef";
+import { useEmployeesModuleAccess } from "../../hooks/useEmployeesModuleAccess";
 
 const Employees = () => {
   const { empTitles, setSkipGetAllEmployeeOnListPage } = useEmployees();
+  const { canMutate } = useEmployeesModuleAccess();
+  const visibleEmpTitles = useMemo(() => {
+    if (canMutate !== false) return empTitles;
+    return empTitles.filter((t) => t.id === 1);
+  }, [canMutate, empTitles]);
   const location = useLocation();
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -74,7 +80,7 @@ const Employees = () => {
       <div className="flex flex-col gap-2 pb-3 w-full">
         <div className="flex justify-between items-center gap-5 py-5">
           <div className="flex flex-wrap items-center gap-5">
-            {empTitles.map((ele) => (
+            {visibleEmpTitles.map((ele) => (
               <NavLink
                 key={ele.id}
                 className={`${

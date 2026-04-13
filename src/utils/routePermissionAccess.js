@@ -1,11 +1,12 @@
 import { SIDEBAR_TAB_PERMISSION_PREFIXES } from "../constants/employeeSidebarPermissionMap";
-import { permissionTagsGrantModule } from "./oneIdPermissionUtils";
+import { getModuleAccessLevel, permissionTagsGrantModule } from "./oneIdPermissionUtils";
 
 /**
  * Route-level flags derived from OneID `permissions[]` (same prefixes as sidebar tab ids).
  */
 export function buildRoutePermissionAccess(permissionTags) {
   const tags = Array.isArray(permissionTags) ? permissionTags : [];
+  const employeesAccess = getModuleAccessLevel(tags, "EMPLOYEE");
   const has = (tabId) => {
     const prefixes = SIDEBAR_TAB_PERMISSION_PREFIXES[tabId];
     if (!prefixes?.length) return false;
@@ -13,7 +14,9 @@ export function buildRoutePermissionAccess(permissionTags) {
   };
 
   return {
-    employees: has(3),
+    /** "full" | "read_only" | "none" — use for Employees module write vs view-only UI */
+    employeesAccess,
+    employees: employeesAccess === "full" || employeesAccess === "read_only",
     departments: has(4),
     branches: has(5),
     hrPolicies: has(6),

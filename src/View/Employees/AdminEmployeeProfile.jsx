@@ -103,6 +103,12 @@ import { Link } from "react-router-dom";
 import { File_BASE_URL } from "../../Model/BaseUri";
 import { getImageUrlFromEmployeeData, buildDocumentFileUrl } from "../../utils/imageUrlUtils";
 import ProfileImageUpload from "../../Components/ProfileImageUpload/ProfileImageUpload";
+import { fetchRolePermissionsByName } from "../../Model/Data/OneId/oneIdRolePermissionsApi";
+import { getDecodedToken } from "../../Authentication/jwt_decode";
+import {
+    mapOneIdPermissionTagsToCurrentPrivileges,
+    DEFAULT_PRIVILEGES_TREE_FOR_DRAWER,
+} from "../../utils/mapOneIdPermissionTagsToCurrentPrivileges";
 
 import { Stepper, Step } from "@material-tailwind/react";
 import DatePicker from "react-datepicker";
@@ -383,6 +389,10 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         description: "",
     });
     const [addRoleSubmitting, setAddRoleSubmitting] = useState(false);
+    const [employeePrivilegesReadOnly, setEmployeePrivilegesReadOnly] = useState(false);
+    const [privilegesEyePreviewRoleName, setPrivilegesEyePreviewRoleName] = useState("");
+    const [privilegesDrawerInstanceKey, setPrivilegesDrawerInstanceKey] = useState(0);
+    const [rolePermissionsEyeLoading, setRolePermissionsEyeLoading] = useState(false);
     const [currentEmployeePrivileges, setCurrentEmployeePrivileges] =
         useState(null);
     const [editingAcademicRecord, setEditingAcademicRecord] = useState(null);
@@ -2405,6 +2415,47 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
         }
     };
 
+    /** Eye icon in User Roles → opens Employee Privileges drawer with role template (read-only). */
+    const handleOpenRolePermissionsFromEye = useCallback(async (roleNameForApi) => {
+        const roleName = String(roleNameForApi ?? "").trim();
+        if (!roleName) {
+            showToast("Role name is missing", "error");
+            return;
+        }
+        setRolePermissionsEyeLoading(true);
+        try {
+            const decoded = getDecodedToken();
+            const appId = decoded?.app_id != null ? Number(decoded.app_id) : 10;
+            const data = await fetchRolePermissionsByName(roleName, appId);
+            if (!data) {
+                showToast("No permissions data for this role", "error");
+                return;
+            }
+            const mapped = mapOneIdPermissionTagsToCurrentPrivileges(data.permissions || []);
+            settingPrivilegesData(DEFAULT_PRIVILEGES_TREE_FOR_DRAWER);
+            setCurrentEmployeePrivileges(mapped);
+            setPrivilegesForm((prev) => ({
+                ...prev,
+                privilege:
+                    data.role_id != null && data.role_id !== ""
+                        ? String(data.role_id)
+                        : prev.privilege,
+            }));
+            setPrivilegesEyePreviewRoleName(String(data.role_name || roleName).trim());
+            setEmployeePrivilegesReadOnly(true);
+            setPrivilegesDrawerInstanceKey((k) => k + 1);
+            setOpenEmployeePrivilegesDrawer(true);
+        } catch (err) {
+            const msg =
+                err?.response?.data?.ERROR_DESCRIPTION ||
+                err?.message ||
+                "Failed to load role permissions";
+            showToast(msg, "error");
+        } finally {
+            setRolePermissionsEyeLoading(false);
+        }
+    }, [settingPrivilegesData]);
+
     const handleGrantRole = async () => {
         try {
             if (!employeeId) {
@@ -2510,11 +2561,17 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 setCurrentEmployeePrivileges(currentPrivileges);
 
                 // Open drawer
+                setEmployeePrivilegesReadOnly(false);
+                setPrivilegesEyePreviewRoleName("");
+                setPrivilegesDrawerInstanceKey((k) => k + 1);
                 setOpenEmployeePrivilegesDrawer(true);
             } else {
                 // If API fails, still open drawer with default values
                 settingPrivilegesData(mockPrivilegesData);
                 setCurrentEmployeePrivileges(null);
+                setEmployeePrivilegesReadOnly(false);
+                setPrivilegesEyePreviewRoleName("");
+                setPrivilegesDrawerInstanceKey((k) => k + 1);
                 setOpenEmployeePrivilegesDrawer(true);
                 showToast(
                     "Failed to load current privileges. Using default values.",
@@ -2548,6 +2605,9 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             };
             settingPrivilegesData(mockPrivilegesData);
             setCurrentEmployeePrivileges(null);
+            setEmployeePrivilegesReadOnly(false);
+            setPrivilegesEyePreviewRoleName("");
+            setPrivilegesDrawerInstanceKey((k) => k + 1);
             setOpenEmployeePrivilegesDrawer(true);
             showToast("Failed to load privileges", "error");
         }
@@ -2564,6 +2624,8 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
     const handleCloseEmployeePrivilegesDrawer = () => {
         setOpenEmployeePrivilegesDrawer(false);
         setCurrentEmployeePrivileges(null);
+        setEmployeePrivilegesReadOnly(false);
+        setPrivilegesEyePreviewRoleName("");
         handleAddPrivilegesClose();
     };
 
@@ -6691,10 +6753,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                         item.description != null && item.description !== ""
                                             ? item.description
                                             : "—";
-                                    const n =
-                                        typeof item.allowedModuleCount === "number"
-                                            ? item.allowedModuleCount
-                                            : 0;
+                                    const apiRoleNameForPermissions =
+                                        item.role_name != null &&
+                                        String(item.role_name).trim() !== ""
+                                            ? String(item.role_name).trim()
+                                            : String(roleLabel).trim();
                                     const isBaseEmployeeRole =
                                         isImmutableEmployeeUserRoleRow(
                                             item,
@@ -6705,7 +6768,22 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                             <td className="px-4 py-3 text-gray-900">{roleLabel}</td>
                                             <td className="px-4 py-3 text-gray-700">{desc}</td>
                                             <td className="px-4 py-3 text-gray-700">
-                                                {n} module{n === 1 ? "" : "s"} enabled
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleOpenRolePermissionsFromEye(
+                                                                apiRoleNameForPermissions
+                                                            )
+                                                        }
+                                                        disabled={rolePermissionsEyeLoading}
+                                                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                                                        title={`View permissions for ${apiRoleNameForPermissions}`}
+                                                        aria-label="View role permissions"
+                                                    >
+                                                        <FaEye className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 {isBaseEmployeeRole ? (
@@ -8506,17 +8584,21 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <div className="p-6">
                         {privilegesData && Object.keys(privilegesData).length > 0 ? (
                             <AddingPrivileges
+                                key={privilegesDrawerInstanceKey}
                                 privilegesData={privilegesData}
                                 handleAddPrivilegesClose={handleCloseEmployeePrivilegesDrawer}
                                 empId={employeeId}
                                 currentPrivileges={currentEmployeePrivileges}
                                 onUpdateSuccess={handleRefreshEmployeeData}
                                 privilegeLevel={privilegesForm.privilege}
+                                readOnly={employeePrivilegesReadOnly}
                                 role_name={
-                                    getRoleRowByOneIdRollId(
-                                        String(privilegesForm.privilege ?? ""),
-                                        oneIdRolesOptions
-                                    )?.role_name ?? ""
+                                    employeePrivilegesReadOnly && privilegesEyePreviewRoleName
+                                        ? privilegesEyePreviewRoleName
+                                        : getRoleRowByOneIdRollId(
+                                              String(privilegesForm.privilege ?? ""),
+                                              oneIdRolesOptions
+                                          )?.role_name ?? ""
                                 }
                             />
                         ) : (

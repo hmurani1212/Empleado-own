@@ -1,5 +1,9 @@
 import React from 'react'
-import { SidebarTabsContainer } from './data'
+import {
+  SidebarTabsContainer,
+  SIDEBAR_TAB_ID_ATTENDANCE_SELF,
+  SIDEBAR_TAB_ID_ATTENDANCE_ADMIN,
+} from './data'
 import { NavLink, useLocation } from 'react-router-dom'
 import useSideMenu from './sideMenuServices'
 import { motion } from 'framer-motion'
@@ -15,13 +19,13 @@ const SideMenu = (props) => {
   const isTabActive = (tabUrl, tabId) => {
     if (!tabUrl || tabUrl === '#') return false;
     if (tabUrl === '/') return location.pathname === '/';
-    if (tabId === 2 && tabUrl === '/my-attendance') {
+    if (tabId === SIDEBAR_TAB_ID_ATTENDANCE_SELF && tabUrl === '/my-attendance') {
       return (
         location.pathname === '/my-attendance' ||
         location.pathname.startsWith('/my-attendance/')
       );
     }
-    if (tabId === 10 && tabUrl === '/attendance') {
+    if (tabId === SIDEBAR_TAB_ID_ATTENDANCE_ADMIN && tabUrl === '/attendance') {
       const p = location.pathname;
       if (p === '/my-attendance' || p.startsWith('/my-attendance')) return false;
       return p === '/attendance' || p.startsWith('/attendance/');

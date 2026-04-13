@@ -93,7 +93,7 @@ const Attendance = () => {
       <div className="flex flex-col py-6 px-6 gap-6 min-h-screen bg-background">
         <div>
            <div className="flex flex-col gap-1">
-             <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Attendance Management</h1>
+             <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Attendance</h1>
              <p className="text-sm text-gray-500">Your daily attendance and permission-based reports.</p>
            </div>
         </div>

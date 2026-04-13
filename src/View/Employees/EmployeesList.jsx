@@ -73,22 +73,25 @@ const EmployeesList = (props) => {
     onPreviousPage,
     onGoToPage,
     currentStatus,
+    readOnlyEmployeeList,
   } = props;
 
   const drawerOpen = useStore((state) => state.drawerOpen);
 
   const isLoading = loadingProp !== undefined ? loadingProp : !empListData?.employees;
 
-  const data = [
-    "Employee ID",
-    "Bio ID",
-    "ID",
-    "Name",
-    "Placement",
-    "Department",
-    "Mobile#",
-    "Action",
-  ];
+  const data = readOnlyEmployeeList
+    ? ["Employee ID", "Bio ID", "ID", "Name", "Placement", "Department", "Mobile#"]
+    : [
+        "Employee ID",
+        "Bio ID",
+        "ID",
+        "Name",
+        "Placement",
+        "Department",
+        "Mobile#",
+        "Action",
+      ];
 
   const {
     handleEmpActionList,
@@ -198,7 +201,7 @@ const EmployeesList = (props) => {
           <col className="w-[12%]" />
           <col className="w-[14%]" />
           <col className="w-[18%] min-w-[12rem]" />
-          <col className="w-[10%]" />
+          {!readOnlyEmployeeList && <col className="w-[10%]" />}
         </colgroup>
         <thead className="sticky top-0 z-20 bg-gray-50 shadow-sm">
           <tr>
@@ -239,9 +242,11 @@ const EmployeesList = (props) => {
                 <td className="px-4 py-4">
                   <div className="h-4 bg-gray-100 rounded w-full max-w-[88px] mx-auto" />
                 </td>
+                {!readOnlyEmployeeList && (
                 <td className="px-4 py-4">
                   <div className="h-8 bg-gray-100 rounded-lg w-full max-w-[64px] mx-auto" />
                 </td>
+                )}
               </tr>
             ))}
           {!isLoading && empListData?.employees?.length > 0 && (
@@ -290,6 +295,7 @@ const EmployeesList = (props) => {
                     </Typography>
                   </td>
 
+                  {!readOnlyEmployeeList && (
                   <td className={`px-4 py-4 relative ${openMenuValue[i] ? "z-[30]" : ""}`}>
                     <div
                       ref={(el) => (triggerRefs.current[i] = el)}
@@ -309,6 +315,7 @@ const EmployeesList = (props) => {
                       {/* Dropdown is rendered via portal below to avoid clipping by overflow container */}
                     </div>
                   </td>
+                  )}
                 </motion.tr>
               );
             }))}
@@ -405,7 +412,7 @@ const EmployeesList = (props) => {
         </div>
       )}
 
-      {portalState.openIndex >= 0 &&
+      {!readOnlyEmployeeList && portalState.openIndex >= 0 &&
         ReactDOM.createPortal(
           <motion.div
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -443,7 +450,7 @@ const EmployeesList = (props) => {
           document.body
         )}
 
-      {salaryDetailsValue?.show && (
+      {!readOnlyEmployeeList && salaryDetailsValue?.show && (
         <PortalDrawer
           open={salaryDetailsValue.show}
           compo={

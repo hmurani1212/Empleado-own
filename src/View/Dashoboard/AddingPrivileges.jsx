@@ -14,6 +14,7 @@ const AddingPrivileges = (props) => {
         onUpdateSuccess,
         privilegeLevel,
         role_name: roleNameProp = '',
+        readOnly = false,
     } = props;
 
     const [loading, setLoading] = useState(false)
@@ -108,6 +109,7 @@ const AddingPrivileges = (props) => {
     }, { parents: [], children: {} });
 
     const handleUpdatePrivileges = async () => {
+        if (readOnly) return;
         if (!empId) {
             showToast('Employee ID is missing', 'error');
             return;
@@ -209,6 +211,11 @@ const AddingPrivileges = (props) => {
 
     return (
         <div className='space-y-3' style={{ height: 'calc(100vh - 120px)' }}>
+            {readOnly && (
+                <Typography variant="small" className="text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    View only — permissions for role <span className="font-semibold">{roleNameProp || '—'}</span>. Close when done.
+                </Typography>
+            )}
             <div className='space-y-4'>
                 {organizedData.parents.map(parent => (
                     <div key={parent.id} className='border-b-2 border-gray-200 pb-4'>
@@ -232,6 +239,7 @@ const AddingPrivileges = (props) => {
                                                 value={pData.value}
                                                 checked={selectedValues[parent.id] === pData.value} // Controlled component
                                                 onChange={() => handleRadioChange(parent.id, pData.value, true)}
+                                                disabled={readOnly}
                                             />
                                         ))
                                     ) : (
@@ -250,6 +258,7 @@ const AddingPrivileges = (props) => {
                                                 value={pData.value}
                                                 checked={selectedValues[parent.id] === pData.value} // Controlled component
                                                 onChange={() => handleRadioChange(parent.id, pData.value, false)}
+                                                disabled={readOnly}
                                             />
                                         ))
                                     )}
@@ -274,6 +283,7 @@ const AddingPrivileges = (props) => {
                                                 value={pData.value}
                                                 checked={selectedValues[child.id] === pData.value} // Controlled component
                                                 onChange={() => handleRadioChange(child.id, pData.value, false)}
+                                                disabled={readOnly}
                                             />
                                         ))}
                                     </div>
@@ -292,6 +302,7 @@ const AddingPrivileges = (props) => {
                 >
                     <span>Close</span>
                 </Button>
+                {!readOnly && (
                 <Button 
                     onClick={handleUpdatePrivileges} 
                     loading={loading}
@@ -301,6 +312,7 @@ const AddingPrivileges = (props) => {
                 >
                     <span>{loading ? 'Updating...' : 'Update Privileges'}</span>
                 </Button>
+                )}
             </div>
         </div>
     );

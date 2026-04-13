@@ -100,6 +100,7 @@ import {
 } from "../Authentication/roleHelpers";
 import { useEmployeeRolePermissions } from "../hooks/useEmployeeRolePermissions";
 import { buildRoutePermissionAccess } from "../utils/routePermissionAccess";
+import { getModuleAccessLevel } from "../utils/oneIdPermissionUtils";
 import EmpDashboard from "../View/EmployeeView/EmpDashboard/EmpDashboard";
 import EmpAttendance from "../View/EmployeeView/EmpAttendance/EmpAttendance";
 import EmpNotices from "../View/EmployeeView/EmpNotices/EmpNotices";
@@ -155,10 +156,24 @@ const Routers = () => {
   const canAccessBranches = isAdmin || isBranchAdmin(authRole);
   const canAccessDepartments = isAdmin || isDepartmentAdmin(authRole);
 
-  const { data: rolePermData } = useEmployeeRolePermissions();
+  const { data: rolePermData, isSuccess: rolePermsSuccess, isPending: rolePermsPending } =
+    useEmployeeRolePermissions();
   const perm = buildRoutePermissionAccess(rolePermData?.permissions);
 
-  const showEmployeesAdmin = isAdmin || perm.employees;
+  const employeesAccessLevel = isAdmin
+    ? "full"
+    : rolePermsSuccess && rolePermData
+      ? getModuleAccessLevel(rolePermData.permissions || [], "EMPLOYEE")
+      : null;
+
+  const showEmployeesAdmin =
+    isAdmin ||
+    employeesAccessLevel === "full" ||
+    employeesAccessLevel === "read_only" ||
+    (employeesAccessLevel === null && rolePermsPending);
+
+  /** Add / bulk / checklist routes — full Employee module access only */
+  const employeesWriteRoutes = isAdmin || employeesAccessLevel === "full";
   const canDeptRoutes = canAccessDepartments || perm.departments;
   const canBranchRoutes = canAccessBranches || perm.branches;
   const showPayrollAdmin = isAdmin || perm.payroll;
@@ -209,11 +224,35 @@ const Routers = () => {
                   element={<IndividualAttendance />}
                 ></Route>
               </Route>
-              <Route path="add_emp" element={<AddNewEmployee />}></Route>
-              <Route path="add_bulk_emp" element={<AddBulkEmployee />}></Route>
+              <Route
+                path="add_emp"
+                element={
+                  employeesWriteRoutes ? (
+                    <AddNewEmployee />
+                  ) : (
+                    <Navigate to="/employees/all_employess" replace />
+                  )
+                }
+              ></Route>
+              <Route
+                path="add_bulk_emp"
+                element={
+                  employeesWriteRoutes ? (
+                    <AddBulkEmployee />
+                  ) : (
+                    <Navigate to="/employees/all_employess" replace />
+                  )
+                }
+              ></Route>
               <Route
                 path="emp_checkList"
-                element={<EmployeeCheckList />}
+                element={
+                  employeesWriteRoutes ? (
+                    <EmployeeCheckList />
+                  ) : (
+                    <Navigate to="/employees/all_employess" replace />
+                  )
+                }
               ></Route>
             </Route>
           )}

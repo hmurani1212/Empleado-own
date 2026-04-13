@@ -27,6 +27,24 @@ export function permissionTagsGrantModule(permissionTags, modulePrefixes) {
 }
 
 /**
+ * Effective access for one module prefix (e.g. "EMPLOYEE", "DEPARTMENT").
+ * Precedence: *_FULL_ACCESS > *_READ_ONLY > *_NO_ACCESS (conflicting tags: full wins).
+ *
+ * @returns {"full"|"read_only"|"none"}
+ */
+export function getModuleAccessLevel(permissionTags, modulePrefix) {
+  if (!Array.isArray(permissionTags) || !permissionTags.length) return "none";
+  const p = String(modulePrefix || "").trim().toUpperCase();
+  if (!p) return "none";
+  const tags = permissionTags.map(normalizePermissionTag).filter((t) => t.startsWith(`${p}_`));
+  if (!tags.length) return "none";
+  if (tags.some((t) => t.includes("_FULL_ACCESS"))) return "full";
+  if (tags.some((t) => t.includes("_READ_ONLY"))) return "read_only";
+  if (tags.some((t) => t.includes("_NO_ACCESS"))) return "none";
+  return "none";
+}
+
+/**
  * Sidebar tab visibility when OneID role permissions are loaded.
  */
 export function isSidebarTabVisibleForPermissions(tab, ctx) {

@@ -25,7 +25,7 @@ const VideoTutorial = () => {
     },
     {
       id: 4,
-      title: "Empleado - Attendance Management",
+      title: "Empleado - Attendance",
       url: "https://youtu.be/DaKME3Hl8eA",
       embedUrl: "https://www.youtube.com/embed/DaKME3Hl8eA"
     },

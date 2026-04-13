@@ -24,9 +24,14 @@ try {
 }
 const useAdminIcons = role === 'Admin';
 
+/** Sidebar tab id: personal attendance (self-service) — routes to `/my-attendance`. */
+export const SIDEBAR_TAB_ID_ATTENDANCE_SELF = 2;
+/** Sidebar tab id: admin attendance management — routes to `/attendance`. */
+export const SIDEBAR_TAB_ID_ATTENDANCE_ADMIN = 10;
+
 export const SidebarTabs = [
     { id: 1, tabName: 'Dashboard', icon: useAdminIcons ? <BsSpeedometer2 /> : <GoHomeFill />, roles: ['Admin', 'Employee', 'Branch_Admin', 'Department_Admin'] },
-    { id: 2, tabName: 'My Attendance', icon: <FaUserCheck />, roles: ['Employee', 'Branch_Admin', 'Department_Admin'] },
+    { id: SIDEBAR_TAB_ID_ATTENDANCE_SELF, tabName: 'Attendance', icon: <FaUserCheck />, roles: ['Employee', 'Branch_Admin', 'Department_Admin'] },
     { id: 3, tabName: 'Employees', icon: <HiUser />, roles: ['Admin'] },
     { id: 4, tabName: 'Departments', icon: <HiUserGroup />, roles: ['Admin', 'Department_Admin'] },
     { id: 5, tabName: 'Branches', icon: <BsFillBuildingFill />, roles: ['Admin', 'Branch_Admin'] },
@@ -34,7 +39,7 @@ export const SidebarTabs = [
     { id: 7, tabName: 'Payroll', icon: <FaFileInvoiceDollar />, roles: ['Admin'] },
     { id: 8, tabName: 'Notices', icon: useAdminIcons ? <HiOutlineSpeakerphone /> : <HiSpeakerphone />, roles: ['Admin', 'Employee', 'Branch_Admin', 'Department_Admin'] },
     { id: 9, tabName: 'Tasks', icon: useAdminIcons ? <AiFillFile /> : <MdTask />, roles: ['Admin', 'Employee', 'Branch_Admin', 'Department_Admin'] },
-    { id: 10, tabName: 'Attendance Management', icon: <BiSolidUserCheck />, roles: ['Admin'] },
+    { id: SIDEBAR_TAB_ID_ATTENDANCE_ADMIN, tabName: 'Attendance', icon: <BiSolidUserCheck />, roles: ['Admin'] },
     { id: 11, tabName: 'Shift Planners', icon: <BsClockFill />, roles: ['Admin'] },
     { id: 12, tabName: 'Hire 2.0', icon: <BsSearch />, roles: ['Admin'] },
     { id: 13, tabName: 'Application', icon: <AiOutlineFileText />, roles: ['Admin'] },
@@ -55,7 +60,7 @@ export const SidebarTabs = [
 ];
 export const SidebarTabsContainer = [
     { id: 1, tabUrl: '/' },
-    { id: 2, tabUrl: '/my-attendance' },
+    { id: SIDEBAR_TAB_ID_ATTENDANCE_SELF, tabUrl: '/my-attendance' },
     { id: 3, tabUrl: '/employees/all_employess' },
     { id: 4, tabUrl: '/departments' },
     { id: 5, tabUrl: '/branches' },
@@ -63,7 +68,7 @@ export const SidebarTabsContainer = [
     { id: 7, tabUrl: '/payroll/payroll_overview' },
     { id: 8, tabUrl: '/notices/list_notices' },
     { id: 9, tabUrl: '/tasks' },
-    { id: 10, tabUrl: '/attendance' },
+    { id: SIDEBAR_TAB_ID_ATTENDANCE_ADMIN, tabUrl: '/attendance' },
     { id: 11, tabUrl: '/shiftPlanners' },
     { id: 12, tabUrl: '/hire/vacancies_list' },
     { id: 13, tabUrl: '/application/application_list' },
