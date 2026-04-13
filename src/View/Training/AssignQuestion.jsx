@@ -4,12 +4,13 @@ import { showToast } from '../../Components/Toaster/Toaster'
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices'
 import SearchReactSelect from '../../Components/CustomSelect/SearchReactSelect'
 import useStore from '../../Store/store'
+import { TrainingDrawerOverlay } from './TrainingDrawerLoader'
 
 const AssignQuestion = ({ questionIds, questionNames, closeDrawer }) => {
   // Get functions directly from store
   const assignQuestionsByBranchDept = useStore((state) => state.assignQuestionsByBranchDept)
   const isLoadingQuestionAssignment = useStore((state) => state.isLoadingQuestionAssignment)
-  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, Get_All_Employeefn, Get_All_Employee } = useEmployees()
+  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, Get_All_Employeefn, Get_All_Employee, getAllEmployeeLoading } = useEmployees()
   
   const [selectedBranch, setSelectedBranch] = useState(null)
   const [selectedDepartment, setSelectedDepartment] = useState(null)
@@ -235,8 +236,10 @@ const AssignQuestion = ({ questionIds, questionNames, closeDrawer }) => {
     }
   }
 
+  const assigningBusy = loading || isLoadingQuestionAssignment
+
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='relative flex flex-col gap-4 min-h-[280px]'>
       {/* Header */}
       <div className='flex flex-col gap-2'>
         {/* <Typography className='text-[18px] font-semibold text-[#474747]'>
@@ -335,6 +338,7 @@ const AssignQuestion = ({ questionIds, questionNames, closeDrawer }) => {
             options={employeeOptions}
             onChangeHandler={handleEmployeeChange}
             isMulti={true}
+            menuLoading={getAllEmployeeLoading}
             isDisabled={!selectedDepartment || selectedDepartment?.value === null || selectedDepartment?.value === undefined}
             cStyle={true}
             customStyles={{
@@ -417,25 +421,21 @@ const AssignQuestion = ({ questionIds, questionNames, closeDrawer }) => {
 
         {/* Submit Button */}
         <div className='mt-4'>
-          {(loading || isLoadingQuestionAssignment) ? (
-            <Button
-              className='bg-blue-300 py-[10px] capitalize w-full'
-              loading={true}
-              disabled
-            >
-              Assigning...
-            </Button>
-          ) : (
-            <Button
-              type='submit'
-              className='bg-blue-500 py-[10px] capitalize w-full hover:bg-blue-600'
-              disabled={!selectedBranch || !selectedDepartment || selectedEmployees.length === 0}
-            >
-              Assign Questions
-            </Button>
-          )}
+          <Button
+            type='submit'
+            className='bg-blue-500 py-[10px] capitalize w-full hover:bg-blue-600'
+            disabled={
+              assigningBusy ||
+              !selectedBranch ||
+              !selectedDepartment ||
+              selectedEmployees.length === 0
+            }
+          >
+            Assign Questions
+          </Button>
         </div>
       </form>
+      <TrainingDrawerOverlay show={assigningBusy} label="Assigning questions…" />
     </div>
   )
 }

@@ -28,7 +28,7 @@ const SubGoals = () => {
     const { handleProfileView, setShowReviewCycle, handleOpenRatingModal } = useOutletContext() || {}
 
     // Get data from store
-    const { subComptencyData, subGoalsData, gettingSubCompetency, subGoalsLoading, subCompetencyLoading } = useStore()
+    const { subComptencyData, subGoalsData, gettingSubCompetency, gettingFeedbackByEmployeeId, subGoalsLoading, subCompetencyLoading } = useStore()
 
     // Get URL parameters and navigation
     const params = useParams()
@@ -113,6 +113,10 @@ const SubGoals = () => {
     }
 
     const handleFeedbackTabClick = () => {
+        const id = params.employeeId || employeeProfile?.employee_id
+        if (id) {
+            gettingFeedbackByEmployeeId(id)
+        }
         setCurrentView('feedback')
     }
 
@@ -449,6 +453,8 @@ const SubGoals = () => {
                     compo={
                         <AddEditGoal
                             performance={goalsValue.performance}
+                            performanceListLoading={goalsValue.performanceListLoading}
+                            employeesLoading={addGoalValue.employeesLoading}
                             handleSelectGoals={handleSelectGoals}
                             addGoalValue={addGoalValue}
                             handleChangeAddGoal={handleChangeAddGoal}

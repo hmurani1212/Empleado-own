@@ -29,7 +29,8 @@ const useCometencyServices = ()=>{
     const [competencyValue, setCompetencyValue] = useState({
         performance:[],
         performance_id:null,
-        searchText: ''
+        searchText: '',
+        performanceListLoading: true,
     })
 
 
@@ -59,6 +60,8 @@ const useCometencyServices = ()=>{
 
 
     const gettingPRCSelect = async()=>{
+        useStore.setState({ competencyLoading: true })
+        setCompetencyValue((prev) => ({ ...prev, performanceListLoading: true }))
         try {
             const response = await performanceApi.getPRCForSelect()
             const responseData = response.data 
@@ -73,6 +76,8 @@ const useCometencyServices = ()=>{
             }
         } catch (error) {
             console.log(error)
+        } finally {
+            setCompetencyValue((prev) => ({ ...prev, performanceListLoading: false }))
         }
     }
 

@@ -20,7 +20,7 @@ const useHire_2 = () => {
     const removeApplicantFromList = useStore((state) => state.removeApplicantFromList);
 
     // Local state management
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [vacanciesList, setVacanciesList] = useState([]);
     const [deleteDialog, setDeleteDialog] = useState(false);
     const [deactiveValues, setDeactiveValues] = useState({});

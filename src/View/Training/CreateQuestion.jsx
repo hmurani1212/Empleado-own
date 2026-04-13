@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Typography, Card, CardBody, Input, Button, Select, Option } from '@material-tailwind/react'
 import TrainingService from '../../ViewModel/TraingingViewModel/TrainingService'
 import { showToast } from '../../Components/Toaster/Toaster'
+import { TrainingDrawerSpinner, TrainingDrawerOverlay } from './TrainingDrawerLoader'
 
 const CreateQuestion = ({ courseId, courseName, closeDrawer }) => {
   const { getCourseResources, generateQuestionsFromResources, saveQuestions } = TrainingService()
@@ -310,11 +311,7 @@ const CreateQuestion = ({ courseId, courseName, closeDrawer }) => {
       <Card className='w-full drop-shadow'>
         <CardBody className='py-6 px-4'>
           {resourcesLoading ? (
-            <div className='flex items-center justify-center py-16'>
-              <Typography className="text-[16px] text-gray-500 font-medium">
-                Loading resources...
-              </Typography>
-            </div>
+            <TrainingDrawerSpinner label="Loading resources…" className="py-12" size="lg" />
           ) : resources.length > 0 ? (
             <div className='flex flex-col gap-3'>
               {resources.map((resource, index) => (
@@ -386,6 +383,7 @@ const CreateQuestion = ({ courseId, courseName, closeDrawer }) => {
           )}
         </CardBody>
       </Card>
+      <TrainingDrawerOverlay show={creating} label="Generating questions…" />
     </div>
   )
 }

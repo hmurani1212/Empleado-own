@@ -4,6 +4,7 @@ import { FaPlus, FaTrash, FaLink, FaUpload, FaFileAlt } from 'react-icons/fa'
 import TrainingService from '../../ViewModel/TraingingViewModel/TrainingService'
 import { showToast } from '../../Components/Toaster/Toaster'
 import useStore from '../../Store/store'
+import { TrainingDrawerSpinner, TrainingDrawerOverlay } from './TrainingDrawerLoader'
 
 function EditCourse(props) {
   const { courseId, closeDrawer } = props
@@ -295,17 +296,13 @@ function EditCourse(props) {
 
   if (fetching) {
     return (
-      <div className='flex items-center justify-center py-16'>
-        <Typography className="text-[16px] text-gray-500 font-medium">
-          Loading course data...
-        </Typography>
-      </div>
+      <TrainingDrawerSpinner label="Loading course data…" className="py-16 min-h-[240px]" size="lg" />
     )
   }
 
   return (
     <>
-      <div className=''>
+      <div className='relative min-h-[320px]'>
         <form className='' onSubmit={handleSubmit}>
           <div className='flex flex-col gap-4'>
             {/* Course Name */}
@@ -485,25 +482,17 @@ function EditCourse(props) {
 
             {/* Submit Button */}
             <div>
-              {loading ? (
-                <Button
-                  className='bg-blue-300 py-[10px] capitalize'
-                  loading={true}
-                >
-                  Loading
-                </Button>
-              ) : (
-                <Button
-                  type='submit'
-                  className={`py-[10px] capitalize ${isFormValid ? 'bg-blue-500' : 'bg-blue-200'}`}
-                  disabled={!isFormValid}
-                >
-                  Update
-                </Button>
-              )}
+              <Button
+                type='submit'
+                className={`py-[10px] capitalize ${isFormValid && !loading ? 'bg-blue-500' : 'bg-blue-200'}`}
+                disabled={!isFormValid || loading}
+              >
+                Update
+              </Button>
             </div>
           </div>
         </form>
+        <TrainingDrawerOverlay show={loading} label="Updating course…" />
       </div>
     </>
   )

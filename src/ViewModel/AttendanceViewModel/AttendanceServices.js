@@ -24,12 +24,14 @@ const useAttendance = () => {
     const settingDrawerSize = useStore ((state) => state.settingDrawerSize)
     const gettingLateComers = useStore ((state) => state.gettingLateComers)
     const allAttArchiveReport = useStore ((state) => state.allAttArchiveReport)
+    const attArchiveReportLoading = useStore ((state) => state.attArchiveReportLoading)
     const gettingAttReportArchive = useStore ((state) => state.gettingAttReportArchive)
     const branchesAttendance = useStore ((state) => state.branchesAttendance)
     const attendanceBranches = useStore ((state) => state.attendanceBranches)
     const empListAtt = useStore ((state) => state.empListAtt)
     const empSuggestionListAtt = useStore ((state) => state.empSuggestionListAtt)
     const gettingRequestAdj = useStore ((state) => state.gettingRequestAdj)
+    const requestAdjListLoading = useStore ((state) => state.requestAdjListLoading)
     const requestData = useStore ((state) => state.requestData)
     const requestPagination = useStore ((state) => state.requestPagination)
     const gettingAdjDetail = useStore ((state) => state.gettingAdjDetail)
@@ -498,8 +500,8 @@ const useAttendance = () => {
         }
     };
 
-  return {attendanceCardsItems,gettingLateComers, backNavigate, branchwiseRep, allAttArchiveReport, gettingAttReportArchive, attendanceBranches, branchesAttendance, handleSelectChangeAttendance, dept_subDeptA, flattenOptions, gettingSubBranchesAttendance, getBranchWiseAttList, attBranchList, showTable, setShowTable, handleGetAttendance, excelLayoutOptions, empListAtt, empSuggestionListAtt, rawLogsAtt, setRawLogsAtt, onChangeRaw, handleGetAttRawLogs, showTableRaw, setShowTableRaw, handleCheckboxChangeAtt, isIndividualAtt, individualExport,
-    NewAdjustRequest, gettingRequestAdj, requestData, requestPagination, handleLoadMoreRequests, handleCloseAttDetail, individualRequestDetail, handleDetailRequest, editAdjRequest, handleEditRequestedAdj, editData, editValues, handleChangeReqAdj, updateTimeAdjustment, updatedAdjRequest,
+  return {attendanceCardsItems,gettingLateComers, backNavigate, branchwiseRep, allAttArchiveReport, attArchiveReportLoading, gettingAttReportArchive, attendanceBranches, branchesAttendance, handleSelectChangeAttendance, dept_subDeptA, flattenOptions, gettingSubBranchesAttendance, getBranchWiseAttList, attBranchList, showTable, setShowTable, handleGetAttendance, excelLayoutOptions, empListAtt, empSuggestionListAtt, rawLogsAtt, setRawLogsAtt, onChangeRaw, handleGetAttRawLogs, showTableRaw, setShowTableRaw, handleCheckboxChangeAtt, isIndividualAtt, individualExport,
+    NewAdjustRequest, gettingRequestAdj, requestAdjListLoading, requestData, requestPagination, handleLoadMoreRequests, handleCloseAttDetail, individualRequestDetail, handleDetailRequest, editAdjRequest, handleEditRequestedAdj, editData, editValues, handleChangeReqAdj, updateTimeAdjustment, updatedAdjRequest,
     // Employee recent records
     employeeRecentRecords, loadingRecentRecords, getEmployeeRecentRecords, loading, setLoading, AttendanceNavTitles, getLiveBiometricDevices, liveBiometricDevices, updateLiveBiometricDevice
   }

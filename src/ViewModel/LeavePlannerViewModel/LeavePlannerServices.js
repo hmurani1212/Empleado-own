@@ -23,6 +23,7 @@ const useLeavesPlanner = () => {
     const getAllDepartmentsLeaves = useStore ((state) => state.getAllDepartmentsLeaves)
     const handleMountLeave = useStore ((state)=>state.handleMountLeave)
     const mountLeave = useStore ((state)=>state.mountLeave)
+    const leavesGroupTableLoading = useStore((state) => state.leavesGroupTableLoading)
     const getLeavesList = useStore ((state)=>state.getLeavesList)
     const getPaidLeavesConfig = useStore ((state)=>state.getPaidLeavesConfig)
     const addNewLeaveGroupState = useStore((state)=>state.addNewLeaveGroupState)
@@ -47,6 +48,9 @@ const useLeavesPlanner = () => {
     const gettingGoogleForms = useStore((state) => state.gettingGoogleForms)
     const countriesGoogleForm = useStore((state) => state.countriesGoogleForm)
     const branchesGoogleForm = useStore((state) => state.branchesGoogleForm)
+    const googleFormsLoading = useStore((state) => state.googleFormsLoading)
+    const leavesBranchesLoading = useStore((state) => state.leavesBranchesLoading)
+    const googleFormPoliciesLoading = useStore((state) => state.googleFormPoliciesLoading)
     const settingGoogleHolidays = useStore((state) => state.settingGoogleHolidays)
     const googleHolidays = useStore((state) => state.googleHolidays)
     const showGoogleForm = useStore((state) => state.showGoogleForm)
@@ -196,7 +200,7 @@ const useLeavesPlanner = () => {
     const selectBranchHandler = async(searchTerm) => {
         const data = { branch_id: searchTerm, search:'' };
         console.log("data of the filter ", data)
-        
+        useStore.setState({ leavesGroupTableLoading: true })
 
         try{
             const response = await leavesPlannerApi.getLeavesGroupByBranch(data)
@@ -212,6 +216,8 @@ const useLeavesPlanner = () => {
         } catch(err) {
             console.log('Branch filter error:', err)
             settingLeavePlannerByBranch([])
+        } finally {
+            useStore.setState({ leavesGroupTableLoading: false })
         }
         
     }
@@ -710,12 +716,12 @@ const useLeavesPlanner = () => {
 
 
    
-    return { leavesPlannerTitles, allLeavesGroup, getLeavesList, getPaidLeavesConfig, addLeaveGroupDrawer, leavesBranches, getAllDepartmentsLeaves, isLoading, handleMountLeave, mountLeave,
+    return { leavesPlannerTitles, allLeavesGroup, leavesGroupTableLoading, getLeavesList, getPaidLeavesConfig, addLeaveGroupDrawer, leavesBranches, getAllDepartmentsLeaves, isLoading, handleMountLeave, mountLeave,
         addGroupValues, handleLeaveBranch, handleLeave, addNewLeaveGroup, handleLeaveView, allViewLeave, viewLeavesLoading, getViewLeavesList, handleLeavesChange, leavesSearch, openMenu, toggleMenuLeaves,
         leavesNoticesItems, handleMenuItemsLeaves, openDialogLeaves, handleDeleteLeavesDialog, handleDeleteGroups, handleDeleteLeaves, viewId, handleDeleteSpecificLeaves,
         openDialogSpecific, addDefineLeave, addLeaveTypeValues, handleLeaveTypesValue, handleSelectChangeMonth, addDefineLeaveType, handleLeaveTypeSearch, handleChangeToggle, type,
         policiesList, googleCalenderHolidays, holidayValues, allCountries,setAddGroupValues,getDropdownPosition,triggerRefs,selectBranchHandler,UpdateLeaveGroup, importEmpLeaves, handleSelectChangeBranch, paidLeaveValues, 
-        gettingCountries, countriesGoogleForm, branchesGoogleForm, handleGoogleHoliday, handleSelectChange,
+        gettingCountries, countriesGoogleForm, branchesGoogleForm, googleFormsLoading, leavesBranchesLoading, googleFormPoliciesLoading, handleGoogleHoliday, handleSelectChange,
         googleHolidays,
         showGoogleForm,
         handleGoogleModal,

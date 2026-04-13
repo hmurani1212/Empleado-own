@@ -1,6 +1,6 @@
 import apiServices from "../../Model/Data/APIServices/ApiServices"
 import employeesApi from "../../Model/Data/Employees/Employees"
-import country from "../../View/country/country_list.js"
+import country from "../../services/country/country_list.js"
 import { executeApiCall, createApiKey } from "../../services/__apiManager"
 
 const utilsViewModel = (set, get)=>({

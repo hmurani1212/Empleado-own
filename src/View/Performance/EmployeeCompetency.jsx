@@ -3,10 +3,13 @@ import { Typography, Button } from '@material-tailwind/react';
 import { FaStar, FaUser, FaCheck, FaArrowLeft, FaClipboardList } from 'react-icons/fa6';
 import { useOutletContext } from 'react-router';
 import { motion } from 'framer-motion';
+import useStore from '../../Store/store';
+import { CompetencyCardsSkeleton } from './PerformanceSkeletons';
 
 const EmployeeCompetency = () => {
   // Get data from context
   const { competencyData, handleOpenRatingModal, handleCloseProfile } = useOutletContext() || {};
+  const subCompetencyLoading = useStore((state) => state.subCompetencyLoading);
 
   const handleBackToCompetency = () => {
     try {
@@ -33,6 +36,10 @@ const EmployeeCompetency = () => {
     }
     return stars;
   };
+
+  if (subCompetencyLoading) {
+    return <CompetencyCardsSkeleton />;
+  }
 
   if (!competencyData || competencyData.length === 0) {
     return (

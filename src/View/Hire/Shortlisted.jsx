@@ -17,6 +17,8 @@ import InterviewScoreComp from "./InterviewScoreComp";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { formatTimestampToDate, formatTimestampToTime } from "../../services/__dateTimeServices";
 import { Link } from "react-router-dom";
+import useStore from "../../Store/store";
+import { ApplicantsTableSkeleton } from "./HireSkeletons";
 const Shortlisted = () => {
   const {
     allShortlistedApp,
@@ -44,6 +46,7 @@ const Shortlisted = () => {
   } = useHire();
 
   const { get_applicants_data } = useHire_2();
+  const allApplicantsLoading = useStore((state) => state.allApplicantsLoading);
 
   const shortlistData = [
     "Applicant Name",
@@ -86,7 +89,9 @@ const Shortlisted = () => {
                 </thead>
 
                 <tbody>
-                  {get_applicants_data?.length > 0 ? (
+                  {allApplicantsLoading ? (
+                    <ApplicantsTableSkeleton rows={8} colCount={9} />
+                  ) : get_applicants_data?.length > 0 ? (
                     get_applicants_data?.map((hire, index) => {
                       const isLast = index === allShortlistedApp.length - 1;
                       const classes = isLast

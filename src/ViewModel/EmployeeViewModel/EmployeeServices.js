@@ -61,6 +61,7 @@ const useEmployees = () => {
     const newEmployee = useStore((state) => state.newEmployee)
     const gettingEmployeeCheckList = useStore((state) => state.gettingEmployeeCheckList)
     const employeeCheckListData = useStore((state) => state.employeeCheckListData)
+    const employeeCheckListLoading = useStore((state) => state.employeeCheckListLoading)
     const get_inactive_empfn = useStore((state) => state.get_inactive_empfn);
     const get_inactive_emp_data = useStore((state) => state.get_inactive_emp_data);
     const deactive_employeefn = useStore((state) => state.deactive_employeefn);
@@ -68,6 +69,7 @@ const useEmployees = () => {
     const deactive_employee = useStore((state) => state.deactive_employee);
     const Get_All_Employeefn = useStore((state) => state.Get_All_Employeefn);
     const Get_All_Employee = useStore((state) => state.Get_All_Employee);
+    const getAllEmployeeLoading = useStore((state) => state.getAllEmployeeLoading);
     const getHeaderDatafn = useStore((state) => state.getHeaderDatafn);
     const getHeaderData = useStore((state) => state.getHeaderData);
     const hrPolicyDropdown = useStore((state) => state.hrPolicyDropdown);
@@ -157,6 +159,8 @@ const useEmployees = () => {
 
     const [empBranches, setEmpBranches] = useState([])
     const [branchesLoading, setBranchesLoading] = useState(false)
+    /** True while `gettingSubBranches` is fetching departments for the selected branch */
+    const [departmentsLoading, setDepartmentsLoading] = useState(false)
     const [empManager, setEmpmanager] = useState([])
 
     // console.log("empBranchesempBranches", empBranches)
@@ -992,6 +996,7 @@ const useEmployees = () => {
 
 
     const gettingSubBranches = async (id) => {
+        setDepartmentsLoading(true)
         const applyEmptyBranchContext = () => {
             setDept_subDept({ departments: [] })
             useStore.setState({ get_all_department: [] })
@@ -1068,6 +1073,8 @@ const useEmployees = () => {
             setDesignations([])
             setEmpmanager([])
             setPolicies([])
+        } finally {
+            setDepartmentsLoading(false)
         }
     }
     const gettingPolicies = async (id) => {
@@ -1585,7 +1592,11 @@ const useEmployees = () => {
             const responseData = response.data;
             console.log('Update Employee Response:', responseData);
 
-            if (responseData.STATUS === "SUCCESSFUL") {
+            const statusRaw = responseData?.STATUS ?? responseData?.status;
+            const ok =
+                String(statusRaw || "").toUpperCase() === "SUCCESSFUL";
+
+            if (ok) {
                 showToast('Profile has been updated', 'success');
                 return responseData;
             } else {
@@ -1801,11 +1812,12 @@ const useEmployees = () => {
         empTitles, getEmployeesList, allEmployees, employeesListLoading, empMount, handleEmpMount, setSkipGetAllEmployeeOnListPage, allBranches, handleFilterChange, handleFilterDeptChange, filterValues, getAllDepartments, filterDepartments,
         listView, handleListToggle, handleGridToggle, handleChangeEmployees, empStatus, handleStatusFilter, handelAlphabetSearch, alphaIndex, newEmpValues, handleNewEmpChange, getFindEmp,
         handleVerifyUserModalClose, verfiyUser, findingEmp, handleStepActive, activeStep, isFirstStep, isLastStep, handlePrev, handleNext, handleLastStep, handleFirstStep, allCountries,
-        handleSelectChange, handleDOB, passwordToggle, validateAge, empBranches, branchesLoading, dept_subDept, flattenOptions, customStyles,
+        handleSelectChange, handleDOB, passwordToggle, validateAge, empBranches, branchesLoading, departmentsLoading, dept_subDept, flattenOptions, customStyles,
         designations, empManager, policies, salaryTemplate, addEmpHandler,
         openMenuValue, toggleMenuValue,
         gettingEmployeeCheckList,
         employeeCheckListData,
+        employeeCheckListLoading,
         getEmployeesWithFilters,
         handleBulkEmployeeSubmit,
         updateEmployee,
@@ -1845,6 +1857,7 @@ const useEmployees = () => {
         deactive_employee,
         Get_All_Employeefn,
         Get_All_Employee,
+        getAllEmployeeLoading,
         Active_employeefn,
 
 

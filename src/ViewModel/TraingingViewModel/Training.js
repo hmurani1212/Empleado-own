@@ -34,19 +34,25 @@ const TrainingiewModel = (set, get) => ({
         }
     },
 
+    // Dashboard list: start true so first paint shows skeletons (not empty table)
+    isLoadingTrainingData: true,
+    trainingListLoadMoreLoading: false,
+
     gettingAllTraingiList: async (data = {}) => {
         // console.log("Training API call with data:", data)
+        const page = data.page || 1;
         try {
-            // Set loading state only for initial load (page 1) or when explicitly requested
-            if (!data.page || data.page === 1) {
+            if (page === 1) {
                 set({ isLoadingTrainingData: true });
+            } else {
+                set({ trainingListLoadMoreLoading: true });
             }
 
             const response = await trainingApi.getTrainigDate(data)
             const respData = response.data
 
             if (response.status === 200 && respData.STATUS === 'SUCCESSFUL') {
-                const currentPage = data.page || 1;
+                const currentPage = page;
 
                 if (currentPage === 1) {
                     // First page - replace all data
@@ -82,7 +88,7 @@ const TrainingiewModel = (set, get) => ({
                 }
             } else if (response.status === 200 && respData.STATUS === 'ERROR') {
                 // Handle "No Date Found" or other errors
-                if (data.page === 1) {
+                if (page === 1) {
                     set({
                         allTraingig_data: {
                             Card: { total_doc: 0, active_course: 0, total_learn: 0, pending_course: 0 },
@@ -99,7 +105,7 @@ const TrainingiewModel = (set, get) => ({
             }
         } catch (error) {
             console.log("Training API error:", error)
-            if (data.page === 1) {
+            if (page === 1) {
                 set({
                     allTraingig_data: {
                         Card: { total_doc: 0, active_course: 0, total_learn: 0, pending_course: 0 },
@@ -114,14 +120,13 @@ const TrainingiewModel = (set, get) => ({
                 })
             }
         } finally {
-            if (!data.page || data.page === 1) {
+            if (page === 1) {
                 set({ isLoadingTrainingData: false });
+            } else {
+                set({ trainingListLoadMoreLoading: false });
             }
         }
     },
-
-    // Loading state for training list
-    isLoadingTrainingData: false,
 
     // Reset training data to initial state
     resetTrainingData: () => {
@@ -135,7 +140,9 @@ const TrainingiewModel = (set, get) => ({
                 Card: { total_doc: 0, active_course: 0, total_learn: 0, pending_course: 0 },
                 courses: [],
                 pagination: { total: 0, page: 1, limit: 10, pages: 1 }
-            }
+            },
+            isLoadingTrainingData: false,
+            trainingListLoadMoreLoading: false
         })
     },
 

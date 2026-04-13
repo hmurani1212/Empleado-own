@@ -23,7 +23,7 @@ const AddEditPRC = (props) => {
     fetchPermissionEmployees,
   } = props;
   //   console.log("handleSelectAddPRChandleSelectAddPRC", PRCAddValue);
-  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept } = useEmployees();
+  const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, branchesLoading, departmentsLoading } = useEmployees();
   
   // State for cascading dropdowns
   const [selectedBranch, setSelectedBranch] = useState(null);
@@ -258,7 +258,8 @@ const AddEditPRC = (props) => {
                       value={PRCAddValue.allow_goal_custom_employees}
                       options={PRCAddValue.permissionEmployeesOptions}
                       onChangeHandler={(selected) => handleSelectAddPRC(selected, 'allow_goal_custom_employees')}
-                      disabled={PRCAddValue.permissionEmployeesLoading}
+                      menuLoading={PRCAddValue.permissionEmployeesLoading}
+                      menuLoadingLabel="Loading employees..."
                       isMulti
                       isClearable
                       cStyle={true}
@@ -305,7 +306,8 @@ const AddEditPRC = (props) => {
                       value={PRCAddValue.allow_competency_custom_employees}
                       options={PRCAddValue.permissionEmployeesOptions}
                       onChangeHandler={(selected) => handleSelectAddPRC(selected, 'allow_competency_custom_employees')}
-                      disabled={PRCAddValue.permissionEmployeesLoading}
+                      menuLoading={PRCAddValue.permissionEmployeesLoading}
+                      menuLoadingLabel="Loading employees..."
                       isMulti
                       isClearable
                       cStyle={true}
@@ -333,7 +335,7 @@ const AddEditPRC = (props) => {
       <div className="space-y-2">
         <label className="text-[#698592] text-[12px]">Branch</label>
         <SearchReactSelect
-          placeHolderTitle="Branch"
+          placeHolderTitle={branchesLoading ? "Loading branches..." : "Branch"}
           value={selectedBranch}
           options={[
             { value: 0, label: 'All Branches' },
@@ -342,6 +344,8 @@ const AddEditPRC = (props) => {
               label: branch.branch_name,
             })) || [])
           ]}
+          menuLoading={branchesLoading}
+          menuLoadingLabel="Loading branches..."
           onChangeHandler={async (selectedOption) => {
             setSelectedBranch(selectedOption);
             setSelectedDepartment(null);
@@ -378,7 +382,7 @@ const AddEditPRC = (props) => {
       <div className="space-y-2">
         <label className="text-[#698592] text-[12px]">Departments</label>
         <SearchReactSelect
-          placeHolderTitle="Department"
+          placeHolderTitle={departmentsLoading ? "Loading departments..." : "Department"}
           value={selectedDepartment}
           options={[
             { value: 0, label: 'All Departments' },
@@ -394,6 +398,9 @@ const AddEditPRC = (props) => {
                   }))
                 : [])
           ]}
+          menuLoading={departmentsLoading}
+          menuLoadingLabel="Loading departments..."
+          disabled={departmentsLoading}
           onChangeHandler={async (selectedOption) => {
             setSelectedDepartment(selectedOption);
             setSelectedEmployee(null);
@@ -408,7 +415,13 @@ const AddEditPRC = (props) => {
       <div className="space-y-2">
         <label className="text-[#698592] text-[12px]">Employee</label>
         <SearchReactSelect
-          placeHolderTitle={selectedDepartment ? "Select Employee" : "Select department first"}
+          placeHolderTitle={
+            PRCAddValue.employeesDropdownLoading
+              ? "Loading employees..."
+              : selectedDepartment
+                ? "Select Employee"
+                : "Select department first"
+          }
           value={selectedEmployee}
           options={[
             { value: 0, label: 'All Employees' },
@@ -419,6 +432,8 @@ const AddEditPRC = (props) => {
                 }))
               : [])
           ]}
+          menuLoading={PRCAddValue.employeesDropdownLoading}
+          menuLoadingLabel="Loading employees..."
           onChangeHandler={async (selectedOption) => {
             setSelectedEmployee(selectedOption);
             // If "All Employees" is selected, handle it differently

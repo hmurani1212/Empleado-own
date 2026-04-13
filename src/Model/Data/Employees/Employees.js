@@ -1,4 +1,4 @@
-import axiosInstance, { axiosInstancecoremodule, payRollinstancemodule, traininginstancemodeule } from "../../base"
+import axiosInstance, { axiosInstancecoremodule, payRollinstancemodule, traininginstancemodeule, axiosFormDataTransformRequest } from "../../base"
 import axios from "axios"
 import { CORE_BASE_URL } from "../../BaseUri"
 import { getLocalStorage } from "../../../Authentication/localStorageServices"
@@ -1317,7 +1317,7 @@ const employeesApi = {
             method: 'POST',
             url: '/api/make_url',
             data: formData,
-            headers: { 'Content-Type': 'multipart/form-data' }
+            transformRequest: [axiosFormDataTransformRequest],
         })
     },
 

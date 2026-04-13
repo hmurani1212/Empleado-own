@@ -16,7 +16,16 @@ const CONTENT_LABELS = {
 }
 
 const AddEditGoal = (props) => {
-    const { performance, handleSelectGoals , addGoalValue, handleChangeAddGoal, handleNewGoal, handleRemoveEmp} = props
+    const {
+        performance,
+        performanceListLoading = false,
+        employeesLoading = false,
+        handleSelectGoals,
+        addGoalValue,
+        handleChangeAddGoal,
+        handleNewGoal,
+        handleRemoveEmp,
+    } = props
 
   const [contentDrawerOpen, setContentDrawerOpen] = useState(false)
   const [contentData, setContentData] = useState(null)
@@ -66,7 +75,7 @@ const AddEditGoal = (props) => {
               <FaInfoCircle className='text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0' onClick={() => openContentDrawer(CONTENT_LABELS.reviewCycle)} />
             </div>
             <CustomSelect 
-                placeHolderTitle = 'Performance'
+                placeHolderTitle = {performanceListLoading ? 'Loading cycles...' : 'Performance'}
                 cStyle = {true}
                 value={performance?.find(option => option._id === addGoalValue.pID) 
                         ? { value: performance?.find(option => option._name === addGoalValue.pID)._id, 
@@ -76,8 +85,8 @@ const AddEditGoal = (props) => {
                     }
                 options={performance?.map((ele) => ({ value: ele._id, label:ele.name}))} 
                 onChangeHandler={(selectedOption) => handleSelectGoals(selectedOption, 'pID')}
-            
-                
+                menuLoading={performanceListLoading}
+                menuLoadingLabel="Loading review cycles..."
             />
         </div>
         <div className='space-y-2'>
@@ -119,13 +128,13 @@ const AddEditGoal = (props) => {
             <div className='w-96'>
                 <label className='text-[#698592] text-[12px]'>Employee</label>
                 <CustomSelect 
-                    placeHolderTitle = 'Employee'
+                    placeHolderTitle = {employeesLoading ? 'Loading employees...' : 'Employee'}
                     cStyle = {true}
                     value={addGoalValue?.employee_id}
                     options={addGoalValue?.employees?.map((ele) => ({ value: ele.value, label:ele.label}))} 
                     onChangeHandler={(selectedOption) => handleSelectGoals(selectedOption, 'employee_id')}
-                
-                    
+                    menuLoading={employeesLoading}
+                    menuLoadingLabel="Loading employees..."
                 />
             </div>
             <div className='w-96'> 

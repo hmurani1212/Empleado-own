@@ -38,7 +38,10 @@ const expenseViewModel = (set, get) => ({
             }
         }
     },
-    loading: false,
+    // dashboard list/graph fetch — start true so first paint shows skeletons (not empty states)
+    loading: true,
+    loadMoreLoading: false,
+    addExpenseLoading: false,
     error: null,
     pendingApprovals: [],
     pendingApprovalsLoading: false,
@@ -131,6 +134,8 @@ const expenseViewModel = (set, get) => ({
                 }
             },
             loading: false,
+            loadMoreLoading: false,
+            addExpenseLoading: false,
             error: null
         });
     },
@@ -145,9 +150,9 @@ const expenseViewModel = (set, get) => ({
         set({ error });
     },
 
-    // Load more expense data for pagination
+    // Load more expense data for pagination (does not toggle main dashboard loading)
     loadMoreExpenseData: async (params = {}) => {
-        set({ loading: true, error: null });
+        set({ loadMoreLoading: true, error: null });
         try {
             const response = await expenseApi.getExpenseListDAT(params);
             const respData = response.data;
@@ -162,13 +167,13 @@ const expenseViewModel = (set, get) => ({
                             pagination: respData.DB_DATA.TABLE_DATA.pagination
                         }
                     },
-                    loading: false
+                    loadMoreLoading: false
                 }));
                 return { success: true, data: respData.DB_DATA.TABLE_DATA };
             } else {
                 set({
                     error: respData.ERROR_DESCRIPTION || 'Failed to load more expense data',
-                    loading: false
+                    loadMoreLoading: false
                 });
                 showToast(respData.ERROR_DESCRIPTION || 'Failed to load more expense data', 'error');
                 return { success: false, error: respData.ERROR_DESCRIPTION };
@@ -178,7 +183,7 @@ const expenseViewModel = (set, get) => ({
             const errorMessage = error.response?.data?.ERROR_DESCRIPTION || 'An error occurred while loading more expense data';
             set({
                 error: errorMessage,
-                loading: false
+                loadMoreLoading: false
             });
             showToast(errorMessage, 'error');
             return { success: false, error: errorMessage };
@@ -264,13 +269,13 @@ const expenseViewModel = (set, get) => ({
 
     // Add new expense
     addExpense: async (expenseData) => {
-        set({ loading: true, error: null });
+        set({ addExpenseLoading: true, error: null });
         try {
             const response = await expenseApi.addExpense(expenseData);
             const respData = response.data;
 
             if ((response.status === 200 || response.status === 201) && respData.STATUS === 'SUCCESSFUL') {
-                set({ loading: false });
+                set({ addExpenseLoading: false });
                 showToast('Expense added successfully', 'success');
                 
                 // Update dashboard data in real-time after successful expense addition
@@ -280,7 +285,7 @@ const expenseViewModel = (set, get) => ({
             } else {
                 set({
                     error: respData.ERROR_DESCRIPTION || 'Failed to add expense',
-                    loading: false
+                    addExpenseLoading: false
                 });
                 showToast(respData.ERROR_DESCRIPTION || 'Failed to add expense', 'error');
                 return { success: false, error: respData.ERROR_DESCRIPTION };
@@ -289,7 +294,7 @@ const expenseViewModel = (set, get) => ({
             console.error('Error adding expense:', err);
             set({
                 error: 'Error adding expense',
-                loading: false
+                addExpenseLoading: false
             });
             showToast('Error adding expense', 'error');
             return { success: false, error: 'Error adding expense' };

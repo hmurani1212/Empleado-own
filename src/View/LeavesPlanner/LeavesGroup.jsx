@@ -16,8 +16,8 @@ const LeavesGroup = () => {
     getAllDepartmentsLeaves,
     leavesBranches,
     allLeavesGroup,
-    mountLeave,
     getLeavesList,
+    leavesGroupTableLoading,
     getPaidLeavesConfig,
     handleLeaveView,
     handleLeavesChange,
@@ -49,17 +49,14 @@ const LeavesGroup = () => {
   ];
 
   useEffect(() => {
-    if (mountLeave) {
-      setLeavesGroupLoading(false);
-    } else {
-      setLeavesGroupLoading(true);
-      Promise.all([
-        getLeavesList(),
-        getAllDepartmentsLeaves(),
-        getPaidLeavesConfig(),
-      ]).finally(() => setLeavesGroupLoading(false));
-    }
-  }, [mountLeave]);
+    setLeavesGroupLoading(true);
+    Promise.all([
+      getLeavesList(),
+      getAllDepartmentsLeaves(),
+      getPaidLeavesConfig(),
+    ]).finally(() => setLeavesGroupLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once: load branches, groups, paid config
+  }, []);
 
   const location = useLocation();
 
@@ -157,8 +154,8 @@ const LeavesGroup = () => {
           </div>
           )}
 
-          {/* Table */}
-          {leavesGroupLoading ? (
+          {/* Table — full skeleton on first load; table-only skeleton while branch filter / list refetch */}
+          {(leavesGroupLoading || leavesGroupTableLoading) ? (
             <LeavesGroupTableSkeleton />
           ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

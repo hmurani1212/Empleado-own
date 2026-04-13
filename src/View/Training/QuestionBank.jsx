@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useLayoutEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Typography, Button, Card, CardBody } from '@material-tailwind/react'
 import { FaArrowLeft, FaPlus, FaChevronDown, FaChevronUp } from 'react-icons/fa'
@@ -29,13 +29,13 @@ const QuestionBank = () => {
 
   const [courseData, setCourseData] = useState(null)
   const [resourcesWithQuestions, setResourcesWithQuestions] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(() => !!courseId)
   const [totalResources, setTotalResources] = useState(0)
   const [totalQuestions, setTotalQuestions] = useState(0)
   const [selectedQuestions, setSelectedQuestions] = useState([]) // Array of { id, name }
   const [expandedResources, setExpandedResources] = useState({}) // Track which resources are expanded
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (courseId) {
       fetchCourseCompleteDetails()
     }

@@ -4,6 +4,7 @@ import { FaPlus, FaTrash, FaLink, FaUpload, FaFileAlt } from 'react-icons/fa'
 import TrainingService from '../../ViewModel/TraingingViewModel/TrainingService'
 import { showToast } from '../../Components/Toaster/Toaster'
 import useStore from '../../Store/store'
+import { TrainingDrawerOverlay } from './TrainingDrawerLoader'
 
 function AddCourse(props) {
   const { closeDrawer } = props
@@ -203,7 +204,7 @@ function AddCourse(props) {
 
   return (
     <>
-      <div className='mt-6'>
+      <div className='relative mt-6 min-h-[320px]'>
         <form className='' onSubmit={handleSubmit}>
           <div className='flex flex-col gap-4'>
             {/* Course Name */}
@@ -377,25 +378,17 @@ function AddCourse(props) {
 
             {/* Submit Button */}
             <div>
-              {loading ? (
-                <Button
-                  className='bg-blue-300 py-[10px] capitalize'
-                  loading={true}
-                >
-                  Loading
-                </Button>
-              ) : (
-                <Button
-                  type='submit'
-                  className={`py-[10px] capitalize ${isFormValid ? 'bg-blue-500' : 'bg-blue-200'}`}
-                  disabled={!isFormValid}
-                >
-                  Submit
-                </Button>
-              )}
+              <Button
+                type='submit'
+                className={`py-[10px] capitalize ${isFormValid && !loading ? 'bg-blue-500' : 'bg-blue-200'}`}
+                disabled={!isFormValid || loading}
+              >
+                Submit
+              </Button>
             </div>
           </div>
         </form>
+        <TrainingDrawerOverlay show={loading} label="Creating course…" />
       </div>
     </>
   )

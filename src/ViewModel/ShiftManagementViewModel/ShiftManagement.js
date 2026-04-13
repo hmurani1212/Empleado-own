@@ -4,14 +4,20 @@ import departmentsApi from '../../Model/Data/Departments/Departments'
 
 const shiftManagementViewModel = (set, get) => ({
     allShiftData : [],
+    loadingPlannersList: false,
+    loadingPlannerShifts: false,
+    loadingShiftTeams: false,
+    loadingShiftTeamMembers: false,
     branchesShift : [],
     shiftPlannersData : [],
     allShiftTeams : [],
     allTeamMembers : [],
     allEmployeesDept: [],
     employeesPagination: {},
+    loadingDeptEmployees: false,
     allRotatorClock : [],
     allRotatorStatus : [],
+    loadingRotatorSettings: false,
     availableTeams: [],
     selectedMemberForEdit: null,
     teamId : '',
@@ -24,6 +30,7 @@ const shiftManagementViewModel = (set, get) => ({
     },
 
     gettingAllShift : async() => {
+        set({ loadingPlannersList: true })
         try{
             const response = await shiftApi.getShiftPlanner()
             const data = response.data
@@ -35,6 +42,8 @@ const shiftManagementViewModel = (set, get) => ({
             }
         } catch(error) {
             console.error(error)
+        } finally {
+            set({ loadingPlannersList: false })
         }
     },
 
@@ -63,7 +72,7 @@ const shiftManagementViewModel = (set, get) => ({
 
     gettingShifts : async(shift) => {
         // Clear previous shifts data immediately when selecting new planner
-        set({shiftPlannersData: []})
+        set({shiftPlannersData: [], loadingPlannerShifts: true})
         
         const shiftData = {planner : shift.id || shift.planner_id}
         try {
@@ -78,10 +87,13 @@ const shiftManagementViewModel = (set, get) => ({
             console.error('Error fetching shifts:', error)
             // Handle 400 error by keeping shiftPlannersData empty
             set({shiftPlannersData:[]})
+        } finally {
+            set({ loadingPlannerShifts: false })
         }
     },
 
     gettingShiftTeams : async(dataShift) => {
+        set({ allShiftTeams: [], loadingShiftTeams: true })
         const teamData = {shift : dataShift.id}
         try {
             const response = await shiftApi.getShiftTeam(teamData)
@@ -93,10 +105,13 @@ const shiftManagementViewModel = (set, get) => ({
             }
         } catch(error) {
             console.error(error)
+        } finally {
+            set({ loadingShiftTeams: false })
         }
     },
 
     gettingShiftTeamMembers : async(dataTeam) => {
+        set({ allTeamMembers: [], loadingShiftTeamMembers: true })
         const members = {team : dataTeam.id}
 
         try {
@@ -113,11 +128,14 @@ const shiftManagementViewModel = (set, get) => ({
         } catch (error) {
             console.log(error)
             set({allTeamMembers: []})
+        } finally {
+            set({ loadingShiftTeamMembers: false })
         }
     },
 
     deptEmployeesPlanner : async(id, page = 1, limit = 10) => {
         console.log('id of the dept', id)
+        set({ loadingDeptEmployees: true })
         
         try {
             let response;
@@ -146,10 +164,13 @@ const shiftManagementViewModel = (set, get) => ({
         } catch (error) {
             console.log(error)
             set({allEmployeesDept : [], employeesPagination: {}})
+        } finally {
+            set({ loadingDeptEmployees: false })
         }
     },
 
     rotatorSettingsData : async(planner_id) => {
+        set({ loadingRotatorSettings: true })
         const plannerId = {planner : planner_id}
 
         try{
@@ -193,6 +214,8 @@ const shiftManagementViewModel = (set, get) => ({
 
         }catch(error){
             console.log(error)
+        } finally {
+            set({ loadingRotatorSettings: false })
         }
     },
 

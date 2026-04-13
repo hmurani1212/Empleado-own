@@ -1,301 +1,311 @@
-import { useReducer, useEffect } from "react";
+import { useReducer, useEffect, useRef, useState } from "react";
 import useStore from "../../Store/store";
 import { gettingDepartmentsServices } from "../../services/__frequentApiServices";
 import payrollApi from "../../Model/Data/Payroll/Payroll";
 
 // localStorage key for persisting Generate Payslip filters
-const GENERATE_PAYSLIP_FILTERS_KEY = 'generatePayslipFilters';
+const GENERATE_PAYSLIP_FILTERS_KEY = "generatePayslipFilters";
+
+export const ALL_BRANCH_OPTION = { value: "all", label: "All Branch" };
 
 // Helper function to load filters from localStorage
 const loadFiltersFromStorage = () => {
-    try {
-        const savedFilters = localStorage.getItem(GENERATE_PAYSLIP_FILTERS_KEY);
-        if (savedFilters) {
-            return JSON.parse(savedFilters);
-        }
-    } catch (error) {
-        console.error('Error loading Generate Payslip filters from localStorage:', error);
+  try {
+    const savedFilters = localStorage.getItem(GENERATE_PAYSLIP_FILTERS_KEY);
+    if (savedFilters) {
+      return JSON.parse(savedFilters);
     }
-    return null;
+  } catch (error) {
+    console.error("Error loading Generate Payslip filters from localStorage:", error);
+  }
+  return null;
 };
 
-// Helper function to save filters to localStorage
+// Helper function to save filters to localStorage (department only — branch always defaults to All Branch on load)
 const saveFiltersToStorage = (filters) => {
-    try {
-        // Only save branch and department filters
-        const filtersToSave = {
-            branch_id: filters.branch_id,
-            department_id: filters.department_id
-        };
-        localStorage.setItem(GENERATE_PAYSLIP_FILTERS_KEY, JSON.stringify(filtersToSave));
-    } catch (error) {
-        console.error('Error saving Generate Payslip filters to localStorage:', error);
-    }
+  try {
+    const filtersToSave = {
+      department_id: filters.department_id,
+    };
+    localStorage.setItem(GENERATE_PAYSLIP_FILTERS_KEY, JSON.stringify(filtersToSave));
+  } catch (error) {
+    console.error("Error saving Generate Payslip filters to localStorage:", error);
+  }
 };
 
-const useManagePaySlip = ()=>{
+const getDefaultInitialState = () => ({
+  view: 0,
+  departments: [],
+  department_id: null,
+  branch_id: ALL_BRANCH_OPTION,
+  type: null,
+  empSalary: [],
+  originalEmpSalary: [],
+  search_emp: "",
+  showFilter: true,
+  loading: true,
+});
 
-    const getAllBranchesPayroll = useStore((state)=> state.getAllBranchesPayroll)
-    const branches_payroll = useStore((state)=> state.branches_payroll)
-    const departments_payroll = useStore((state)=> state.departments_payroll)
+const buildInitialState = () => {
+  const defaults = getDefaultInitialState();
+  const saved = loadFiltersFromStorage();
+  if (!saved) return defaults;
+  const merged = { ...defaults, ...saved };
+  // Always open this page with "All Branch" — do not restore a previously selected branch from storage
+  merged.branch_id = ALL_BRANCH_OPTION;
+  if (!merged.department_id || typeof merged.department_id !== "object") {
+    merged.department_id = null;
+  }
+  return merged;
+};
 
-    const getDefaultInitialState = () => ({
-        view:0,
-        departments:[],
-        department_id:null,
-        branch_id:null,
-        type:null,
-        empSalary:[],
-        originalEmpSalary: [], // To store the unfiltered list of employees
-        search_emp:'',
-        showFilter:false, 
-        loading: false
+const useManagePaySlip = () => {
+  const getAllBranchesPayroll = useStore((state) => state.getAllBranchesPayroll);
+  const branches_payroll = useStore((state) => state.branches_payroll);
+  const branchesLoaded = useStore((state) => state.branchesLoaded);
+
+  const [departmentMenuLoading, setDepartmentMenuLoading] = useState(false);
+
+  const managePyaSlipReducer = (state, action) => {
+    switch (action.type) {
+      case 1:
+        getAllBranchesPayroll();
+        return { ...state, view: action.payload };
+
+      case 2:
+        return { ...state, view: action.payload };
+
+      case "BRANCH":
+        return {
+          ...state,
+          branch_id: action.value,
+          showFilter: true,
+          departments: action.payload,
+          department_id: null,
+        };
+
+      case "SET_DEPARTMENTS":
+        return { ...state, departments: action.payload };
+
+      case "SELECTION":
+        return { ...state, [action.field]: action.value };
+
+      case "EMP_SALARY":
+        return {
+          ...state,
+          empSalary: action.payload,
+          originalEmpSalary: action.payload,
+          loading: false,
+        };
+
+      case "SET_LOADING":
+        return { ...state, loading: action.payload };
+
+      default:
+        return state;
+    }
+  };
+
+  const [managePaySlipState, dispatch] = useReducer(managePyaSlipReducer, undefined, buildInitialState);
+
+  const initEmployeesRan = useRef(false);
+
+  // Single initial load: branches list + departments for current branch + employee list (no duplicate fetch from the view)
+  useEffect(() => {
+    if (initEmployeesRan.current) return;
+    initEmployeesRan.current = true;
+
+    getAllBranchesPayroll();
+
+    const branch = managePaySlipState.branch_id ?? ALL_BRANCH_OPTION;
+    const savedDept = managePaySlipState.department_id;
+
+    const run = async () => {
+      setDepartmentMenuLoading(true);
+      try {
+        let depts = [];
+        if (!branch?.value || branch.value === "all") {
+          depts = await gettingDepartmentsServices(0);
+        } else {
+          depts = await gettingDepartmentsServices(branch.value);
+        }
+        if (!Array.isArray(depts)) depts = [];
+        dispatch({ type: "SET_DEPARTMENTS", payload: depts });
+
+        let deptToUse = savedDept;
+        if (
+          savedDept &&
+          savedDept.value !== "all" &&
+          !depts.some((d) => String(d.value) === String(savedDept.value))
+        ) {
+          deptToUse = null;
+          dispatch({ type: "SELECTION", field: "department_id", value: null });
+        }
+
+        const deptId =
+          deptToUse && deptToUse.value !== "all" ? deptToUse.value : null;
+
+        if (!branch?.value || branch.value === "all") {
+          await gettingAllEmpSalary(deptId);
+        } else {
+          await gettingEmpSalary(branch, deptId);
+        }
+      } finally {
+        setDepartmentMenuLoading(false);
+      }
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save filters to localStorage whenever branch_id or department_id changes
+  useEffect(() => {
+    saveFiltersToStorage({
+      branch_id: managePaySlipState.branch_id,
+      department_id: managePaySlipState.department_id,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [managePaySlipState.branch_id, managePaySlipState.department_id]);
 
-    // Load saved filters from localStorage or use defaults
-    const savedFilters = loadFiltersFromStorage();
-    const managePaySlipInitialState = savedFilters 
-        ? { ...getDefaultInitialState(), ...savedFilters }
-        : getDefaultInitialState();
+  const managePaySlip = (data) => {
+    dispatch({ type: data.id, payload: data.id });
+  };
 
+  const handleSelectManagePaySlip = async (selected, field) => {
+    if (field === "branch_id") {
+      dispatch({ type: "EMP_SALARY", payload: [] });
 
-    const managePyaSlipReducer = (state, action)=>{
-        switch (action.type) {
-            case 1:
-                getAllBranchesPayroll()
-                return {...state, view:action.payload}
-        
-            case 2:
-                return {...state, view:action.payload}
-            case 'BRANCH':
-                return{...state, branch_id:action.value, showFilter:true, departments:action.payload, department_id:null }
-            case 'SELECTION':
-                return{...state, [action.field]:action.value }
-            case 'EMP_SALARY':
-                return{...state, empSalary:action.payload, originalEmpSalary: action.payload, loading: false }
-            case 'SET_LOADING':
-                return{...state, loading: action.payload}
-            default:
-                return state;
+      if (selected.value === "all") {
+        dispatch({ type: "BRANCH", value: selected, payload: [] });
+        setDepartmentMenuLoading(true);
+        try {
+          const data = await gettingDepartmentsServices(0);
+          dispatch({ type: "SET_DEPARTMENTS", payload: Array.isArray(data) ? data : [] });
+        } finally {
+          setDepartmentMenuLoading(false);
         }
+        gettingAllEmpSalary(null);
+      } else {
+        setDepartmentMenuLoading(true);
+        try {
+          const data = await gettingDepartmentsServices(selected.value);
+          dispatch({
+            type: "BRANCH",
+            value: selected,
+            payload: Array.isArray(data) ? data : [],
+          });
+        } finally {
+          setDepartmentMenuLoading(false);
+        }
+        gettingEmpSalary(selected, null);
+      }
+    } else if (field === "department_id") {
+      const branchSnap = managePaySlipState.branch_id;
+      dispatch({ type: "EMP_SALARY", payload: [] });
+      dispatch({ type: "SELECTION", field, value: selected });
+
+      const deptId = selected && selected.value !== "all" ? selected.value : null;
+
+      if (!branchSnap || branchSnap.value === "all") {
+        gettingAllEmpSalary(deptId);
+      } else {
+        gettingEmpSalary(branchSnap, deptId);
+      }
+    } else {
+      dispatch({ type: "SELECTION", field, value: selected });
     }
+  };
 
-    const [managePaySlipState, dispatch] = useReducer(managePyaSlipReducer, managePaySlipInitialState)
+  const gettingEmpSalary = async (branchData, deptId = null) => {
+    dispatch({ type: "SET_LOADING", payload: true });
+    const apiData = {
+      bid: branchData?.value || branchData,
+      did: deptId && deptId !== "all" ? deptId : "",
+      get_all: true,
+    };
+    try {
+      const response = await payrollApi.empPaySlip(apiData);
+      const responseData = response.data;
 
-    // Save filters to localStorage whenever branch_id or department_id changes
-    useEffect(() => {
-        saveFiltersToStorage({
-            branch_id: managePaySlipState.branch_id,
-            department_id: managePaySlipState.department_id,
-            get_all: true
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [managePaySlipState.branch_id, managePaySlipState.department_id]);
+      if (
+        response.status === 200 &&
+        (responseData.STATUS === "SUCCESSFUL" || responseData.STATUS === "SUCCESS")
+      ) {
+        let employeeData = [];
 
-    const managePaySlip = (data)=>{
-        // console.log('data', data)
-        dispatch({type:data.id, payload:data.id})
+        if (responseData.DATA?.data && Array.isArray(responseData.DATA.data)) {
+          employeeData = responseData.DATA.data;
+        } else if (responseData.DB_DATA && Array.isArray(responseData.DB_DATA)) {
+          employeeData = responseData.DB_DATA;
+        } else if (responseData.data && Array.isArray(responseData.data)) {
+          employeeData = responseData.data;
+        } else if (Array.isArray(responseData)) {
+          employeeData = responseData;
+        }
+
+        dispatch({ type: "EMP_SALARY", payload: employeeData });
+      } else {
+        dispatch({ type: "EMP_SALARY", payload: [] });
+      }
+    } catch (err) {
+      dispatch({ type: "EMP_SALARY", payload: [] });
     }
+  };
 
+  const gettingAllEmpSalary = async (deptId = null) => {
+    dispatch({ type: "SET_LOADING", payload: true });
+    const apiData = {
+      bid: 0,
+      did: deptId && deptId !== "all" ? deptId : "",
+      get_all: true,
+    };
+    try {
+      const response = await payrollApi.empPaySlip(apiData);
+      const responseData = response.data;
 
-    const handleSelectManagePaySlip = async(selected, field)=>{
-        if(field === 'branch_id'){
-            // Clear employee list immediately before fetching new data
-            dispatch({type:'EMP_SALARY', payload:[]})
-            // If "All Branch" is selected, fetch all employees
-            if(selected.value === 'all'){
-                dispatch({type:'BRANCH', value:selected, payload:[]})
-                // Pass current department_id if exists, otherwise null
-                const currentDeptId = managePaySlipState.department_id && managePaySlipState.department_id.value !== 'all' 
-                    ? managePaySlipState.department_id.value 
-                    : null;
-                gettingAllEmpSalary(currentDeptId)
-            } else {
-                const data = await gettingDepartmentsServices(selected.value)
-                dispatch({type:'BRANCH', value:selected, payload:data})
-                // Pass current department_id if exists
-                const currentDeptId = managePaySlipState.department_id && managePaySlipState.department_id.value !== 'all' 
-                    ? managePaySlipState.department_id.value 
-                    : null;
-                gettingEmpSalary(selected, currentDeptId)
-            }
-            console.log('selected',selected)
+      if (
+        response.status === 200 &&
+        (responseData.STATUS === "SUCCESSFUL" || responseData.STATUS === "SUCCESS")
+      ) {
+        let employeeData = [];
+
+        if (responseData.DATA?.data && Array.isArray(responseData.DATA.data)) {
+          employeeData = responseData.DATA.data;
+        } else if (responseData.DB_DATA && Array.isArray(responseData.DB_DATA)) {
+          employeeData = responseData.DB_DATA;
+        } else if (responseData.data && Array.isArray(responseData.data)) {
+          employeeData = responseData.data;
+        } else if (Array.isArray(responseData)) {
+          employeeData = responseData;
         }
-        else if(field === 'department_id'){
-            console.log('Department selected:', selected)
-            console.log('Current branch:', managePaySlipState.branch_id)
-            
-            // Clear employee list immediately before fetching new data to avoid showing stale data
-            dispatch({type:'EMP_SALARY', payload:[]})
-            
-            // Update state
-            dispatch({type:'SELECTION', field:field, value:selected})
-            
-            // Fetch employees with department filter from API
-            const deptId = selected && selected.value !== 'all' ? selected.value : null;
-            
-            if(managePaySlipState.branch_id){
-                if(managePaySlipState.branch_id.value === 'all'){
-                    // If "All Branch" is selected, fetch all employees with department filter
-                    gettingAllEmpSalary(deptId)
-                } else {
-                    // If specific branch is selected, fetch employees for that branch with department filter
-                    gettingEmpSalary(managePaySlipState.branch_id, deptId)
-                }
-            } else {
-                // If no branch is selected, fetch all employees with department filter
-                gettingAllEmpSalary(deptId)
-            }
-        }
-        else{
-            dispatch({type:'SELECTION', field:field, value:selected})
-        }
+
+        dispatch({ type: "EMP_SALARY", payload: employeeData });
+      } else {
+        dispatch({ type: "EMP_SALARY", payload: [] });
+      }
+    } catch (err) {
+      dispatch({ type: "EMP_SALARY", payload: [] });
     }
+  };
 
-
-    const gettingEmpSalary = async(branchData, deptId = null)=>{
-        console.log('gettingEmpSalary called with:', { branchData, deptId })
-        dispatch({type: 'SET_LOADING', payload: true})
-        const apiData = {
-            bid: branchData?.value || branchData,
-            did: deptId && deptId !== 'all' ? deptId : '',
-            get_all: true, // Always pass get_all=true
-        }
-        try{
-            const response = await payrollApi.empPaySlip(apiData)
-            const responseData = response.data 
-            console.log('Employee PaySlip Response:', responseData)
-            if(response.status === 200 && (responseData.STATUS === "SUCCESSFUL" || responseData.STATUS === "SUCCESS")){
-                // Handle multiple possible API response structures
-                let employeeData = [];
-                
-                if (responseData.DATA?.data && Array.isArray(responseData.DATA.data)) {
-                    employeeData = responseData.DATA.data;
-                } else if (responseData.DB_DATA && Array.isArray(responseData.DB_DATA)) {
-                    employeeData = responseData.DB_DATA;
-                } else if (responseData.data && Array.isArray(responseData.data)) {
-                    employeeData = responseData.data;
-                } else if (Array.isArray(responseData)) {
-                    employeeData = responseData;
-                }
-                
-                console.log('Employee data extracted:', employeeData);
-                dispatch({type:'EMP_SALARY' , payload:employeeData})
-            }else{
-                // Clear employee list on error
-                console.log('Error or no employees found:', responseData.ERROR_DESCRIPTION || responseData)
-                dispatch({type:'EMP_SALARY' , payload:[]})
-            }
-        }catch(err){
-            console.log('Error fetching employees:', err)
-            dispatch({type:'EMP_SALARY' , payload:[]})
-        }
-    }
-
-
-    const     gettingEmpSalaryByDept = async(dept, branch)=>{
-        console.log('gettingEmpSalaryByDept called with:', { dept, branch })
-        dispatch({type: 'SET_LOADING', payload: true})
-        const apiData = {
-            bid: branch?.value || '',
-            did: dept?.value || '',
-            get_all: true,
-        }
-        console.log('API Data for dept filtering:', apiData)
-
-        try{
-            const response = await payrollApi.empPaySlip(apiData)
-            const responseData = response.data 
-            console.log('Employee PaySlip by Dept Response:', responseData)
-            if(response.status === 200 && (responseData.STATUS === "SUCCESSFUL" || responseData.STATUS === "SUCCESS")){
-                // Handle multiple possible API response structures
-                let employeeData = [];
-                
-                if (responseData.DATA?.data && Array.isArray(responseData.DATA.data)) {
-                    employeeData = responseData.DATA.data;
-                } else if (responseData.DB_DATA && Array.isArray(responseData.DB_DATA)) {
-                    employeeData = responseData.DB_DATA;
-                } else if (responseData.data && Array.isArray(responseData.data)) {
-                    employeeData = responseData.data;
-                } else if (Array.isArray(responseData)) {
-                    employeeData = responseData;
-                }
-                
-                console.log('Employee data extracted:', employeeData);
-                dispatch({type:'EMP_SALARY' , payload:employeeData})
-            }else{
-                // Clear employee list on error
-                console.log('Error or no employees found:', responseData.ERROR_DESCRIPTION || responseData)
-                dispatch({type:'EMP_SALARY' , payload:[]})
-            }
-        }catch(err){
-            console.log('Error fetching employees by department:', err)
-            dispatch({type:'EMP_SALARY' , payload:[]})
-        }
-    }
-
-    const gettingAllEmpSalary = async(deptId = null)=>{
-        console.log('Fetching all employees from all branches')
-        dispatch({type: 'SET_LOADING', payload: true})
-        const apiData = {
-            bid:0, // Send 0 when "All Branch" is selected
-            did: deptId && deptId !== 'all' ? deptId : '',
-            get_all: true, // Always pass get_all=true when "All Branch" is selected
-        }
-        try{
-            const response = await payrollApi.empPaySlip(apiData)
-            const responseData = response.data 
-            console.log('All Employee PaySlip Response:', responseData)
-            if(response.status === 200 && (responseData.STATUS === "SUCCESSFUL" || responseData.STATUS === "SUCCESS")){
-                // Handle multiple possible API response structures
-                let employeeData = [];
-                
-                if (responseData.DATA?.data && Array.isArray(responseData.DATA.data)) {
-                    employeeData = responseData.DATA.data;
-                } else if (responseData.DB_DATA && Array.isArray(responseData.DB_DATA)) {
-                    employeeData = responseData.DB_DATA;
-                } else if (responseData.data && Array.isArray(responseData.data)) {
-                    employeeData = responseData.data;
-                } else if (Array.isArray(responseData)) {
-                    employeeData = responseData;
-                }
-                
-                console.log('Employee data extracted:', employeeData);
-                dispatch({type:'EMP_SALARY' , payload:employeeData})
-            }else{
-                // Clear employee list on error
-                console.log('Error or no employees found:', responseData.ERROR_DESCRIPTION || responseData)
-                dispatch({type:'EMP_SALARY' , payload:[]})
-            }
-        }catch(err){
-            console.log('Error fetching all employees:', err)
-            dispatch({type:'EMP_SALARY' , payload:[]})
-        }
-    }
-
-
-
-
-
-  
-
-    return {
-        managePaySlip,
-        managePaySlipState,
-        branches_payroll,
-        departments_payroll,
-        handleSelectManagePaySlip,
-    }
-
-}
+  return {
+    managePaySlip,
+    managePaySlipState,
+    branches_payroll,
+    branchesLoaded,
+    departmentMenuLoading,
+    handleSelectManagePaySlip,
+  };
+};
 
 // Export function to clear Generate Payslip filters from localStorage
 export const clearGeneratePayslipFilters = () => {
-    try {
-        localStorage.removeItem(GENERATE_PAYSLIP_FILTERS_KEY);
-    } catch (error) {
-        console.error('Error clearing Generate Payslip filters from localStorage:', error);
-    }
+  try {
+    localStorage.removeItem(GENERATE_PAYSLIP_FILTERS_KEY);
+  } catch (error) {
+    console.error("Error clearing Generate Payslip filters from localStorage:", error);
+  }
 };
 
-export default useManagePaySlip
+export default useManagePaySlip;

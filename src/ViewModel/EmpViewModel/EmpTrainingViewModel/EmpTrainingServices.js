@@ -7,6 +7,7 @@ const useEmpTrainingService = () => {
     const employeeTrainingCourses = useStore((state) => state.employeeTrainingCourses);
     const selectedCourse = useStore((state) => state.selectedCourse);
     const loading = useStore((state) => state.loading);
+    const employeeTrainingCoursesLoading = useStore((state) => state.employeeTrainingCoursesLoading);
     const error = useStore((state) => state.error);
     const getEmployeeTraining = useStore((state) => state.getEmployeeTraining);
     const getEmployeeTrainingCourses = useStore((state) => state.getEmployeeTrainingCourses);
@@ -82,6 +83,7 @@ const useEmpTrainingService = () => {
         selectedCourse,
         assignedQuestions: useStore((state) => state.assignedQuestions),
         loading,
+        employeeTrainingCoursesLoading,
         error,
         
         // UI State

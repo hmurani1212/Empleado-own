@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Button, Card, CardBody, Typography, IconButton } from "@material-tailwind/react";
 import {
   FaClock,
@@ -37,6 +37,12 @@ import { HiMiniUser } from "react-icons/hi2";
 import { FaFileInvoiceDollar, FaFileSignature, FaSackDollar, FaMoneyBill1Wave } from "react-icons/fa6";
 import { IoCalendar } from "react-icons/io5";
 import { AiOutlineBars } from "react-icons/ai";
+import {
+  ExpenseStatCardsSkeleton,
+  ExpenseAnalysisTabSkeleton,
+  ExpenseListTableSkeleton,
+  InvoicesTableSkeleton,
+} from "./ExpenseSkeletons";
 
 // Register Chart.js components
 ChartJS.register(
@@ -53,7 +59,7 @@ const ExpenseDashboard = () => {
   const {
     expenseData,
     loading,
-    error,
+    loadMoreLoading,
     pendingApprovals,
     pendingApprovalsLoading,
     selectedMonth,
@@ -90,7 +96,7 @@ const ExpenseDashboard = () => {
 
   // Load expense data once on mount; ref avoids duplicate from dependency changes or Strict Mode
   const hasFetchedInitialRef = useRef(false);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (hasFetchedInitialRef.current) return;
     hasFetchedInitialRef.current = true;
     getExpenseDashboardData();
@@ -412,6 +418,7 @@ const ExpenseDashboard = () => {
                             options={months?.map((month) => ({ value: month.id, label: month.title }))}
                             onChangeHandler={(selectedOption) => handleMonthChange(selectedOption, "month")}
                             thinScrollbar={true}
+                            menuLoading={loading}
                         />
                     </div>
                     <div className="w-32">
@@ -422,6 +429,7 @@ const ExpenseDashboard = () => {
                             options={years?.map((year) => ({ value: year, label: year }))}
                             onChangeHandler={(selectedOption) => handleYearChange(selectedOption, "year")}
                             thinScrollbar={true}
+                            menuLoading={loading}
                         />
                     </div>
                     <Button
@@ -434,6 +442,9 @@ const ExpenseDashboard = () => {
             </div>
 
             {/* Key Metrics Cards */}
+            {loading ? (
+              <ExpenseStatCardsSkeleton />
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard 
                     title="Approved Expense" 
@@ -462,6 +473,7 @@ const ExpenseDashboard = () => {
                     bgColorClass="bg-[#FDA006]"
                 />
             </div>
+            )}
 
             {/* Tabs */}
             <div className="flex items-center gap-2 p-1 bg-white rounded-xl w-fit shadow-sm border border-gray-100">
@@ -495,6 +507,9 @@ const ExpenseDashboard = () => {
                     transition={{ duration: 0.2 }}
                 >
                     {activeTab === "Expense Analysis" ? (
+                        loading ? (
+                          <ExpenseAnalysisTabSkeleton />
+                        ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             {/* Chart Section */}
                             <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-[450px]">
@@ -533,7 +548,11 @@ const ExpenseDashboard = () => {
                                 </div>
                             </div>
                         </div>
+                        )
                     ) : activeTab === "Expense List" ? (
+                        loading ? (
+                          <ExpenseListTableSkeleton />
+                        ) : (
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="overflow-x-auto customScroll">
                                 <table className="w-full text-left border-collapse">
@@ -610,15 +629,18 @@ const ExpenseDashboard = () => {
                                 <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-center">
                                     <Button
                                         onClick={handleLoadMore}
-                                        disabled={loading}
+                                        disabled={loadMoreLoading}
                                         variant="text"
                                         className="text-blue-600 hover:bg-blue-50 normal-case"
                                     >
-                                        {loading ? "Loading..." : "Load More"}
+                                        {loadMoreLoading ? "Loading..." : "Load More"}
                                     </Button>
                                 </div>
                             )}
                         </div>
+                        )
+                    ) : loading ? (
+                        <InvoicesTableSkeleton />
                     ) : (
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="overflow-x-auto customScroll">

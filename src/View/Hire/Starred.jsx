@@ -17,6 +17,8 @@ import RejectAppForm from "./RejectAppForm";
 import ShortlistTemplateModal from "./ShortlistTemplateModal";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { formatTimestamp } from "../Branches/utils";
+import useStore from "../../Store/store";
+import { ApplicantsTableSkeleton } from "./HireSkeletons";
 const Starred = () => {
   const {
     allStarredApp,
@@ -45,6 +47,7 @@ const Starred = () => {
     handleCloseShortlistTemplate,
   } = useHire();
   const { get_applicants_data } = useHire_2();
+  const allApplicantsLoading = useStore((state) => state.allApplicantsLoading);
 
   const applicantsData = [
     "Applicant Name",
@@ -58,9 +61,6 @@ const Starred = () => {
     "Action",
   ];
   const location = useLocation();
-  get_applicants_data.map((data) => {
-    console.log("data", data?.candidate?.name);
-  });
   return (
     <>
       <div className="flex flex-col gap-3">
@@ -89,7 +89,9 @@ const Starred = () => {
                 </thead>
 
                 <tbody>
-                  {get_applicants_data.length > 0 ? (
+                  {allApplicantsLoading ? (
+                    <ApplicantsTableSkeleton rows={8} colCount={9} />
+                  ) : get_applicants_data?.length > 0 ? (
                     get_applicants_data?.map((hire, index) => {
                       const isLast = index === get_applicants_data.length - 1;
                       const classes = isLast

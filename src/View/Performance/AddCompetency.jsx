@@ -17,10 +17,10 @@ const CONTENT_LABELS = {
 }
 
 const AddCompetency = (props) => {
-    const { performance,addCompetencyValue,handleSelectAddCompetency,handleChangeAddCompetency, addComptency,deleteCompteny, handleSubmitAddCompetency, handleRemoveEmp} = props
+    const { performance, performanceListLoading = false, addCompetencyValue, handleSelectAddCompetency, handleChangeAddCompetency, addComptency, deleteCompteny, handleSubmitAddCompetency, handleRemoveEmp } = props
     
     // Use the same hook as Create Performance Review Cycle
-    const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, Get_All_Employeefn, Get_All_Employee } = useEmployees();
+    const { empBranches, fetchingAllBranches, gettingSubBranches, dept_subDept, Get_All_Employeefn, Get_All_Employee, branchesLoading, departmentsLoading, getAllEmployeeLoading } = useEmployees();
     //const { empBranches, fetchingAllBranches } = useEmployees();
 
     const [contentDrawerOpen, setContentDrawerOpen] = useState(false)
@@ -123,11 +123,13 @@ const AddCompetency = (props) => {
               <FaInfoCircle className='text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0' onClick={() => openContentDrawer(CONTENT_LABELS.performance)} />
             </div>
             <CustomSelect 
-                placeHolderTitle = 'Performance'
+                placeHolderTitle = {performanceListLoading ? 'Loading cycles...' : 'Performance'}
                 cStyle = {true}
                 value={addCompetencyValue.pID}
                 options={performance?.map((ele) => ({ value: ele._id, label: ele.name }))} 
                 onChangeHandler={(selectedOption) => handleSelectAddCompetency(selectedOption, 'pID')}
+                menuLoading={performanceListLoading}
+                menuLoadingLabel="Loading review cycles..."
             />
         </div>
         <div className='flex gap-2'>
@@ -177,7 +179,7 @@ const AddCompetency = (props) => {
             <div className='space-y-2'>
                 <label className='text-[#698592] text-[12px]'>Branch</label>
                 <SearchReactSelect
-                    placeHolderTitle="Branch"
+                    placeHolderTitle={branchesLoading ? "Loading branches..." : "Branch"}
                     value={selectedBranch}
                     options={[
                         { value: 0, label: 'All Branches' },
@@ -214,6 +216,8 @@ const AddCompetency = (props) => {
                         }
                     }}
                     cStyle={true}
+                    menuLoading={branchesLoading}
+                    menuLoadingLabel="Loading branches..."
                     customStyles={{
                         control: (base) => ({
                             ...base,
@@ -270,7 +274,7 @@ const AddCompetency = (props) => {
                 <div className='space-y-2 flex-1'>
                     <label className='text-[#698592] text-[12px]'>Departments</label>
                     <SearchReactSelect
-                        placeHolderTitle="Department"
+                        placeHolderTitle={departmentsLoading ? "Loading departments..." : "Department"}
                         value={selectedDepartment}
                         options={[
                             { value: 0, label: 'All Departments' },
@@ -292,6 +296,9 @@ const AddCompetency = (props) => {
                             await handleSelectAddCompetency(selectedOption, "departmentId");
                         }}
                         cStyle={true}
+                        menuLoading={departmentsLoading}
+                        menuLoadingLabel="Loading departments..."
+                        disabled={departmentsLoading}
                         customStyles={{
                             control: (base) => ({
                                 ...base,
@@ -347,7 +354,7 @@ const AddCompetency = (props) => {
                 <div className='space-y-2 flex-1'>
                     <label className='text-[#698592] text-[12px]'>Employee</label>
                     <SearchReactSelect
-                        placeHolderTitle="Select Employee"
+                        placeHolderTitle={getAllEmployeeLoading ? "Loading employees..." : "Select Employee"}
                         value={selectedEmployee}
                         options={[
                             { value: 0, label: 'All Employees' },
@@ -411,6 +418,8 @@ const AddCompetency = (props) => {
                         }}
                         cStyle={true}
                         isClearable={true}
+                        menuLoading={getAllEmployeeLoading}
+                        menuLoadingLabel="Loading employees..."
                         customStyles={{
                             control: (base) => ({
                                 ...base,

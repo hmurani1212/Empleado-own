@@ -49,13 +49,14 @@ const TrainingService = () => {
     const isAiGrading = useStore((state) => state.isAiGrading);
      const delete_course_fn = useStore((state) => state.delete_course_fn);
     const isLoadingTrainingData = useStore((state) => state.isLoadingTrainingData);
+    const trainingListLoadMoreLoading = useStore((state) => state.trainingListLoadMoreLoading);
 
 
 
     return {
         training_data, Training_datefn, resetTrainingData, Add_training_course_fn, getCourseDetails, getCourseResources, addCourseResources, updateCourseResource, getCourseAssessments, addCourseAssessment, getCourseReviewer, addCourseReviewer, getCourseEmployeeAssignments, addCourseEmployeeAssignment, getCourseComments, addCourseComment, uploadFileToElephant, uploadTrainingFile,
         deteleCoursefn, updateCoursefn, deleteCombinefn, get_assessmen_q_fn, processPdfWithAI, generateQuestionsFromResources, saveQuestion, saveQuestions, getCourseCompleteDetails, updateCourseAndResource, assignCourseToEmployee, assignCourseByBranchDept, isLoadingCourseAssignment, getCourseEmployees, isLoadingCourseEmployees, assignQuestionsByBranchDept, isLoadingQuestionAssignment, addQuestionsToBank, isLoadingAddQuestionsBank, getCourseAssignedEmployees, isLoadingCourseAssignedEmployees, getEmployeeResolvedQuestions, isLoadingResolvedQuestions, updateQuestionCorrectness, isUpdatingQuestionCorrectness, aiGradeAssessment, isAiGrading, 
-        delete_course_fn, isLoadingTrainingData
+        delete_course_fn, isLoadingTrainingData, trainingListLoadMoreLoading
     };
 };
 

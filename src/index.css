@@ -127,10 +127,11 @@
     @keyframes rotateZoomOut {
         0% {
             transform: scale(1) rotate(0deg);
-            /* Start at normal size */
         }
-
         100% {
+            transform: scale(1.2) rotate(360deg);
+        }
+    }
 
     /* Custom slider styles for progress input */
     .slider {
@@ -168,9 +169,20 @@
         border: none;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
-            transform: scale(1.2) rotate(360deg);
-            /* End zoomed in after one full rotation */
+
+    /* Dashboard stat skeletons — explicit colors so loaders stay visible even if utility order fails */
+    @keyframes dashboard-skeleton-shimmer {
+        0%,
+        100% {
+            opacity: 1;
         }
+        50% {
+            opacity: 0.55;
+        }
+    }
+
+    .dashboard-skeleton-pulse {
+        animation: dashboard-skeleton-shimmer 1.4s ease-in-out infinite;
     }
 
     .navLinkCustom.active{
@@ -338,6 +350,6 @@ body > div[style*="position: fixed"][style*="inset"]:not([role="dialog"]):not([a
 /* Ensure Material Tailwind Drawer overlays are properly cleaned up */
 body > div[class*="bg-black"][class*="bg-opacity"]:not([role="dialog"]) {
     display: none !important;
-};
+}
 
 /* application module print styles */

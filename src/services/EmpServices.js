@@ -214,6 +214,28 @@ const getEmergencyContacts = (employee) => {
   return values.length ? values.join(', ') : '';
 };
 
+/** Address for export: prefer top-level address fields, then contact entries marked as address. */
+const getEmployeeAddress = (employee) => {
+  const directAddress =
+    employee?.address ??
+    employee?.ntn ??
+    employee?.ntn_no ??
+    employee?.basic_information?.address ??
+    employee?.basic_information?.ntn_no;
+  if (directAddress != null && String(directAddress).trim() !== '') {
+    return String(directAddress).trim();
+  }
+
+  const contacts = Array.isArray(employee?.contacts) ? employee.contacts : [];
+  const addressContact = contacts.find((c) =>
+    /address/i.test(String(c?.contact_type ?? '')) || /address/i.test(String(c?.contact_title ?? ''))
+  );
+  if (addressContact?.contact != null && String(addressContact.contact).trim() !== '') {
+    return String(addressContact.contact).trim();
+  }
+  return '';
+};
+
 /** Get net salary for Excel: prefer full_salary_data.summary.net_salary (from profile API), then current_salary, then basic_salary/salary. */
 const getNetSalary = (employee) => {
   const net = employee?.Salary_Settings?.full_salary_data?.summary?.net_salary ??
@@ -241,8 +263,14 @@ const getGrossSalary = (employee) => {
 const formatDateForExcel = (value) => {
   if (value == null || value === '') return '';
   const str = String(value).trim();
-  const num = parseInt(str, 10);
-  const date = !Number.isNaN(num) && num > 0 ? new Date(num > 1e10 ? num : num * 1000) : new Date(str);
+  if (!str || str === '0') return '';
+  // Only treat purely numeric values as unix timestamps.
+  // "1999-12-15" must be parsed as a normal date string (not unix 1999 seconds).
+  const isNumericOnly = /^\d+$/.test(str);
+  const num = isNumericOnly ? parseInt(str, 10) : NaN;
+  const date = !Number.isNaN(num) && num > 0
+    ? new Date(num > 1e10 ? num : num * 1000)
+    : new Date(str);
   if (Number.isNaN(date.getTime())) return str;
   const d = date.getDate();
   const m = date.getMonth() + 1;
@@ -261,6 +289,10 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
   const employees = employeesData?.employees ?? [];
   /** When statusFilter is 'active', hide Exit column; show for 'all' and 'inactive'. */
   const showExitColumn = options.statusFilter !== 'active';
+  const emergencyContacts = employees.map((employee) => getEmergencyContacts(employee));
+  const showEmergencyContactColumn = emergencyContacts.some(
+    (value) => String(value ?? '').trim() !== ''
+  );
 
   const getMobileNumber = (employee) => {
     if (!employee?.contacts || !Array.isArray(employee.contacts)) return '';
@@ -297,7 +329,8 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
     'Email',
     'Blood Group',
     'HR Policy',
-    'Emergency Contact'
+    ...(showEmergencyContactColumn ? ['Emergency Contact'] : []),
+    'Address'
   ];
   const EMAIL_COLUMN_INDEX = columns.indexOf('Email') + 1;
 
@@ -372,7 +405,8 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
       employee?.email ?? employee?.work_email ?? '',
       employee?.blood_group != null && String(employee.blood_group).trim() !== '' ? String(employee.blood_group).trim() : '',
       employee?.policy_id ?? employee?.hr_policy_id ?? employee?.work_policy?.value ?? employee?.work_policy ?? '',
-      getEmergencyContacts(employee),
+      ...(showEmergencyContactColumn ? [getEmergencyContacts(employee)] : []),
+      getEmployeeAddress(employee),
     ];
     sheet.addRow(row);
   });
@@ -397,8 +431,8 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
   }
 
   const colWidths = showExitColumn
-    ? [8, 12, 8, 30, 30, 22, 22, 12, 12, 12, 30, 12, 22, 16, 50, 12, 14, 28]
-    : [8, 12, 8, 30, 30, 22, 22, 12, 12, 30, 12, 22, 16, 50, 12, 14, 28];
+    ? [8, 12, 8, 30, 30, 22, 22, 16, 12, 12, 30, 12, 22, 16, 50, 12, 14, ...(showEmergencyContactColumn ? [28] : []), 36]
+    : [8, 12, 8, 30, 30, 22, 22, 16, 12, 30, 12, 22, 16, 50, 12, 14, ...(showEmergencyContactColumn ? [28] : []), 36];
   columns.forEach((_, i) => {
     sheet.getColumn(i + 1).width = colWidths[i] || 14;
   });

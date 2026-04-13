@@ -1080,8 +1080,12 @@ const useHire = () => {
       gettingSubBranches,
       gettingPolicies,
       gettingSalayTemplate,
-      gettingDesignation
+      gettingDesignation,
+      branchesLoading,
+      departmentsLoading,
     } = useEmployees();
+
+    const hrPolicyDropdownLoading = useStore((state) => state.hrPolicyDropdownLoading);
 
 
     ///console.log('Employee Data for Hiring:', dept_subDept);
@@ -1301,6 +1305,8 @@ const useHire = () => {
               }))}
               onChangeHandler={(selectedOption) => handleSelectChangeLocal(selectedOption, "branch")}
               cStyle={true}
+              menuLoading={branchesLoading}
+              menuLoadingLabel="Loading branches..."
               customStyles={{
                 control: (base) => ({
                   ...base,
@@ -1340,6 +1346,8 @@ const useHire = () => {
               options={flattenOptions(dept_subDept)}
               onChangeHandler={(selectedOption) => handleSelectChangeLocal(selectedOption, "department")}
               cStyle={true}
+              menuLoading={departmentsLoading}
+              menuLoadingLabel="Loading departments..."
             />
           </div>
 
@@ -1397,6 +1405,8 @@ const useHire = () => {
               }))}
               onChangeHandler={(selectedOption) => handleSelectChangeLocal(selectedOption, "work_policy")}
               cStyle={true}
+              menuLoading={hrPolicyDropdownLoading}
+              menuLoadingLabel="Loading policies..."
               customStyles={{
                 control: (base) => ({
                   ...base,
