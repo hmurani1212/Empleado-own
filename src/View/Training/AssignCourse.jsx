@@ -447,7 +447,7 @@ const AssignCourse = ({ courseId, courseName, closeDrawer }) => {
         <div className='mt-4'>
           <Button
             type='submit'
-            className='bg-blue-500 py-[10px] capitalize w-full hover:bg-blue-600'
+            className='bg-blue-500 py-[10px] cursor-pointer capitalize w-full hover:bg-blue-600'
             disabled={
               assigningBusy ||
               !selectedBranch ||

@@ -257,8 +257,10 @@ export const useTalentPoolServices = () => {
 
             const response = await getTalentPool(filters);
 
-            if (response.data.STATUS === 'SUCCESSFUL' && Array.isArray(response.data.DB_DATA)) {
+            if (response.data.STATUS === 'SUCCESSFUL') {
                 const data = response.data.DB_DATA;
+                const label_data = response.data.Label_Data;
+                store.setLabelData(label_data);
                 if (filters.page === 1) {
                     store.setTalentPool(data || []);
                 } else {
@@ -267,11 +269,13 @@ export const useTalentPoolServices = () => {
                 return { success: true, data };
             } else {
                 store.setTalentPool([]);
+                store.setLabelData([]);
                 store.setTalentPoolError('No candidates found matching the criteria');
                 return { success: false, error: 'No candidates found matching the criteria' };
             }
         } catch (error) {
             store.setTalentPool([]);
+            store.setLabelData([]);
             store.setTalentPoolError('No candidates found matching the criteria');
             return { success: false, error: 'No candidates found matching the criteria' };
         } finally {

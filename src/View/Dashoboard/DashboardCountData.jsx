@@ -793,7 +793,7 @@ const DashboardCountData = (props) => {
       {exportData && title !== "Late Comers Last 7 days" && (
         <div className='flex justify-end items-center'>
           <Button 
-            className="flex items-center gap-3 px-4 border border-[#0ACF97] py-2 text-[#0ACF97] rounded-full bg-[#EDFFF0] hover:shadow-[#EDFFF0]/20 focus:shadow-[#EDFFF0]/20 active:shadow-[#EDFFF0]/10"
+            className="flex items-center cursor-pointer gap-3 px-4 border border-[#0ACF97] py-2 text-[#0ACF97] rounded-full bg-[#EDFFF0] hover:shadow-[#EDFFF0]/20 focus:shadow-[#EDFFF0]/20 active:shadow-[#EDFFF0]/10"
             onClick={handleExport}
           >
             <TbFileExport className='text-[16px]'/>

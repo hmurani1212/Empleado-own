@@ -31,7 +31,7 @@ const ViewDesignations = (props) => {
                 variant='outlined' 
                 color='red' 
                 size='sm'
-                className='w-full sm:w-auto'
+                className='w-full sm:w-auto cursor-pointer'
                 onClick={closeAddDesignationForm}
               >
                 Back
@@ -93,7 +93,7 @@ const ViewDesignations = (props) => {
                                 {editDesignation && editDesValue.d_id === designation.id ? (
                                   <Button
                                     size="sm"
-                                    className="capitalize font-medium text-[12px] bg-[#8bc9f8] px-3 py-1.5 hover:bg-[#7ab8e7] rounded-[8px]"
+                                    className="capitalize font-medium text-[12px] bg-[#8bc9f8] px-3 py-1.5 hover:bg-[#7ab8e7] rounded-[8px] cursor-pointer"
                                     onClick={(e) => handleEditDesignation(e)}
                                   >
                                     Save
@@ -101,7 +101,7 @@ const ViewDesignations = (props) => {
                                 ) : (
                                   <Button
                                     size="sm"
-                                    className="capitalize font-medium text-[12px] bg-[#8bc9f8] px-3 py-1.5 hover:bg-[#7ab8e7] rounded-[8px]"
+                                    className="capitalize font-medium text-[12px] bg-[#8bc9f8] px-3 py-1.5 hover:bg-[#7ab8e7] rounded-[8px] cursor-pointer"
                                     onClick={() => editInput(designation)}
                                   >
                                     Edit
@@ -109,7 +109,7 @@ const ViewDesignations = (props) => {
                                 )}
                                 <Button
                                   size="sm"
-                                  className="capitalize font-medium text-[12px] bg-[#FF4979] px-3 py-1.5 hover:bg-[#e63d69] rounded-[8px]"
+                                  className="capitalize font-medium text-[12px] bg-[#FF4979] px-3 py-1.5 hover:bg-[#e63d69] rounded-[8px] cursor-pointer"
                                   onClick={() => handleDialogDesig(designation.id, deptId)}
                                 >
                                   Delete
@@ -139,7 +139,7 @@ const ViewDesignations = (props) => {
             {designationPagination?.hasMore && (
               <div className="w-full flex justify-center mt-4 sm:mt-6 mb-2 sm:mb-4 px-2 sm:px-0">
                 <Button
-                  className="flex items-center gap-2 capitalize font-normal text-xs sm:text-sm md:text-[13px] border border-[#3da5f4] text-[#3da5f4] px-4 sm:px-5 md:px-[20px] py-2 sm:py-[10px] w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 capitalize font-normal text-xs sm:text-sm md:text-[13px] border border-[#3da5f4] text-[#3da5f4] px-4 sm:px-5 md:px-[20px] py-2 sm:py-[10px] w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   variant="outlined"
                   onClick={handleLoadMoreDesignations}
                   disabled={isLoadingMoreDesignations}

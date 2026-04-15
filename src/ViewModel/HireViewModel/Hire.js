@@ -18,6 +18,7 @@ const hireViewModel = (set, get) => ({
     vacRounds: [],
     mountHireList: false,
     allTalentPool: [],
+    labelData: [],
     allCities: [],
     /** True while `gettingAllLocations` (hiring cities for Create Vacancy) is in flight */
     locationsLoading: false,
@@ -365,8 +366,10 @@ const hireViewModel = (set, get) => ({
 
             if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
                 set({ allTalentPool: data.DB_DATA })
+                set({ labelData: data.Label_Data })
             } else if (response.status === 200 && data.STATUS === 'ERROR') {
                 set({ allTalentPool: [] })
+                set({ labelData: [] })
             }
         } catch (error) {
             throw error

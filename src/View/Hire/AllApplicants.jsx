@@ -52,60 +52,102 @@ const AllApplicants = () => {
 
   const rejectedRequestPayload = (f) => {
     const payload = {};
-    const vid = f.vacancy_id || (vacancyId && vacancyId !== "0" ? vacancyId : "");
-    if (vid) payload.vacancy_id = vid;
+    // const vid = f.vacancy_id || (vacancyId && vacancyId !== "0" ? vacancyId : "");
+    // if (vid) payload.vacancy_id = vid;
+    if (f.vacancy_id !== undefined && f.vacancy_id !== null && f.vacancy_id !== "")
+      payload.vacancy_id = f.vacancy_id;
     if (f.gender !== undefined && f.gender !== null && f.gender !== "")
       payload.gender = f.gender;
     return payload;
   };
 
   const handleFilterChange = (type, value) => {
-    const newFilters = { ...filters };
-
-    switch (type) {
-      case "gender":
-        newFilters.gender =
-          value === "Male" ? "1" : value === "Female" ? "0" : "2";
-        break;
-      case "vacancy":
-        newFilters.vacancy_id = value;
-        break;
-      case "status":
-        newFilters.status = value;
-        break;
-      default:
-        break;
-    }
-
+    const newFilters = {
+      ...filters,
+      [type]: value ?? "",
+    };
+  
     setFilters(newFilters);
-    // Apply filters with current status and location
+  
     const currentPath = location.pathname;
-    let currentStatus = newFilters.status;
-    let currentLocation = "Applicants";
-
-    if (currentPath.includes("/starred")) {
-      currentStatus = "5";
-      currentLocation = "Starred";
-    } else if (currentPath.includes("/shortlisted")) {
-      currentStatus = "1";
-      currentLocation = "Shortlisted";
-    } else if (currentPath.includes("/interviewed")) {
-      currentStatus = "2";
-      currentLocation = "Interviewed";
-    } else if (currentPath.includes("/accepted")) {
-      currentStatus = "3";
-      currentLocation = "Accepted";
-    } else if (currentPath.includes("/rejected")) {
+  
+    if (currentPath.includes("/rejected")) {
       get_rejected_app(rejectedRequestPayload(newFilters));
       return;
-    } else {
-      currentStatus = "4";
-      currentLocation = "Applicants";
-    };
-
-    get_allApplicants(vacancyId, newFilters, currentStatus, currentLocation);
-    // Removed get_record() call - no need to refresh counts when filters change
+    }
+  
+    let status = newFilters.status;
+    let locationName = "Applicants";
+  
+    if (currentPath.includes("/starred")) {
+      status = "5";
+      locationName = "Starred";
+    } else if (currentPath.includes("/shortlisted")) {
+      status = "1";
+      locationName = "Shortlisted";
+    } else if (currentPath.includes("/interviewed")) {
+      status = "2";
+      locationName = "Interviewed";
+    } else if (currentPath.includes("/accepted")) {
+      status = "3";
+      locationName = "Accepted";
+    }
+  
+    get_allApplicants(vacancyId, newFilters, status, locationName);
   };
+  // const handleFilterChange = (type, value) => {
+  //   const newFilters = { ...filters };
+
+  //   console.log("newFilters", newFilters);
+  //   console.log("value", value);
+  //   console.log("type", type);
+
+  //   switch (type) {
+  //     case "gender":
+  //       newFilters.gender = String(value) ?? "";
+  //       break;
+  //     case "vacancy_id":
+  //       newFilters.vacancy_id = String(value) ?? "";
+  //       break;
+  //     case "status":
+  //       newFilters.status = value;
+  //       break;
+  //     default:
+  //       break;
+  //   }
+
+  //   setFilters((prev) => ({
+  //     ...prev,
+  //     [type]: value ?? "",
+  //   }));
+  //   // Apply filters with current status and location
+  //   const currentPath = location.pathname;
+  //   let currentStatus = newFilters.status;
+  //   let currentLocation = "Applicants";
+
+  //   if (currentPath.includes("/starred")) {
+  //     currentStatus = "5";
+  //     currentLocation = "Starred";
+  //   } else if (currentPath.includes("/shortlisted")) {
+  //     currentStatus = "1";
+  //     currentLocation = "Shortlisted";
+  //   } else if (currentPath.includes("/interviewed")) {
+  //     currentStatus = "2";
+  //     currentLocation = "Interviewed";
+  //   } else if (currentPath.includes("/accepted")) {
+  //     currentStatus = "3";
+  //     currentLocation = "Accepted";
+  //   } else if (currentPath.includes("/rejected")) {
+  //     get_rejected_app(rejectedRequestPayload(newFilters));
+  //     return;
+  //   } else {
+  //     currentStatus = "4";
+  //     currentLocation = "Applicants";
+  //   };
+
+  //   get_allApplicants(vacancyId, newFilters, currentStatus, currentLocation);
+  //   // Removed get_record() call - no need to refresh counts when filters change
+  // };
 
   const handleApplicationClick = (e, link, id, ele) => {
     e.preventDefault();
@@ -253,25 +295,32 @@ const AllApplicants = () => {
           <div className="flex items-center justify-between">
             <div className="flex flex-wrap items-center gap-3">
               <div>
-                <Select
-                  label="Filter by Jobs"
-                  color="blue"
-                  className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                  value={
-                    filters.vacancy_id !== undefined &&
-                      filters.vacancy_id !== null &&
-                      filters.vacancy_id !== ""
-                      ? String(filters.vacancy_id)
-                      : ""
-                  }
-                  onChange={(value) => handleFilterChange("vacancy", value)}
-                >
-                  {get_vacanc_filter_data?.map((item, index) => (
-                    <Option value={String(item.id)} key={index}>
-                      {item.title}
-                    </Option>
-                  ))}
-                </Select>
+              <Select
+                label="Filter by Jobs"
+                color="blue"
+                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                // key={get_vacanc_filter_data?.length}
+                value={
+                  get_vacanc_filter_data?.length
+                    ? filters.vacancy_id
+                    : ""
+                }
+                selected={(element) => {
+                  const selected = get_vacanc_filter_data?.find(
+                    (item) => String(item.id) === String(filters.vacancy_id)
+                  );
+                
+                  return selected?.title || "All Applicants";
+                }}
+                onChange={(value) => handleFilterChange("vacancy_id", value)}
+              >
+                <Option value="">All Applicants</Option>
+                {get_vacanc_filter_data?.map((item, index) => (
+                  <Option key={index} value={String(item.id)}>
+                    {item.title}
+                  </Option>
+                ))}
+              </Select>
               </div>
 
               <div>
@@ -279,12 +328,13 @@ const AllApplicants = () => {
                   label="Filter by Gender"
                   color="blue"
                   className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                  value={genderLabelFromCode(filters.gender)}
+                  value={filters.gender}
                   onChange={(value) => handleFilterChange("gender", value)}
                 >
-                  <Option value="Male">Male</Option>
-                  <Option value="Female">Female</Option>
-                  <Option value="Other">Other</Option>
+                  <Option value="">All</Option>
+                  <Option value="1">Male</Option>
+                  <Option value="0">Female</Option>
+                  <Option value="2">Other</Option>
                 </Select>
               </div>
             </div>

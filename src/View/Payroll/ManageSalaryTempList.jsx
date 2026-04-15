@@ -201,7 +201,7 @@ const ManageSalaryTempList = (props) => {
                         className="relative flex justify-center"
                       >
                         <Button
-                          className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.8vw,13px)] bg-[#EFF8FF] border border-[#3DA5F4] text-[#3DA5F4] px-[10px] py-[5px] rounded-[7px]"
+                          className="flex items-center gap-2 capitalize cursor-pointer font-normal text-[clamp(10px,0.8vw,13px)] bg-[#EFF8FF] border border-[#3DA5F4] text-[#3DA5F4] px-[10px] py-[5px] rounded-[7px]"
                           // variant="outlined"
                         >
                           Action
@@ -268,7 +268,7 @@ const ManageSalaryTempList = (props) => {
             <div className="w-full flex justify-center mt-4 mb-4">
               <Button
                 title="Load More"
-                className="capitalize px-[clamp(4px,0.8vw,12px)] py-2 font-medium text-[clamp(10px,0.8vw,13px)] bg-bgBlue flex items-center gap-2 rounded-lg text-white"
+                className="capitalize px-[clamp(4px,0.8vw,12px)] cursor-pointer py-2 font-medium text-[clamp(10px,0.8vw,13px)] bg-bgBlue flex items-center gap-2 rounded-lg text-white"
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
                 loading={isLoadingMore}

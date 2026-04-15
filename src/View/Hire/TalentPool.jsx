@@ -10,6 +10,7 @@ import { TalentPoolTableSkeleton } from "./HireSkeletons";
 const TalentPool = () => {
   const { getTalentPoolData, resetTalentPool } = useTalentPoolServices();
   const allTalentPool = useStore((state) => state.allTalentPool);
+  const labelData = useStore((state) => state.labelData);
   const talentPoolError = useStore((state) => state.talentPoolError);
   const talentPoolLoading = useStore((state) => state.talentPoolLoading);
 
@@ -111,19 +112,40 @@ const TalentPool = () => {
   };
 
   const handleFilterChange = async (filterName, value) => {
-    // Convert empty strings to undefined for API
-    const apiValue = value === "" ? undefined : value;
-
     const newFilters = {
       ...filters,
-      page: 1, // Reset to first page when filter changes
-      [filterName]: apiValue,
+      page: 1,
+      [filterName]: value ?? "",
     };
-
+  
     setCurrentPage(1);
     setFilters(newFilters);
-    fetchData(newFilters);
+  
+    const apiFilters = {
+      ...newFilters,
+      label_id: newFilters.label_id || undefined,
+      gender: newFilters.gender || undefined,
+      age_from: newFilters.age_from || undefined,
+      age_to: newFilters.age_to || undefined,
+    };
+  
+    fetchData(apiFilters);
   };
+
+  // const handleFilterChange = async (filterName, value) => {
+  //   // Convert empty strings to undefined for API
+  //   const apiValue = value === "" ? undefined : String(value);
+
+  //   const newFilters = {
+  //     ...filters,
+  //     page: 1, // Reset to first page when filter changes
+  //     [filterName]: apiValue,
+  //   };
+
+  //   setCurrentPage(1);
+  //   setFilters(newFilters);
+  //   fetchData(newFilters);
+  // };
 
   const talentHead = ["Candidate", "City", "CV", "Talent", "Added"];
   const age = getAllAge();
@@ -131,6 +153,8 @@ const TalentPool = () => {
   const formatTimestamp = (timestamp) => {
     return format(new Date(timestamp * 1000), "dd MMM yyyy");
   };
+
+  console.log(filters)
 
   return (
     <>
@@ -146,23 +170,22 @@ const TalentPool = () => {
                 labelProps={{ className: "hidden" }}
                 color="blue"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                value={hasLabelFilterValue ? String(filters.label_id) : ""}
+                value={filters.label_id}
                 onChange={(val) => {
                   handleFilterChange("label_id", val);
                   setLabelIx(false);
                 }}
-                selected={(optionEl) => {
-                  if (hasLabelFilterValue) return optionEl;
-                  if (showLabelPh) {
-                    return (
-                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                        All Labels
-                      </span>
+                selected={(element) => {
+                  if (filters.label_id) {
+                    const selectedLabel = labelData?.find(
+                      (label) => String(label.id) === String(filters.label_id)
                     );
+                    return selectedLabel?.label_name || element?.props?.children;
                   }
+
                   return (
-                    <span className="text-[12px] font-Urbanist text-[#474747]">
-                      &nbsp;
+                    <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                      All Labels
                     </span>
                   );
                 }}
@@ -170,10 +193,35 @@ const TalentPool = () => {
                 onFocus={() => setLabelIx(true)}
                 containerProps={containerBlur(setLabelIx)}
               >
-                <Option value="1">Label 1</Option>
-                <Option value="2">Label 2</Option>
-                <Option value="3">Label 3</Option>
+                <Option value="">All Labels</Option>
+                {labelData?.map((label) => (
+                  <Option key={label.id} value={String(label.id)}>
+                    {label.label_name}
+                  </Option>
+                ))}
               </Select>
+              {/* <Select
+                ref={labelRef}
+                labelProps={{ className: "hidden" }}
+                color="blue"
+                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                value={String(filters.label_id) || undefined}
+                onChange={(val) => {
+                  handleFilterChange("label_id", val);
+                  setLabelIx(false);
+                }}
+                label="All Labels"
+                onClick={() => clickSelect(labelRef, setLabelIx)}
+                onFocus={() => setLabelIx(true)}
+                containerProps={containerBlur(setLabelIx)}
+              >
+                <Option value="">All Labels</Option>
+                {labelData?.map((label, index) => (
+                  <Option key={index} value={String(label.id)}>
+                    {label.label_name}
+                  </Option>
+                ))}
+              </Select> */}
             </div>
 
             <div>
@@ -181,6 +229,25 @@ const TalentPool = () => {
                 Gender Filter
               </label>
               <Select
+                ref={genderRef}
+                labelProps={{ className: "hidden" }}
+                color="blue"
+                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                value={filters.gender}
+                onChange={(val) => {
+                  handleFilterChange("gender", val);
+                  setGenderIx(false);
+                }}
+                label="Gender Filter"
+                onClick={() => clickSelect(genderRef, setGenderIx)}
+                onFocus={() => setGenderIx(true)}
+                containerProps={containerBlur(setGenderIx)}
+              >
+                <Option value="">All</Option>
+                <Option value="0">Female</Option>
+                <Option value="1">Male</Option>
+              </Select>
+              {/* <Select
                 ref={genderRef}
                 labelProps={{ className: "hidden" }}
                 color="blue"
@@ -209,9 +276,10 @@ const TalentPool = () => {
                 onFocus={() => setGenderIx(true)}
                 containerProps={containerBlur(setGenderIx)}
               >
+                <Option value="">All</Option>
                 <Option value="0">Female</Option>
                 <Option value="1">Male</Option>
-              </Select>
+              </Select> */}
             </div>
 
             <div>
@@ -223,34 +291,29 @@ const TalentPool = () => {
                 labelProps={{ className: "hidden" }}
                 color="blue"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                value={
-                  hasAgeFromValue ? String(filters.age_from) : ""
-                }
+                value={filters.age_from}
                 onChange={(val) => {
                   handleFilterChange("age_from", val);
                   setAgeFromIx(false);
                 }}
-                selected={(optionEl) => {
-                  if (hasAgeFromValue) return optionEl;
-                  if (showAgeFromPh) {
-                    return (
-                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                        Age From
-                      </span>
-                    );
-                  }
-                  return (
-                    <span className="text-[12px] font-Urbanist text-[#474747]">
-                      &nbsp;
-                    </span>
-                  );
-                }}
+                label="Age From"
+                // selected={(optionEl) => {
+                //   if (hasAgeFromValue) return optionEl;
+                //   if (showAgeFromPh) {
+                //     return (
+                //       <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                //         Age From
+                //       </span>
+                //     );
+                //   }
+                // }}
                 onClick={() => clickSelect(ageFromRef, setAgeFromIx)}
                 onFocus={() => setAgeFromIx(true)}
                 containerProps={containerBlur(setAgeFromIx)}
               >
+                <Option value="">Age From</Option>
                 {age.map((a, i) => (
-                  <Option key={i} value={a}>
+                  <Option key={i} value={String(a)}>
                     {a}
                   </Option>
                 ))}
@@ -266,32 +329,29 @@ const TalentPool = () => {
                 labelProps={{ className: "hidden" }}
                 color="blue"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                value={hasAgeToValue ? String(filters.age_to) : ""}
+                value={filters.age_to}
                 onChange={(val) => {
                   handleFilterChange("age_to", val);
                   setAgeToIx(false);
                 }}
-                selected={(optionEl) => {
-                  if (hasAgeToValue) return optionEl;
-                  if (showAgeToPh) {
-                    return (
-                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                        Age To
-                      </span>
-                    );
-                  }
-                  return (
-                    <span className="text-[12px] font-Urbanist text-[#474747]">
-                      &nbsp;
-                    </span>
-                  );
-                }}
+                label="Age To"
+                // selected={(optionEl) => {
+                //   if (hasAgeToValue) return optionEl;
+                //   if (showAgeToPh) {
+                //     return (
+                //       <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                //         Age To
+                //       </span>
+                //     );
+                //   }
+                // }}
                 onClick={() => clickSelect(ageToRef, setAgeToIx)}
                 onFocus={() => setAgeToIx(true)}
                 containerProps={containerBlur(setAgeToIx)}
               >
+                <Option value="">Age To</Option>
                 {age.map((a, i) => (
-                  <Option key={i} value={a}>
+                  <Option key={i} value={String(a)}>
                     {a}
                   </Option>
                 ))}
@@ -304,22 +364,22 @@ const TalentPool = () => {
           {talentPoolLoading && currentPage === 1 ? (
             <TalentPoolTableSkeleton rows={8} />
           ) : talentPoolError ? (
-            <div className="text-center py-4 text-red-500">
+            <div className="text-left py-4 text-red-500">
               {talentPoolError}
             </div>
           ) : (
             <table className="w-full min-w-max text-left h-full text-[12px]">
-              <thead className="sticky top-[0px] z-20">
-                <tr>
+              <thead className="sticky top-[0px] z-20 text-left">
+                <tr className="text-left">
                   {talentHead?.map((head, i) => (
                     <th
                       key={i}
-                      className="border-b border-blue-gray-100 bg-blue-gray-50 p-4"
+                      className="border-b border-blue-gray-100 bg-blue-gray-50 p-4 text-left"
                     >
                       <Typography
                         variant="small"
                         color="blue-gray"
-                        className="font-normal leading-none opacity-70 capitalize"
+                        className="font-semibold leading-none opacity-70 text-left capitalize"
                       >
                         {head}
                       </Typography>
@@ -341,8 +401,8 @@ const TalentPool = () => {
                   allTalentPool?.map((ele, index) => {
                     const isLast = index === allTalentPool?.length - 1;
                     const classes = isLast
-                      ? "p-2"
-                      : "p-2 border-b border-blue-gray-50";
+                      ? "p-4"
+                      : "p-4 border-b border-blue-gray-50";
 
                     return (
                       <tr key={index}>
@@ -352,7 +412,7 @@ const TalentPool = () => {
                             color="blue-gray"
                             className="font-normal text-[#4D7CFF]"
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-left gap-2">
                               <img
                                 className="rounded-full w-[35px] h-[35px] object-cover"
                                 src={
@@ -362,7 +422,7 @@ const TalentPool = () => {
                                 alt={ele?.candidate?.name || "Profile"}
                               />
                               <span className="pl-[5px]">
-                                {ele?.candidate?.name || "N/A"}
+                                {ele?.candidate?.name || "--"}
                               </span>
                             </div>
                           </Typography>
@@ -374,7 +434,7 @@ const TalentPool = () => {
                             color="blue-gray"
                             className="font-normal"
                           >
-                            {ele?.candidate?.city?.city_name || "N/A"}
+                            {ele?.candidate?.city?.city_name || "--"}
                           </Typography>
                         </td>
 
@@ -393,7 +453,7 @@ const TalentPool = () => {
                                 <FaEye className="text-[#3DA5F4] text-[20px] cursor-pointer" />
                               </a>
                             ) : (
-                              "N/A"
+                              "--"
                             )}
                           </Typography>
                         </td>
@@ -404,7 +464,7 @@ const TalentPool = () => {
                             color="blue-gray"
                             className="font-normal"
                           >
-                            {ele.talent || "N/A"}
+                            {ele.talent || "--"}
                           </Typography>
                         </td>
 
@@ -416,7 +476,7 @@ const TalentPool = () => {
                           >
                             {ele.unix_timestamp
                               ? formatTimestamp(ele.unix_timestamp)
-                              : "N/A"}
+                              : "--"}
                           </Typography>
                         </td>
                       </tr>

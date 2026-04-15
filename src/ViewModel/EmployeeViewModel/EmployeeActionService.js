@@ -386,7 +386,7 @@ const useEmployeeActionService = () => {
                         type="submit"
                         color="blue"
                         disabled={sendingSms || loadingContacts}
-                        className="bg-[#3DA5F4] text-white font-medium normal-case"
+                        className="bg-[#3DA5F4] cursor-pointer text-white font-medium normal-case"
                     >
                         {sendingSms ? 'Sending...' : 'Send SMS'}
                     </Button>
@@ -669,6 +669,7 @@ const useEmployeeActionService = () => {
                         color="blue"
                         type="submit"
                         disabled={loading}
+                        className="cursor-pointer"
                     >
                         {loading ? 'Processing...' : 'Submit'}
                     </Button>

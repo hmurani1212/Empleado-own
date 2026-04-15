@@ -619,7 +619,7 @@ const SettlementAcceptanceModal = ({ closeModal }) => {
       <div className="flex justify-end">
         <Button
           size="md"
-          className="bg-blue-500 text-white border-0 shadow-sm hover:bg-blue-600 px-8 py-2 rounded-lg"
+          className="bg-blue-500 text-white border-0 cursor-pointer shadow-sm hover:bg-blue-600 px-8 py-2 rounded-lg"
           onClick={handleSubmit}
           disabled={addExpenseLoading}
         >

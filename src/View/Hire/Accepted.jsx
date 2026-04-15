@@ -71,7 +71,7 @@ const Accepted = () => {
         ) : (
           <div className="bg-white rounded-[10px] drop-shadow-md p-2">
             <div className="min-h-[calc(100vh-100px)] overflow-auto customScroll">
-              <table className="w-full text-center">
+              <table className="w-full text-left">
                 <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
                   <tr>
                     {accpetData?.map((head, i) => (
@@ -106,7 +106,7 @@ const Accepted = () => {
                               // color="blue-gray"
                               className="font-normal cursor-pointer text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                             >
-                              <div className="flex items-center justify-center gap-2">
+                              <div className="flex items-center justify-left gap-2">
                                 <span>
                                   <img
                                     className="rounded-full w-[35px] h-[35px] object-cover"
@@ -154,18 +154,20 @@ const Accepted = () => {
                           </td>
 
                           <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                            >
-                              <a
-                                href={hire?.candidate?.cv_file_path}
-                                target="_blank"
+                            {/* <div className="flex items-center justify-center"> */}
+                              <Typography
+                                // variant="small"
+                                // color="blue-gray"
+                                className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                               >
-                                <FaEye className="text-[#3DA5F4] text-[20px]" />
-                              </a>
-                            </Typography>
+                                <a
+                                  href={hire?.candidate?.cv_file_path}
+                                  target="_blank"
+                                >
+                                  <FaEye className="text-[#3DA5F4] text-[20px]" />
+                                </a>
+                              </Typography>
+                            {/* </div> */}
                           </td>
 
                           {/* <td className={classes}> */}
@@ -181,6 +183,7 @@ const Accepted = () => {
                           {/* </td> */}
 
                           <td className={classes}>
+                            <div className="pl-2">
                             <Menu>
                               <MenuHandler>
                                 <Button
@@ -194,7 +197,7 @@ const Accepted = () => {
                               <MenuList>
                                 <MenuItem
                                   onClick={() => handleSendEmail(hire)}
-                                  className="flex items-center justify-center gap-2"
+                                  className="flex items-center gap-2"
                                 >
                                   <FaEnvelope className="h-4 w-4" />
                                   Send Email
@@ -208,6 +211,7 @@ const Accepted = () => {
                                 </MenuItem>
                               </MenuList>
                             </Menu>
+                            </div>
                           </td>
                         </tr>
                       );

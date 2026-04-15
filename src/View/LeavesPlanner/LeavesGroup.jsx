@@ -146,7 +146,7 @@ const LeavesGroup = () => {
             </div>
 
             <Button
-              className="bg-bgBlue text-white shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all w-full lg:w-auto flex justify-center"
+              className="bg-bgBlue text-white cursor-pointer shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all w-full lg:w-auto flex justify-center"
               onClick={addLeaveGroupDrawer}
             >
               Add New Group
@@ -207,7 +207,7 @@ const LeavesGroup = () => {
                           <td className="p-4">
                             <Button
                               variant="text"
-                              className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                              className="p-2 rounded-lg text-blue-500 cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors"
                               onClick={() => handleLeaveView(leave.id)}
                             >
                               <FaEye size={18} />
@@ -225,7 +225,7 @@ const LeavesGroup = () => {
                               className="relative inline-block"
                             >
                               <Button
-                                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
+                                className="flex items-center cursor-pointer gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
                                 variant="text"
                               >
                                 Action
@@ -245,14 +245,14 @@ const LeavesGroup = () => {
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                     transition={{ duration: 0.15, ease: "easeOut" }}
                                     className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-40 right-0 ${
-                                      index >= allLeavesGroup.length - 3 ? "bottom-full mb-2" : "top-full mt-2"
+                                      index >= allLeavesGroup.length - 3 ? "bottom-full" : "top-full"
                                     }`}
                                   >
                                     <ul className="flex flex-col py-1">
                                       {leavesNoticesItems?.map((menuItem) => (
                                         <li className="px-1" key={menuItem.id}>
                                           <button
-                                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                                            className="w-full text-left cursor-pointer px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
                                             onClick={() => handleMenuItemsLeaves(menuItem.id, leave)}
                                           >
                                             {menuItem.title}

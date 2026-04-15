@@ -114,7 +114,7 @@ const ApprovalFlow = () => {
                       <div className="flex items-center gap-2">
                         <Button
                           variant="text"
-                          className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 normal-case font-medium px-3 py-2 rounded-lg"
+                          className="flex items-center gap-2 cursor-pointer text-blue-600 hover:bg-blue-50 normal-case font-medium px-3 py-2 rounded-lg"
                           onClick={() => viewFormApproval(data)}
                         >
                           <PiEyeLight className="text-lg" />
@@ -125,7 +125,7 @@ const ApprovalFlow = () => {
                         {data.org_id === 0 || data.org_id === "0" ? null : (
                           <Button
                             variant="text"
-                            className="flex items-center gap-2 text-red-500 hover:bg-red-50 normal-case font-medium px-3 py-2 rounded-lg"
+                            className="flex items-center gap-2 cursor-pointer text-red-500 hover:bg-red-50 normal-case font-medium px-3 py-2 rounded-lg"
                             onClick={() => handleDeleteApproval(data.id)}
                           >
                             <FaTrash className="text-sm" />

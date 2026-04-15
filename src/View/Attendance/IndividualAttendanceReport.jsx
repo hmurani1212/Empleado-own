@@ -715,7 +715,7 @@ const IndividualAttendanceReport = () => {
           <div className="flex items-center gap-3 w-full md:w-auto">
              <button
                 onClick={exportAttendanceToExcel}
-                className="px-4 py-2.5 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 rounded-xl text-sm font-medium transition-colors border border-green-200 flex items-center gap-2"
+                className="px-4 py-2.5 bg-green-50 cursor-pointer text-green-600 hover:bg-green-100 hover:text-green-700 rounded-xl text-sm font-medium transition-colors border border-green-200 flex items-center gap-2"
              >
                 <span>Export Excel</span>
              </button>

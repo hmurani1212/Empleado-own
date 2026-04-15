@@ -423,7 +423,7 @@ const ListNotices = () => {
                               className="relative flex justify-center"
                             >
                               <Button
-                                className="flex items-center gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
+                                className="flex items-center gap-2 cursor-pointer capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
                                 variant="text"
                               >
                                 Action
@@ -484,7 +484,7 @@ const ListNotices = () => {
                         <li className="px-1" key={menuItem.id}>
                           <button
                             type="button"
-                            className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
+                            className="w-full text-left px-3 cursor-pointer py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors"
                             onClick={() => handleMenuItemsNotices(menuItem.id, ele)}
                           >
                             {menuItem.title}
@@ -504,10 +504,10 @@ const ListNotices = () => {
                 <Button
                   onClick={handleLoadMore}
                   disabled={isLoadingMore}
-                  className="px-6 py-2.5 text-xs font-semibold capitalize bg-white text-blue-600 border border-blue-100 hover:bg-blue-50 hover:border-blue-200 rounded-xl shadow-sm transition-all flex items-center gap-2"
+                  className="px-6 py-2.5 text-xs font-semibold cursor-pointer capitalize bg-white text-blue-600 border border-blue-100 hover:bg-blue-50 hover:border-blue-200 rounded-xl shadow-sm transition-all flex items-center gap-2"
                 >
                   {isLoadingMore && (
-                    <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+                    <div className="w-3 h-3 border-2 cursor-pointer border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
                   )}
                   {isLoadingMore ? "Loading..." : "Load More Notices"}
                 </Button>

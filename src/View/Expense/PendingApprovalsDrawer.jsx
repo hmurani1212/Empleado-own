@@ -75,7 +75,7 @@ const PendingApprovalsDrawer = ({ closeDrawer, pendingApprovals = [], pendingApp
         <div className="mb-4">
           <Button
             variant="text"
-            className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 p-2"
+            className="flex items-center gap-2 cursor-pointer text-blue-600 hover:bg-blue-50 p-2"
             onClick={handleBackToList}
           >
             <FaArrowLeft className="w-4 h-4" />
@@ -176,7 +176,7 @@ const PendingApprovalsDrawer = ({ closeDrawer, pendingApprovals = [], pendingApp
         <div className="flex justify-end gap-3">
           <Button
             size="md"
-            className="bg-green-500 text-white border-0 shadow-sm hover:bg-green-600 px-6 py-2 rounded-lg disabled:opacity-50"
+            className="bg-green-500 text-white border-0 shadow-sm cursor-pointer hover:bg-green-600 px-6 py-2 rounded-lg disabled:opacity-50"
             onClick={handleApprove}
             disabled={isProcessing}
           >
@@ -184,7 +184,7 @@ const PendingApprovalsDrawer = ({ closeDrawer, pendingApprovals = [], pendingApp
           </Button>
           <Button
             size="md"
-            className="bg-red-500 text-white border-0 shadow-sm hover:bg-red-600 px-6 py-2 rounded-lg disabled:opacity-50"
+            className="bg-red-500 text-white border-0 cursor-pointer shadow-sm hover:bg-red-600 px-6 py-2 rounded-lg disabled:opacity-50"
             onClick={handleRefuse}
             disabled={isProcessing}
           >
@@ -269,7 +269,7 @@ const PendingApprovalsDrawer = ({ closeDrawer, pendingApprovals = [], pendingApp
                 <div className="flex gap-2 ml-auto">
                   <Button
                     size="sm"
-                    className="bg-[#0ACF97] text-white font-medium px-4 py-2 rounded-[7px] disabled:opacity-50"
+                    className="bg-[#0ACF97] text-white font-medium cursor-pointer px-4 py-2 rounded-[7px] disabled:opacity-50"
                     onClick={() => handleApprove(approval)}
                     disabled={isProcessing}
                   >
@@ -277,7 +277,7 @@ const PendingApprovalsDrawer = ({ closeDrawer, pendingApprovals = [], pendingApp
                   </Button>
                   <Button
                     size="sm"
-                    className="bg-[#FDA006] text-white font-medium px-4 py-2 rounded-[7px] disabled:opacity-50"
+                    className="bg-[#FDA006] text-white font-medium cursor-pointer px-4 py-2 rounded-[7px] disabled:opacity-50"
                     onClick={() => handleRefuse(approval)}
                     disabled={isProcessing}
                   >

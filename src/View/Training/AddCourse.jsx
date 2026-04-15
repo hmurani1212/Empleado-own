@@ -380,7 +380,7 @@ function AddCourse(props) {
             <div>
               <Button
                 type='submit'
-                className={`py-[10px] capitalize ${isFormValid && !loading ? 'bg-blue-500' : 'bg-blue-200'}`}
+                className={`py-[10px] capitalize cursor-pointer ${isFormValid && !loading ? 'bg-blue-500' : 'bg-blue-200'}`}
                 disabled={!isFormValid || loading}
               >
                 Submit

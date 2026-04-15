@@ -227,7 +227,7 @@ function MedicalApp(props = {}) {
             <Button
               type="submit"
               color="blue"
-              className='px-6 py-2 rounded-lg capitalize font-medium text-sm font-poppins bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/40'
+              className='px-6 py-2 rounded-lg cursor-pointer capitalize font-medium text-sm font-poppins bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/40'
               size="lg"
             >
               Submit

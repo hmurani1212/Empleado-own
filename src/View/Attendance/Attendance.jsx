@@ -104,12 +104,12 @@ const Attendance = () => {
               <Outlet />
             ) : (
               <>
-                <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-6 shadow-sm mb-8">
+                {/* <div className="rounded-2xl border border-gray-100 bg-white p-4 md:p-6 shadow-sm mb-8">
                   <h2 className="text-lg font-semibold text-gray-800 mb-4">Your daily attendance</h2>
                   <EmpAttendance embedded />
-                </div>
+                </div> */}
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800 mb-4">Reports &amp; tools</h2>
+                  {/* <h2 className="text-lg font-semibold text-gray-800 mb-4">Reports &amp; tools</h2> */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {visibleCards.map((item, index) => (
                       <motion.div

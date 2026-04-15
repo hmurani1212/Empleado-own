@@ -60,7 +60,7 @@ const EmployeeCompetency = () => {
       <div className="flex items-center justify-between">
         <Button
           variant="text"
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
+          className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
           onClick={handleBackToCompetency}
         >
           <FaArrowLeft className="text-sm" /> Back to List

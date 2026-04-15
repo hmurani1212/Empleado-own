@@ -212,7 +212,7 @@ const PoliciesList = (props) => {
                     className="relative flex justify-center"
                   >
                     <Button
-                      className="flex items-center gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
+                      className="flex items-center gap-2 capitalize cursor-pointer font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
                       variant="text"
                     >
                       Action
@@ -271,25 +271,25 @@ const PoliciesList = (props) => {
             >
               <ul className="flex flex-col py-1">
                 <li className="px-1">
-                  <button type="button" className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(1, policy)}>
+                  <button type="button" className="w-full text-left cursor-pointer px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(1, policy)}>
                     Edit
                     <span className="text-gray-400">{hrPoliciesItems.find((item) => item.title === 'Edit')?.icon}</span>
                   </button>
                 </li>
                 <li className="px-1">
-                  <button type="button" className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(2, policy)}>
+                  <button type="button" className="w-full text-left px-3 py-2 cursor-pointer text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(2, policy)}>
                     View
                     <span className="text-gray-400">{hrPoliciesItems.find((item) => item.title === 'View')?.icon}</span>
                   </button>
                 </li>
                 <li className="px-1">
-                  <button type="button" className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(5, policy)}>
+                  <button type="button" className="w-full text-left px-3 py-2 cursor-pointer text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(5, policy)}>
                     Policy Used By
                     <span className="text-gray-400">{hrPoliciesItems.find((item) => item.title === 'Policy Used By')?.icon}</span>
                   </button>
                 </li>
                 <li className="px-1">
-                  <button type="button" className="w-full text-left px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(6, policy)}>
+                  <button type="button" className="w-full text-left cursor-pointer px-3 py-2 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(6, policy)}>
                     Copy
                     <span className="text-gray-400">{hrPoliciesItems.find((item) => item.title === 'Copy')?.icon}</span>
                   </button>
@@ -299,14 +299,14 @@ const PoliciesList = (props) => {
                   // OLD (incoming branch):
                   // {policy.status === '0' ? (
                   <li className="px-1">
-                    <button type="button" className="w-full text-left px-3 py-2 text-xs font-medium text-green-600 hover:bg-green-50 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(3, policy.id, 1)}>
+                    <button type="button" className="w-full text-left cursor-pointer px-3 py-2 text-xs font-medium text-green-600 hover:bg-green-50 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(3, policy.id, 1)}>
                       Activate
                       <span>{hrPoliciesItems.find((item) => item.title === 'Activate')?.icon}</span>
                     </button>
                   </li>
                 ) : (
                   <li className="px-1">
-                    <button type="button" className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(3, policy.id, 0)}>
+                    <button type="button" className="w-full text-left cursor-pointer px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center justify-between rounded-lg transition-colors" onClick={() => handleMenuItemsHrPolicies(3, policy.id, 0)}>
                       Deactivate
                       <span>{hrPoliciesItems.find((item) => item.title === 'Deactivate')?.icon}</span>
                     </button>
@@ -325,7 +325,7 @@ const PoliciesList = (props) => {
             <button
               title="Previous Page"
               disabled={paginationData.currentPage <= 1 || isLoadingMore}
-              className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+              className={`flex items-center justify-center w-8 h-8 rounded-lg border cursor-pointer transition-all ${
                 paginationData.currentPage > 1
                   ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
                   : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
@@ -347,7 +347,7 @@ const PoliciesList = (props) => {
                     key={page}
                     onClick={() => onGoToPage(page)}
                     disabled={isLoadingMore}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                    className={`w-8 h-8 flex items-center justify-center cursor-pointer rounded-lg text-xs font-medium transition-all ${
                       page === currentPage
                         ? 'bg-bgBlue text-white shadow-md shadow-blue-500/20'
                         : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
@@ -391,7 +391,7 @@ const PoliciesList = (props) => {
             <button
               title="Next Page"
               disabled={paginationData.currentPage >= paginationData.totalPages || isLoadingMore}
-              className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+              className={`flex items-center justify-center w-8 h-8 cursor-pointer rounded-lg border transition-all ${
                 paginationData.currentPage < paginationData.totalPages
                   ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
                   : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'

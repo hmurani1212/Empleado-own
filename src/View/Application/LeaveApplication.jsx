@@ -168,7 +168,7 @@ function LeaveApplication(props) {
           <div className='w-full'>
             <Input
               type='file'
-              className='!h-11 !rounded-6'
+              className='!h-11 !rounded-6 cursor-pointer'
               label="Supporting Documents (Optional)"
               name='supporting_docs'
               onChange={handleChangeLeaveApp}
@@ -185,7 +185,7 @@ function LeaveApplication(props) {
               color="blue"
               type="submit"
               disabled={isUploading}
-              className="px-8 py-2"
+              className="px-8 py-2 cursor-pointer"
             >
               {isUploading ? 'Submitting...' : 'Submit '}
             </Button>

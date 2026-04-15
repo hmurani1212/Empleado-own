@@ -610,7 +610,7 @@ function ApplicationsLists() {
               <Button
                 variant="outlined"
                 size="sm"
-                className="flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-50 bg-white"
+                className="flex items-center cursor-pointer gap-2 border-gray-300 text-gray-700 hover:bg-gray-50 bg-white"
                 onClick={handlePrintAll}
                 disabled={isPrintLoading}
               >
@@ -684,7 +684,7 @@ function ApplicationsLists() {
                           <Button
                             variant="text"
                             onClick={() => handleButtonClick(ele?.id, ele)}
-                            className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                            className="p-2 rounded-lg cursor-pointer text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                           >
                             <FaRegEye size={18} />
                           </Button>
@@ -776,7 +776,7 @@ function ApplicationsLists() {
             className="w-full"
         >
              <div className="mb-4">
-                <Button variant="text" onClick={handleCloseDetails} className="flex items-center gap-2 text-gray-600 hover:bg-gray-100">
+                <Button variant="text" onClick={handleCloseDetails} className="flex items-center cursor-pointer gap-2 text-gray-600 hover:bg-gray-100">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                     Back to List
                 </Button>

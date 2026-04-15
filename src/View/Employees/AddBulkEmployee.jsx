@@ -1100,7 +1100,7 @@ const AddBulkEmployee = () => {
                   <span className="ml-3 text-sm text-gray-500">{fileName}</span>
                 </div>
                 <Button
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                  className="flex items-center cursor-pointer gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
                   onClick={handleImport}
                   disabled={!selectedFile || isUploading}
                   loading={isUploading}
@@ -1116,7 +1116,7 @@ const AddBulkEmployee = () => {
               <div className="border-t pt-4 space-y-2">
                 <p className="text-[14px] font-normal text-[#474747] font-Urbanist">Excel Template For Data Insertion.</p>
                 <Button
-                  className="flex items-center gap-2 px-4 py-2 bg-green-400 text-white rounded-md hover:bg-green-700 font-Urbanist text-[12px] font-medium"
+                  className="flex items-center cursor-pointer gap-2 px-4 py-2 bg-green-400 text-white rounded-md hover:bg-green-700 font-Urbanist text-[12px] font-medium"
                   onClick={handleDownloadTemplate}
                 >
                   <FaDownload className="text-sm" />

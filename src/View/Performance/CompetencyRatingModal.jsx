@@ -157,7 +157,7 @@ const CompetencyRatingModal = ({ open, onClose, competency, onRatingUpdate }) =>
               color="gray"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4"
+              className="px-4 cursor-pointer"
             >
               Cancel
             </Button>
@@ -165,7 +165,7 @@ const CompetencyRatingModal = ({ open, onClose, competency, onRatingUpdate }) =>
               color="blue"
               onClick={handleSubmit}
               disabled={isSubmitting || rating === 0}
-              className="px-4"
+              className="px-4 cursor-pointer"
             >
               {isSubmitting ? "Submitting..." : "Submit Rating"}
             </Button>

@@ -139,7 +139,7 @@ const ManagePolicies = () => {
             <div className="bg-gray-100/50 p-1 rounded-lg border border-gray-200 flex items-center gap-1">
                 <button
                   onClick={handleListToggleHr}
-                  className={`p-2 rounded-md transition-all duration-200 ${
+                  className={`p-2 rounded-md transition-all duration-200 cursor-pointer ${
                     listViewHr 
                       ? "bg-white text-bgBlue shadow-sm" 
                       : "text-gray-400 hover:text-gray-600"
@@ -150,7 +150,7 @@ const ManagePolicies = () => {
                 </button>
                 <button
                   onClick={handleGridToggle}
-                  className={`p-2 rounded-md transition-all duration-200 ${
+                  className={`p-2 rounded-md transition-all duration-200 cursor-pointer ${
                     !listViewHr 
                       ? "bg-white text-bgBlue shadow-sm" 
                       : "text-gray-400 hover:text-gray-600"

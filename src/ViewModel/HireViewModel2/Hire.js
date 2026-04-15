@@ -267,11 +267,13 @@ const hireViewModel = (set, get) => ({
 
     // Talent Pool State
     allTalentPool: [],
+    labelData: [],
     talentPoolError: null,
     talentPoolLoading: false,
 
     // Talent Pool Actions
     setTalentPool: (data) => set({ allTalentPool: data }),
+    setLabelData: (data) => set({ labelData: data }),
     setTalentPoolError: (error) => set({ talentPoolError: error }),
     setTalentPoolLoading: (loading) => set({ talentPoolLoading: loading }),
     resetTalentPool: () => set({ allTalentPool: [], talentPoolError: null, talentPoolLoading: false })

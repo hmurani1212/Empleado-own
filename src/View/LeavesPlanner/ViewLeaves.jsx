@@ -59,7 +59,7 @@ const ViewLeaves = () => {
         <div className="flex items-center gap-4 w-full md:w-auto">
           <Button 
             variant="text" 
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
+            className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
             onClick={handleBackToLeave}
           >
             <FaArrowLeft /> Back
@@ -79,7 +79,7 @@ const ViewLeaves = () => {
         </div>
 
         <Button
-          className="bg-bgBlue text-white shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
+          className="bg-bgBlue text-white shadow-blue-500/20 cursor-pointer hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
           onClick={() => addDefineLeave(params.id)}
         >
           <FaPlus size={12} /> Define Leave Type
@@ -132,7 +132,7 @@ const ViewLeaves = () => {
                     <td className="p-4">
                       <Button
                         variant="text"
-                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
                         onClick={() => handleDeleteSpecificLeaves(ele.id)}
                       >
                         <MdDelete size={20} />

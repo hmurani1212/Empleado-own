@@ -1994,7 +1994,7 @@ const MakingPayments = () => {
             <Button
               variant="outlined"
               size="sm"
-              className="normal-case text-gray-600 border-gray-300 hover:bg-white hover:border-gray-400 px-3 py-2 text-[12px] flex items-center gap-1.5"
+              className="normal-case cursor-pointer text-gray-600 border-gray-300 hover:bg-white hover:border-gray-400 px-3 py-2 text-[12px] flex items-center gap-1.5"
               onClick={handleExportClick}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2005,7 +2005,7 @@ const MakingPayments = () => {
             <Button
               variant="outlined"
               size="sm"
-              className="normal-case text-gray-600 border-gray-300 hover:bg-white hover:border-gray-400 px-3 py-2 text-[12px] flex items-center gap-1.5"
+              className="normal-case cursor-pointer text-gray-600 border-gray-300 hover:bg-white hover:border-gray-400 px-3 py-2 text-[12px] flex items-center gap-1.5"
               onClick={handlePrintAllClick}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2019,7 +2019,7 @@ const MakingPayments = () => {
             {/* Primary Actions */}
             <Button
               size="sm"
-              className="normal-case bg-[#FF4979] hover:bg-[#e63e6b] text-white px-3 py-2 text-[12px] flex items-center gap-1.5 shadow-sm hover:shadow transition-all"
+              className="normal-case cursor-pointer bg-[#FF4979] hover:bg-[#e63e6b] text-white px-3 py-2 text-[12px] flex items-center gap-1.5 shadow-sm hover:shadow transition-all"
               onClick={handleDeleteMarked}
               disabled={loading || selectedEmployees.length === 0}
               loading={loading}
@@ -2029,7 +2029,7 @@ const MakingPayments = () => {
             </Button>
             <Button
               size="sm"
-              className="normal-case bg-[#0ACF97] hover:bg-[#09b989] text-white px-3 py-2 text-[12px] flex items-center gap-1.5 shadow-sm hover:shadow transition-all"
+              className="normal-case cursor-pointer bg-[#0ACF97] hover:bg-[#09b989] text-white px-3 py-2 text-[12px] flex items-center gap-1.5 shadow-sm hover:shadow transition-all"
               onClick={handleMarkPaid}
               disabled={isMarkingPaid || selectedEmployees.length === 0}
               loading={isMarkingPaid}
@@ -2271,7 +2271,7 @@ const MakingPayments = () => {
                       <td>
                         <div className="relative dropdown-container">
                           <Button
-                            className="bg-[#EFF8FF] border border-[#3DA5F4] capitalize px-3 py-2 font-normal text-[clamp(10px,0.8vw,13px)] flex items-center gap-1 text-[#3DA5F4] rounded-[7px]"
+                            className="bg-[#EFF8FF] cursor-pointer border border-[#3DA5F4] capitalize px-3 py-2 font-normal text-[clamp(10px,0.8vw,13px)] flex items-center gap-1 text-[#3DA5F4] rounded-[7px]"
                             size="sm"
                             onClick={(e) => {
                               // e.stopPropagation()
@@ -2288,7 +2288,7 @@ const MakingPayments = () => {
                               <div className="py-1">
                                 {/* View Button - Always visible */}
                                 <button
-                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                  className="w-full px-4 py-2 cursor-pointer text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                   onClick={(e) => {
                                     // e.stopPropagation()
                                     handleViewPayslip(employee);
@@ -2300,7 +2300,7 @@ const MakingPayments = () => {
 
                                 {/* Delete Button - Always visible */}
                                 <button
-                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                  className="w-full px-4 py-2 cursor-pointer text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                   onClick={(e) => {
                                     // e.stopPropagation()
                                     handleDeleteSinglePayslip(employee);
@@ -2313,7 +2313,7 @@ const MakingPayments = () => {
                                 {/* Mark Paid Button - Only for Due status */}
                                 {employee.status?.toLowerCase() === "due" && (
                                   <button
-                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                    className="w-full px-4 py-2 cursor-pointer text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                     onClick={(e) => {
                                       // e.stopPropagation()
                                       handleMarkSinglePaid(employee);
@@ -2355,7 +2355,7 @@ const MakingPayments = () => {
                         {paginationData.currentPage > 1 ? (
                           <button
                             title="Previous Page"
-                            className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={goToPreviousPage}
                             disabled={isLoadingMore}
                           >
@@ -2376,7 +2376,7 @@ const MakingPayments = () => {
                                 key={pageNum}
                                 onClick={() => goToPage(pageNum)}
                                 disabled={isLoadingMore}
-                                className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                                   pageNum === paginationData.currentPage
                                     ? "bg-[#1a73e8] text-white font-medium"
                                     : "text-[#1a73e8] hover:bg-gray-100"
@@ -2425,7 +2425,7 @@ const MakingPayments = () => {
                                     key={page}
                                     onClick={() => goToPage(page)}
                                     disabled={isLoadingMore}
-                                    className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                                       page === currentPage
                                         ? "bg-[#1a73e8] text-white font-medium"
                                         : "text-[#1a73e8] hover:bg-gray-100"
@@ -2442,7 +2442,7 @@ const MakingPayments = () => {
                         {paginationData.currentPage < paginationData.totalPages ? (
                           <button
                             title="Next Page"
-                            className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={goToNextPage}
                             disabled={isLoadingMore}
                           >
@@ -2547,14 +2547,14 @@ const MakingPayments = () => {
 
             <div className="px-5 py-4 border-t border-[#EEF2F6] flex justify-end gap-2">
               <Button
-                className="bg-[#FF4979] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#e63f6f] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-[#FF4979] cursor-pointer text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#e63f6f] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={() => setMarkPaidDialog(false)}
                 disabled={isMarkingPaid}
               >
                 Cancel
               </Button>
               <Button
-                className="bg-[#0ACF97] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#08b784] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-[#0ACF97] text-white cursor-pointer font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#08b784] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={confirmMarkPaid}
                 disabled={isMarkingPaid || !paymentMethod}
                 loading={isMarkingPaid}
@@ -2640,14 +2640,14 @@ const MakingPayments = () => {
 
             <div className="px-5 py-4 border-t border-[#EEF2F6] flex justify-end gap-2">
               <Button
-                className="bg-[#FF4979] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#e63f6f] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-[#FF4979] cursor-pointer text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#e63f6f] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={() => setSingleMarkPaidDialog(false)}
                 disabled={isMarkingPaid}
               >
                 Cancel
               </Button>
               <Button
-                className="bg-[#0ACF97] text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#08b784] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="bg-[#0ACF97] cursor-pointer text-white font-medium font-Urbanist text-[14px] rounded-[7px] px-4 py-2 cursor-pointer hover:bg-[#08b784] transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={confirmSingleMarkPaid}
                 disabled={isMarkingPaid || !paymentMethod}
                 loading={isMarkingPaid}

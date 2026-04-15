@@ -154,7 +154,7 @@ const History = ({
         <div className="flex items-center mb-4">
           <Button
             variant="text"
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors p-2 cursor-pointer"
+            className="flex items-center gap-2 cursor-pointer text-blue-600 hover:text-blue-800 font-medium transition-colors p-2 cursor-pointer"
             onClick={handleBackToMain}
           >
             <FaArrowLeft className="text-sm" />
@@ -626,7 +626,7 @@ const History = ({
                     <button
                       key={page}
                       onClick={() => goToHistoryPage(page)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                      className={`w-8 h-8 flex items-center cursor-pointer justify-center rounded-lg text-xs font-medium transition-all ${
                         page === currentPage
                           ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
                           : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
@@ -669,7 +669,7 @@ const History = ({
               <button
                 title="Next Page"
                 disabled={historyPaginationData.currentPage >= historyPaginationData.totalPages}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                className={`flex items-center justify-center cursor-pointer w-8 h-8 rounded-lg border transition-all ${
                   historyPaginationData.currentPage < historyPaginationData.totalPages
                     ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
                     : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'

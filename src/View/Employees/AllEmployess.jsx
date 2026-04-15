@@ -294,7 +294,7 @@ const AllEmployess = () => {
                     <div className='flex items-center gap-3 w-full xl:w-auto justify-end mt-4 xl:mt-0'>
                         {!isReadOnlyTable && (
                          <Button 
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg shadow-none normal-case font-medium text-sm transition-all ${
+                            className={`flex items-center cursor-pointer gap-2 px-5 py-2.5 rounded-lg shadow-none normal-case font-medium text-sm transition-all ${
                                 allEmployees?.STATUS === "ERROR" || !allEmployees?.employees?.length || isExporting
                                     ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
                                     : "bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 hover:shadow-sm"
@@ -308,13 +308,13 @@ const AllEmployess = () => {
                         )}
                         <div className='flex bg-gray-100 p-1 rounded-lg border border-gray-200'>
                             <button 
-                                className={`p-2 rounded-md transition-all ${listView ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`p-2 rounded-md cursor-pointer transition-all ${listView ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                                 onClick={handleListToggle}
                             >
                                 <FaListUl />
                             </button>
                             <button 
-                                className={`p-2 rounded-md transition-all ${!listView ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`p-2 rounded-md cursor-pointer transition-all ${!listView ? 'bg-white text-brand-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                                 onClick={handleGridToggle}
                             >
                                 <IoGrid />
@@ -333,7 +333,7 @@ const AllEmployess = () => {
                                 whileHover={{ scale: 1.15 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => handleAlphabetFilter(ele, i)}
-                                className={`relative w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-full transition-all duration-300 z-10 ${
+                                className={`relative cursor-pointer w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-full transition-all duration-300 z-10 ${
                                     alphaIndex === i 
                                         ? "text-white shadow-md shadow-brand-500/30" 
                                         : "text-gray-500 hover:text-brand-600 hover:bg-brand-50"

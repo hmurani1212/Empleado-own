@@ -3520,7 +3520,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <Button
                         variant="text"
                         size="sm"
-                        className="p-1.5 sm:p-2 text-green-500 rounded-full"
+                        className="p-1.5 sm:p-2 text-green-500 rounded-full cursor-pointer"
                         onClick={() => setOpenBasicInfoDrawer(true)}
                     >
                         <FaRegPenToSquare size={18} />
@@ -4013,7 +4013,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     <Button
                                         variant="text"
                                         size="lg"
-                                        className="p-1 text-green-500 rounded-full"
+                                        className="p-1 text-green-500 rounded-full cursor-pointer"
                                         onClick={() => {
                                             setEditingContact(null);
                                             setEmergencyContactForm({
@@ -4108,14 +4108,14 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                                             <div className="flex items-center gap-2">
                                                                 <button
                                                                     onClick={() => handleEditContact(contact)}
-                                                                    className="text-green-500 hover:text-green-600 transition-colors"
+                                                                    className="text-green-500 cursor-pointer hover:text-green-600 transition-colors"
                                                                     title="Edit"
                                                                 >
                                                                     <FaRegPenToSquare size={16} />
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleDeleteContact(contact.id)}
-                                                                    className="text-red-500 hover:text-red-600 transition-colors"
+                                                                    className="text-red-500 cursor-pointer hover:text-red-600 transition-colors"
                                                                     title="Delete"
                                                                 >
                                                                     <FaTimes size={16} />
@@ -4158,7 +4158,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                     <Button
                         variant="text"
                         size="sm"
-                        className="p-1.5 sm:p-2 text-green-500 rounded-full"
+                        className="p-1.5 sm:p-2 text-green-500 rounded-full cursor-pointer"
                         disabled={attendanceProfileLoading}
                         onClick={async () => {
                             if (!employeeId || !gettingEmpProfileAttendance) return;
@@ -7874,7 +7874,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 <Button
                                     color="blue"
                                     size="sm"
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-md font-medium normal-case text-xs sm:text-sm w-full sm:w-auto"
+                                    className="bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-md font-medium normal-case text-xs sm:text-sm w-full sm:w-auto"
                                     onClick={async () => {
                                         if (!employeeId) {
                                             showToast("Employee ID is missing", "error");
@@ -7913,7 +7913,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 <Button
                                     variant="outlined"
                                     size="sm"
-                                    className="border-blue-500 text-brand-500 hover:bg-brand-50 px-3 sm:px-4 py-2 rounded-md font-medium normal-case text-xs sm:text-sm w-full sm:w-auto"
+                                    className="border-blue-500 cursor-pointer text-brand-500 hover:bg-brand-50 px-3 sm:px-4 py-2 rounded-md font-medium normal-case text-xs sm:text-sm w-full sm:w-auto"
                                     onClick={handleBack}
                                 >
                                     Back
@@ -8491,6 +8491,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 color="blue"
                                 onClick={handleBasicInfoSubmit}
                                 disabled={isUpdating}
+                                className="cursor-pointer"
                             >
                                 {isUpdating ? "Updating..." : "Update"}
                             </Button>
@@ -8600,7 +8601,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     color="blue"
                                     onClick={handleAddAsset}
                                     disabled={isUpdating}
-                                    className="capitalize"
+                                    className="cursor-pointer"
                                 >
                                     {isUpdating ? "Adding..." : "Add Asset"}
                                 </Button>
@@ -9208,7 +9209,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                 color="blue"
                                 onClick={handleEmergencyContactSubmit}
                                 disabled={isUpdating}
-                                className="px-6 py-2"
+                                className="px-6 py-2 cursor-pointer"
                             >
                                 {isUpdating
                                     ? editingContact
@@ -9752,28 +9753,30 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                                     customStyles={{
                                         control: (base) => ({
                                             ...base,
-                                            fontSize: "0.175rem",
+                                            fontSize: "14px",
+                                            borderRadius: '7px',
+                                            focusBorderColor: '2px solid black',
                                         }),
                                         singleValue: (base) => ({
                                             ...base,
-                                            fontSize: "0.175rem",
+                                            fontSize: "14px",
                                         }),
                                         placeholder: (base) => ({
                                             ...base,
-                                            fontSize: "0.175rem",
+                                            fontSize: "14px",
                                         }),
                                         option: (base) => ({
                                             ...base,
-                                            fontSize: "0.14rem",
-                                            padding: "1px 3px",
+                                            fontSize: "14px",
+                                            padding: "4px 10px",
                                         }),
                                         menu: (base) => ({
                                             ...base,
-                                            fontSize: "0.14rem",
+                                            fontSize: "14px",
                                         }),
                                         menuList: (base) => ({
                                             ...base,
-                                            fontSize: "0.14rem",
+                                            fontSize: "14px",
                                         }),
                                     }}
                                 />

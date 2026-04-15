@@ -35,7 +35,7 @@ const AttendanceAdjustmentDetail = () => {
             <button
               key={item.id}
               onClick={() => handleClick(item.id)}
-              className={`relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left w-full group ${
+              className={`relative flex items-center cursor-pointer gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left w-full group ${
                 activePage === item.id
                   ? 'bg-white shadow-sm text-customBlue border border-blue-50'
                   : 'hover:bg-white/50 text-gray-600 hover:text-gray-900 border border-transparent'

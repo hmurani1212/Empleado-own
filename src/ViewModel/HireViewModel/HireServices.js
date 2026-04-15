@@ -168,7 +168,7 @@ const useHire = () => {
   const filterByStatusMenu = [
     { id: 1, title: 'All Vacancies', statusFilter: 2 },
     { id: 2, title: 'Active Vacancies', statusFilter: 1 },
-    { id: 3, title: 'Deactivate Vacancies', statusFilter: 0 },
+    { id: 3, title: 'Inactive Vacancies', statusFilter: 0 },
   ]
 
   const genderOptions = [

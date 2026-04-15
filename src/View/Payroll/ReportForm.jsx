@@ -833,7 +833,7 @@ const ReportForm = ({ reportType, onClose }) => {
                   !formData.branch_id ||
                   !formData.department_id
                 }
-                className="bg-bgBlue hover:bg-blue-700 text-white font-medium px-6 h-fit rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed normal-case flex items-center justify-center min-w-[120px]"
+                className="bg-bgBlue hover:bg-blue-700 cursor-pointer text-white font-medium px-6 h-fit rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed normal-case flex items-center justify-center min-w-[120px]"
               >
                 SUBMIT
               </Button>
@@ -850,7 +850,7 @@ const ReportForm = ({ reportType, onClose }) => {
               </h3>
               <button
                 onClick={handleClosePayslipSection}
-                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 bg-gray-300 rounded-md transition-colors"
+                className="px-4 py-2 cursor-pointer text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 bg-gray-300 rounded-md transition-colors"
               >
                 Close
               </button>
@@ -904,7 +904,7 @@ const ReportForm = ({ reportType, onClose }) => {
                   <Button
                     onClick={handlePrint}
                     disabled={!hasRecords}
-                    className="bg-bgBlue hover:bg-blue-700 text-white font-medium px-4 py-2 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-bgBlue hover:bg-blue-700 cursor-pointer text-white font-medium px-4 py-2 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Print
                   </Button>
@@ -915,7 +915,7 @@ const ReportForm = ({ reportType, onClose }) => {
                   <Button
                     onClick={handleExport}
                     disabled={!hasRecords}
-                    className="bg-green-600 hover:bg-green-700 font-medium text-white px-4 py-2 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-green-600 hover:bg-green-700 cursor-pointer font-medium text-white px-4 py-2 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Export
                   </Button>

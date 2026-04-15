@@ -53,7 +53,7 @@ function LeaveEncash({ handleLeaveEncashment, handleChangeLeaveEncash, leaveEnca
         <div className='flex justify-end pt-4'>
           <button
             type="submit"
-            className="bg-bgBlue text-white px-6 py-2.5 rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 font-medium text-sm font-poppins"
+            className="bg-bgBlue text-white cursor-pointer px-6 py-2.5 rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 font-medium text-sm font-poppins"
           >
             Submit
           </button>

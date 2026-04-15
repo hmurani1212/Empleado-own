@@ -756,9 +756,6 @@ const IncrementReportForm = () => {
                   : '_All_Employees'
                 const filename = `Increment_Report_${timestamp}${employeeInfo}`
 
-                console.log('📤 Export clicked - Current reportData:', reportData)
-                console.log('📤 Export clicked - Selected employee:', formData.selectedEmployee)
-
                 // If no data and individual employee is selected, try to fetch data first
                 if ((!reportData || reportData.length === 0) && formData.selectedEmployee) {
                   console.log('🔄 No data found, attempting to fetch for selected employee...')
@@ -795,7 +792,7 @@ const IncrementReportForm = () => {
                 showToast('Error exporting file', 'error')
               }
             }}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            className="px-6 py-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
           >
             Export
           </Button>
@@ -804,17 +801,17 @@ const IncrementReportForm = () => {
 
 
         {/* Close button when no selections made or no data */}
-        {(!formData.branch_id || !formData.department_id || !formData.fromDate || !formData.toDate || (!reportData || reportData.length === 0)) && (
+        {/* {(!formData.branch_id || !formData.department_id || !formData.fromDate || !formData.toDate || (!reportData || reportData.length === 0)) && (
           <div className="flex justify-end pt-4 border-t border-gray-200">
           <Button
             type="button"
             onClick={closeDrawer}
-            className="px-6 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            className="px-6 py-2 text-gray-600 bg-gray-100 cursor-pointer hover:bg-gray-200 rounded-md transition-colors"
           >
             Close
           </Button>
           </div>
-        )}
+        )} */}
         </div>
     </div>
   )

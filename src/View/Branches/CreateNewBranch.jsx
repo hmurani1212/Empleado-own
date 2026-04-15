@@ -188,13 +188,13 @@ function CreateNewBranch(props) {
               variant="text"
               color="gray"
               onClick={closeBranchDrawer}
-              className="font-poppins normal-case"
+              className="font-poppins normal-case cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type='submit'
-              className={`font-poppins normal-case px-6 ${isFormValid ? 'bg-bgBlue shadow-blue-500/20' : 'bg-blue-200 shadow-none'}`}
+              className={`font-poppins normal-case px-6 cursor-pointer ${isFormValid ? 'bg-bgBlue shadow-blue-500/20' : 'bg-blue-200 shadow-none'}`}
               disabled={!isFormValid || isLoading}
             >
               {isLoading ? 'Creating...' : 'Create Branch'}

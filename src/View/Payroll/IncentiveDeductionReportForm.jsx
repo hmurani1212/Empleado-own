@@ -758,19 +758,17 @@ const IncentiveDeductionReportForm = () => {
 
         {/* Export Button - Always show */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-          <Button
+          {/* <Button
             type="button"
             onClick={closeDrawer}
             className="px-6 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
           >
             Close
-          </Button>
+          </Button> */}
           <Button
             type="button"
             onClick={async () => {
               try {
-                console.log('📤 Export clicked - Current reportData:', reportData)
-                console.log('📤 Export clicked - Selected employee:', formData.selectedEmployee)
 
                 // If no data and individual employee is selected, try to fetch data first
                 if ((!reportData || reportData.length === 0) && formData.selectedEmployee) {
@@ -803,7 +801,7 @@ const IncentiveDeductionReportForm = () => {
                 showToast('Error preparing export', 'error')
               }
             }}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            className="px-6 py-2 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
           >
             Export
           </Button>
@@ -838,7 +836,7 @@ const IncentiveDeductionReportForm = () => {
                     showToast('Error exporting Excel file', 'error')
                   }
                 }}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+                className="px-4 py-2 cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
               >
                 Export as Excel
               </Button>
@@ -866,14 +864,14 @@ const IncentiveDeductionReportForm = () => {
                     showToast('Error exporting PDF file', 'error')
                   }
                 }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                className="px-4 py-2 cursor-pointer bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
               >
                 Export as PDF
               </Button>
               <Button
                 type="button"
                 onClick={() => setShowExportOptions(false)}
-                className="px-4 py-2 text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+                className="px-4 py-2 text-gray-600 cursor-pointer bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
               >
                 Cancel
               </Button>

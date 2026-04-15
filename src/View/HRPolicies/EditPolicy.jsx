@@ -201,7 +201,7 @@ const EditPolicy = (props) => {
         <div className="pt-6 mt-6 border-t border-gray-100">
             {policiesValues.loading ? (
               <Button 
-                className="w-full bg-bgBlue/80 font-poppins capitalize text-sm flex items-center justify-center gap-2" 
+                className="w-full bg-bgBlue/80 font-poppins cursor-pointer capitalize text-sm flex items-center justify-center gap-2" 
                 disabled
               >
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -210,7 +210,7 @@ const EditPolicy = (props) => {
             ) : (
                <SubmitButton 
                  title="Update Policy" 
-                 className="w-full bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/30 font-poppins capitalize text-sm"
+                 className="w-full bg-bgBlue cursor-pointer shadow-blue-500/20 hover:shadow-blue-500/30 font-poppins capitalize text-sm"
                />
             )}
         </div>

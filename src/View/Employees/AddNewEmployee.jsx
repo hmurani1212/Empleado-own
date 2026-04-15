@@ -1244,7 +1244,7 @@ const AddNewEmployee = () => {
                   </div>
                   <div className="pt-6">
                     <button
-                      className="text-2xl bg-bgBlue text-white rounded-md w-10 h-10 flex items-center justify-center hover:bg-blue-500 transition-colors"
+                      className="text-2xl cursor-pointer bg-bgBlue text-white rounded-md w-10 h-10 flex items-center justify-center hover:bg-blue-500 transition-colors"
                       onClick={handleOpenSalaryTemplateDrawer}
                       type="button"
                     >
@@ -1299,7 +1299,7 @@ const AddNewEmployee = () => {
             {activeStep > 0 && (
               <Button 
                 onClick={handlePrev} 
-                className="capitalize"
+                className="capitalize cursor-pointer"
                 disabled={loading || isAddingEmployee}
               >
                 Prev

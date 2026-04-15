@@ -176,6 +176,7 @@ const Interviewed = () => {
                           </td>
 
                           <td className={classes}>
+                            <div className="flex items-center justify-center">
                             <Typography
                               // variant="small"
                               // color="blue-gray"
@@ -188,6 +189,7 @@ const Interviewed = () => {
                                 <FaEye className="text-[#3DA5F4] text-[20px]" />
                               </a>
                             </Typography>
+                            </div>
                           </td>
 
                           <td className={classes}>
@@ -226,6 +228,7 @@ const Interviewed = () => {
                           {/* Tooba */}
                           {/* In Action Drop down Accept is not implemented */}
                           <td className={classes}>
+                            <div className="flex items-center justify-center">
                             <Typography
                               // variant="small"
                               // color="blue-gray"
@@ -285,6 +288,7 @@ const Interviewed = () => {
                                 </div>
                               </td>
                             </Typography>
+                            </div>
                           </td>
                         </tr>
                       );

@@ -314,7 +314,7 @@ const Departments = () => {
                                 </span>
                                 <button
                                   type="button"
-                                  className="text-xs text-blue-500 hover:text-blue-700 font-medium font-poppins transition-colors underline decoration-blue-200 hover:decoration-blue-500 underline-offset-2"
+                                  className="text-xs cursor-pointer text-blue-500 hover:text-blue-700 font-medium font-poppins transition-colors underline decoration-blue-200 hover:decoration-blue-500 underline-offset-2"
                                   onClick={() => handleSubDept(t_data, params.id)}
                                 >
                                   Manage
@@ -328,7 +328,7 @@ const Departments = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleDesignation(t_data.designation, t_data.id)}
-                                  className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-600 transition-all shadow-sm border border-blue-100"
+                                  className="w-8 h-8 flex cursor-pointer items-center justify-center rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-600 transition-all shadow-sm border border-blue-100"
                                   title="View Designations"
                                 >
                                   <FaEye size={14} />
@@ -345,7 +345,7 @@ const Departments = () => {
                                   className="relative flex justify-center"
                                 >
                                   <Button
-                                    className="flex items-center gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
+                                    className="flex items-center cursor-pointer gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
                                   >
                                     Action
                                     <FaChevronDown

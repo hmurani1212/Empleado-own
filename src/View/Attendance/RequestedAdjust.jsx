@@ -155,7 +155,7 @@ const RequestedAdjust = ({ onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
+            className="w-6 h-6 flex justify-center cursor-pointer items-center rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
             title="Close"
             aria-label="Close"
           >
@@ -270,7 +270,7 @@ const RequestedAdjust = ({ onClose }) => {
                         <button
                           type="button"
                           onClick={() => openEdit(row)}
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 text-[#3DA5F4] hover:bg-blue-50 transition-colors text-sm font-medium"
+                          className="inline-flex items-center cursor-pointer justify-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 text-[#3DA5F4] hover:bg-blue-50 transition-colors text-sm font-medium"
                           title="Edit"
                           aria-label="Edit adjustment"
                         >

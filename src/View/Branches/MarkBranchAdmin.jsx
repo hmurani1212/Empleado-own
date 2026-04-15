@@ -110,7 +110,7 @@ const MarkBranchAdmin = (props) => {
                                 <Button 
                                     variant="text" 
                                     size="sm" 
-                                    className="p-1 min-w-0 hover:bg-blue-50 text-blue-500 font-medium normal-case flex items-center gap-1 ml-auto"
+                                    className="p-1 min-w-0 hover:bg-blue-50 cursor-pointer text-blue-500 font-medium normal-case flex items-center gap-1 ml-auto"
                                     onClick={showDeleteOption}
                                 >
                                     {deleteOption ? 'Done' : 'Edit'}
@@ -195,12 +195,12 @@ const MarkBranchAdmin = (props) => {
                 variant="text"
                 color="gray"
                 onClick={closeDrawer}
-                className="mr-2 font-poppins normal-case"
+                className="mr-2 font-poppins normal-case cursor-pointer"
             >
                 Cancel
             </Button>
             <Button
-                className="capitalize font-medium bg-bgBlue shadow-blue-500/20 px-6 py-2 rounded-lg font-poppins"
+                className="capitalize font-medium bg-bgBlue cursor-pointer shadow-blue-500/20 px-6 py-2 rounded-lg font-poppins"
                 disabled={empIdBranchAdmin?.loading}
                 onClick={async () => {
                     if (empIdBranchAdmin?.emp_Id) {

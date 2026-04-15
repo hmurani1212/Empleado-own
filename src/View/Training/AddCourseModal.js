@@ -681,7 +681,7 @@ const AddCourseModal = ({ isOpen, onClose }) => {
                 <Button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="px-6 py-2 bg-[#3DA5F4] text-white rounded-lg hover:bg-[#2B8FD4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 bg-[#3DA5F4] cursor-pointer text-white rounded-lg hover:bg-[#2B8FD4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Submitting...' : 'Submit Course'}
                 </Button>

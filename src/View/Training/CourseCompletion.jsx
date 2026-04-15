@@ -208,7 +208,7 @@ const CourseCompletion = () => {
           </div>
           <Button
             variant="outlined"
-            className='flex items-center gap-2 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300 normal-case'
+            className='flex items-center gap-2 border-gray-200 cursor-pointer text-gray-600 hover:bg-white hover:border-gray-300 normal-case'
             onClick={() => navigate('/trainingDash')}
           >
             Back to Training

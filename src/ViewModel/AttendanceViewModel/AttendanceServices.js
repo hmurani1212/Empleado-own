@@ -72,7 +72,7 @@ const useAttendance = () => {
     const lateComersReport = () => {
         openDrawer()
         settingDrawerSize('45vw')
-        settingDrawerTitle('Late Comers Report')
+        settingDrawerTitle('')
         settingComponent(<ReportsLateComers />)
     }
 

@@ -58,7 +58,7 @@ const PersonalInfo = (props) => {
         </div>
 
         <div className='mt-3'>
-          <span>{viewPending && viewPending.candidate && viewPending.candidate.gender === 1 ? 'Male' : viewPending.candidate.gender === 2 ? 'Female' : 'Other'}</span>
+          <span>{viewPending && viewPending.candidate && viewPending.candidate.gender === 1 ? 'Male' : viewPending.candidate.gender === 0 ? 'Female' : 'Other'}</span>
         </div>
 
         <div className='mt-3'>

@@ -272,7 +272,7 @@ const PRC = () => {
                           className="relative flex justify-center"
                         >
                           <Button
-                            className="flex items-center gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
+                            className="flex items-center cursor-pointer gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
                           >
                             Action
                             <FaChevronDown
@@ -312,7 +312,7 @@ const PRC = () => {
               <button
                 title="Previous Page"
                 disabled={PRCPaginationData.currentPage <= 1}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                className={`flex items-center justify-center cursor-pointer w-8 h-8 rounded-lg border transition-all ${
                   PRCPaginationData.currentPage > 1
                     ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
                     : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
@@ -332,7 +332,7 @@ const PRC = () => {
                     <button
                       key={page}
                       onClick={() => goToPRCPage(page)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                      className={`w-8 h-8 flex items-center cursor-pointer justify-center rounded-lg text-xs font-medium transition-all ${
                         page === currentPage
                           ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
                           : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
@@ -375,7 +375,7 @@ const PRC = () => {
               <button
                 title="Next Page"
                 disabled={PRCPaginationData.currentPage >= PRCPaginationData.totalPages}
-                className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                className={`flex items-center cursor-pointer justify-center w-8 h-8 rounded-lg border transition-all ${
                   PRCPaginationData.currentPage < PRCPaginationData.totalPages
                     ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
                     : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'

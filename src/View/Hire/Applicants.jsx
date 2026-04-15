@@ -82,7 +82,7 @@ const Applicants = (data) => {
       ) : (
         <div className="px-2 flex flex-col gap-3 bg-white rounded-[10px] drop-shadow-md p-2">
           <div className="min-h-[calc(100vh-100px)] overflow-auto customScroll">
-            <table className="w-full text-center">
+            <table className="w-full text-left">
               <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
                 <tr>
                   {applicantsData?.map((head, i) => (
@@ -115,15 +115,15 @@ const Applicants = (data) => {
                           <Typography
                             // variant="small"
                             // color="blue-gray"
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize relative"
+                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] capitalize relative"
                           >
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex items-center justify-left gap-2">
                               <img
                                 className="rounded-full w-[35px] h-[35px] object-cover"
                                 src={hire?.candidate?.photo}
                               />
                               <span
-                                className="text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
+                                className="text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] capitalize"
                                 onClick={() => handleNavigateView(hire)}
                               >
                                 {hire?.candidate?.name}

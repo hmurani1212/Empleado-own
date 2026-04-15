@@ -36,11 +36,11 @@ const Calendar = (props) => {
           <motion.button
             whileHover={{ scale: 1.2 }}
             onClick={()=>handlePreviousMonth(currentDate, searchingEmpValue.year.label)}
-            className="w-8 h-8 flex items-center justify-center border border-customGray-300 rounded-full hover:bg-bgBlue hover:text-customGray-300"
+            className="w-8 h-8 flex items-center cursor-pointer justify-center border border-customGray-300 rounded-full hover:bg-bgBlue hover:text-customGray-300"
           >
             <FaChevronLeft />
           </motion.button>
-          <div className="text-xl text-customGray-400 font-bold flex flex-col items-center">
+          <div className="text-xl text-customGray-400  font-bold flex flex-col items-center">
             <span className="font-medium text-[#292929] text-[20px] font-Urbanist">
               {/* {currentDate.toLocaleString("default", { month: "long" })} */}
               {searchingEmpValue?.month.label}
@@ -50,7 +50,7 @@ const Calendar = (props) => {
           <motion.button
             whileHover={{ scale: 1.2 }}
             onClick={handleNextMonth}
-            className="w-8 h-8 flex items-center justify-center border border-customGray-300 rounded-full hover:bg-bgBlue hover:text-customGray-300"
+            className="w-8 h-8 flex items-center cursor-pointer justify-center border border-customGray-300 rounded-full hover:bg-bgBlue hover:text-customGray-300"
           >
             <FaChevronRight />
           </motion.button>
