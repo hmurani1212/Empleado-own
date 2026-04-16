@@ -37,7 +37,7 @@ const ActivateVacancyForm = (props) => {
             </div>
 
             <div className='py-2'>
-              <Button type='submit' color='blue'>Submit</Button>
+              <Button type='submit' color='blue' className="cursor-pointer">Submit</Button>
 
             </div>
         </div>

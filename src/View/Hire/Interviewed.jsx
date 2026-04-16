@@ -8,7 +8,7 @@ import {
 import React, { useEffect } from "react";
 import useHire from "../../ViewModel/HireViewModel/HireServices";
 import { FaEye } from "react-icons/fa";
-import { Outlet, useLocation } from "react-router";
+import { Outlet, useLocation, useParams } from "react-router";
 import { motion } from "framer-motion";
 import RejectAppForm from "./RejectAppForm";
 import AcceptForm from "./AcceptForm";
@@ -81,9 +81,14 @@ const Interviewed = () => {
     handleCloseAcceptanceConfirmation,
   } = useHire();
 
-  const { get_applicants_data } = useHire_2();
+  const { get_applicants_data, applicantsPaginationData, applicantActiveFilters, get_allApplicants } = useHire_2();
   const allApplicantsLoading = useStore((state) => state.allApplicantsLoading);
   const location = useLocation();
+  const { vacancyId } = useParams();
+
+  const goToApplicantPage = (page) => {
+    get_allApplicants(vacancyId, { ...applicantActiveFilters, page }, "2", "Interviewed");
+  };
   // console.log("get_applicants_data", get_applicants_data);
   return (
     <>
@@ -93,9 +98,10 @@ const Interviewed = () => {
             <Outlet />
           </div>
         ) : (
-          <div className="bg-white rounded-[10px] drop-shadow-md p-2">
+          <>
+          <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
             <div className="min-h-[calc(100vh-100px)] overflow-auto customScroll">
-              <table className="w-full text-center">
+              <table className="w-full text-left">
                 <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
                   <tr>
                     {shortlistData?.map((head, i) => (
@@ -122,15 +128,15 @@ const Interviewed = () => {
                         ? "p-4"
                         : "p-4 border-b border-[#F2F2F9]";
 
-                      return (
-                        <tr key={index}>
+                        return (
+                        <tr key={index} className="hover:bg-brand-50/30 transition-colors">
                           <td className={classes}>
                             <Typography
                               // variant="small"
                               // color="blue-gray"
                               className="font-normal cursor-pointer text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                             >
-                              <div className="flex items-center justify-center gap-2">
+                              <div className="flex items-center justify-left gap-2">
                                 <img
                                   className="rounded-full w-[35px] h-[35px] object-cover"
                                   src={hire?.candidate?.photo}
@@ -176,6 +182,7 @@ const Interviewed = () => {
                           </td>
 
                           <td className={classes}>
+                            <div className="flex items-center justify-left">
                             <Typography
                               // variant="small"
                               // color="blue-gray"
@@ -188,6 +195,7 @@ const Interviewed = () => {
                                 <FaEye className="text-[#3DA5F4] text-[20px]" />
                               </a>
                             </Typography>
+                            </div>
                           </td>
 
                           <td className={classes}>
@@ -226,6 +234,7 @@ const Interviewed = () => {
                           {/* Tooba */}
                           {/* In Action Drop down Accept is not implemented */}
                           <td className={classes}>
+                            <div className="flex items-center justify-left">
                             <Typography
                               // variant="small"
                               // color="blue-gray"
@@ -239,10 +248,10 @@ const Interviewed = () => {
                                   onMouseLeave={() =>
                                     toggleMenuShare(index, false)
                                   }
-                                  className="relative flex items-center justify-center"
+                                  className="relative flex items-center justify-left"
                                 >
                                   <Button
-                                    className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px]"
+                                    className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px] cursor-pointer"
                                     variant="outlined"
                                   >
                                     Action
@@ -285,6 +294,7 @@ const Interviewed = () => {
                                 </div>
                               </td>
                             </Typography>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -368,6 +378,52 @@ const Interviewed = () => {
               </table>
             </div>
           </div>
+
+          {/* Pagination */}
+          {!allApplicantsLoading && get_applicants_data?.length > 0 && applicantsPaginationData?.totalRecords > 10 && (
+            <div className="w-full flex justify-center items-center gap-1 mt-4 mb-2">
+              {applicantsPaginationData.currentPage > 1 ? (
+                <button className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1" onClick={() => goToApplicantPage(applicantsPaginationData.currentPage - 1)}>
+                  <span>‹</span><span>Previous</span>
+                </button>
+              ) : (
+                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1"><span>‹</span><span>Previous</span></div>
+              )}
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const { currentPage, totalPages } = applicantsPaginationData;
+                  const pages = totalPages <= 10
+                    ? Array.from({ length: totalPages }, (_, i) => i + 1)
+                    : (() => {
+                        const p = [1];
+                        if (currentPage > 3) p.push('…');
+                        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) p.push(i);
+                        if (currentPage < totalPages - 2) p.push('…');
+                        p.push(totalPages);
+                        return p;
+                      })();
+                  return pages.map((page, i) =>
+                    typeof page === 'string' ? (
+                      <span key={i} className="px-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8]">{page}</span>
+                    ) : (
+                      <button key={page} onClick={() => goToApplicantPage(page)}
+                        className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors ${page === currentPage ? 'bg-[#1a73e8] text-white font-medium' : 'text-[#1a73e8] hover:bg-gray-100'}`}>
+                        {page}
+                      </button>
+                    )
+                  );
+                })()}
+              </div>
+              {applicantsPaginationData.currentPage < applicantsPaginationData.totalPages ? (
+                <button className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1" onClick={() => goToApplicantPage(applicantsPaginationData.currentPage + 1)}>
+                  <span>Next</span><span>›</span>
+                </button>
+              ) : (
+                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1"><span>Next</span><span>›</span></div>
+              )}
+            </div>
+          )}
+          </>
         )}
       </div>
     </>

@@ -376,7 +376,7 @@ const TrainingDash = () => {
                                                                 />
                                                             )
                                                         }}
-                                                        className="text-bgBlue hover:text-blue-700 text-sm font-medium transition-colors hover:underline"
+                                                        className="text-bgBlue cursor-pointer hover:text-blue-700 text-sm font-medium transition-colors hover:underline"
                                                     >
                                                         View Assigned
                                                     </button>
@@ -395,7 +395,7 @@ const TrainingDash = () => {
                                                     >
                                                         <Button
                                                             variant="text"
-                                                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-all shadow-sm normal-case text-gray-700"
+                                                            className="flex items-center cursor-pointer gap-2 px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-all shadow-sm normal-case text-gray-700"
                                                             onClick={(e) => {
                                                                 e.stopPropagation()
                                                                 toggleMenu(index, !openMenu[index])

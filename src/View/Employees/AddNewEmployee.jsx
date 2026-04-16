@@ -200,20 +200,19 @@ const AddNewEmployee = () => {
           setLastEnrolledEmployeeIdFallback(empId != null && empId !== "" ? String(empId) : "N/A");
         } else {
           setLastEnrolledEmployeeIdFallback("N/A");
+          // OLD (incoming branch):
+          // if (data?.STATUS === 'SUCCESSFUL') {
+          //   const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
+          //   const empId = lastEnrolled?.emp_id;
+          //   if (empId != null && empId !== '') {
+          //     setLastEnrolledEmployeeId(String(empId));
+          //   } else {
+          //     setLastEnrolledEmployeeId('N/A');
+          //   }
+          // } else {
+          //   setLastEnrolledEmployeeId('N/A');
+          // }
         }
-
-        // OLD (incoming branch): used setLastEnrolledEmployeeId — invalid; last enrolled uses adminDashboardData + lastEnrolledEmployeeIdFallback (see state above).
-        // if (data?.STATUS === 'SUCCESSFUL') {
-        //   const lastEnrolled = data?.lastEnrolledEmployee ?? data?.DB_DATA?.lastEnrolledEmployee;
-        //   const empId = lastEnrolled?.emp_id;
-        //   if (empId != null && empId !== '') {
-        //     setLastEnrolledEmployeeId(String(empId));
-        //   } else {
-        //     setLastEnrolledEmployeeId('N/A');
-        //   }
-        // } else {
-        //   setLastEnrolledEmployeeId('N/A');
-        // }
       } catch {
         if (!cancelled) setLastEnrolledEmployeeIdFallback("N/A");
       }
@@ -1245,7 +1244,7 @@ const AddNewEmployee = () => {
                   </div>
                   <div className="pt-6">
                     <button
-                      className="text-2xl bg-bgBlue text-white rounded-md w-10 h-10 flex items-center justify-center hover:bg-blue-500 transition-colors"
+                      className="text-2xl cursor-pointer bg-bgBlue text-white rounded-md w-10 h-10 flex items-center justify-center hover:bg-blue-500 transition-colors"
                       onClick={handleOpenSalaryTemplateDrawer}
                       type="button"
                     >
@@ -1300,7 +1299,7 @@ const AddNewEmployee = () => {
             {activeStep > 0 && (
               <Button 
                 onClick={handlePrev} 
-                className="capitalize"
+                className="capitalize cursor-pointer"
                 disabled={loading || isAddingEmployee}
               >
                 Prev

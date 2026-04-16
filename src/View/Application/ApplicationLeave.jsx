@@ -437,11 +437,11 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
           <h2 className="text-[#3DA5F4] font-semibold text-lg">Application Info</h2>
           <div className="flex items-center gap-2">
             {isLeaveApplication && (
-              <button className="bg-bgBlue text-white px-4 text-xs py-2 font-medium rounded-md hover:drop-shadow-md" onClick={() => handlePrint()}>Print</button>
+              <button className="bg-bgBlue text-white px-4 text-xs py-2 cursor-pointer font-medium rounded-md hover:drop-shadow-md" onClick={() => handlePrint()}>Print</button>
             )}
             <button
               onClick={onClose}
-              className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
+              className="w-6 h-6 flex justify-center items-center cursor-pointer rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
               title="Close"
               aria-label="Close"
             >

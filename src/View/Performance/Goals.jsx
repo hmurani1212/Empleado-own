@@ -116,7 +116,7 @@ const Goals = () => {
             </div>
 
             <Button
-              className="bg-bgBlue text-white shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
+              className="bg-bgBlue text-white cursor-pointer shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
               onClick={handleAddGoal}
             >
               <FaPlus size={12} /> Add Goal
@@ -193,7 +193,7 @@ const Goals = () => {
                           <td className="px-4 py-4">
                             <Button
                               variant="text"
-                              className="p-2 rounded-lg text-brand-500 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+                              className="p-2 rounded-lg text-brand-500 cursor-pointer hover:bg-brand-50 hover:text-brand-700 transition-colors"
                               onClick={() => handleProfileClick(ele.employee_id)}
                               title="View Employee Profile"
                             >

@@ -56,7 +56,6 @@ const ExportAttendance = () => {
 
   // OLD (incoming branch) — only DOWNLOAD_WAIT_MS, no long-wait toast / extra refs:
   // const DOWNLOAD_WAIT_MS = 5 * 60 * 1000
-
   // State for API data (same as BranchWiseListReporting)
   const [empBranches, setEmpBranches] = useState([])
   const [dept_subDept, setDept_subDept] = useState([])

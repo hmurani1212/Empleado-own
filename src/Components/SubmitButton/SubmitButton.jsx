@@ -6,7 +6,7 @@ const SubmitButton = (props) => {
    
   return (
     <>
-    <Button type='submit' className='bg-[#8bc9f8] capitalize p-2 font-medium text-[12px]' loading={loading} >{title}</Button>
+    <Button type='submit' className='bg-[#8bc9f8] capitalize p-2 font-medium text-[12px] cursor-pointer' loading={loading} >{title}</Button>
     </>
   )
 }

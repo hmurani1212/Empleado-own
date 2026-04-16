@@ -1,153 +1,131 @@
-import {
-  Accordion,
-  AccordionBody,
-  AccordionHeader,
-} from "@material-tailwind/react";
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { FiChevronDown, FiChevronUp, FiExternalLink } from 'react-icons/fi'
 
-const ApplyHistory = (props) => {
-  const { viewPending } = props;
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(null);
+const statusConfig = {
+  Rejected:    { cls: 'bg-red-50 text-red-600 border border-red-200' },
+  Shortlisted: { cls: 'bg-amber-50 text-amber-700 border border-amber-200' },
+  Interview:   { cls: 'bg-blue-50 text-blue-700 border border-blue-200' },
+  Accepted:    { cls: 'bg-green-50 text-green-700 border border-green-200' },
+  Pending:     { cls: 'bg-gray-100 text-gray-600 border border-gray-200' },
+  Starred:     { cls: 'bg-purple-50 text-purple-700 border border-purple-200' },
+}
 
-  const handleOpen = (value) => setOpen(open === value ? null : value);
+const InfoRow = ({ label, children }) => (
+  <div className="flex items-start gap-3 py-2 border-b border-gray-50 last:border-b-0">
+    <span className="text-[11px] font-semibold text-[#3da5f4] font-Urbanist min-w-[90px] flex-shrink-0">
+      {label}
+    </span>
+    <span className="text-[11px] text-gray-700 font-Urbanist">{children}</span>
+  </div>
+)
 
-  // Function to get status text based on status number
-  const getStatusText = (status) => {
-    switch (status) {
-      case 0:
-        return "Rejected";
-      case 1:
-        return "Shortlisted";
-      case 2:
-        return "Interview";
-      case 3:
-        return "Accepted";
-      case 4:
-        return "Pending";
-      case 5:
-        return "Starred";
-      default:
-        return "Unknown";
-    }
-  };
+const ApplyHistory = ({ viewPending }) => {
+  const navigate = useNavigate()
+  const [openIndex, setOpenIndex] = useState(null)
 
-  // Function to handle application click based on status
+  const toggle = (i) => setOpenIndex(openIndex === i ? null : i)
+
   const handleApplicationClick = (item) => {
-    // Get vacancy ID and app ID from the main viewPending data
-    const vacancyId = viewPending?.vacancy?.id;
-    const appId = item.application_id || viewPending?.answers?.[0]?.app_id;
-    console.log("itemitem", item.status === "Rejected");
-    // Convert status string to number for routing
-    let statusNumber = 4; // Default to pending
-    if (item.status === "Rejected") statusNumber = 0;
-    else if (item.status === "Shortlisted") statusNumber = 1;
-    else if (item.status === "Interview") statusNumber = 2;
-    else if (item.status === "Accepted") statusNumber = 3;
-    else if (item.status === "Pending") statusNumber = 4;
-    else if (item.status === "Starred") statusNumber = 5;
+    const vacancyId = viewPending?.vacancy?.id
+    const appId = item.application_id || viewPending?.answers?.[0]?.app_id
 
-    switch (statusNumber) {
-      // console.log("")
-      case 0: // Rejected
-        // console.log("yes this is true");
-        //  navigate(
-        //   `http://localhost:3000/`
-        // );
-        navigate(
-          `/hire/vacancies_list/all_applicants/${vacancyId}/rejected`
-        );
-        break;
-      case 1: // Shortlisted
-        navigate(
-          `/hire/vacancies_list/all_applicants/${vacancyId}/shortlisted`
-        );
-        break;
-      case 2: // Interview
-        navigate(
-          `/hire/vacancies_list/all_applicants/${vacancyId}/interviewed`
-        );
-        break;
-      case 3: // Accepted
-        navigate(
-          `/hire/vacancies_list/all_applicants/${vacancyId}/accepted`
-        );
-        break;
-      case 4: // Pending - use applicant route since there's no pending route
-        navigate(
-          `/hire/vacancies_list/all_applicants/${vacancyId}/applicant`
-        );
-        break;
-      case 5: // Starred
-        navigate(
-          `/hire/vacancies_list/all_applicants/${vacancyId}/starred/view_detail/${appId}`
-        );
-        break;
-      default:
-        // Default to applicant route if status is unknown
-        navigate(
-          `/`
-        );
-        break;
+    const routeMap = {
+      Rejected:    `/hire/vacancies_list/all_applicants/${vacancyId}/rejected`,
+      Shortlisted: `/hire/vacancies_list/all_applicants/${vacancyId}/shortlisted`,
+      Interview:   `/hire/vacancies_list/all_applicants/${vacancyId}/interviewed`,
+      Accepted:    `/hire/vacancies_list/all_applicants/${vacancyId}/accepted`,
+      Pending:     `/hire/vacancies_list/all_applicants/${vacancyId}/applicant`,
+      Starred:     `/hire/vacancies_list/all_applicants/${vacancyId}/starred/view_detail/${appId}`,
     }
-  };
+
+    navigate(routeMap[item.status] ?? '/')
+  }
+
+  const history = viewPending?.app_history ?? []
 
   return (
-    <div className="p-4">
-      {viewPending?.app_history?.map((item, index) => (
-        <Accordion
-          key={index}
-          open={open === index}
-          className="mb-2 rounded-lg border border-blue-gray-100"
-        >
-          <AccordionHeader
-            onClick={() => handleOpen(index)}
-            className="text-[14px] rounded-lg border-b-0 bg-[#F8F9FF]"
-          >
-            <span className="px-4">{item.vacancy_name}</span>
-          </AccordionHeader>
-          <AccordionBody>
-            <div className="grid grid-cols-3 px-[10px]">
-              <div className="text-[12px] font-semibold">
-                <div className="mt-3">
-                  <span>Post</span>
-                </div>
-                <div className="mt-3">
-                  <span>Date</span>
-                </div>
-                <div className="mt-3">
-                  <span>Status</span>
-                </div>
-                <div className="mt-3">
-                  <span>Application</span>
-                </div>
-              </div>
-              <div className="col-span-2 text-[12px]">
-                <div className="mt-3">
-                  <span>{item.vacancy_name}</span>
-                </div>
-                <div className="mt-3">
-                  <span>{item.post_date}</span>
-                </div>
-                <div className="mt-3">
-                  <span>{item.status}</span>
-                </div>
-                <div className="mt-3">
-                  <span
-                    className="text-blue-600 cursor-pointer hover:text-blue-800 underline"
-                    onClick={() => handleApplicationClick(item)}
-                  >
-                    Open Application
-                  </span>
-                </div>
-              </div>
-            </div>
-          </AccordionBody>
-        </Accordion>
-      ))}
-    </div>
-  );
-};
+    <div className="p-5">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <h3 className="text-[13px] font-bold text-gray-800 font-Urbanist mb-4 flex items-center gap-2">
+          <span className="w-1 h-4 rounded-full bg-[#3da5f4] inline-block" />
+          Application History
+        </h3>
 
-export default ApplyHistory;
+        {history.length > 0 ? (
+          <div className="space-y-2">
+            {history.map((item, index) => {
+              const isOpen = openIndex === index
+              const statusInfo = statusConfig[item.status] ?? {
+                cls: 'bg-gray-100 text-gray-500 border border-gray-200',
+              }
+
+              return (
+                <div
+                  key={index}
+                  className="rounded-xl border border-gray-100 overflow-hidden transition-shadow hover:shadow-sm"
+                >
+                  {/* Accordion Header */}
+                  <button
+                    onClick={() => toggle(index)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-[#F8F9FA] hover:bg-[#EFF8FF] transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-[12px] font-semibold text-gray-800 font-Urbanist truncate">
+                        {item.vacancy_name}
+                      </span>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold font-Urbanist capitalize flex-shrink-0 ${statusInfo.cls}`}
+                      >
+                        {item.status}
+                      </span>
+                    </div>
+                    <span className="text-gray-400 flex-shrink-0 ml-2">
+                      {isOpen ? (
+                        <FiChevronUp size={15} />
+                      ) : (
+                        <FiChevronDown size={15} />
+                      )}
+                    </span>
+                  </button>
+
+                  {/* Accordion Body */}
+                  {isOpen && (
+                    <div className="px-5 py-4 bg-white border-t border-gray-50">
+                      <div>
+                        <InfoRow label="Post">{item.vacancy_name}</InfoRow>
+                        <InfoRow label="Date">{item.post_date}</InfoRow>
+                        <InfoRow label="Status">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold font-Urbanist capitalize ${statusInfo.cls}`}
+                          >
+                            {item.status}
+                          </span>
+                        </InfoRow>
+                        <InfoRow label="Application">
+                          <button
+                            onClick={() => handleApplicationClick(item)}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#3da5f4] hover:text-[#2a8fd4] underline underline-offset-2 transition-colors cursor-pointer font-Urbanist"
+                          >
+                            <FiExternalLink size={12} />
+                            Open Application
+                          </button>
+                        </InfoRow>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-400 text-[12px] font-Urbanist">
+            No application history available
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default ApplyHistory

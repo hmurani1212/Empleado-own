@@ -75,7 +75,7 @@ const ApplicationInfo = ({ onClose }) => {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="w-6 h-6 flex justify-center items-center rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
+                            className="w-6 h-6 flex cursor-pointer justify-center items-center rounded-full border-2 border-blue-500 hover:bg-blue-50 transition-colors"
                             title="Close"
                             aria-label="Close"
                         >

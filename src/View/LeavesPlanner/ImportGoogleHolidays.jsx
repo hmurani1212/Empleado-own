@@ -131,7 +131,7 @@ const ImportGoogleHolidays = () => {
                 Loading
               </Button>
             ) : (
-              <Button type='submit' className='bg-[#8bc9f8]'>
+              <Button type='submit' className='bg-[#8bc9f8] cursor-pointer'>
                 Submit
               </Button>
             )}

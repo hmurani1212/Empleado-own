@@ -13,7 +13,7 @@ const RemoveHoliday = (props) => {
         </div>
         <div className='flex items-center justify-center'>
           <Button
-            className="bg-[#ff4979] hover:bg-[#F55E67]/90"
+            className="bg-[#ff4979] hover:bg-[#F55E67]/90 cursor-pointer"
             onClick={()=>handleRemovePublicHoliday(showSingleHoliday?.data?.id)}
             loading={showSingleHoliday?.loading}
           >

@@ -714,8 +714,8 @@ const useLeavesPlanner = () => {
 
 
 
-
-   
+    // OLD (incoming branch):
+    // return { leavesPlannerTitles, allLeavesGroup, getLeavesList, getPaidLeavesConfig, addLeaveGroupDrawer, leavesBranches, getAllDepartmentsLeaves, isLoading, handleMountLeave, mountLeave,
     return { leavesPlannerTitles, allLeavesGroup, leavesGroupTableLoading, getLeavesList, getPaidLeavesConfig, addLeaveGroupDrawer, leavesBranches, getAllDepartmentsLeaves, isLoading, handleMountLeave, mountLeave,
         addGroupValues, handleLeaveBranch, handleLeave, addNewLeaveGroup, handleLeaveView, allViewLeave, viewLeavesLoading, getViewLeavesList, handleLeavesChange, leavesSearch, openMenu, toggleMenuLeaves,
         leavesNoticesItems, handleMenuItemsLeaves, openDialogLeaves, handleDeleteLeavesDialog, handleDeleteGroups, handleDeleteLeaves, viewId, handleDeleteSpecificLeaves,

@@ -304,7 +304,7 @@ const EmployeesList = (props) => {
                       className="relative flex justify-center"
                     >
                       <Button
-                        className="flex items-center gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
+                        className="flex items-center cursor-pointer gap-2 capitalize font-medium bg-white hover:bg-brand-50 text-brand-500 border border-brand-200 hover:border-brand-300 rounded-lg text-xs px-3 py-1.5 shadow-sm transition-all"
                       >
                         Action
                         <FaChevronDown
@@ -359,7 +359,7 @@ const EmployeesList = (props) => {
                 <button
                   key={page}
                   onClick={() => onGoToPage(page)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${page === currentPage
+                  className={`w-8 h-8 flex items-center cursor-pointer justify-center rounded-lg text-xs font-medium transition-all ${page === currentPage
                       ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
                       : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
                     }`}
@@ -401,7 +401,7 @@ const EmployeesList = (props) => {
           <button
             title="Next Page"
             disabled={paginationData.currentPage >= paginationData.totalPages}
-            className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${paginationData.currentPage < paginationData.totalPages
+            className={`flex items-center cursor-pointer justify-center w-8 h-8 rounded-lg border transition-all ${paginationData.currentPage < paginationData.totalPages
                 ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
                 : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
               }`}

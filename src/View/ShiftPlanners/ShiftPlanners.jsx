@@ -162,13 +162,13 @@ const ShiftPlanners = () => {
                       {/* <CustomButton onClick={handleBackToGrid} title="Back to Planner" /> */}
                       <button
                         onClick={handleBackToGrid}
-                        className="text-[12px] flex items-center justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-[8px] px-4 py-2 cursor-pointer"
+                        className="text-[12px] flex items-center cursor-pointer justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-[8px] px-4 py-2 cursor-pointer"
                       >
                         Back to Planner
                       </button>
                       <button
                         onClick={() => handleRotator(selectedShift)}
-                        className="text-[12px] flex items-center justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-[8px] px-4 py-2 cursor-pointer"
+                        className="text-[12px] flex items-center cursor-pointer justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-[8px] px-4 py-2 cursor-pointer"
                       >
                         Rotator Setting
                       </button>
@@ -297,13 +297,13 @@ const ShiftPlanners = () => {
                       {/* <CustomButton onClick={handleBackToGrid} title="Back to Planner" /> */}
                       <button
                         onClick={() => handleNewShift(selectedShift)}
-                        className="text-[12px] flex items-center justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-[8px] px-4 py-2 cursor-pointer"
+                        className="text-[12px] flex items-center cursor-pointer justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-[8px] px-4 py-2 cursor-pointer"
                       >
                         Create New Shift
                       </button>
                       <button
                         onClick={() => handleRotator(selectedShift)}
-                        className="text-[12px] flex items-center justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-[8px] px-4 py-2 cursor-pointer"
+                        className="text-[12px] flex cursor-pointer items-center justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-[8px] px-4 py-2 cursor-pointer"
                       >
                         Rotator Setting
                       </button>
@@ -338,10 +338,10 @@ const ShiftPlanners = () => {
                         onClick={() => handleAddTeam(newShift)}
                         className="flex flex-col items-center justify-center bg-[#EFF8FF] border border-dashed border-bgBlue rounded-[10px] p-3 h-[120px] cursor-pointer w-auto min-w-[140px] max-w-[180px] space-y-2"
                       >
-                        <button className="text-[12px] flex items-center justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-full p-2 cursor-pointer">
+                        <button className="text-[12px] flex items-center cursor-pointer justify-center text-white font-medium hover:drop-shadow-md font-Urbanist bg-bgBlue rounded-full p-2 cursor-pointer">
                           <FaPlus className="text-[16px] text-white" />
                         </button>
-                        <span className="text-[11px] font-medium font-Urbanist text-[#474747] hover:underline text-center">
+                        <span className="text-[11px] font-medium cursor-pointer font-Urbanist text-[#474747] hover:underline text-center">
                           Create New Team
                         </span>
                       </div>
@@ -415,13 +415,13 @@ const ShiftPlanners = () => {
                   <div className="flex gap-3">
                     <button
                       onClick={() => handleNewShift(selectedShift)}
-                      className="text-[12px] text-white bg-bgBlue px-4 py-2 rounded-[8px]"
+                      className="text-[12px] text-white bg-bgBlue cursor-pointer px-4 py-2 rounded-[8px]"
                     >
                       Create New Shift
                     </button>
                     <button
                       onClick={() => handleRotator(selectedShift)}
-                      className="text-[12px] text-white bg-bgBlue px-4 py-2 rounded-[8px]"
+                      className="text-[12px] text-white bg-bgBlue cursor-pointer px-4 py-2 rounded-[8px]"
                     >
                       Rotator Setting
                     </button>

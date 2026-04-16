@@ -60,7 +60,7 @@ const ManagePayslips = () => {
                 key={ele.id}
                 onClick={() => managePaySlip(ele)}
                 className={`
-                  relative flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium
+                  relative flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium cursor-pointer
                   transition-all duration-300 ease-out flex-1 sm:flex-none justify-center
                   ${isActive 
                     ? 'text-white shadow-lg shadow-blue-500/25' 

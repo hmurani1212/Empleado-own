@@ -73,7 +73,7 @@ const ManageSalaryTemplate = () => {
 
               {/* Create Button */}
               <Button
-                className="bg-bgBlue hover:bg-blue-600 normal-case px-5 py-3 font-medium text-sm rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 flex items-center gap-2"
+                className="bg-bgBlue hover:bg-blue-600 cursor-pointer normal-case px-5 py-3 font-medium text-sm rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 flex items-center gap-2"
                 onClick={handleCreateTemplateDrawer}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +137,7 @@ const ManageSalaryTemplate = () => {
                 <div className="flex items-center bg-gray-100 rounded-xl p-1">
                   <button
                     onClick={handleListTogglePayroll}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg text-sm font-medium transition-all duration-200 ${
                       listViewPayroll
                         ? 'bg-white text-blue-600 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'
@@ -148,7 +148,7 @@ const ManageSalaryTemplate = () => {
                   </button>
                   <button
                     onClick={handleGridTogglePayroll}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg text-sm font-medium transition-all duration-200 ${
                       !listViewPayroll
                         ? 'bg-white text-blue-600 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'

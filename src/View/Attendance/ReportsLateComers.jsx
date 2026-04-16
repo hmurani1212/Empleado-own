@@ -742,21 +742,21 @@ const ReportsLateComers = () => {
       </div>
 
       <div className="flex justify-end gap-3 pt-6">
-        <Button variant="outlined" color="blue-gray" onClick={handleCancel} className="px-6">
+        <Button variant="outlined" color="blue-gray" onClick={handleCancel} className="px-6 cursor-pointer">
           Cancel
         </Button>
 
         {!showExportOptions ? (
-          <Button color="blue" onClick={handleExportSubmit} className="px-6" disabled={isLoading || !canSubmit()}>
+          <Button color="blue" onClick={handleExportSubmit} className="px-6 cursor-pointer" disabled={isLoading || !canSubmit()}>
             {isLoading ? 'Loading...' : 'Export'}
           </Button>
         ) : (
           <div className="flex gap-3">
-            <Button color="green" onClick={handleExcelExport} className="px-6 py-2 flex items-center gap-2">
+            <Button color="green" onClick={handleExcelExport} className="px-6 cursor-pointer py-2 flex items-center gap-2">
               <FaFileExcel className="text-lg" />
               Excel
             </Button>
-            <Button color="red" onClick={handlePdfExport} className="px-6 py-2 flex items-center gap-2">
+            <Button color="red" onClick={handlePdfExport} className="px-6 py-2 cursor-pointer flex items-center gap-2">
               <FaFilePdf className="text-lg" />
               PDF
             </Button>

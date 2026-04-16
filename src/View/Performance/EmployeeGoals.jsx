@@ -348,14 +348,14 @@ const EmployeeGoals = () => {
           <div className="flex items-center justify-between">
             <Button
               variant="text"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
+              className="flex items-center cursor-pointer gap-2 text-gray-600 hover:text-gray-900 normal-case font-medium p-2"
               onClick={handleBackToGoals}
             >
               <FaArrowRight className="text-sm rotate-180" /> Back to List
             </Button>
 
             <Button
-              className="bg-bgBlue text-white shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
+              className="bg-bgBlue text-white cursor-pointer shadow-blue-500/20 hover:shadow-blue-500/40 capitalize font-medium text-sm px-6 py-2.5 rounded-xl transition-all flex items-center gap-2"
               onClick={handleAddGoal}
             >
               Add Goal
@@ -423,7 +423,7 @@ const EmployeeGoals = () => {
                       <td className="p-4">
                         <button
                           type="button"
-                          className="text-gray-400 hover:text-blue-500 transition-colors p-2 rounded-full hover:bg-blue-50"
+                          className="text-gray-400 cursor-pointer hover:text-blue-500 transition-colors p-2 rounded-full hover:bg-blue-50"
                           onClick={() => handleOpenCommentsDrawer && handleOpenCommentsDrawer(goal)}
                           title="View comments"
                         >
@@ -447,7 +447,7 @@ const EmployeeGoals = () => {
                           <MenuHandler>
                             <Button
                               variant="text"
-                              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-all shadow-sm normal-case text-gray-700"
+                              className="flex items-center cursor-pointer gap-2 px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-all shadow-sm normal-case text-gray-700"
                             >
                               Action <FaChevronDown className="text-[10px]" />
                             </Button>
@@ -551,6 +551,9 @@ const EmployeeGoals = () => {
         title={addGoalValue.show ? (addGoalValue.view ? "View Goal" : addGoalValue.update ? "Edit Goal" : "Add Goal") : ""}
         closeDrawer={addGoalValue.show ? toggleAddGoal : () => {}}
         widthSize={addGoalValue.show ? (addGoalValue.view ? 760 : 620) : 550}
+        // widthSize={addGoalValue.show ? (addGoalValue.view ? 760 : 550) : 550}
+        // widthSize={addGoalValue.show ? (addGoalValue.view ? 760 : 550) : 550}
+        // widthSize={620}
       />
 
       <ConfirmationDialog

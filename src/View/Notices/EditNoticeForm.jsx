@@ -117,10 +117,10 @@ const EditNoticeForm = (props) => {
 
         </div>
 
-        <div className='mt-auto pt-6 border-t border-gray-100 flex justify-end gap-3'>
+        <div className='mt-auto flex justify-end gap-3'>
             <Button 
                 type='submit' 
-                className='font-poppins font-medium capitalize bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/40 min-w-[120px] flex items-center justify-center py-2.5 rounded-xl'
+                className='font-poppins font-medium cursor-pointer capitalize bg-bgBlue shadow-blue-500/20 hover:shadow-blue-500/40 min-w-[120px] flex items-center justify-center py-2.5 rounded-xl'
                 disabled={loading}
             >
                 {loading ? <Loader2 className='animate-spin w-4 h-4' /> : 'Update Notice'}

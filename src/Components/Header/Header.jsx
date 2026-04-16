@@ -376,9 +376,9 @@ function Header() {
             >
               <IconButton variant="text" color="blue-gray" className="rounded-full hover:bg-gray-100" onClick={handleInbox}>
                  {userRole === "Admin" ? (
-                   <HiOutlineMail size={22} className="text-gray-500" />
+                   <HiOutlineMail size={22} className="text-gray-500 cursor-pointer" />
                  ) : (
-                   <MdMail size={22} className="text-brand-500" />
+                   <MdMail size={22} className="text-brand-500 cursor-pointer" />
                  )}
               </IconButton>
             </Badge>
@@ -392,9 +392,9 @@ function Header() {
             >
               <IconButton variant="text" color="blue-gray" className="rounded-full hover:bg-gray-100" onClick={toggleNotificationPanel}>
                  {userRole === "Admin" ? (
-                   <BsBell size={20} className="text-gray-500" />
+                   <BsBell size={20} className="text-gray-500 cursor-pointer" />
                  ) : (
-                   <FaBell size={20} className="text-brand-500" />
+                   <FaBell size={20} className="text-brand-500 cursor-pointer" />
                  )}
               </IconButton>
             </Badge>
@@ -407,7 +407,7 @@ function Header() {
             className="relative hidden sm:block"
           >
             <Button
-              className="flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 text-brand-600 shadow-none hover:shadow-sm hover:bg-brand-100 transition-all font-medium normal-case py-2 px-4"
+              className="flex items-center gap-2 cursor-pointer rounded-lg border border-brand-200 bg-brand-50 text-brand-600 shadow-none hover:shadow-sm hover:bg-brand-100 transition-all font-medium normal-case py-2 px-4"
               size="sm"
             >
               <span>Switch Access</span>

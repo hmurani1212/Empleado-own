@@ -108,7 +108,7 @@ const CreateNewDepartment = () => {
       <div className="px-2 flex flex-col gap-3">
         <div className="flex justify-end text-12px">
           <IconButton
-            className="bg-[#FF4979] hover:bg-[#e6395a] p-2 rounded-full"
+            className="bg-[#FF4979] hover:bg-[#e6395a] p-2 rounded-full cursor-pointer"
             onClick={handleBackDept}
             title="Close and return to Manage Departments"
           >

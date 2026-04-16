@@ -86,7 +86,7 @@ const EmployeeCheckList = () => {
               >
                 <AccordionHeader
                   onClick={() => handleOpen(ele.id)}
-                  className={`text-[15px] font-medium text-gray-900 font-urbanist px-4 py-3.5 ${open === ele.id ? 'border-b border-gray-100 bg-gradient-to-r from-brand-50/40 to-transparent' : 'border-b-0'}`}
+                  className={`text-[15px] font-medium cursor-pointer text-gray-900 font-urbanist px-4 py-3.5 ${open === ele.id ? 'border-b border-gray-100 bg-gradient-to-r from-brand-50/40 to-transparent' : 'border-b-0'}`}
                 >
                   {ele.title}
                 </AccordionHeader>
@@ -121,7 +121,7 @@ const EmployeeCheckList = () => {
                     <div className="flex items-start pt-0.5">
                       <button
                         type="button"
-                        className="w-9 h-9 flex items-center justify-center border border-emerald-200 text-emerald-600 rounded-lg cursor-pointer hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-colors shadow-sm"
+                        className="w-9 h-9 flex items-center justify-center border border-emerald-200 text-emerald-600 rounded-lg cursor-pointer hover:bg-slate-500 hover:text-blue-300 hover:border-emerald-500 transition-colors shadow-sm"
                         onClick={() => handleEditCheckList(ele)}
                         title="Edit Checklist"
                       >

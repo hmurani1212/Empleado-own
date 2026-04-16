@@ -67,7 +67,7 @@ const SalaryDetails = (props) => {
         <div className="flex justify-start">
             <Button
                 color="blue"
-                className='text-[12px] px-10'
+                className='text-[12px] px-10 cursor-pointer'
                 onClick={() => handleSalaryIncrement({
                     ...employeeInfo,
                     ...salary,
@@ -150,6 +150,7 @@ const SalaryDetails = (props) => {
                                                 size="sm"
                                                 color="red"
                                                 variant="outlined"
+                                                className='cursor-pointer'
                                                 onClick={() => ToggleCancelIncDialog(ele.id)}
                                             >
                                                 Cancel

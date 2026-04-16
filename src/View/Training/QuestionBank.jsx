@@ -209,7 +209,7 @@ const QuestionBank = () => {
           <div className='flex items-center gap-4'>
             <Button
               variant="text"
-              className="p-2 rounded-full hover:bg-white hover:shadow-sm"
+              className="p-2 rounded-full hover:bg-white cursor-pointer hover:shadow-sm"
               onClick={handleBack}
             >
               <FaArrowLeft className="text-gray-600 text-lg" />

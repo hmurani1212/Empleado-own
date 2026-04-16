@@ -154,7 +154,6 @@ const filterColumnsByZero = (columns, data) => {
     return hasAnyPositive
   })
 }
-
 // OLD (incoming branch): flat PAYSLIP_COLUMNS + getVisiblePayslipColumns(data) only.
 // const getVisiblePayslipColumns = (data) => {
 //   if (!data || data.length === 0) return PAYSLIP_COLUMNS
@@ -664,7 +663,6 @@ const ExportPayslip = () => {
 
         // OLD (incoming branch): inline row mapping + flat PAYSLIP_COLUMNS keys (overTime, absenties, …).
         // const transformedData = currentPayslips.map((payslip, index) => { ... })
-
         setExportData(transformedData)
         if (hasData) {
           setShowExportOptions(true)
@@ -874,7 +872,6 @@ const ExportPayslip = () => {
       }
 
       // OLD (incoming): single header row via headerLabels + for-loop styling (no grouped Earnings/Deductions).
-
       if (exportData.length > 0) {
         exportData.forEach((row) => {
           const cellValues = visibleCols.map((col) => getCellDisplayValue(row, col))

@@ -241,7 +241,7 @@ const AddNotice = () => {
           <Button
             variant="text"
             color="gray"
-            className="capitalize"
+            className="capitalize cursor-pointer"
           >
             Cancel
           </Button>
@@ -250,7 +250,7 @@ const AddNotice = () => {
             color="blue"
             type="submit"
             disabled={loading}
-            className="min-w-[120px] flex items-center justify-center"
+            className="min-w-[120px] flex items-center justify-center cursor-pointer"
           >
             {loading ? (
               <Loader2 className="animate-spin w-4 h-4" />

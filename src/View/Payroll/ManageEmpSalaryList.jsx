@@ -213,7 +213,7 @@ const ManageEmpSalaryList = (props) => {
                     <td className={classes}>
                       <div className="flex flex-col items-center gap-2 justify-center h-full text-[clamp(10px,0.8vw,13px)] font-normal text-[#474747] font-Urbanist">
                         <Select
-                        className="text-[clamp(10px,0.8vw,13px)] font-normal text-[#474747] font-Urbanist"
+                        className="text-[clamp(10px,0.8vw,13px)] cursor-pointer font-normal text-[#474747] font-Urbanist"
                           key={`template-${data.id}-${
                             availableTemplates.length
                           }-${
@@ -301,7 +301,7 @@ const ManageEmpSalaryList = (props) => {
                         className="relative"
                       >
                         <Button
-                          className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.8vw,13px)] border border-[#3DA5F4] text-[#3DA5F4] px-[10px] py-[5px] bg-[#EFF8FF] rounded-[7px]"
+                          className="flex items-center gap-2 capitalize cursor-pointer font-normal text-[clamp(10px,0.8vw,13px)] border border-[#3DA5F4] text-[#3DA5F4] px-[10px] py-[5px] bg-[#EFF8FF] rounded-[7px]"
                           // variant="outlined"
                         >
                           Action

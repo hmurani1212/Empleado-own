@@ -65,6 +65,7 @@ const useHire = () => {
   const record_data = useStore((state) => state.get_count_app_data);
   const get_rejected_app = useStore((state) => state.get_rejected_app);
   const get_rejected_app_data = useStore((state) => state.get_rejected_app_data);
+  const rejectedPaginationData = useStore((state) => state.rejectedPaginationData);
   const getViewDataPending = useStore((state) => state.gettingViewPending);
   const get_applicants_data = useStore((state) => state.allApplicants_data);
   const removeApplicantFromList = useStore((state) => state.removeApplicantFromList);
@@ -168,7 +169,7 @@ const useHire = () => {
   const filterByStatusMenu = [
     { id: 1, title: 'All Vacancies', statusFilter: 2 },
     { id: 2, title: 'Active Vacancies', statusFilter: 1 },
-    { id: 3, title: 'Deactivate Vacancies', statusFilter: 0 },
+    { id: 3, title: 'Inactive Vacancies', statusFilter: 0 },
   ]
 
   const genderOptions = [
@@ -1946,7 +1947,7 @@ const useHire = () => {
     acceptanceConfirmationDialog, handleAcceptanceConfirmationDialog, acceptedApplicantData, handleSendAcceptanceLetter, handleCloseAcceptanceConfirmation,
     shortlistTemplateDialog, handleShortlistTemplateDialog, shortlistedApplicantData, handleSendShortlistTemplate, handleCloseShortlistTemplate,
     loadMoreTalentPool, pagination: talentPoolPagination, Re_Interviewfn, Re_Interview_data,
-    get_rejected_app_data, get_rejected_app, gettingViewPending, dataForScore, HireEmployeeDrawerContent,
+    get_rejected_app_data, get_rejected_app, rejectedPaginationData, gettingViewPending, dataForScore, HireEmployeeDrawerContent,
     openDrawer, closeDrawer, settingDrawerTitle, settingDrawerSize, settingComponent, fetchingAllBranches, openHireEmployeeDrawer,
     City_data, gettingCitiesByCountry,
   }

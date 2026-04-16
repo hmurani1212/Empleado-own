@@ -52,60 +52,102 @@ const AllApplicants = () => {
 
   const rejectedRequestPayload = (f) => {
     const payload = {};
-    const vid = f.vacancy_id || (vacancyId && vacancyId !== "0" ? vacancyId : "");
-    if (vid) payload.vacancy_id = vid;
+    // const vid = f.vacancy_id || (vacancyId && vacancyId !== "0" ? vacancyId : "");
+    // if (vid) payload.vacancy_id = vid;
+    if (f.vacancy_id !== undefined && f.vacancy_id !== null && f.vacancy_id !== "")
+      payload.vacancy_id = f.vacancy_id;
     if (f.gender !== undefined && f.gender !== null && f.gender !== "")
       payload.gender = f.gender;
     return payload;
   };
 
   const handleFilterChange = (type, value) => {
-    const newFilters = { ...filters };
-
-    switch (type) {
-      case "gender":
-        newFilters.gender =
-          value === "Male" ? "1" : value === "Female" ? "0" : "2";
-        break;
-      case "vacancy":
-        newFilters.vacancy_id = value;
-        break;
-      case "status":
-        newFilters.status = value;
-        break;
-      default:
-        break;
-    }
-
+    const newFilters = {
+      ...filters,
+      [type]: value ?? "",
+    };
+  
     setFilters(newFilters);
-    // Apply filters with current status and location
+  
     const currentPath = location.pathname;
-    let currentStatus = newFilters.status;
-    let currentLocation = "Applicants";
-
-    if (currentPath.includes("/starred")) {
-      currentStatus = "5";
-      currentLocation = "Starred";
-    } else if (currentPath.includes("/shortlisted")) {
-      currentStatus = "1";
-      currentLocation = "Shortlisted";
-    } else if (currentPath.includes("/interviewed")) {
-      currentStatus = "2";
-      currentLocation = "Interviewed";
-    } else if (currentPath.includes("/accepted")) {
-      currentStatus = "3";
-      currentLocation = "Accepted";
-    } else if (currentPath.includes("/rejected")) {
+  
+    if (currentPath.includes("/rejected")) {
       get_rejected_app(rejectedRequestPayload(newFilters));
       return;
-    } else {
-      currentStatus = "4";
-      currentLocation = "Applicants";
-    };
-
-    get_allApplicants(vacancyId, newFilters, currentStatus, currentLocation);
-    // Removed get_record() call - no need to refresh counts when filters change
+    }
+  
+    let status = newFilters.status;
+    let locationName = "Applicants";
+  
+    if (currentPath.includes("/starred")) {
+      status = "5";
+      locationName = "Starred";
+    } else if (currentPath.includes("/shortlisted")) {
+      status = "1";
+      locationName = "Shortlisted";
+    } else if (currentPath.includes("/interviewed")) {
+      status = "2";
+      locationName = "Interviewed";
+    } else if (currentPath.includes("/accepted")) {
+      status = "3";
+      locationName = "Accepted";
+    }
+  
+    get_allApplicants(vacancyId, newFilters, status, locationName);
   };
+  // const handleFilterChange = (type, value) => {
+  //   const newFilters = { ...filters };
+
+  //   console.log("newFilters", newFilters);
+  //   console.log("value", value);
+  //   console.log("type", type);
+
+  //   switch (type) {
+  //     case "gender":
+  //       newFilters.gender = String(value) ?? "";
+  //       break;
+  //     case "vacancy_id":
+  //       newFilters.vacancy_id = String(value) ?? "";
+  //       break;
+  //     case "status":
+  //       newFilters.status = value;
+  //       break;
+  //     default:
+  //       break;
+  //   }
+
+  //   setFilters((prev) => ({
+  //     ...prev,
+  //     [type]: value ?? "",
+  //   }));
+  //   // Apply filters with current status and location
+  //   const currentPath = location.pathname;
+  //   let currentStatus = newFilters.status;
+  //   let currentLocation = "Applicants";
+
+  //   if (currentPath.includes("/starred")) {
+  //     currentStatus = "5";
+  //     currentLocation = "Starred";
+  //   } else if (currentPath.includes("/shortlisted")) {
+  //     currentStatus = "1";
+  //     currentLocation = "Shortlisted";
+  //   } else if (currentPath.includes("/interviewed")) {
+  //     currentStatus = "2";
+  //     currentLocation = "Interviewed";
+  //   } else if (currentPath.includes("/accepted")) {
+  //     currentStatus = "3";
+  //     currentLocation = "Accepted";
+  //   } else if (currentPath.includes("/rejected")) {
+  //     get_rejected_app(rejectedRequestPayload(newFilters));
+  //     return;
+  //   } else {
+  //     currentStatus = "4";
+  //     currentLocation = "Applicants";
+  //   };
+
+  //   get_allApplicants(vacancyId, newFilters, currentStatus, currentLocation);
+  //   // Removed get_record() call - no need to refresh counts when filters change
+  // };
 
   const handleApplicationClick = (e, link, id, ele) => {
     e.preventDefault();
@@ -196,78 +238,74 @@ const AllApplicants = () => {
   const jwt = localStorage.getItem("jwt");
   return (
     <>
-      <div className="pl-2 flex flex-col gap-3">
-        <div className="flex justify-end mt-[40px] gap-4">
-          <CustomButton className="bg-[#8bc9f8]" title="Back" onClick={handleBackVacancies}>
-            Back
-          </CustomButton>
-          {/* <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank">
-            <Button className="bg-[#0ACF97] capitalize p-3  font-medium">
-              Career Page
-            </Button>
-          </Link> */}
+      <div className="flex flex-col gap-4">
+        {/* Top Actions */}
+        <div className="flex justify-end gap-3">
+          <CustomButton
+            className="bg-[#8bc9f8] capitalize p-2 font-medium shadow-sm"
+            title="Back"
+            onClick={handleBackVacancies}
+          />
           <Link to={`https://hiring.veevotech.com/company/${org_id}/veevo-tech`} target="_blank">
-            <Button className="bg-[#0ACF97] capitalize p-3  font-medium">
+            <Button className="bg-[#0ACF97] capitalize p-3 font-medium shadow-sm cursor-pointer">
               Career Page
             </Button>
           </Link>
         </div>
 
-        <div className="flex flex-col gap-2 pb-3 mt-[20px]">
-          <div className="flex justify-between items-center gap-5 px-3 py-5">
-            <div className="flex items-center gap-5">
-              {allApplicantsMenu.map((ele) => (
-                <NavLink
-                  key={ele.id}
-                  className={`${location.pathname === ele.link
+        <div className="flex flex-col gap-4">
+          {/* Sub Navigation */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-5 px-3 py-2">
+            {allApplicantsMenu.map((ele) => (
+              <NavLink
+                key={ele.id}
+                className={`${
+                  location.pathname === ele.link
                     ? "text-white"
                     : "hover:text-[#474747]/60 text-[#474747]"
-                    } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
-                  style={{
-                    WebkitTapHighlightColor: "transparent",
-                  }}
-                  onClick={(e) =>
-                    handleApplicationClick(e, ele.link, ele.id, ele.vacancyId)
-                  }
-                >
-                  {location.pathname === ele.link && (
-                    <motion.span
-                      layoutId="bubble"
-                      className="absolute inset-0 z-10 bg-[#8bc9f8]"
-                      style={{ borderRadius: 9999 }}
-                      transition={{
-                        type: "spring",
-                        bounce: 0.2,
-                        duration: 0.6,
-                      }}
-                    />
-                  )}
-                  <span className="relative flex cursor-pointer text-[14px] z-20">
-                    {ele.title}
-                    <div className="text-[10px] pt-[2px] ml-[4px]">{`(${ele.allcount})`}</div>
-                  </span>
-                </NavLink>
-              ))}
-            </div>
+                } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
+                style={{ WebkitTapHighlightColor: "transparent" }}
+                onClick={(e) =>
+                  handleApplicationClick(e, ele.link, ele.id, ele.vacancyId)
+                }
+              >
+                {location.pathname === ele.link && (
+                  <motion.span
+                    layoutId="bubble"
+                    className="absolute inset-0 z-10 bg-[#8bc9f8]"
+                    style={{ borderRadius: 9999 }}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative flex cursor-pointer text-[14px] z-20">
+                  {ele.title}
+                  <span className="text-[10px] pt-[2px] ml-[4px]">{`(${ele.allcount})`}</span>
+                </span>
+              </NavLink>
+            ))}
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex flex-wrap items-center gap-3">
+
+          {/* Filter Section */}
+          <div className="bg-white rounded-xl shadow-soft p-4 border border-gray-100">
+            <div className="flex flex-wrap items-center gap-4">
               <div>
+                <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">Filter by Jobs</label>
                 <Select
-                  label="Filter by Jobs"
+                  labelProps={{ className: "hidden" }}
                   color="blue"
-                  className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                  value={
-                    filters.vacancy_id !== undefined &&
-                      filters.vacancy_id !== null &&
-                      filters.vacancy_id !== ""
-                      ? String(filters.vacancy_id)
-                      : ""
-                  }
-                  onChange={(value) => handleFilterChange("vacancy", value)}
+                  className="bg-white text-[12px] font-Urbanist font-medium px-2 text-gray-400 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                  value={get_vacanc_filter_data?.length ? filters.vacancy_id : ""}
+                  selected={(element) => {
+                    const selected = get_vacanc_filter_data?.find(
+                      (item) => String(item.id) === String(filters.vacancy_id)
+                    );
+                    return selected?.title || "All Applicants";
+                  }}
+                  onChange={(value) => handleFilterChange("vacancy_id", value)}
                 >
+                  <Option value="">All Applicants</Option>
                   {get_vacanc_filter_data?.map((item, index) => (
-                    <Option value={String(item.id)} key={index}>
+                    <Option key={index} value={String(item.id)}>
                       {item.title}
                     </Option>
                   ))}
@@ -275,16 +313,18 @@ const AllApplicants = () => {
               </div>
 
               <div>
+                <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">Filter by Gender</label>
                 <Select
-                  label="Filter by Gender"
+                  labelProps={{ className: "hidden" }}
                   color="blue"
-                  className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                  value={genderLabelFromCode(filters.gender)}
+                  className="bg-white text-[12px] font-Urbanist font-medium px-2 text-gray-400 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                  value={filters.gender}
                   onChange={(value) => handleFilterChange("gender", value)}
                 >
-                  <Option value="Male">Male</Option>
-                  <Option value="Female">Female</Option>
-                  <Option value="Other">Other</Option>
+                  <Option value="">All</Option>
+                  <Option value="1">Male</Option>
+                  <Option value="0">Female</Option>
+                  <Option value="2">Other</Option>
                 </Select>
               </div>
             </div>

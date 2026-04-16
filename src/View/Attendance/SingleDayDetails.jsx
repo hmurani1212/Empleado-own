@@ -556,7 +556,7 @@ const SingleDayDetails = (props) => {
                   onClick={handleAddTimePair}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-dashed border-slate-200/80 text-slate-500 text-sm font-medium bg-gradient-to-b from-slate-50/50 to-white hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50/70 hover:shadow-[0_2px_8px_-2px_rgba(16,185,129,0.2)] focus:outline-none focus:ring-2 focus:ring-emerald-200 transition-all"
+                  className="inline-flex items-center gap-2 cursor-pointer px-5 py-2.5 rounded-xl border-2 border-dashed border-slate-200/80 text-slate-500 text-sm font-medium bg-gradient-to-b from-slate-50/50 to-white hover:border-emerald-300 hover:text-emerald-600 hover:bg-emerald-50/70 hover:shadow-[0_2px_8px_-2px_rgba(16,185,129,0.2)] focus:outline-none focus:ring-2 focus:ring-emerald-200 transition-all"
                 >
                   <Plus className="w-4 h-4" aria-hidden />
                   Add Time Pair
@@ -577,7 +577,7 @@ const SingleDayDetails = (props) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   style={{ background: 'linear-gradient(180deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(37, 99, 235, 0.4), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
-                  className="inline-flex items-center gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center cursor-pointer gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : null}
                   {isSubmitting ? 'Saving...' : 'Adjust Timings'}
@@ -589,7 +589,7 @@ const SingleDayDetails = (props) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   style={{ background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(220, 38, 38, 0.4), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
-                  className="inline-flex items-center gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center cursor-pointer gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <XCircle className="w-4 h-4" aria-hidden />}
                   {isSubmitting ? 'Processing...' : 'Mark Absent'}
@@ -601,7 +601,7 @@ const SingleDayDetails = (props) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   style={{ background: 'linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)', color: '#ffffff', boxShadow: '0 4px 14px -2px rgba(245, 158, 11, 0.35), inset 0 1px 0 0 rgba(255,255,255,0.2)' }}
-                  className="inline-flex items-center gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                  className="inline-flex items-center cursor-pointer gap-2 px-8 py-3 rounded-xl !text-white text-sm font-semibold hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Calendar className="w-4 h-4" aria-hidden />}
                   {isSubmitting ? 'Processing...' : 'Mark Holiday'}

@@ -278,7 +278,7 @@ const Performance = () => {
               }
             }}
             className={`
-              relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out z-10
+              relative px-4 py-2 rounded-xl cursor-pointer text-sm font-medium transition-all duration-300 ease-out z-10
               ${((showProfile && selectedEmployeeId && currentView === ele.title.toLowerCase()) ||
                  (!showProfile && location.pathname === ele.link))
                   ? "text-white shadow-md shadow-blue-500/20" 

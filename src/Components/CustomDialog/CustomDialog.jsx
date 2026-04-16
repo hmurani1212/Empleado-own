@@ -70,9 +70,9 @@ const CustomDialog = (props) => {
             type="button"
             onClick={handleOpen}
             aria-label="Close"
-            className={`p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 ${hasHeaderBg ? 'text-white hover:bg-white/20 focus:ring-white/50' : 'text-slate-500 hover:bg-slate-100 focus:ring-slate-300'}`}
+            className={`p-2 rounded-lg transition-colors cursor-pointer focus:outline-none focus:ring-2 ${hasHeaderBg ? 'text-white hover:bg-white/20 focus:ring-white/50' : 'text-slate-500 hover:bg-slate-100 focus:ring-slate-300'}`}
           >
-            <IoClose className="w-5 h-5" />
+            <IoClose className="w-5 h-5 cursor-pointer" />
           </button>
           </DialogHeader>
         <DialogBody className={`customScroll overflow-x-hidden text-slate-700 bg-gradient-to-b from-slate-100/80 via-slate-50/60 to-slate-100/80 ${
@@ -89,7 +89,7 @@ const CustomDialog = (props) => {
 
               <div className='flex gap-4'>
                 <Button
-                 className={switchBtn ? "bg-brand-500 hover:bg-brand-600" :"bg-red-500 hover:bg-red-600"}
+                 className={switchBtn ? "bg-brand-500 hover:bg-brand-600 cursor-pointer" :"bg-red-500 hover:bg-red-600 cursor-pointer"}
                 onClick={handleOpen}
                 // className="mr-1"
                 >
@@ -97,13 +97,13 @@ const CustomDialog = (props) => {
                 </Button>
                 
                 {showBtns && 
-                <Button  className='font-normal bg-brand-500 hover:bg-brand-600' onClick={handleConfirm}>
+                <Button  className='font-normal bg-brand-500 hover:bg-brand-600 cursor-pointer' onClick={handleConfirm}>
                   <span >Confirm</span>
                 </Button>
                 }
 
                 {confirmBtn && 
-                <Button  className='font-normal bg-brand-500 hover:bg-brand-600' type='submit' >
+                <Button  className='font-normal bg-brand-500 hover:bg-brand-600 cursor-pointer' type='submit' >
                   <span>Confirm Form</span>
                 </Button>
                 }

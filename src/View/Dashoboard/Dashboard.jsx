@@ -316,7 +316,7 @@ function Dashboard() {
             <div>
               <input
                 type="date"
-                className="bg-white border border-gray-300 rounded-md outline-none px-3 py-1.5 text-gray-700 text-xs focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all shadow-sm"
+                className="bg-white cursor-pointer border border-gray-300 rounded-md outline-none px-3 py-1.5 text-gray-700 text-xs focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all shadow-sm"
                 name="date"
                 value={selectedDate || ""}
                 onChange={handleDateFilterChange}
@@ -637,7 +637,7 @@ function Dashboard() {
                             <td className="px-6 py-4 text-center whitespace-nowrap">
                               <button
                                 onClick={() => handleGreetClick(ele)}
-                                className="text-xs bg-purple-50 text-purple-600 hover:bg-purple-500 hover:text-white px-4 py-1.5 rounded-md transition-all font-medium border border-purple-100 hover:border-purple-500"
+                                className="text-xs cursor-pointer bg-purple-50 text-purple-600 hover:bg-purple-500 hover:text-white px-4 py-1.5 rounded-md transition-all font-medium border border-purple-100 hover:border-purple-500"
                               >
                                 Say Hello 👋
                               </button>

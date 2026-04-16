@@ -18,11 +18,13 @@ const hireViewModel = (set, get) => ({
     vacRounds: [],
     mountHireList: false,
     allTalentPool: [],
+    labelData: [],
     allCities: [],
     /** True while `gettingAllLocations` (hiring cities for Create Vacancy) is in flight */
     locationsLoading: false,
     City_data: [], // Cities by country (Pakistan)
     get_rejected_app_data: [],
+    rejectedPaginationData: { currentPage: 1, totalPages: 1, totalRecords: 0 },
     /** True while `get_rejected_app` request is in flight */
     rejectedApplicantsLoading: false,
     record_data: [],
@@ -315,16 +317,22 @@ const hireViewModel = (set, get) => ({
             // console.log('get_rejected_app API response:', data);
 
             if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
-                set({ get_rejected_app_data: data.DB_DATA })
-                // console.log('Set get_rejected_app_data:', data.DB_DATA);
+                const pagination = data.pagination || {}
+                set({
+                    get_rejected_app_data: data.DB_DATA,
+                    rejectedPaginationData: {
+                        currentPage: pagination.page || 1,
+                        totalPages: pagination.pages || 1,
+                        totalRecords: pagination.total || 0,
+                    },
+                })
                 return true;
             } else {
-                set({ get_rejected_app_data: [] })
-                // console.log('Set get_rejected_app_data to empty array due to ERROR');
+                set({ get_rejected_app_data: [], rejectedPaginationData: { currentPage: 1, totalPages: 1, totalRecords: 0 } })
                 return false;
             }
         } catch (error) {
-            set({ get_rejected_app_data: [] })
+            set({ get_rejected_app_data: [], rejectedPaginationData: { currentPage: 1, totalPages: 1, totalRecords: 0 } })
             return false;
         } finally {
             set({ rejectedApplicantsLoading: false })
@@ -365,8 +373,10 @@ const hireViewModel = (set, get) => ({
 
             if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
                 set({ allTalentPool: data.DB_DATA })
+                set({ labelData: data.Label_Data })
             } else if (response.status === 200 && data.STATUS === 'ERROR') {
                 set({ allTalentPool: [] })
+                set({ labelData: [] })
             }
         } catch (error) {
             throw error

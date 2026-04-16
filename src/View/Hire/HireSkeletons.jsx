@@ -53,52 +53,35 @@ export const RejectedTableSkeleton = ({ rows = 8 }) => (
   <VacanciesListTableSkeleton rows={rows} colCount={6} />
 );
 
-export const TalentPoolTableSkeleton = ({ rows = 8 }) => {
-  const talentHead = ["Candidate", "City", "CV", "Talent", "Added"];
-  return (
-    <table className="w-full min-w-max text-left h-full text-[12px]">
-      <thead className="sticky top-[0px] z-20">
-        <tr>
-          {talentHead.map((head, i) => (
-            <th
-              key={i}
-              className="border-b border-blue-gray-100 bg-blue-gray-50 p-4"
-            >
-              <Typography
-                variant="small"
-                color="blue-gray"
-                className="font-normal leading-none opacity-70 capitalize"
-              >
-                {head}
-              </Typography>
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {Array.from({ length: rows }).map((_, ri) => (
-          <tr key={ri} className="border-b border-blue-gray-50">
-            <td className="p-2">
-              <div className="flex items-center gap-2">
-                <div className="rounded-full w-[35px] h-[35px] bg-gray-200 animate-pulse shrink-0" />
-                <div className="h-4 bg-gray-200 rounded animate-pulse flex-1 max-w-[140px]" />
-              </div>
-            </td>
-            <td className="p-2">
-              <div className="h-4 bg-gray-200 rounded animate-pulse max-w-[80px]" />
-            </td>
-            <td className="p-2">
-              <div className="h-5 w-5 bg-gray-200 rounded animate-pulse" />
-            </td>
-            <td className="p-2">
-              <div className="h-4 bg-gray-200 rounded animate-pulse max-w-[60px]" />
-            </td>
-            <td className="p-2">
-              <div className="h-4 bg-gray-200 rounded animate-pulse max-w-[90px]" />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
+/** Renders only <tr> body rows — embed inside the real <tbody> of TalentPool's table. */
+export const TalentPoolTableSkeleton = ({ rows = 8 }) => (
+  <>
+    {Array.from({ length: rows }).map((_, ri) => (
+      <tr key={ri} className="border-b border-[#F2F2F9] animate-pulse">
+        {/* Candidate — avatar + name bar */}
+        <td className="p-4">
+          <div className="flex items-center gap-2">
+            <div className="rounded-full w-[35px] h-[35px] bg-gray-200 shrink-0" />
+            <div className="h-3.5 bg-gray-200 rounded w-[120px]" />
+          </div>
+        </td>
+        {/* City */}
+        <td className="p-4">
+          <div className="h-3.5 bg-gray-200 rounded w-[80px]" />
+        </td>
+        {/* CV icon */}
+        <td className="p-4">
+          <div className="h-5 w-5 bg-gray-200 rounded" />
+        </td>
+        {/* Talent */}
+        <td className="p-4">
+          <div className="h-3.5 bg-gray-200 rounded w-[60px]" />
+        </td>
+        {/* Added date */}
+        <td className="p-4">
+          <div className="h-3.5 bg-gray-200 rounded w-[90px]" />
+        </td>
+      </tr>
+    ))}
+  </>
+);

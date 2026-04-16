@@ -2,14 +2,19 @@ import { Button, Option, Select, Typography } from "@material-tailwind/react";
 import React from "react";
 import useHire from "../../ViewModel/HireViewModel/HireServices";
 import { FaEye } from "react-icons/fa";
-import { Outlet, useLocation } from "react-router";
+import { Outlet, useLocation, useParams } from "react-router";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { formatTimestamp } from "../Branches/utils";
 import useStore from "../../Store/store";
 import { RejectedTableSkeleton } from "./HireSkeletons";
 const Rejected = () => {
-  const { get_rejected_app_data, handleNavigateView } =
+  const { get_rejected_app_data, handleNavigateView, get_rejected_app, rejectedPaginationData } =
     useHire();
+  const { vacancyId } = useParams();
+
+  const goToRejectedPage = (page) => {
+    get_rejected_app({ vacancy_id: vacancyId, page });
+  };
   const rejectedApplicantsLoading = useStore(
     (state) => state.rejectedApplicantsLoading
   );
@@ -34,9 +39,10 @@ const Rejected = () => {
             <Outlet />
           </div>
         ) : (
-          <div className="bg-white rounded-[10px] drop-shadow-md p-2">
+          <>
+          <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
             <div className="min-h-[calc(100vh-100px)] overflow-auto customScroll">
-              <table className="w-full text-center">
+              <table className="w-full text-left">
                 <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
                   <tr>
                     {rejectData?.map((head, i) => (
@@ -63,8 +69,8 @@ const Rejected = () => {
                         ? "p-4"
                         : "p-4 border-b border-[#F2F2F9]";
 
-                      return (
-                        <tr key={index}>
+                        return (
+                        <tr key={index} className="hover:bg-brand-50/30 transition-colors">
                           <td className={classes}>
                             <Typography
                               // variant="small"
@@ -123,9 +129,9 @@ const Rejected = () => {
 
                           <td className={classes}>
                             <Button
-                              className="bg-white border-2 border-[#8bc9f8] text-[#9b9b9b] px-[14px] py-[8px]"
+                              className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px] cursor-pointer"
+                              variant="outlined"
                               onClick={() => {
-                                // console.log("Clicking App Detail for hire:", hire);
                                 handleNavigateView({ application_type, hire });
                               }}
                             >
@@ -148,6 +154,52 @@ const Rejected = () => {
               </table>
             </div>
           </div>
+
+          {/* Pagination */}
+          {!rejectedApplicantsLoading && get_rejected_app_data?.length > 0 && rejectedPaginationData?.totalRecords > 10 && (
+            <div className="w-full flex justify-center items-center gap-1 mt-4 mb-2">
+              {rejectedPaginationData.currentPage > 1 ? (
+                <button className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1" onClick={() => goToRejectedPage(rejectedPaginationData.currentPage - 1)}>
+                  <span>‹</span><span>Previous</span>
+                </button>
+              ) : (
+                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1"><span>‹</span><span>Previous</span></div>
+              )}
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const { currentPage, totalPages } = rejectedPaginationData;
+                  const pages = totalPages <= 10
+                    ? Array.from({ length: totalPages }, (_, i) => i + 1)
+                    : (() => {
+                        const p = [1];
+                        if (currentPage > 3) p.push('…');
+                        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) p.push(i);
+                        if (currentPage < totalPages - 2) p.push('…');
+                        p.push(totalPages);
+                        return p;
+                      })();
+                  return pages.map((page, i) =>
+                    typeof page === 'string' ? (
+                      <span key={i} className="px-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8]">{page}</span>
+                    ) : (
+                      <button key={page} onClick={() => goToRejectedPage(page)}
+                        className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors ${page === currentPage ? 'bg-[#1a73e8] text-white font-medium' : 'text-[#1a73e8] hover:bg-gray-100'}`}>
+                        {page}
+                      </button>
+                    )
+                  );
+                })()}
+              </div>
+              {rejectedPaginationData.currentPage < rejectedPaginationData.totalPages ? (
+                <button className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1" onClick={() => goToRejectedPage(rejectedPaginationData.currentPage + 1)}>
+                  <span>Next</span><span>›</span>
+                </button>
+              ) : (
+                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1"><span>Next</span><span>›</span></div>
+              )}
+            </div>
+          )}
+          </>
         )}
       </div>
     </>

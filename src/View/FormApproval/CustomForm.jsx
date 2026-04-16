@@ -174,7 +174,7 @@ const CustomForm = () => {
                       <div className="flex items-center gap-2">
                         <Button
                           variant="text"
-                          className="flex items-center gap-2 text-amber-600 hover:bg-amber-50 normal-case font-medium px-3 py-2 rounded-lg"
+                          className="flex items-center cursor-pointer gap-2 text-amber-600 hover:bg-amber-50 normal-case font-medium px-3 py-2 rounded-lg"
                           onClick={() => viewAssignAF(data)}
                           disabled={assignAFLoadingId === (data.id || data._id)}
                         >
@@ -187,7 +187,7 @@ const CustomForm = () => {
                         </Button>
                         <Button
                           variant="text"
-                          className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 normal-case font-medium px-3 py-2 rounded-lg"
+                          className="flex items-center gap-2 cursor-pointer text-blue-600 hover:bg-blue-50 normal-case font-medium px-3 py-2 rounded-lg"
                           onClick={() => handleViewForm(data)}
                         >
                           <PiEyeLight className="text-lg" />

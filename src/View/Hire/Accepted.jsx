@@ -12,15 +12,20 @@ import React, { useState } from "react";
 import useHire from "../../ViewModel/HireViewModel/HireServices";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { FaEye, FaEllipsisV, FaEnvelope, FaUser } from "react-icons/fa";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router";
 import AcceptanceConfirmationModal from "./AcceptanceConfirmationModal";
 import useStore from "../../Store/store";
 import { ApplicantsTableSkeleton } from "./HireSkeletons";
 
 const Accepted = () => {
   const { handleNavigateView } = useHire();
-  const { get_applicants_data } = useHire_2();
+  const { get_applicants_data, applicantsPaginationData, applicantActiveFilters, get_allApplicants } = useHire_2();
   const allApplicantsLoading = useStore((state) => state.allApplicantsLoading);
+  const { vacancyId } = useParams();
+
+  const goToApplicantPage = (page) => {
+    get_allApplicants(vacancyId, { ...applicantActiveFilters, page }, "3", "Accepted");
+  };
   const accpetData = [
     "Candidate",
     "Applied For",
@@ -71,7 +76,7 @@ const Accepted = () => {
         ) : (
           <div className="bg-white rounded-[10px] drop-shadow-md p-2">
             <div className="min-h-[calc(100vh-100px)] overflow-auto customScroll">
-              <table className="w-full text-center">
+              <table className="w-full text-left">
                 <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
                   <tr>
                     {accpetData?.map((head, i) => (
@@ -106,7 +111,7 @@ const Accepted = () => {
                               // color="blue-gray"
                               className="font-normal cursor-pointer text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                             >
-                              <div className="flex items-center justify-center gap-2">
+                              <div className="flex items-center justify-left gap-2">
                                 <span>
                                   <img
                                     className="rounded-full w-[35px] h-[35px] object-cover"
@@ -154,18 +159,20 @@ const Accepted = () => {
                           </td>
 
                           <td className={classes}>
-                            <Typography
-                              // variant="small"
-                              // color="blue-gray"
-                              className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                            >
-                              <a
-                                href={hire?.candidate?.cv_file_path}
-                                target="_blank"
+                            {/* <div className="flex items-center justify-center"> */}
+                              <Typography
+                                // variant="small"
+                                // color="blue-gray"
+                                className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
                               >
-                                <FaEye className="text-[#3DA5F4] text-[20px]" />
-                              </a>
-                            </Typography>
+                                <a
+                                  href={hire?.candidate?.cv_file_path}
+                                  target="_blank"
+                                >
+                                  <FaEye className="text-[#3DA5F4] text-[20px]" />
+                                </a>
+                              </Typography>
+                            {/* </div> */}
                           </td>
 
                           {/* <td className={classes}> */}
@@ -181,12 +188,13 @@ const Accepted = () => {
                           {/* </td> */}
 
                           <td className={classes}>
+                            <div className="pl-2">
                             <Menu>
                               <MenuHandler>
                                 <Button
                                   variant="text"
                                   size="sm"
-                                  className="p-1"
+                                  className="p-1 cursor-pointer"
                                 >
                                   <FaEllipsisV className="h-4 w-4" />
                                 </Button>
@@ -194,7 +202,7 @@ const Accepted = () => {
                               <MenuList>
                                 <MenuItem
                                   onClick={() => handleSendEmail(hire)}
-                                  className="flex items-center justify-center gap-2"
+                                  className="flex items-center gap-2"
                                 >
                                   <FaEnvelope className="h-4 w-4" />
                                   Send Email
@@ -208,6 +216,7 @@ const Accepted = () => {
                                 </MenuItem>
                               </MenuList>
                             </Menu>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -228,6 +237,50 @@ const Accepted = () => {
                 </tbody>
               </table>
             </div>
+          {/* Pagination */}
+          {!allApplicantsLoading && get_applicants_data?.length > 0 && applicantsPaginationData?.totalRecords > 10 && (
+            <div className="w-full flex justify-center items-center gap-1 mt-4 mb-2">
+              {applicantsPaginationData.currentPage > 1 ? (
+                <button className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1" onClick={() => goToApplicantPage(applicantsPaginationData.currentPage - 1)}>
+                  <span>‹</span><span>Previous</span>
+                </button>
+              ) : (
+                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1"><span>‹</span><span>Previous</span></div>
+              )}
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const { currentPage, totalPages } = applicantsPaginationData;
+                  const pages = totalPages <= 10
+                    ? Array.from({ length: totalPages }, (_, i) => i + 1)
+                    : (() => {
+                        const p = [1];
+                        if (currentPage > 3) p.push('…');
+                        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) p.push(i);
+                        if (currentPage < totalPages - 2) p.push('…');
+                        p.push(totalPages);
+                        return p;
+                      })();
+                  return pages.map((page, i) =>
+                    typeof page === 'string' ? (
+                      <span key={i} className="px-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8]">{page}</span>
+                    ) : (
+                      <button key={page} onClick={() => goToApplicantPage(page)}
+                        className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors ${page === currentPage ? 'bg-[#1a73e8] text-white font-medium' : 'text-[#1a73e8] hover:bg-gray-100'}`}>
+                        {page}
+                      </button>
+                    )
+                  );
+                })()}
+              </div>
+              {applicantsPaginationData.currentPage < applicantsPaginationData.totalPages ? (
+                <button className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1" onClick={() => goToApplicantPage(applicantsPaginationData.currentPage + 1)}>
+                  <span>Next</span><span>›</span>
+                </button>
+              ) : (
+                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1"><span>Next</span><span>›</span></div>
+              )}
+            </div>
+          )}
           </div>
         )}
 

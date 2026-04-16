@@ -181,6 +181,7 @@ const Feedback = () => {
         </CustomButton>
         <Button
           variant="outlined"
+          className="cursor-pointer"
           color="gray"
           onClick={handleCancelFeedback}
           disabled={isSubmitting}

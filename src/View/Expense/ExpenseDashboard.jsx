@@ -433,7 +433,7 @@ const ExpenseDashboard = () => {
                         />
                     </div>
                     <Button
-                        className="flex items-center gap-2 bg-bgBlue hover:bg-blue-600 shadow-blue-500/20 hover:shadow-blue-500/40 rounded-xl py-2.5 px-4 h-[42px] normal-case"
+                        className="flex items-center gap-2 bg-bgBlue cursor-pointer hover:bg-blue-600 shadow-blue-500/20 hover:shadow-blue-500/40 rounded-xl py-2.5 px-4 h-[42px] normal-case"
                         onClick={openSettlementDrawer}
                     >
                         <FaPlus className="text-xs" /> New Expense
@@ -481,7 +481,7 @@ const ExpenseDashboard = () => {
                     <button
                         key={tab}
                         onClick={() => handleTabChange(tab)}
-                        className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                        className={`relative px-5 py-2 rounded-lg cursor-pointer text-sm font-medium transition-all duration-300 ${
                             activeTab === tab ? 'text-white' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
                         }`}
                     >
@@ -605,7 +605,7 @@ const ExpenseDashboard = () => {
                                                     </td>
                                                     <td className="p-4 last:pr-6 text-center">
                                                         <IconButton variant="text" color="blue" size="sm" onClick={() => handleViewExpense(expense)} className="rounded-full hover:bg-blue-50">
-                                                            <PiEyeLight className="text-lg" />
+                                                            <PiEyeLight className="text-lg cursor-pointer" />
                                                         </IconButton>
                                                     </td>
                                                 </tr>
@@ -683,7 +683,7 @@ const ExpenseDashboard = () => {
                                                     </td>
                                                     <td className="p-4 last:pr-6 text-center">
                                                         <IconButton variant="text" color="blue" size="sm" onClick={() => handleViewInvoice(invoice)} className="rounded-full hover:bg-blue-50">
-                                                            <PiEyeLight className="text-lg" />
+                                                            <PiEyeLight className="text-lg cursor-pointer" />
                                                         </IconButton>
                                                     </td>
                                                 </tr>

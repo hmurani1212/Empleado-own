@@ -957,7 +957,7 @@ const LeaveApplicationDrawerContent = ({ selectedEmpId, selectedEmpName, leaveTy
                     <label className='text-[#698592] text-[12px] mb-1 block'>Supporting Documents (Optional)</label>
                     <input
                         type="file"
-                        className='w-full text-[#333333] text-[12px] rounded-md py-[8px] px-[17px] border border-gray-500 outline-none'
+                        className='w-full text-[#333333] cursor-pointer text-[12px] rounded-md py-[8px] px-[17px] border border-gray-500 outline-none'
                         name="supporting_docs"
                         onChange={(e) => {
                             const file = e.target.files[0];
@@ -1065,7 +1065,7 @@ const LeaveApplicationDrawerContent = ({ selectedEmpId, selectedEmpName, leaveTy
                 <div className="w-full flex justify-end gap-3 pt-4">
                     <button
                         onClick={generateLeaveDays}
-                        className="bg-blue-500 text-white text-sm py-2 px-6 rounded-md hover:bg-blue-600 font-medium"
+                        className="bg-blue-500 text-white cursor-pointer text-sm py-2 px-6 rounded-md hover:bg-blue-600 font-medium"
                         type="button"
                     >
                         Adjust In
@@ -1074,7 +1074,7 @@ const LeaveApplicationDrawerContent = ({ selectedEmpId, selectedEmpName, leaveTy
                         color="blue"
                         type="submit"
                         disabled={isUploading}
-                        className="px-6 py-2 rounded-lg font-medium text-sm"
+                        className="px-6 py-2 rounded-lg font-medium text-sm cursor-pointer"
                     >
                         {isUploading ? 'Submitting...' : 'Submit'}
                     </Button>

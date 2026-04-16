@@ -211,7 +211,7 @@ const AttAdustmentRequest = () => {
              <div className="flex items-center gap-3">
                 <button 
                   onClick={() => navigate("/attendance")}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+                  className="p-2 hover:bg-gray-100 rounded-full cursor-pointer transition-colors text-gray-500"
                 >
                    <FaArrowLeft />
                 </button>
@@ -237,7 +237,7 @@ const AttAdustmentRequest = () => {
                
                <button
                   onClick={() => NewAdjustRequest(true)}
-                  className="flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap"
+                  className="flex items-center justify-center cursor-pointer gap-2 bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow-md active:scale-95 whitespace-nowrap"
                >
                  <FaPlus className="text-sm" />
                  <span>New Request</span>
@@ -327,7 +327,7 @@ const AttAdustmentRequest = () => {
                               <button
                                 type="button"
                                 onClick={() => handleDetailRequest(ele._id)}
-                                className="text-gray-400 hover:text-brand-500 hover:bg-brand-50 p-2 rounded-lg transition-all"
+                                className="text-gray-400 cursor-pointer hover:text-brand-500 hover:bg-brand-50 p-2 rounded-lg transition-all"
                                 title="View Details"
                               >
                                 <FaRegEye size={18} />

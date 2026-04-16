@@ -349,11 +349,11 @@ const PaySlipGenerationSelection = (props) => {
                     </div>
                     <div>
                         {index === managePaySlipGeneration.overTime.length - 1 ? (
-                            <Button className='bg-bgBlue' onClick={addMoreOverTime}>
+                            <Button className='bg-bgBlue cursor-pointer' onClick={addMoreOverTime}>
                                 <FaPlus />
                             </Button>
                         ) : (
-                            <Button className='bg-red-500' onClick={() => removeOverTime(index)}>
+                            <Button className='bg-red-500 cursor-pointer' onClick={() => removeOverTime(index)}>
                                 <FaXmark />
                             </Button>
                         )}
@@ -383,7 +383,7 @@ const PaySlipGenerationSelection = (props) => {
         {/* Generate Payslip Button */}
         <div className='pt-2'>
             <Button 
-                className='bg-bgBlue text-white px-6 py-2 text-[12px] font-medium font-Urbanist'
+                className='bg-bgBlue text-white cursor-pointer px-6 py-2 text-[12px] font-medium font-Urbanist'
                 onClick={generateBulkPayroll}
                 disabled={
                     managePaySlipGeneration.isGenerating || 

@@ -42,7 +42,7 @@ const FormApproval = () => {
           </div>
           
           <Button
-            className="flex items-center gap-2 bg-bgBlue hover:bg-blue-600 shadow-blue-500/20 hover:shadow-blue-500/40 rounded-xl py-2.5 px-6 normal-case font-medium"
+            className="flex items-center gap-2 bg-bgBlue cursor-pointer hover:bg-blue-600 shadow-blue-500/20 hover:shadow-blue-500/40 rounded-xl py-2.5 px-6 normal-case font-medium"
             onClick={() => defineApprovalFlowForm()}
           >
             <FaPlus className="text-sm" /> Define Approval Flow
