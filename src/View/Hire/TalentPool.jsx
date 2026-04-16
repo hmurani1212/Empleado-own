@@ -2,13 +2,19 @@ import { Button, Option, Select, Typography } from "@material-tailwind/react";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { getAllAge } from "../../services/__hireServices";
 import { FaEye } from "react-icons/fa";
-import { format } from "date-fns";
+import { format, set } from "date-fns";
 import useStore from "../../Store/store";
 import { useTalentPoolServices } from "../../ViewModel/HireViewModel2/hireServices_2";
+import useHire from "../../ViewModel/HireViewModel/HireServices";
+
 import { TalentPoolTableSkeleton } from "./HireSkeletons";
 
 const TalentPool = () => {
   const { getTalentPoolData, resetTalentPool } = useTalentPoolServices();
+  const { GetLabel_def, Label_data } = useHire();
+  // console.log('what is this', Label_data)
+  // console.log('what is this', GetLabel_def)
+  // console.log('what is this', Label_data)
   const allTalentPool = useStore((state) => state.allTalentPool);
   const labelData = useStore((state) => state.labelData);
   const talentPoolError = useStore((state) => state.talentPoolError);
@@ -28,6 +34,8 @@ const TalentPool = () => {
   const [genderIx, setGenderIx] = useState(false);
   const [ageFromIx, setAgeFromIx] = useState(false);
   const [ageToIx, setAgeToIx] = useState(false);
+  const [Label_data_1, setLabelData] = useState([]);
+  // console.log('what is this', Label_data_1);
 
   const labelRef = useRef(null);
   const genderRef = useRef(null);
@@ -79,6 +87,8 @@ const TalentPool = () => {
   useEffect(() => {
     // Initial load of talent pool data
     fetchData(filters);
+    GetLabel_def();
+    setLabelData(Label_data);
 
     // Cleanup on unmount
     return () => {
@@ -165,7 +175,7 @@ const TalentPool = () => {
                 value={filters.label_id}
                 onChange={(val) => {
                   handleFilterChange("label_id", val);
-                  setLabelIx(false);
+                  setLabelIx(true);
                 }}
                 selected={() => {
                   if (filters.label_id) {
@@ -188,12 +198,20 @@ const TalentPool = () => {
                 onFocus={() => setLabelIx(true)}
                 containerProps={containerBlur(setLabelIx)}
               >
-                <Option value="">All Labels</Option>
-                {labelData?.map((label) => (
-                  <Option key={label.id} value={String(label.id)}>
-                    {label.label_name}
+                {!labelData?.length ? (
+                  <Option value="" disabled>
+                    No labels available
                   </Option>
-                ))}
+                ) : (
+                  <>
+                    <Option value="">All Labels</Option>
+                    {labelData.map((label) => (
+                      <Option key={label.id} value={String(label.id)}>
+                        {label.label_name}
+                      </Option>
+                    ))}
+                  </>
+                )}
               </Select>
               {/* <Select
                 ref={labelRef}
@@ -308,17 +326,26 @@ const TalentPool = () => {
                   handleFilterChange("age_from", val);
                   setAgeFromIx(false);
                 }}
-                selected={() => {
+                selected={(optionEl) => {
                   if (hasAgeFromValue) {
                     return (
+                      optionEl ?? (
+                        <span className="text-[12px] font-Urbanist font-medium text-[#474747]">
+                          {filters.age_from}
+                        </span>
+                      )
+                    );
+                  }
+                  if (showAgeFromPh) {
+                    return (
                       <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                        {filters.age_from}
+                        Age From
                       </span>
                     );
                   }
                   return (
-                    <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                      Age From
+                    <span className="text-[12px] font-Urbanist text-[#474747]">
+                      &nbsp;
                     </span>
                   );
                 }}
@@ -349,17 +376,26 @@ const TalentPool = () => {
                   handleFilterChange("age_to", val);
                   setAgeToIx(false);
                 }}
-                selected={() => {
+                selected={(optionEl) => {
                   if (hasAgeToValue) {
                     return (
+                      optionEl ?? (
+                        <span className="text-[12px] font-Urbanist font-medium text-[#474747]">
+                          {filters.age_to}
+                        </span>
+                      )
+                    );
+                  }
+                  if (showAgeToPh) {
+                    return (
                       <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                        {filters.age_to}
+                        Age To
                       </span>
                     );
                   }
                   return (
-                    <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                      Age To
+                    <span className="text-[12px] font-Urbanist text-[#474747]">
+                      &nbsp;
                     </span>
                   );
                 }}
