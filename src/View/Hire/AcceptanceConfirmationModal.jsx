@@ -287,7 +287,7 @@ const AcceptanceConfirmationModal = ({
                            key={time}
                            type="button"
                            onClick={() => handleTimeChange(time)}
-                           className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                          >
                            {time}
                          </button>
@@ -297,7 +297,7 @@ const AcceptanceConfirmationModal = ({
                        <button
                          type="button"
                          onClick={() => setShowTimePicker(false)}
-                         className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                         className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 cursor-pointer"
                        >
                          Cancel
                        </button>
@@ -379,7 +379,7 @@ const AcceptanceConfirmationModal = ({
                        <button
                          type="button"
                          onClick={() => setShowStartDatePicker(false)}
-                         className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                         className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 cursor-pointer"
                        >
                          Cancel
                        </button>
@@ -414,7 +414,7 @@ const AcceptanceConfirmationModal = ({
                        <button
                          type="button"
                          onClick={() => setShowResponseDatePicker(false)}
-                         className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                         className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 cursor-pointer"
                        >
                          Cancel
                        </button>
@@ -460,14 +460,14 @@ const AcceptanceConfirmationModal = ({
               variant="outlined"
               color="red"
               onClick={handleClose}
-              className="px-6"
+              className="px-6 cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               color="blue"
               onClick={handleSend}
-              className="px-6"
+              className="px-6 cursor-pointer"
               disabled={!candidateData && !applicantData}
             >
               Send

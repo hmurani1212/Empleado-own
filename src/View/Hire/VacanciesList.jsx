@@ -164,10 +164,10 @@ const VacanciesList = () => {
         debouncedSearch(value, newFilters); // Debounce the API call with current filters
         return; // Return early to prevent duplicate API call
       case "yearFilter":
-        newFilters.year_date = value;
+        newFilters.year_date = value === "all" ? "" : value;
         break;
       case "monthFilter":
-        newFilters.month_date = getMonthShortName(value);
+        newFilters.month_date = value === "all" ? "" : getMonthShortName(value);
         break;
       default:
         break;
@@ -295,18 +295,27 @@ const VacanciesList = () => {
   // console.log("allVacanciesList_data", allVacanciesList_data.response)
   return (
     <>
-      <div className="lg:px-2 md:px-2 px-0 flex flex-col gap-3">
-        {/* <Hire data={allVacanciesList_data} /> */}
-        <div className="flex flex-wrap items-center justify-between">
-          <div className="flex flex-wrap items-center gap-3">
+      <div className="lg:px-2 md:px-2 px-0 flex flex-col gap-4">
+        {/* Filter Section */}
+        <div className="bg-white rounded-xl shadow-soft p-5 border border-gray-100">
+          <div className="flex flex-wrap items-center gap-4">
             <div>
               <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">Filter by vacancy</label>
               <Select
                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 labelProps={{className: "hidden"}}
-                // label="Filter by Vacancy"
                 onChange={(val) => handleFilterChange("statusFilter", val)}
                 value={filters.status}
+                selected={() => {
+                  const selectedItem = filterByStatusMenu?.find(
+                    (ele) => String(ele.statusFilter) === String(filters.status)
+                  )
+                  return (
+                    <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                      {selectedItem?.title || "Filter by vacancy"}
+                    </span>
+                  )
+                }}
               >
                 {filterByStatusMenu?.map((ele) => (
                   <Option value={`${ele.statusFilter}`} key={ele.id}>
@@ -348,23 +357,17 @@ const VacanciesList = () => {
                 color="blue"
                 className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 name="yearFilter"
-                value={filters.year_date ? String(filters.year_date) : ""}
+                value={filters.year_date ? String(filters.year_date) : "all"}
                 onChange={(val) => {
                   handleFilterChange("yearFilter", val)
                   setYearSelectInteracting(false)
                 }}
-                selected={(optionEl) => {
-                  if (hasYearValue) {
-                    return optionEl
-                  }
-                  if (showYearPlaceholder) {
-                    return (
-                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                        Year Filter
-                      </span>
-                    )
-                  }
-                  return <span className="text-[12px] font-Urbanist text-[#474747]">&nbsp;</span>
+                selected={() => {
+                  return (
+                    <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                      {filters.year_date || "All"}
+                    </span>
+                  )
                 }}
                 onClick={handleYearSelectClick}
                 onFocus={() => setYearSelectInteracting(true)}
@@ -376,6 +379,7 @@ const VacanciesList = () => {
                   },
                 }}
               >
+                <Option value="all">All</Option>
                 {years.map((year, i) => (
                   <Option key={i} value={String(year)}>
                     {year}
@@ -402,24 +406,28 @@ const VacanciesList = () => {
                     ? months.find(
                         (m) => getMonthShortName(m.id) === filters.month_date
                       )?.id?.toString()
-                    : ""
+                    : "all"
                 }
                 onChange={(val) => {
                   handleFilterChange("monthFilter", val)
                   setMonthSelectInteracting(false)
                 }}
-                selected={(optionEl) => {
+                selected={() => {
                   if (hasMonthValue) {
-                    return optionEl
-                  }
-                  if (showMonthPlaceholder) {
+                    const selectedMonth = months.find(
+                      (m) => getMonthShortName(m.id) === filters.month_date
+                    )
                     return (
                       <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                        Month Filter
+                        {selectedMonth?.title || filters.month_date}
                       </span>
                     )
                   }
-                  return <span className="text-[12px] font-Urbanist text-[#474747]">&nbsp;</span>
+                  return (
+                    <span className="text-[12px] font-Urbanist font-medium text-gray-400">
+                      All
+                    </span>
+                  )
                 }}
                 onClick={handleMonthSelectClick}
                 onFocus={() => setMonthSelectInteracting(true)}
@@ -431,6 +439,7 @@ const VacanciesList = () => {
                   },
                 }}
               >
+                <Option value="all">All</Option>
                 {months.map((month) => (
                   <Option key={month.id} value={String(month.id)}>
                     {month.title}
@@ -441,7 +450,8 @@ const VacanciesList = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-[10px] drop-shadow-md p-2">
+        {/* Table Section */}
+        <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
           <div className="min-h-[calc(100vh-100px)] overflow-auto customScroll">
             <table className="w-full text-center">
               <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
@@ -484,12 +494,10 @@ const VacanciesList = () => {
                       : "p-4 border-b border-[#F2F2F9]";
 
                     return (
-                      <tr key={index}>
+                      <tr key={index} className="hover:bg-brand-50/30 transition-colors">
                         <td className={classes}>
                           <Typography
-                            // variant="small"
-                            // color="blue-gray"
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
+                            className="font-medium text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] capitalize cursor-pointer hover:text-brand-500 transition-colors"
                             onClick={() => handleAllApps(hire.id)}
                           >
                             {hire.title}
@@ -545,19 +553,25 @@ const VacanciesList = () => {
                         </td>
 
                         <td className={classes}>
-                          <Typography
-                            // variant="small"
-                            // color="blue-gray"
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold font-Urbanist whitespace-nowrap ${
+                              hire.status === "ACTIVE"
+                                ? "bg-green-50 text-green-700 border border-green-200"
+                                : hire.status === "EXPIRED"
+                                ? "bg-red-50 text-red-600 border border-red-200"
+                                : hire.status === "DRAFT"
+                                ? "bg-gray-100 text-gray-500 border border-gray-200"
+                                : "bg-orange-50 text-orange-600 border border-orange-200"
+                            }`}
                           >
-                            {hire.status == "DRAFT"
-                              ? "Deactivate"
+                            {hire.status === "DRAFT"
+                              ? "Deactivated"
                               : hire.status === "ACTIVE"
                               ? "Active"
                               : hire.status === "EXPIRED"
                               ? "Expired"
                               : "Closed"}
-                          </Typography>
+                          </span>
                         </td>
 
                         <td className={classes}>
@@ -583,7 +597,7 @@ const VacanciesList = () => {
                             className="relative flex items-center justify-center"
                           >
                             <Button
-                              className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px]"
+                              className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px] cursor-pointer"
                               variant="outlined"
                             >
                               Share Link
@@ -627,7 +641,7 @@ const VacanciesList = () => {
                                   <div className="border-t border-gray-100 px-2 pb-2 pt-1">
                                     <button
                                       type="button"
-                                      className="w-full rounded-md bg-[#3DA5F4] text-white text-[11px] font-Urbanist font-medium py-1.5 px-2 hover:bg-[#2d8fd6] transition-colors"
+                                      className="w-full rounded-md bg-[#3DA5F4] text-white text-[11px] font-Urbanist font-medium py-1.5 px-2 hover:bg-[#2d8fd6] transition-colors cursor-pointer"
                                       onClick={() => handleCopyVacancyLink(hire)}
                                     >
                                       Copy link
@@ -646,7 +660,7 @@ const VacanciesList = () => {
                             className="relative flex items-center justify-center"
                           >
                             <Button
-                              className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px]"
+                              className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px] cursor-pointer"
                               variant="outlined"
                             >
                               Action
@@ -764,7 +778,7 @@ const VacanciesList = () => {
                 {paginationData.currentPage > 1 ? (
                   <button
                     title="Previous Page"
-                    className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1"
+                    className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1"
                     onClick={goToPreviousPage}
                   >
                     <span>‹</span>
@@ -789,7 +803,7 @@ const VacanciesList = () => {
                         <button
                           key={pageNum}
                           onClick={() => goToPage(pageNum)}
-                          className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors ${
+                          className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors ${
                             pageNum === currentPage
                               ? 'bg-[#1a73e8] text-white font-medium'
                               : 'text-[#1a73e8] hover:bg-gray-100'
@@ -848,7 +862,7 @@ const VacanciesList = () => {
                         <button
                           key={page}
                           onClick={() => goToPage(page)}
-                          className={`px-3 py-1.5 text-[clamp(12px,1vw,14px)] rounded transition-colors ${
+                          className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors ${
                             page === currentPage
                               ? 'bg-[#1a73e8] text-white font-medium'
                               : 'text-[#1a73e8] hover:bg-gray-100'
@@ -865,7 +879,7 @@ const VacanciesList = () => {
                 {paginationData.currentPage < paginationData.totalPages ? (
                   <button
                     title="Next Page"
-                    className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1"
+                    className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1"
                     onClick={goToNextPage}
                   >
                     <span>Next</span>

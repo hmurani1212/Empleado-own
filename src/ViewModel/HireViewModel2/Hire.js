@@ -6,6 +6,8 @@ const hireViewModel = (set, get) => ({
     allVacanciesList_data: [],
     deactiveVacancies: [],
     allApplicants_data: [],
+    applicantsPaginationData: { currentPage: 1, totalPages: 1, totalRecords: 0 },
+    applicantActiveFilters: {},
     /** True until an applicants list fetch finishes; starts true so first paint shows skeleton (not "not found"). */
     allApplicantsLoading: true,
     /** True until global hire counts (`get_count_app`) return — drives dashboard stat cards. */
@@ -64,21 +66,30 @@ const hireViewModel = (set, get) => ({
             allApplicantsLoading: true,
             allApplicants_data: [],
             rejectedApplicantsLoading: false,
+            applicantActiveFilters: filters,
         })
         try {
             const response = await hireApi.getAllApplicants(vacancyId, filters, status, location)
             const data = response.data
             if (response.status === 200 && data.STATUS === 'SUCCESSFUL') {
-                set({ allApplicants_data: data.DB_DATA })
+                const pagination = data.pagination || {}
+                set({
+                    allApplicants_data: data.DB_DATA,
+                    applicantsPaginationData: {
+                        currentPage: pagination.page || 1,
+                        totalPages: pagination.pages || 1,
+                        totalRecords: pagination.total || 0,
+                    },
+                })
             } else if (response.status === 200 && data.STATUS === 'ERROR') {
-                set({ allApplicants_data: [] })
+                set({ allApplicants_data: [], applicantsPaginationData: { currentPage: 1, totalPages: 1, totalRecords: 0 } })
                 if (data.ERROR_FILTER !== 'USER_END_VIOLATION') {
                     // showToast('error', data.ERROR_DESCRIPTION || 'Failed to fetch applications')
                 }
             }
         } catch (error) {
             console.error('Error fetching applications:', error)
-            set({ allApplicants_data: [] })
+            set({ allApplicants_data: [], applicantsPaginationData: { currentPage: 1, totalPages: 1, totalRecords: 0 } })
             // showToast('error', 'Failed to fetch applications')
         } finally {
             set({ allApplicantsLoading: false })
@@ -270,13 +281,15 @@ const hireViewModel = (set, get) => ({
     labelData: [],
     talentPoolError: null,
     talentPoolLoading: false,
+    talentPoolPaginationData: { currentPage: 1, totalPages: 1, totalRecords: 0 },
 
     // Talent Pool Actions
     setTalentPool: (data) => set({ allTalentPool: data }),
     setLabelData: (data) => set({ labelData: data }),
     setTalentPoolError: (error) => set({ talentPoolError: error }),
     setTalentPoolLoading: (loading) => set({ talentPoolLoading: loading }),
-    resetTalentPool: () => set({ allTalentPool: [], talentPoolError: null, talentPoolLoading: false })
+    setTalentPoolPaginationData: (paginationData) => set({ talentPoolPaginationData: paginationData }),
+    resetTalentPool: () => set({ allTalentPool: [], talentPoolError: null, talentPoolLoading: false, talentPoolPaginationData: { currentPage: 1, totalPages: 1, totalRecords: 0 } })
 });
 
 export default hireViewModel

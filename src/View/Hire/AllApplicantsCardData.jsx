@@ -61,7 +61,7 @@ const AllApplicantsCardData = () => {
     <>
       <div className="pl-2 flex flex-col gap-3">
         <div className="flex justify-end mt-[40px] gap-4">
-          <Button className="bg-[#8bc9f8]" onClick={handleBackVacancies}>
+          <Button className="bg-[#8bc9f8] cursor-pointer" onClick={handleBackVacancies}>
             Back
           </Button>
           {/* <Link to={`http://172.18.0.44:8080/${org_id}`} target="_blank">

@@ -642,14 +642,14 @@ const CreateVacancy = () => {
       <div className="pl-2 flex flex-col gap-3">
         <div className="flex justify-end mt-[40px] gap-4">
           <Button
-            className="bg-bgBlue text-white font-medium capitalize rounded-lg px-4 py-2 shadow-sm hover:bg-[#2d94e0]"
+            className="bg-bgBlue text-white font-medium capitalize rounded-lg px-4 py-2 shadow-sm hover:bg-[#2d94e0] cursor-pointer"
             onClick={() => navigate("/hire/vacancies_list")}
           >
             Back
           </Button>
           {/* Career Page */}
           {/* <Link to={`http://172.18.0.44:8080/${org_id}`} target="_blank">
-            <Button className="bg-[#0ACF97] capitalize p-2 font-medium">
+            <Button className="bg-[#0ACF97] capitalize p-2 font-medium cursor-pointer">
               Career Page
             </Button>
           </Link> */}
@@ -1046,7 +1046,7 @@ const CreateVacancy = () => {
                                 onClick={(e) =>
                                   removeAccordion(e, accordion.id, index)
                                 }
-                                className=""
+                                className="cursor-pointer"
                               >
                                 <IoMdCloseCircleOutline className="text-[20px] text-red-500" />
                               </button>
@@ -1055,7 +1055,7 @@ const CreateVacancy = () => {
                         ))}
                         <Button
                           onClick={addAccordion}
-                          className="mt-4 bg-bgBlue text-white capitalize p-2 font-medium rounded-lg shadow-sm hover:bg-[#2d94e0]"
+                          className="mt-4 bg-bgBlue text-white capitalize p-2 font-medium rounded-lg shadow-sm hover:bg-[#2d94e0] cursor-pointer"
                         >
                           Add More Questions
                         </Button>
@@ -1266,7 +1266,7 @@ const CreateVacancy = () => {
                     {!isFirstStep && (
                       <Button
                         onClick={handlePrev}
-                        className="capitalize bg-bgBlue text-white rounded-lg shadow-sm hover:bg-[#2d94e0]"
+                        className="capitalize bg-bgBlue text-white rounded-lg shadow-sm hover:bg-[#2d94e0] cursor-pointer"
                       >
                         Prev
                       </Button>

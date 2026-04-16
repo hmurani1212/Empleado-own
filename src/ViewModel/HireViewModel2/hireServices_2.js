@@ -9,6 +9,8 @@ const useHire_2 = () => {
     const allVacanciesList_data = useStore((state) => state.allVacanciesList_data);
     const get_allApplicants = useStore((state) => state.gettingAllApplicants);
     const get_applicants_data = useStore((state) => state.allApplicants_data);
+    const applicantsPaginationData = useStore((state) => state.applicantsPaginationData);
+    const applicantActiveFilters = useStore((state) => state.applicantActiveFilters);
     const get_vacanc_filter = useStore((state) => state.gettingVacancyFilters);
     const get_vacanc_filter_data = useStore((state) => state.vacancyFilters);
     const get_city = useStore((state) => state.get_city_all);
@@ -224,11 +226,15 @@ const useHire_2 = () => {
         removeApplicantFromList,
         countData,
         loading, // Export loading state
-        // Pagination functions and state
+        // Vacancy pagination
         paginationData,
         goToNextPage,
         goToPreviousPage,
-        goToPage
+        goToPage,
+        // Applicant pagination
+        applicantsPaginationData,
+        applicantActiveFilters,
+        get_allApplicants,
     }
 }
 
@@ -260,22 +266,26 @@ export const useTalentPoolServices = () => {
             if (response.data.STATUS === 'SUCCESSFUL') {
                 const data = response.data.DB_DATA;
                 const label_data = response.data.Label_Data;
+                const pagination = response.data.pagination || {};
                 store.setLabelData(label_data);
-                if (filters.page === 1) {
-                    store.setTalentPool(data || []);
-                } else {
-                    store.setTalentPool([...store.allTalentPool, ...(data || [])]);
-                }
+                store.setTalentPool(data || []);
+                store.setTalentPoolPaginationData({
+                    currentPage: pagination.page || filters.page || 1,
+                    totalPages: pagination.pages || 1,
+                    totalRecords: pagination.total || 0,
+                });
                 return { success: true, data };
             } else {
                 store.setTalentPool([]);
                 store.setLabelData([]);
+                store.setTalentPoolPaginationData({ currentPage: 1, totalPages: 1, totalRecords: 0 });
                 store.setTalentPoolError('No candidates found matching the criteria');
                 return { success: false, error: 'No candidates found matching the criteria' };
             }
         } catch (error) {
             store.setTalentPool([]);
             store.setLabelData([]);
+            store.setTalentPoolPaginationData({ currentPage: 1, totalPages: 1, totalRecords: 0 });
             store.setTalentPoolError('No candidates found matching the criteria');
             return { success: false, error: 'No candidates found matching the criteria' };
         } finally {
@@ -283,18 +293,9 @@ export const useTalentPoolServices = () => {
         }
     };
 
-    // const give_data = () => {
-    //     return {
-    //         get_rejected_app,
-    //         get_rejected_app_data
-    //     }
-    // }
-
     return {
         getTalentPoolData,
         resetTalentPool: store.resetTalentPool,
-        // countData
-        // give_data
     };
 };
 

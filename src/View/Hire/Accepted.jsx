@@ -12,15 +12,20 @@ import React, { useState } from "react";
 import useHire from "../../ViewModel/HireViewModel/HireServices";
 import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 import { FaEye, FaEllipsisV, FaEnvelope, FaUser } from "react-icons/fa";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router";
 import AcceptanceConfirmationModal from "./AcceptanceConfirmationModal";
 import useStore from "../../Store/store";
 import { ApplicantsTableSkeleton } from "./HireSkeletons";
 
 const Accepted = () => {
   const { handleNavigateView } = useHire();
-  const { get_applicants_data } = useHire_2();
+  const { get_applicants_data, applicantsPaginationData, applicantActiveFilters, get_allApplicants } = useHire_2();
   const allApplicantsLoading = useStore((state) => state.allApplicantsLoading);
+  const { vacancyId } = useParams();
+
+  const goToApplicantPage = (page) => {
+    get_allApplicants(vacancyId, { ...applicantActiveFilters, page }, "3", "Accepted");
+  };
   const accpetData = [
     "Candidate",
     "Applied For",
@@ -189,7 +194,7 @@ const Accepted = () => {
                                 <Button
                                   variant="text"
                                   size="sm"
-                                  className="p-1"
+                                  className="p-1 cursor-pointer"
                                 >
                                   <FaEllipsisV className="h-4 w-4" />
                                 </Button>
@@ -232,6 +237,50 @@ const Accepted = () => {
                 </tbody>
               </table>
             </div>
+          {/* Pagination */}
+          {!allApplicantsLoading && get_applicants_data?.length > 0 && applicantsPaginationData?.totalRecords > 10 && (
+            <div className="w-full flex justify-center items-center gap-1 mt-4 mb-2">
+              {applicantsPaginationData.currentPage > 1 ? (
+                <button className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1" onClick={() => goToApplicantPage(applicantsPaginationData.currentPage - 1)}>
+                  <span>‹</span><span>Previous</span>
+                </button>
+              ) : (
+                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1"><span>‹</span><span>Previous</span></div>
+              )}
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const { currentPage, totalPages } = applicantsPaginationData;
+                  const pages = totalPages <= 10
+                    ? Array.from({ length: totalPages }, (_, i) => i + 1)
+                    : (() => {
+                        const p = [1];
+                        if (currentPage > 3) p.push('…');
+                        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) p.push(i);
+                        if (currentPage < totalPages - 2) p.push('…');
+                        p.push(totalPages);
+                        return p;
+                      })();
+                  return pages.map((page, i) =>
+                    typeof page === 'string' ? (
+                      <span key={i} className="px-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8]">{page}</span>
+                    ) : (
+                      <button key={page} onClick={() => goToApplicantPage(page)}
+                        className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors ${page === currentPage ? 'bg-[#1a73e8] text-white font-medium' : 'text-[#1a73e8] hover:bg-gray-100'}`}>
+                        {page}
+                      </button>
+                    )
+                  );
+                })()}
+              </div>
+              {applicantsPaginationData.currentPage < applicantsPaginationData.totalPages ? (
+                <button className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1" onClick={() => goToApplicantPage(applicantsPaginationData.currentPage + 1)}>
+                  <span>Next</span><span>›</span>
+                </button>
+              ) : (
+                <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1"><span>Next</span><span>›</span></div>
+              )}
+            </div>
+          )}
           </div>
         )}
 

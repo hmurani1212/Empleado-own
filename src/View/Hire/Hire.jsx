@@ -70,75 +70,63 @@ const Hire = ({ data }) => {
   // })
 
   return (
-    <>
-      {/* Match Dashboard stat grid: fluid columns, consistent gap */}
-      <div className="w-full py-2 pb-1 text-center">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-5">
-          {hireCountsLoading ? (
-            <HireDashboardCardsSkeleton />
-          ) : (
-            hireCardList.map((item, idx) => (
-              <NavLink
-                key={item.id}
-                to={item.link || "#"}
-                className="block w-full min-w-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-                onClick={(e) => handleHireNavClickCards(e, item.link, item.id)}
-              >
-                <CustomCard
-                  image={item.imgSrc}
-                  title={item.title}
-                  backgroundColor={item.legendBg}
-                  count={item.count} // Properly mapped values for each card
-                />
-              </NavLink>
-            ))
-          )}
+    <div className="flex flex-col py-6 px-6 gap-6 min-h-screen bg-background">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-gray-800 tracking-tight font-Urbanist">Hire Management</h1>
+          <p className="text-sm text-gray-500">Manage vacancies, applicants, and the hiring pipeline.</p>
         </div>
-      </div>
-
-      <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:items-center mt-8 sm:mt-10 gap-3 sm:gap-4 w-full">
-        <CustomButton
-          className="bg-[#8bc9f8] capitalize p-2 font-medium w-full sm:w-auto justify-center"
-          onClick={createVacancy}
-          title="Announce new Vacancy"
-        >
-          {/* Announce new Vacancy */}
-        </CustomButton>
-
-        {/* <Button
-          className="bg-[#FF6B6B] capitalize p-2 font-medium"
-          onClick={() => openHireEmployeeDrawer()}
-        >
-          Hire Employee
-        </Button> */}
-
-        {/* Tooba */}
-        {/* Career Page */}
-        {/* <Link to={`http://172.18.0.44:6180?token=${jwt}`} target="_blank" className="w-full sm:w-auto">
-          <Button className="bg-[#0ACF97] capitalize p-2 font-medium w-full sm:w-auto">
-            Career Page
-          </Button>
-        </Link> */}
-        <Link to={`https://hiring.veevotech.com/company/${org_id}/veevo-tech`} target="_blank">
-            <Button className="bg-[#0ACF97] capitalize p-3  font-medium">
+        <div className="flex items-center gap-3">
+          <CustomButton
+            className="bg-[#8bc9f8] capitalize p-2 font-medium justify-center shadow-sm"
+            onClick={createVacancy}
+            title="Announce new Vacancy"
+          />
+          <Link to={`https://hiring.veevotech.com/company/${org_id}/veevo-tech`} target="_blank">
+            <Button className="bg-[#0ACF97] capitalize p-3 font-medium shadow-sm cursor-pointer">
               Career Page
             </Button>
           </Link>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2 pb-3 mt-[20px]">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-5 px-3 py-5">
+      {/* Dashboard Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-5">
+        {hireCountsLoading ? (
+          <HireDashboardCardsSkeleton />
+        ) : (
+          hireCardList.map((item, idx) => (
+            <NavLink
+              key={item.id}
+              to={item.link || "#"}
+              className="block w-full min-w-0 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+              onClick={(e) => handleHireNavClickCards(e, item.link, item.id)}
+            >
+              <CustomCard
+                image={item.imgSrc}
+                title={item.title}
+                backgroundColor={item.legendBg}
+                count={item.count}
+              />
+            </NavLink>
+          ))
+        )}
+      </div>
+
+      {/* Sub Navigation */}
+      <div className="flex flex-col gap-2 pb-3">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-5 px-3 py-2">
           <div className="flex flex-wrap items-center gap-3 sm:gap-5">
             {hireMenu.map((ele) => (
               <NavLink
                 key={ele.id}
-                className={`${location.pathname === ele.link
+                className={`${
+                  location.pathname === ele.link
                     ? "text-white"
                     : "hover:text-[#474747]/60 text-[#474747]"
-                  } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
-                style={{
-                  WebkitTapHighlightColor: "transparent",
-                }}
+                } relative rounded-full px-3 py-1.5 text-sm font-medium outline-sky-400 transition focus-visible:outline-2`}
+                style={{ WebkitTapHighlightColor: "transparent" }}
                 onClick={(e) => handleHireNavClick(e, ele.link, ele.id)}
               >
                 {location.pathname === ele.link && (
@@ -161,7 +149,7 @@ const Hire = ({ data }) => {
           <Outlet />
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
