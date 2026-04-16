@@ -1,3 +1,4 @@
+import { Label } from 'recharts';
 import { showToast } from '../../Components/Toaster/Toaster'
 import hireApi from '../../Model/Data/Hire/Hire'
 import hireApi2 from '../../Model/Data/Hire/Hire_2'
@@ -29,6 +30,7 @@ const hireViewModel = (set, get) => ({
 
     viewPending: [],
     Re_Interview_data: [],
+    Label_data: [],
 
 
     handleMountHire: () => {
@@ -477,6 +479,26 @@ const hireViewModel = (set, get) => ({
             return { success: false, error: 'Failed to schedule re-interview' }
         }
     },
+
+    GetLabel_def: async (data) => {
+        try {
+            const response = await hireApi2.GetLabel(data)
+            const responseData = response.data;
+
+            if (responseData.STATUS === 'SUCCESSFUL') {
+                set({ Label_data: responseData.DB_DATA })
+                return { success: true, data: responseData }
+            } else {
+                return { success: false, error: responseData.ERROR_DESCRIPTION }
+            }
+        } catch (error) {
+            console.error("Error in GetLabel_def:", error)
+            return { success: false, error: 'Failed to fetch labels' }
+        }
+    }
+
+
+
 
 
 

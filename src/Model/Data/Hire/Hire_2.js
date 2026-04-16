@@ -125,6 +125,12 @@ const hireApi = {
             data: data
         })
 
+    },
+    GetLabel : function () {
+        return axiosInstanceHire.request({
+            method: 'GET',
+            url: '/api/v1/applications/labels'
+        })
     }
 };
 

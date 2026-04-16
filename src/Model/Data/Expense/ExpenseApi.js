@@ -39,6 +39,38 @@ const empExpenseApi = {
             url: `/expense_api/get_expense_by_id/${expenseId}`
         })
     },
+    
+    getTotalExpenses: function(params = {}) {
+        return expenseAxiosInstance.request({
+            method: "GET",
+            url: `/expense_api/get_total_expense`,
+            params: params
+        })
+    },
+    
+    getRejectedExpenses: function(params = {}) {
+        return expenseAxiosInstance.request({
+            method: "GET",
+            url: `/expense_api/get_rejected_expenses`,
+            params: params
+        })
+    },
+    
+    getApprovedExpenses: function(params = {}) {
+        return expenseAxiosInstance.request({
+            method: "GET",
+            url: `/expense_api/get_approved_expenses`,
+            params: params
+        })
+    },
+    
+    getInvoiceData: function(params = {}) {
+        return expenseAxiosInstance.request({
+            method: "GET",
+            url: `/expense_api/get_invoice_data`,
+            params: params
+        })
+    },
 }
 
 export default empExpenseApi

@@ -11,7 +11,6 @@ import { IoLogoGooglePlaystore } from 'react-icons/io5';
 import empLogo from '../../assets/images/empleado-logo.png'
 import { AnimatePresence, motion } from 'framer-motion'
 import { isTokenValid } from '../../Authentication/jwt_decode';
-import axios from 'axios';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -53,16 +52,6 @@ const Login = () => {
   // State to keep track of the current image
   const [currentImage, setCurrentImage] = useState(0);
 
-  const [signinValue, setSigninValue] = useState({
-    userEmail: '',
-  })
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setSigninValue((prevState) => ({
-      ...prevState,
-      [name]: value
-    }))
-  }
   const singinHandler = async (e) => {
     e.preventDefault()
     try {
@@ -110,8 +99,8 @@ const Login = () => {
   };
 
   return (
-    <div className='h-screen grid grid-cols-2'>
-      <div className='w-full relative overflow-hidden bg-black'>
+    <div className='min-h-screen flex flex-col lg:flex-row relative'>
+      <div className='relative overflow-hidden bg-black w-full lg:w-1/2 min-h-[38vh] sm:min-h-[42vh] lg:min-h-screen'>
         {/* <div className='absolute top-0 right-0 bottom-0 left-0 bg-image-custom' style={{ backgroundImage: `url(${images[currentImage]})`}}></div> */}
         {/* <AnimatePresence> */}
 
@@ -125,17 +114,17 @@ const Login = () => {
             animate="center"
           />
         </AnimatePresence>
-        <div className='relative z-10 text-white flex h-full'>
+        <div className='relative z-10 text-white flex h-full bg-black/25'>
           <div className='flex flex-col w-full justify-between'>
-            <div className='flex-1  flex items-end justify-end'>
+            <div className='flex-1 flex items-end justify-end p-3 sm:p-4'>
               <div className='flex flex-col gap-1'>
 
-                <button className='flex items-center justify-center text-[12px] h-[30px] w-[100px] rounded-l-full bg-[#007bff] text-fff'>Login</button>
-                <button className='flex items-center justify-center text-[12px] h-[30px] w-[100px] rounded-l-full bg-white text-black'>Register</button>
+                <button type='button' className='flex items-center justify-center text-[12px] h-[30px] w-[100px] rounded-l-full bg-[#007bff] text-white md:relative left-10'>Login</button>
+                <button type='button' className='flex items-center justify-center text-[12px] h-[30px] w-[100px] rounded-l-full bg-white text-black md:relative left-10'>Register</button>
               </div>
             </div>
-            <div className='flex-1 flex items-end p-2'>
-              <div className='text-[12px] flex flex-col gap-2'>
+            <div className='flex-1 flex items-end p-3 sm:p-4'>
+              <div className='text-[11px] sm:text-[12px] flex flex-col gap-2'>
                 <div>
                   <span>We always love to support you</span>
                 </div>
@@ -154,8 +143,9 @@ const Login = () => {
           </div>
         </div>
       </div>
-      <div className='flex items-center justify-center bg-white'>
-        <form onSubmit={singinHandler} className='flex flex-col gap-4'>
+      <div className='bg-white w-full lg:w-1/2 px-4 py-6 sm:px-6 sm:py-8 lg:p-10 flex flex-col'>
+        <div className='flex-1 flex items-center justify-center w-full'>
+        <form onSubmit={singinHandler} className='w-full max-w-[360px] flex flex-col gap-4 md:-ml-3'>
           <div className='flex flex-col ga-1'>
             <motion.div
               initial={{ opacity: 0, y: 50 }}
@@ -166,7 +156,7 @@ const Login = () => {
                 ease: [0, 0.21, 0.2, 0.2]
               }}
             >
-              <img className='h-12' src={empLogo} alt='logo' />
+              <img className='h-10 sm:h-12' src={empLogo} alt='logo' />
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 50 }}
@@ -176,9 +166,9 @@ const Login = () => {
                 delay: 0.2,
                 ease: [0, 0.21, 0.2, 0.2]
               }}
-              className='text-[13px] text-[#646464]
+              className='text-[12px] sm:text-[13px] text-[#646464]
           '>
-              <span>Welcome, Start managing your work force in a digital way!</span>
+              <span className='md:whitespace-nowrap'>Welcome, Start managing your work force in a digital way!</span>
             </motion.div>
           </div>
           <motion.div className='flex flex-col gap-2'
@@ -207,7 +197,7 @@ const Login = () => {
               <button className='text-[#343A40] capitalize rounded-none border border-[#343A40] text-[13px] px-3 py-2 hover:text-white hover:bg-[#343A40] ease-out duration-1000 transition-hover'>Log in Using OneID</button>
             </motion.div>
           </motion.div>
-          <div className='flex flex-col gap-2 text-[15px]'>
+          <div className='flex flex-col gap-2 text-[14px] sm:text-[15px]'>
             <motion.div
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
@@ -219,7 +209,7 @@ const Login = () => {
             >
               <span>Get Empleado from</span>
             </motion.div>
-            <motion.div className='flex items-center gap-3'
+            <motion.div className='flex flex-col sm:flex-row sm:items-center gap-3'
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
@@ -228,17 +218,33 @@ const Login = () => {
                 ease: [0, 0.21, 0.2, 0.2]
               }}
             >
-              <button className="flex items-center gap-2 text-[#dc3545] capitalize rounded-none border border-[#dc3545] text-[13px] px-4 py-2 hover:text-white hover:bg-[#dc3545] ease-out duration-1000 transition-hover">
+              <button type='button' className="w-full sm:w-auto flex items-center justify-center gap-2 text-[#dc3545] capitalize rounded-none border border-[#dc3545] text-[13px] px-4 py-2 hover:text-white hover:bg-[#dc3545] ease-out duration-1000 transition-hover">
                 <span><IoLogoGooglePlaystore /></span>
                 Google Play
               </button>
-              <button className="flex items-center gap-2 text-[#343A40] capitalize rounded-none border border-[#343A40] text-[13px] px-4 py-2 hover:text-white hover:bg-[#343A40] ease-out duration-1000 transition-hover">
+              <button type='button' className="w-full sm:w-auto flex items-center justify-center gap-2 text-[#343A40] capitalize rounded-none border border-[#343A40] text-[13px] px-4 py-2 hover:text-white hover:bg-[#343A40] ease-out duration-1000 transition-hover">
                 <span><FaApple /></span>
                 App Store
               </button>
             </motion.div>
           </div>
         </form>
+        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.5,
+            delay: 0.8,
+            ease: [0, 0.21, 0.2, 0.2]
+          }}
+          className='w-full pb-1 sm:pb-2 text-[11px] sm:text-[12px] text-[#7d7d7d] leading-tight'
+        >
+          <div className='w-full max-w-[360px] mx-auto pt-2 sm:pt-3 md:pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-start gap-1 sm:gap-2 relative md:-translate-x-[40%] md:translate-y-[2%]'>
+            {/* <span className='text-left'>Empleado by Veevo Tech</span> */}
+            <span className='text-left'>version 3</span>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

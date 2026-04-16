@@ -26,6 +26,22 @@ const useExpenseService = () => {
     const selectedExpenseDetail = useStore((state) => state.selectedExpenseDetail);
     const isLoadingExpenseDetail = useStore((state) => state.isLoadingExpenseDetail);
     const clearExpenseDetail = useStore((state) => state.clearExpenseDetail);
+    const totalExpenses = useStore((state) => state.totalExpenses);
+    const totalExpensesLoading = useStore((state) => state.totalExpensesLoading);
+    const getTotalExpenses = useStore((state) => state.getTotalExpenses);
+    const clearTotalExpenses = useStore((state) => state.clearTotalExpenses);
+    const rejectedExpenses = useStore((state) => state.rejectedExpenses);
+    const rejectedExpensesLoading = useStore((state) => state.rejectedExpensesLoading);
+    const getRejectedExpenses = useStore((state) => state.getRejectedExpenses);
+    const clearRejectedExpenses = useStore((state) => state.clearRejectedExpenses);
+    const approvedExpensesList = useStore((state) => state.approvedExpensesList);
+    const approvedExpensesLoading = useStore((state) => state.approvedExpensesLoading);
+    const getApprovedExpenses = useStore((state) => state.getApprovedExpenses);
+    const clearApprovedExpenses = useStore((state) => state.clearApprovedExpenses);
+    const invoiceData = useStore((state) => state.invoiceData);
+    const invoiceDataLoading = useStore((state) => state.invoiceDataLoading);
+    const getInvoiceData = useStore((state) => state.getInvoiceData);
+    const clearInvoiceData = useStore((state) => state.clearInvoiceData);
 
     // Local state for UI components - no initial filters
     const [selectedMonth, setSelectedMonth] = useState(null);
@@ -33,6 +49,9 @@ const useExpenseService = () => {
     const [activeTab, setActiveTab] = useState('Expense Analysis');
     const [showPendingApprovalsDrawer, setShowPendingApprovalsDrawer] = useState(false);
     const [showSettlementDrawer, setShowSettlementDrawer] = useState(false);
+    const [showTotalExpensesDrawer, setShowTotalExpensesDrawer] = useState(false);
+    const [showRejectedExpensesDrawer, setShowRejectedExpensesDrawer] = useState(false);
+    const [showApprovedExpensesDrawer, setShowApprovedExpensesDrawer] = useState(false);
 
     // Drawer functions
     const openPendingApprovalsDrawer = async () => {
@@ -56,6 +75,48 @@ const useExpenseService = () => {
 
     const closeSettlementDrawer = () => {
         setShowSettlementDrawer(false);
+    };
+
+    // Total expenses drawer functions
+    const openTotalExpensesDrawer = async () => {
+        console.log('Opening Total Expenses Drawer');
+        setShowTotalExpensesDrawer(true);
+        // Load total expenses data when drawer opens
+        await getTotalExpenses();
+    };
+
+    const closeTotalExpensesDrawer = () => {
+        setShowTotalExpensesDrawer(false);
+        // Clear total expenses data when drawer closes
+        clearTotalExpenses();
+    };
+
+    // Rejected expenses drawer functions
+    const openRejectedExpensesDrawer = async () => {
+        console.log('Opening Rejected Expenses Drawer');
+        setShowRejectedExpensesDrawer(true);
+        // Load rejected expenses data when drawer opens
+        await getRejectedExpenses();
+    };
+
+    const closeRejectedExpensesDrawer = () => {
+        setShowRejectedExpensesDrawer(false);
+        // Clear rejected expenses data when drawer closes
+        clearRejectedExpenses();
+    };
+
+    // Approved expenses drawer functions
+    const openApprovedExpensesDrawer = async () => {
+        console.log('Opening Approved Expenses Drawer');
+        setShowApprovedExpensesDrawer(true);
+        // Load approved expenses data when drawer opens
+        await getApprovedExpenses();
+    };
+
+    const closeApprovedExpensesDrawer = () => {
+        setShowApprovedExpensesDrawer(false);
+        // Clear approved expenses data when drawer closes
+        clearApprovedExpenses();
     };
 
     // Tab change handler
@@ -182,6 +243,12 @@ const useExpenseService = () => {
         employeesLoading,
         selectedExpenseDetail,
         isLoadingExpenseDetail,
+        totalExpenses,
+        totalExpensesLoading,
+        rejectedExpenses,
+        rejectedExpensesLoading,
+        approvedExpensesList,
+        approvedExpensesLoading,
 
         // UI State
         selectedMonth,
@@ -189,6 +256,9 @@ const useExpenseService = () => {
         activeTab,
         showPendingApprovalsDrawer,
         showSettlementDrawer,
+        showTotalExpensesDrawer,
+        showRejectedExpensesDrawer,
+        showApprovedExpensesDrawer,
 
         // Functions
         getExpenseDashboardData,
@@ -203,12 +273,26 @@ const useExpenseService = () => {
         setError,
         getExpenseById,
         clearExpenseDetail,
+        getTotalExpenses,
+        clearTotalExpenses,
+        getRejectedExpenses,
+        clearRejectedExpenses,
+        getApprovedExpenses,
+        clearApprovedExpenses,
+        getInvoiceData,
+        clearInvoiceData,
 
         // UI Functions
         openPendingApprovalsDrawer,
         closePendingApprovalsDrawer,
         openSettlementDrawer,
         closeSettlementDrawer,
+        openTotalExpensesDrawer,
+        closeTotalExpensesDrawer,
+        openRejectedExpensesDrawer,
+        closeRejectedExpensesDrawer,
+        openApprovedExpensesDrawer,
+        closeApprovedExpensesDrawer,
         handleTabChange,
         handleMonthChange,
         handleYearChange,
@@ -220,7 +304,13 @@ const useExpenseService = () => {
         getGraphSummary,
         getTableData,
         getTablePagination,
-        handleLoadMore
+        handleLoadMore,
+        
+        // Invoice data
+        invoiceData,
+        invoiceDataLoading,
+        getInvoiceData,
+        clearInvoiceData
     };
 };
 

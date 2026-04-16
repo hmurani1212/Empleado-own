@@ -71,8 +71,9 @@ const useHire = () => {
   const get_allApplicants = useStore((state) => state.gettingAllApplicants);
   const Re_Interviewfn = useStore((state) => state.Re_Interviewfn);
   const Re_Interview_data = useStore((state) => state.Re_Interviewfn);
+  const GetLabel_def =  useStore((state) => state.GetLabel_def);
+  const Label_data = useStore((state) => state.Label_data);
 
- 
 
 
   const { } = useHire_2();
@@ -1948,7 +1949,7 @@ const useHire = () => {
     loadMoreTalentPool, pagination: talentPoolPagination, Re_Interviewfn, Re_Interview_data,
     get_rejected_app_data, get_rejected_app, gettingViewPending, dataForScore, HireEmployeeDrawerContent,
     openDrawer, closeDrawer, settingDrawerTitle, settingDrawerSize, settingComponent, fetchingAllBranches, openHireEmployeeDrawer,
-    City_data, gettingCitiesByCountry,
+    City_data, gettingCitiesByCountry, GetLabel_def, Label_data
   }
 }
 

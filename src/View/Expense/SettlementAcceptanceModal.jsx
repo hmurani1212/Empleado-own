@@ -28,10 +28,18 @@ const SettlementAcceptanceModal = ({ closeModal }) => {
   });
 
   // Transform employee data from API to dropdown format
-  const employees = allEmployees.map(emp => ({
-    value: emp.id.toString(),
-    label: emp.name
-  }));
+  let employees = [];
+  try {
+    if (Array.isArray(allEmployees) && allEmployees.length > 0) {
+      employees = allEmployees.map(emp => ({
+        value: emp.id?.toString() || '',
+        label: emp.name || 'Unknown'
+      }));
+    }
+  } catch (error) {
+    console.error('Error processing employees data:', error);
+    employees = [];
+  }
 
   const categories = [
     { value: '1', label: 'Travel' },
@@ -315,7 +323,8 @@ const SettlementAcceptanceModal = ({ closeModal }) => {
           desc: formData.reason,
           amount: parseInt(formData.totalAmount),
           category: formData.category?.label || 'General',
-          date: getCurrentDate()
+          date: getCurrentDate(),
+          type: 1
         };
       } else {
         // Installment deduction payload
@@ -336,7 +345,7 @@ const SettlementAcceptanceModal = ({ closeModal }) => {
           title: formData.category?.label || 'Expense',
           employee_name: formData.employee.label,
           desc: formData.reason,
-          type: 1,
+          type: 2,
           date: getCurrentDate(),
           amount: formData.totalAmount,
           category: formData.category?.label || 'General',

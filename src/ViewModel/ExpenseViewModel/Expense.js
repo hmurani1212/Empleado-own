@@ -54,6 +54,22 @@ const expenseViewModel = (set, get) => ({
     selectedExpenseDetail: null,
     isLoadingExpenseDetail: false,
 
+    // Total expenses state
+    totalExpenses: [],
+    totalExpensesLoading: false,
+
+    // Rejected expenses state
+    rejectedExpenses: [],
+    rejectedExpensesLoading: false,
+
+    // Approved expenses state
+    approvedExpensesList: [],
+    approvedExpensesLoading: false,
+
+    // Invoice data state
+    invoiceData: [],
+    invoiceDataLoading: false,
+
     // Get expense dashboard data
     getExpenseDashboardData: async (params = {}) => {
         set({ loading: true, error: null });
@@ -203,9 +219,7 @@ const expenseViewModel = (set, get) => ({
                     pendingApprovalsLoading: false
                 });
                 
-                // Update dashboard data in real-time after successful fetch
-                await get().getExpenseDashboardData();
-                
+                                
                 return { success: true, data: respData.DB_DATA };
             } else {
                 set({
@@ -374,11 +388,175 @@ const expenseViewModel = (set, get) => ({
         }
     },
 
+    // Get total expenses data
+    getTotalExpenses: async (params = {}) => {
+        set({ totalExpensesLoading: true, error: null });
+        try {
+            const response = await expenseApi.getTotalExpenses(params);
+            const respData = response.data;
+
+            if (response.status === 200 && respData.STATUS === 'SUCCESSFUL') {
+                set({
+                    totalExpenses: respData.DB_DATA,
+                    totalExpensesLoading: false
+                });
+                return { success: true, data: respData.DB_DATA };
+            } else {
+                set({
+                    error: respData.ERROR_DESCRIPTION || 'Failed to fetch total expenses',
+                    totalExpensesLoading: false
+                });
+                showToast(respData.ERROR_DESCRIPTION || 'Failed to fetch total expenses', 'error');
+                return { success: false, error: respData.ERROR_DESCRIPTION };
+            }
+        } catch (error) {
+            console.error('Error fetching total expenses:', error);
+            const errorMessage = error.response?.data?.ERROR_DESCRIPTION || 'An error occurred while fetching total expenses';
+            set({
+                error: errorMessage,
+                totalExpensesLoading: false
+            });
+            showToast(errorMessage, 'error');
+            return { success: false, error: errorMessage };
+        }
+    },
+
+    // Get rejected expenses data
+    getRejectedExpenses: async (params = {}) => {
+        set({ rejectedExpensesLoading: true, error: null });
+        try {
+            const response = await expenseApi.getRejectedExpenses(params);
+            const respData = response.data;
+
+            if (response.status === 200 && respData.STATUS === 'SUCCESSFUL') {
+                set({
+                    rejectedExpenses: respData.DB_DATA,
+                    rejectedExpensesLoading: false
+                });
+                return { success: true, data: respData.DB_DATA };
+            } else {
+                set({
+                    error: respData.ERROR_DESCRIPTION || 'Failed to fetch rejected expenses',
+                    rejectedExpensesLoading: false
+                });
+                showToast(respData.ERROR_DESCRIPTION || 'Failed to fetch rejected expenses', 'error');
+                return { success: false, error: respData.ERROR_DESCRIPTION };
+            }
+        } catch (error) {
+            console.error('Error fetching rejected expenses:', error);
+            const errorMessage = error.response?.data?.ERROR_DESCRIPTION || 'An error occurred while fetching rejected expenses';
+            set({
+                error: errorMessage,
+                rejectedExpensesLoading: false
+            });
+            showToast(errorMessage, 'error');
+            return { success: false, error: errorMessage };
+        }
+    },
+
+    // Get approved expenses data
+    getApprovedExpenses: async (params = {}) => {
+        set({ approvedExpensesLoading: true, error: null });
+        try {
+            const response = await expenseApi.getApprovedExpenses(params);
+            const respData = response.data;
+
+            if (response.status === 200 && respData.STATUS === 'SUCCESSFUL') {
+                set({
+                    approvedExpensesList: respData.DB_DATA,
+                    approvedExpensesLoading: false
+                });
+                return { success: true, data: respData.DB_DATA };
+            } else {
+                set({
+                    error: respData.ERROR_DESCRIPTION || 'Failed to fetch approved expenses',
+                    approvedExpensesLoading: false
+                });
+                showToast(respData.ERROR_DESCRIPTION || 'Failed to fetch approved expenses', 'error');
+                return { success: false, error: respData.ERROR_DESCRIPTION };
+            }
+        } catch (error) {
+            console.error('Error fetching approved expenses:', error);
+            const errorMessage = error.response?.data?.ERROR_DESCRIPTION || 'An error occurred while fetching approved expenses';
+            set({
+                error: errorMessage,
+                approvedExpensesLoading: false
+            });
+            showToast(errorMessage, 'error');
+            return { success: false, error: errorMessage };
+        }
+    },
+
+    // Clear approved expenses data
+    clearApprovedExpenses: () => {
+        set({
+            approvedExpensesList: [],
+            approvedExpensesLoading: false
+        });
+    },
+
+    // Clear rejected expenses data
+    clearRejectedExpenses: () => {
+        set({
+            rejectedExpenses: [],
+            rejectedExpensesLoading: false
+        });
+    },
+
+    // Clear total expenses data
+    clearTotalExpenses: () => {
+        set({
+            totalExpenses: [],
+            totalExpensesLoading: false
+        });
+    },
+
     // Clear expense detail
     clearExpenseDetail: () => {
         set({
             selectedExpenseDetail: null,
             isLoadingExpenseDetail: false
+        });
+    },
+
+    // Get invoice data
+    getInvoiceData: async (params = {}) => {
+        set({ invoiceDataLoading: true, error: null });
+        try {
+            const response = await expenseApi.getInvoiceData(params);
+            const respData = response.data;
+
+            if (response.status === 200 && respData.STATUS === 'SUCCESSFUL') {
+                set({
+                    invoiceData: respData.DB_DATA,
+                    invoiceDataLoading: false
+                });
+                return { success: true, data: respData.DB_DATA };
+            } else {
+                set({
+                    error: respData.ERROR_DESCRIPTION || 'Failed to fetch invoice data',
+                    invoiceDataLoading: false
+                });
+                showToast(respData.ERROR_DESCRIPTION || 'Failed to fetch invoice data', 'error');
+                return { success: false, error: respData.ERROR_DESCRIPTION };
+            }
+        } catch (error) {
+            console.error('Error fetching invoice data:', error);
+            const errorMessage = error.response?.data?.ERROR_DESCRIPTION || 'An error occurred while fetching invoice data';
+            set({
+                error: errorMessage,
+                invoiceDataLoading: false
+            });
+            showToast(errorMessage, 'error');
+            return { success: false, error: errorMessage };
+        }
+    },
+
+    // Clear invoice data
+    clearInvoiceData: () => {
+        set({
+            invoiceData: [],
+            invoiceDataLoading: false
         });
     }
 });
