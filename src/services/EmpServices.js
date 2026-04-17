@@ -4,6 +4,8 @@ import { FaUserCheck } from "react-icons/fa6";
 import { BsFillSendFill } from 'react-icons/bs'
 import { RiCashFill } from 'react-icons/ri'
 import ExcelJS from 'exceljs';
+import { formatNicDigitsWithGroups } from './country/country_nic_formats';
+import payrollApi from '../Model/Data/Payroll/Payroll';
 
 export const contractData = [
   { id: 1, name: 'Permanent' },
@@ -285,6 +287,22 @@ const getExitDateForExcel = (employee) => {
   return formatDateForExcel(jobExitDate);
 };
 
+/** Pakistan CNIC: XXXXX-XXXXXXX-X when the value is exactly 13 digits (with or without dashes). Passports / IDs with letters are left as-is. */
+const PAKISTAN_CNIC_GROUPS = [5, 7, 1];
+
+const formatNicPassportForExcel = (value) => {
+  if (value == null || value === '') return '';
+  const s = String(value).trim();
+  if (!s) return '';
+  if (/[a-zA-Z]/.test(s)) return s;
+  const digits = s.replace(/\D/g, '');
+  if (digits.length === 13) {
+    const formatted = formatNicDigitsWithGroups(digits, PAKISTAN_CNIC_GROUPS);
+    return formatted != null ? formatted : s;
+  }
+  return s;
+};
+
 export const exportEmployeesToExcel = async (employeesData, options = {}) => {
   const employees = employeesData?.employees ?? [];
   /** When statusFilter is 'active', hide Exit column; show for 'all' and 'inactive'. */
@@ -386,7 +404,33 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
   ];
   sheet['!cols'] = columnWidths;
 
+  // Fetch current salary from salary-history API for each employee in parallel.
+  // Falls back to getGrossSalary if the call fails or returns no value.
+  const salaryResults = await Promise.allSettled(
+    employees.map((emp) => {
+      const empId = emp?.id ?? emp?.emp_id;
+      if (!empId) return Promise.resolve(null);
+      return payrollApi.incDeductHistory({ emp_id: empId });
+    })
+  );
+
+  const salaryMap = new Map();
+  salaryResults.forEach((result, i) => {
+    const empId = employees[i]?.id ?? employees[i]?.emp_id;
+    if (!empId) return;
+    if (result.status === 'fulfilled') {
+      const dbData = result.value?.data?.DB_DATA;
+      // New API shape: { current_salary, ... }; old shape: { summary: { net_salary } }
+      const currentSalary = dbData?.current_salary ?? dbData?.summary?.net_salary ?? null;
+      if (currentSalary != null && currentSalary !== '') {
+        salaryMap.set(String(empId), Number(currentSalary));
+      }
+    }
+  });
+
   employees.forEach((employee, index) => {
+    const empId = String(employee?.id ?? employee?.emp_id ?? '');
+    const salary = salaryMap.has(empId) ? salaryMap.get(empId) : getGrossSalary(employee);
     const row = [
       index + 1,
       employee?.id ?? '',
@@ -399,8 +443,8 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
       formatDateForExcel(employee?.join_date),
       ...(showExitColumn ? [getExitDateForExcel(employee)] : []),
       employee?.designation_name ?? employee?.designation ?? '',
-      getGrossSalary(employee),
-      employee?.passport_no ?? employee?.ntn_no ?? '',
+      salary,
+      formatNicPassportForExcel(employee?.passport_no ?? employee?.ntn_no ?? ''),
       getEmployeeMobile(employee),
       employee?.email ?? employee?.work_email ?? '',
       employee?.blood_group != null && String(employee.blood_group).trim() !== '' ? String(employee.blood_group).trim() : '',

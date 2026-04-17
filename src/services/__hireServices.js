@@ -39,18 +39,51 @@ export const getAllYearsHire = () => {
   };
 
 /**
- * Resolve city ids to city names using hiring_city list (id, city_name).
- * Handles vacancy.locations from vacancy_location table.
- * @param {number[]|undefined} cityIds - e.g. [105]
- * @param {Array<{id: number, city_name?: string, name?: string}>|undefined} hiringCityList - from GET /api/v1/locations/hiring_city
- * @returns {string[]} - e.g. ["Islamabad"]
+ * Resolve vacancy locations to city name strings.
+ *
+ * Handles two shapes returned by the API:
+ *  - Old shape: plain array of city IDs  → [36, 105]
+ *  - New shape: array of vacancy_location objects →
+ *      [{ id, city_id, city_name, city: { id, city_name } }]
+ *
+ * For the new shape the city name is read directly from the object so
+ * hiringCityList is only used as a fallback.
+ *
+ * @param {Array<number|{id?:number, city_id?:number, city_name?:string, city?:{city_name?:string}}>|undefined} locations
+ * @param {Array<{id: number, city_name?: string, name?: string}>|undefined} hiringCityList
+ * @returns {string[]}
  */
-export const getCityNamesFromIds = (cityIds, hiringCityList) => {
-  if (!Array.isArray(cityIds) || cityIds.length === 0) return [];
-  if (!Array.isArray(hiringCityList)) return [];
-  return cityIds
-    .map((id) => {
-      const city = hiringCityList.find((c) => c.id === id || c.id === Number(id));
+export const getCityNamesFromIds = (locations, hiringCityList) => {
+  if (!Array.isArray(locations) || locations.length === 0) return [];
+
+  return locations
+    .map((entry) => {
+      // New API shape: location object with embedded city_name
+      if (entry !== null && typeof entry === "object") {
+        const direct =
+          entry.city_name ||
+          entry.city?.city_name ||
+          entry.name ||
+          entry.city?.name ||
+          "";
+        if (direct) return direct;
+
+        // Fallback: look up by city_id or id in hiringCityList
+        const lookupId = entry.city_id ?? entry.id;
+        if (lookupId != null && Array.isArray(hiringCityList)) {
+          const found = hiringCityList.find(
+            (c) => c.id === lookupId || c.id === Number(lookupId)
+          );
+          return found?.city_name ?? found?.name ?? "";
+        }
+        return "";
+      }
+
+      // Old API shape: plain ID — look up in hiringCityList
+      if (!Array.isArray(hiringCityList)) return "";
+      const city = hiringCityList.find(
+        (c) => c.id === entry || c.id === Number(entry)
+      );
       return city?.city_name ?? city?.name ?? "";
     })
     .filter(Boolean);
