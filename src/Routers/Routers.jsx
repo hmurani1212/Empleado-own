@@ -185,6 +185,9 @@ const Routers = () => {
   const showApplicationRoutes = isAdmin || perm.application;
   const showLeavesPlanner = isAdmin || perm.leavesPlanner;
   const showFormApproval = isAdmin || perm.formApproval;
+  const hasPermissionPayload = rolePermsSuccess && Array.isArray(rolePermData?.permissions);
+  // Keep non-admin behavior during permission bootstrap, then enforce ATTENDANCE_DATA-based access.
+  const canAccessSelfAttendance = !isAdmin && (!hasPermissionPayload || perm.attendanceAdmin);
 
   return (
     <Routes>
@@ -215,7 +218,16 @@ const Routers = () => {
           ) : (
             <Route exact path="/dashboard" element={<EmployeeDashboard />} />
           )}
-          <Route path="/my-attendance" element={<EmpAttendance />} />
+          <Route
+            path="/my-attendance"
+            element={
+              canAccessSelfAttendance ? (
+                <EmpAttendance />
+              ) : (
+                <Navigate to="/dashboard" replace />
+              )
+            }
+          />
           {showEmployeesAdmin && (
             <Route path="/employees/" element={<Employees />}>
               <Route path="all_employess" element={<AllEmployess />}>
@@ -550,6 +562,9 @@ const Routers = () => {
           {isAdmin && (
             <Route path="/settings" element={<Settings />} />
           )}
+
+          {/* Fallback: any unauthorized/unknown route returns user to their dashboard */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </>
       )}
     </Routes>

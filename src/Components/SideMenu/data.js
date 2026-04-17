@@ -40,7 +40,6 @@ export const SidebarTabs = [
     { id: 8, tabName: 'Notices', icon: useAdminIcons ? <HiOutlineSpeakerphone /> : <HiSpeakerphone />, roles: ['Admin', 'Employee', 'Branch_Admin', 'Department_Admin'] },
     { id: 9, tabName: 'Tasks', icon: useAdminIcons ? <AiFillFile /> : <MdTask />, roles: ['Admin', 'Employee', 'Branch_Admin', 'Department_Admin'] },
     { id: SIDEBAR_TAB_ID_ATTENDANCE_ADMIN, tabName: 'Attendance', icon: <BiSolidUserCheck />, roles: ['Admin'] },
-    { id: 10, tabName: 'Attendance', icon: <BiSolidUserCheck />, roles: ['Admin'] },
     { id: 11, tabName: 'Shift Planners', icon: <BsClockFill />, roles: ['Admin'] },
     { id: 12, tabName: 'Hire 2.0', icon: <BsSearch />, roles: ['Admin'] },
     { id: 13, tabName: 'Application', icon: <AiOutlineFileText />, roles: ['Admin'] },
