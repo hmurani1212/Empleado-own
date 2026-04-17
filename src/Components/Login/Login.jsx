@@ -145,90 +145,90 @@ const Login = () => {
       </div>
       <div className='bg-white w-full lg:w-1/2 px-4 py-6 sm:px-6 sm:py-8 lg:p-10 flex flex-col'>
         <div className='flex-1 flex items-center justify-center w-full'>
-        <form onSubmit={singinHandler} className='w-full max-w-[360px] flex flex-col gap-4 md:-ml-3'>
-          <div className='flex flex-col ga-1'>
-            <motion.div
+          <form onSubmit={singinHandler} className='w-full max-w-[360px] flex flex-col gap-4 md:-ml-3'>
+            <div className='flex flex-col ga-1'>
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.5,
+                  delay: 0.1,
+                  ease: [0, 0.21, 0.2, 0.2]
+                }}
+              >
+                <img className='h-10 sm:h-12' src={empLogo} alt='logo' />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.5,
+                  delay: 0.2,
+                  ease: [0, 0.21, 0.2, 0.2]
+                }}
+                className='text-[12px] sm:text-[13px] text-[#646464]
+          '>
+                <span className='md:whitespace-nowrap'>Welcome, Start managing your work force in a digital way!</span>
+              </motion.div>
+            </div>
+            <motion.div className='flex flex-col gap-2'
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
                 duration: 0.5,
-                delay: 0.1,
+                delay: 0.3,
                 ease: [0, 0.21, 0.2, 0.2]
               }}
             >
-              <img className='h-10 sm:h-12' src={empLogo} alt='logo' />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.2,
-                ease: [0, 0.21, 0.2, 0.2]
-              }}
-              className='text-[12px] sm:text-[13px] text-[#646464]
-          '>
-              <span className='md:whitespace-nowrap'>Welcome, Start managing your work force in a digital way!</span>
-            </motion.div>
-          </div>
-          <motion.div className='flex flex-col gap-2'
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.5,
-              delay: 0.3,
-              ease: [0, 0.21, 0.2, 0.2]
-            }}
-          >
-            {/* <div className='flex items-center justify-between text-[13px] border-b border-b-[#e7e7e7] pr-3 pl-1 py-1'>
+              {/* <div className='flex items-center justify-between text-[13px] border-b border-b-[#e7e7e7] pr-3 pl-1 py-1'>
 
               <input placeholder='Email/Contact No/UserName' className='outline-none w-full' name='userEmail' onChange={handleChange} />
               <span className='text-[#a1a1a1]'><FaEnvelope /></span>
             </div> */}
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.4,
-                ease: [0, 0.21, 0.2, 0.2]
-              }}
-            >
-              <button className='text-[#343A40] capitalize rounded-none border border-[#343A40] text-[13px] px-3 py-2 hover:text-white hover:bg-[#343A40] ease-out duration-1000 transition-hover'>Log in Using OneID</button>
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.5,
+                  delay: 0.4,
+                  ease: [0, 0.21, 0.2, 0.2]
+                }}
+              >
+                <button className='text-[#343A40] capitalize rounded-none border border-[#343A40] text-[13px] px-3 py-2 hover:text-white hover:bg-[#343A40] ease-out duration-1000 transition-hover'>Log in Using OneID</button>
+              </motion.div>
             </motion.div>
-          </motion.div>
-          <div className='flex flex-col gap-2 text-[14px] sm:text-[15px]'>
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.6,
-                ease: [0, 0.21, 0.2, 0.2]
-              }}
-            >
-              <span>Get Empleado from</span>
-            </motion.div>
-            <motion.div className='flex flex-col sm:flex-row sm:items-center gap-3'
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.7,
-                ease: [0, 0.21, 0.2, 0.2]
-              }}
-            >
-              <button type='button' className="w-full sm:w-auto flex items-center justify-center gap-2 text-[#dc3545] capitalize rounded-none border border-[#dc3545] text-[13px] px-4 py-2 hover:text-white hover:bg-[#dc3545] ease-out duration-1000 transition-hover">
-                <span><IoLogoGooglePlaystore /></span>
-                Google Play
-              </button>
-              <button type='button' className="w-full sm:w-auto flex items-center justify-center gap-2 text-[#343A40] capitalize rounded-none border border-[#343A40] text-[13px] px-4 py-2 hover:text-white hover:bg-[#343A40] ease-out duration-1000 transition-hover">
-                <span><FaApple /></span>
-                App Store
-              </button>
-            </motion.div>
-          </div>
-        </form>
+            <div className='flex flex-col gap-2 text-[14px] sm:text-[15px]'>
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.5,
+                  delay: 0.6,
+                  ease: [0, 0.21, 0.2, 0.2]
+                }}
+              >
+                <span>Get Empleado from</span>
+              </motion.div>
+              <motion.div className='flex flex-col sm:flex-row sm:items-center gap-3'
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.5,
+                  delay: 0.7,
+                  ease: [0, 0.21, 0.2, 0.2]
+                }}
+              >
+                <button type='button' className="w-full sm:w-auto flex items-center justify-center gap-2 text-[#dc3545] capitalize rounded-none border border-[#dc3545] text-[13px] px-4 py-2 hover:text-white hover:bg-[#dc3545] ease-out duration-1000 transition-hover">
+                  <span><IoLogoGooglePlaystore /></span>
+                  Google Play
+                </button>
+                <button type='button' className="w-full sm:w-auto flex items-center justify-center gap-2 text-[#343A40] capitalize rounded-none border border-[#343A40] text-[13px] px-4 py-2 hover:text-white hover:bg-[#343A40] ease-out duration-1000 transition-hover">
+                  <span><FaApple /></span>
+                  App Store
+                </button>
+              </motion.div>
+            </div>
+          </form>
         </div>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -240,9 +240,9 @@ const Login = () => {
           }}
           className='w-full pb-1 sm:pb-2 text-[11px] sm:text-[12px] text-[#7d7d7d] leading-tight'
         >
-          <div className='w-full max-w-[360px] mx-auto pt-2 sm:pt-3 md:pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-start gap-1 sm:gap-2 relative md:-translate-x-[40%] md:translate-y-[2%]'>
-            {/* <span className='text-left'>Empleado by Veevo Tech</span> */}
-            <span className='text-left'>version 3</span>
+          <div className='w-full relative top-10 max-w-[360px] mx-auto pt-2 sm:pt-3 md:pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 md:-translate-x-[40%] md:translate-y-[2%]'>
+            <span className='text-left'>Empleado by Veevo Tech</span>
+            <span className='text-right'>version 3</span>
           </div>
         </motion.div>
       </div>
@@ -251,3 +251,9 @@ const Login = () => {
 }
 
 export default Login;
+
+
+
+
+
+
