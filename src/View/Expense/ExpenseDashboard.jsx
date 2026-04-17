@@ -178,7 +178,7 @@ const ExpenseDashboard = () => {
       {
         label: "Total Expenses",
         data: [0, 0, 0, 0, 0, 0],
-        backgroundColor: "#3B82F6",
+        backgroundColor: "#FDA006",
         borderRadius: 4,
         barThickness: 20,
       },

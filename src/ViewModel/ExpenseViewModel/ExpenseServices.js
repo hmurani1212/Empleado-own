@@ -148,8 +148,8 @@ const useExpenseService = () => {
                 {
                     label: 'Total Expenses',
                     data: expenseData.graphData.data.map(item => item.total_expenses),
-                    backgroundColor: '#3B82F6',
-                    borderColor: '#3B82F6',
+                    backgroundColor: '#FDA006',
+                    borderColor: '#FDA006',
                     borderWidth: 1,
                 },
                 {
