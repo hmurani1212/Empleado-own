@@ -27,6 +27,7 @@ const useNotice = () => {
     const getViewNotice = useStore ((state) => state.getViewNotice)
     const deleteNotice = useStore ((state) => state.deleteNotice)
     const viewNoticeData = useStore ((state) => state.viewNoticeData)
+    const viewNoticeLoading = useStore ((state) => state.viewNoticeLoading)
     const getFilterNotice = useStore ((state) => state.getFilterNotice)
     const noticesPagination = useStore ((state) => state.noticesPagination)
 
@@ -237,8 +238,8 @@ const useNotice = () => {
         
         switch (id) {
             case 1:
+                getViewNotice(ele.id);
                 handleView(ele.id);
-                getViewNotice(ele.id)
                 setNoticeId(ele.id)
             break;
 
@@ -684,7 +685,7 @@ const useNotice = () => {
  return {
     noticeTitles, noticesBranches, noticesDepartment, getAllDepartmentsNotices, getBranchesOnly, getDepartmentsByBranch, noticesFilterBranches, handleChangeDept, addNoticeValue, handleAddNoticeBranch,
     filterDepartmentsNotices, employeeOptions, handleDeptChange, setAddNoticeValue, handleNewNotice, handleCheckboxChange, showEmployeeName, handleChangeEmpName, addNewNotice, allNoticesList,
-    getAllNoticesList, noticeMount, noticesMenuItems, toggleMenuNotices, openMenu, openDialog, handleDelete, handleMenuItemsNotices, deleteNotices, viewNoticeData, getViewNotice, openViewDialog, setOpenViewDialog,
+    getAllNoticesList, noticeMount, noticesMenuItems, toggleMenuNotices, openMenu, openDialog, handleDelete, handleMenuItemsNotices, deleteNotices, viewNoticeData, viewNoticeLoading, getViewNotice, openViewDialog, setOpenViewDialog,
     handleView, handleNoticesSearchEmp, loading, showNoticeDrawer, closeNoticeDrawer,
     handleEditNotice,
     handleEditNoticeToggle,

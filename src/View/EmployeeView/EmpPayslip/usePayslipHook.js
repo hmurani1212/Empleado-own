@@ -3,12 +3,16 @@ import PayslipService from './PayslipService';
 import { showToast } from '../../../Components/Toaster/Toaster';
 import useStore from '../../../Store/store';
 import { getUserData, getDecodedToken } from '../../../Authentication/jwt_decode';
+import useEmpPayslipServices from '../../../ViewModel/EmpViewModel/EmpPayslipViewModel/EmpPayslipServices';
 
 const usePayslipHook = () => {
     const [isLoading, setIsLoading] = useState(false);
+    const [isComprehensiveLoading, setIsComprehensiveLoading] = useState(false);
     const [payslipData, setPayslipData] = useState(null);
+    const [comprehensiveSalaryData, setComprehensiveSalaryData] = useState(null);
     const [showPayslip, setShowPayslip] = useState(false);
     const empDashboardData = useStore((state)=> state.empDashboardData)
+    const { getComprehensiveSalaryData } = useEmpPayslipServices();
     
     // Get employee ID from multiple sources
     const idSet = useStore((state) => state.idSet);
@@ -47,6 +51,41 @@ const usePayslipHook = () => {
         // Last resort fallback - avoid oneid
         currentEmployeeId = userData?.org_id || '123';
     }
+
+    // Dedicated oneid for comprehensive salary endpoint.
+    // Must NOT fallback to org_id.
+    let currentOneId;
+    if (userData?.oneid) {
+        currentOneId = userData.oneid;
+    } else if (decoded?.oneid) {
+        currentOneId = decoded.oneid;
+    } else if (decoded?.org_data?.oneid) {
+        currentOneId = decoded.org_data.oneid;
+    } else if (userData?.org_oneid) {
+        currentOneId = userData.org_oneid;
+    } else {
+        currentOneId = null;
+    }
+
+    const loadComprehensiveSalaryData = async () => {
+        if (!currentOneId) {
+            return null;
+        }
+
+        setIsComprehensiveLoading(true);
+        try {
+            const data = await getComprehensiveSalaryData(currentOneId);
+            setComprehensiveSalaryData(data);
+            return data;
+        } finally {
+            setIsComprehensiveLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadComprehensiveSalaryData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentOneId]);
 
     // Download payslip data
     const downloadPayslip = async (year, month) => {
@@ -124,10 +163,6 @@ const usePayslipHook = () => {
                 const data = response.data;
                 
                 if (data.STATUS === 'SUCCESS' || data.STATUS === 'SUCCESSFUL') {
-                    // showToast('Payslip downloaded successfully', 'success');
-                    
-                    // Set payslip data for display - pass the full response data
-                    console.log('Setting payslip data:', data);
                     setPayslipData(data);
                     setShowPayslip(true);
                     
@@ -173,7 +208,6 @@ const usePayslipHook = () => {
             const data = await PayslipService.fetchPayslipData(month, year, currentEmployeeId);
             
             if (data && (data.STATUS === 'SUCCESS' || data.STATUS === 'SUCCESSFUL')) {
-                console.log('Setting payslip data from fetchPayslipData:', data);
                 setPayslipData(data);
                 setShowPayslip(true);
                 return data;
@@ -214,12 +248,16 @@ const usePayslipHook = () => {
 
     return {
         isLoading,
+        isComprehensiveLoading,
         payslipData,
+        comprehensiveSalaryData,
         showPayslip,
         downloadPayslip,
         fetchPayslipData,
+        loadComprehensiveSalaryData,
         closePayslip,
-        currentEmployeeId
+        currentEmployeeId,
+        currentOneId
     };
 };
 

@@ -154,6 +154,7 @@ const filterColumnsByZero = (columns, data) => {
     return hasAnyPositive
   })
 }
+
 // OLD (incoming branch): flat PAYSLIP_COLUMNS + getVisiblePayslipColumns(data) only.
 // const getVisiblePayslipColumns = (data) => {
 //   if (!data || data.length === 0) return PAYSLIP_COLUMNS

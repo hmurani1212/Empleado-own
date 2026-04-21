@@ -552,7 +552,6 @@ const EmployeeGoals = () => {
         closeDrawer={addGoalValue.show ? toggleAddGoal : () => {}}
         widthSize={addGoalValue.show ? (addGoalValue.view ? 760 : 620) : 550}
         // widthSize={addGoalValue.show ? (addGoalValue.view ? 760 : 550) : 550}
-        // widthSize={addGoalValue.show ? (addGoalValue.view ? 760 : 550) : 550}
         // widthSize={620}
       />
 

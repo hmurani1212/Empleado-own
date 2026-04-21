@@ -1,21 +1,17 @@
 import {
   Button,
-  Card,
-  CardBody,
-  IconButton,
-  MenuItem,
   Typography,
 } from "@material-tailwind/react";
-import React, { useRef } from "react";
+import React, { useRef, useState, useCallback, useLayoutEffect, useEffect } from "react";
+import ReactDOM from "react-dom";
 import useSubDept from "../../ViewModel/DepartmentsViewModel/SubDeptServices";
-import { useParams, useLocation } from "react-router";
+import { useParams } from "react-router";
 import { FaChevronDown, FaEye } from "react-icons/fa";
 import { HiOutlineOfficeBuilding, HiOutlineUserGroup } from "react-icons/hi"; // New icons
 import useDepartments from "../../ViewModel/DepartmentsViewModel/DepartmentsServices";
-import { IoArrowBackOutline } from "react-icons/io5";
-import { motion, AnimatePresence } from "framer-motion";
-import useDropdownService from "../../services/__dropDownHoverService";
+import { motion } from "framer-motion";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
+import useStore from "../../Store/store";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import { getUserData } from "../../Authentication/jwt_decode";
 import { isDepartmentAdmin } from "../../Authentication/roleHelpers";
@@ -75,6 +71,7 @@ const ManageSubDepartments = () => {
     openDialogDept,
     handleDialogDept,
     handleDeleteDept,
+    showDrawer,
   } = useDepartments();
   const {
     subDept,
@@ -84,9 +81,65 @@ const ManageSubDepartments = () => {
     handleAddSubDept,
     backToHome,
   } = useSubDept();
-  // console.log("subDeptsubDept", subDept)
-  const { triggerRefs, getDropdownPosition } = useDropdownService();
+  const drawerOpen = useStore((state) => state.drawerOpen);
   const hideCreateDepartmentButton = isDepartmentAdmin(getUserData()?.roleId);
+
+  const displaySubDepts = subDept || [];
+  const scrollContainerRef = useRef(null);
+  const tableHorizontalScrollRef = useRef(null);
+  const triggerRefs = useRef([]);
+  const [portalState, setPortalState] = useState({
+    openIndex: -1,
+    top: 0,
+    left: 0,
+    bottom: undefined,
+  });
+
+  const updatePortalPosition = useCallback(() => {
+    const openIndex = displaySubDepts.findIndex((_, i) => openMenuDept[i]);
+    if (openIndex < 0) {
+      setPortalState((s) => (s.openIndex < 0 ? s : { ...s, openIndex: -1 }));
+      return;
+    }
+    const triggerEl = triggerRefs.current?.[openIndex];
+    if (!triggerEl) return;
+    const rect = triggerEl.getBoundingClientRect();
+    const openAbove = openIndex >= displaySubDepts.length - 3;
+    const dropdownWidth = 192;
+    const left = Math.max(4, Math.min(rect.right - dropdownWidth, window.innerWidth - dropdownWidth - 4));
+    setPortalState({
+      openIndex,
+      left,
+      top: openAbove ? undefined : rect.bottom + 0,
+      bottom: openAbove ? window.innerHeight - rect.top + 0 : undefined,
+    });
+  }, [openMenuDept, displaySubDepts]);
+
+  useLayoutEffect(() => {
+    updatePortalPosition();
+  }, [openMenuDept, updatePortalPosition]);
+
+  useEffect(() => {
+    if (portalState.openIndex < 0) return;
+    const onScroll = () => updatePortalPosition();
+    const scrollEls = [scrollContainerRef.current, tableHorizontalScrollRef.current].filter(Boolean);
+    scrollEls.forEach((el) => el.addEventListener("scroll", onScroll, true));
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      scrollEls.forEach((el) => el.removeEventListener("scroll", onScroll, true));
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [portalState.openIndex, updatePortalPosition]);
+
+  const isAnyActionMenuOpen = Object.values(openMenuDept || {}).some(Boolean);
+
+  useEffect(() => {
+    if (showDrawer || drawerOpen) {
+      Object.keys(openMenuDept || {}).forEach((i) => toggleMenuDept(Number(i), false));
+    }
+  }, [showDrawer, drawerOpen]);
 
   return (
     <div className="min-h-screen">
@@ -121,11 +174,14 @@ const ManageSubDepartments = () => {
           </div>
         </div>
 
-        {/* Glassy Table Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-center min-w-[1000px] table-auto">
-              <thead>
+        {/* Glassy Table Card — scroll ref syncs portal menu position; menu rendered via portal so it stays above table/overflow */}
+        <div
+          ref={scrollContainerRef}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative w-full overflow-auto customScroll"
+        >
+          <div ref={tableHorizontalScrollRef} className="overflow-x-auto">
+            <table className="w-full text-center min-w-[1000px] table-auto border-collapse">
+              <thead className="sticky top-0 z-20 bg-gray-50/80 shadow-sm">
                 <tr className="bg-gray-50/80 border-b border-gray-100">
                   {subDeptHeader?.map((head, i) => (
                     <th
@@ -139,7 +195,7 @@ const ManageSubDepartments = () => {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className={`divide-y divide-gray-50 bg-white ${isAnyActionMenuOpen ? "relative z-[25]" : ""}`}>
                 {subDeptLoading ? (
                   [...Array(6)].map((_, i) => <SubDeptSkeletonRow key={i} />)
                 ) : subDept?.length > 0 ? (
@@ -149,7 +205,7 @@ const ManageSubDepartments = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="hover:bg-blue-50/30 transition-colors group"
+                      className={`hover:bg-blue-50/30 transition-colors group ${openMenuDept[index] ? "relative z-[40] isolate" : ""}`}
                     >
                       {/* Department Name */}
                       <td className="p-4 first:pl-6 text-left">
@@ -209,7 +265,7 @@ const ManageSubDepartments = () => {
                           <button
                             type="button"
                             onClick={() => handleDesignation(department.designation, department.id)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-600 transition-all shadow-sm border border-blue-100"
+                            className="w-8 h-8 flex cursor-pointer items-center justify-center rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 hover:text-blue-600 transition-all shadow-sm border border-blue-100"
                             title="View Designations"
                           >
                             <FaEye size={14} />
@@ -217,13 +273,13 @@ const ManageSubDepartments = () => {
                         </div>
                       </td>
 
-                      {/* Actions */}
-                      <td className="p-4 last:pr-6 relative">
+                      {/* Actions — dropdown rendered via portal so it stays on top of table rows and scroll containers */}
+                      <td className={`p-4 last:pr-6 relative ${openMenuDept[index] ? "z-[30]" : ""}`}>
                         <div
                           ref={(el) => (triggerRefs.current[index] = el)}
                           onMouseEnter={() => toggleMenuDept(index, true)}
                           onMouseLeave={() => toggleMenuDept(index, false)}
-                          className="relative inline-block"
+                          className="relative flex justify-center"
                         >
                           <Button
                             className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all normal-case"
@@ -235,40 +291,6 @@ const ManageSubDepartments = () => {
                               className={`transition-transform duration-200 ${openMenuDept[index] ? "rotate-180" : ""}`}
                             />
                           </Button>
-
-                          <AnimatePresence>
-                            {openMenuDept[index] && (() => {
-                              const isFirstRow = index === 0;
-                              const isLastRow = index === subDept.length - 1;
-                              const isOpenUp = isFirstRow ? false : isLastRow ? true : getDropdownPosition(index) === "top";
-
-                              return (
-                                <motion.div
-                                  initial={{ opacity: 0, y: isOpenUp ? 10 : -10, scale: 0.95 }}
-                                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                                  exit={{ opacity: 0, y: isOpenUp ? 10 : -10, scale: 0.95 }}
-                                  transition={{ duration: 0.15, ease: "easeOut" }}
-                                  className={`absolute z-50 bg-white border border-gray-100 rounded-xl shadow-xl w-40 right-0 ${
-                                    isOpenUp ? "bottom-full mb-2" : "top-full mt-2"
-                                  }`}
-                                >
-                                  <ul className="flex flex-col py-1">
-                                    {deptActionTitle.map((menuItem) => (
-                                      <li key={menuItem.id}>
-                                        <button
-                                          className="w-full text-left px-4 py-2.5 text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-between transition-colors"
-                                          onClick={() => handleMenuDept(menuItem.id, department)}
-                                        >
-                                          {menuItem.title}
-                                          <span style={{ color: menuItem.color }}>{menuItem.icon}</span>
-                                        </button>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </motion.div>
-                              );
-                            })()}
-                          </AnimatePresence>
                         </div>
                       </td>
                     </motion.tr>
@@ -294,6 +316,44 @@ const ManageSubDepartments = () => {
             </table>
           </div>
         </div>
+
+        {portalState.openIndex >= 0 &&
+          ReactDOM.createPortal(
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.15 }}
+              className="fixed w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[9990]"
+              style={{
+                left: portalState.left,
+                top: portalState.top,
+                bottom: portalState.bottom,
+              }}
+              onMouseEnter={() => toggleMenuDept(portalState.openIndex, true)}
+              onMouseLeave={() => toggleMenuDept(portalState.openIndex, false)}
+            >
+              <ul className="flex w-full flex-col py-1">
+                {deptActionTitle.map((menuItem) => (
+                  <li
+                    className="flex items-center justify-between px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition-colors text-gray-700 hover:text-blue-600"
+                    key={menuItem.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMenuDept(menuItem.id, displaySubDepts[portalState.openIndex]);
+                    }}
+                  >
+                    <Typography variant="small" className="text-xs font-medium font-poppins">
+                      {menuItem.title}
+                    </Typography>
+                    <span style={{ color: menuItem.color }} className="text-sm opacity-80">
+                      {menuItem.icon}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>,
+            document.body
+          )}
 
         <ConfirmationDialog
           openDialog={openDialogDept}

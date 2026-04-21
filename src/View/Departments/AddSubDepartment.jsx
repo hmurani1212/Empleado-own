@@ -9,7 +9,7 @@ const AddSubDepartment = (props) => {
 
     const { submitSubDept, newDesigValue, handleNewDesignations, handleRemoveNewDesignation, handleInputChangeDes, handleChangeDesignation} = useSubDept()
   return (
-    <div className='flex flex-col gap-2'>
+    <div className='flex flex-col gap-4 pt-6'>
         <div>
             <Input
                 label='Department Name'
@@ -57,10 +57,10 @@ const AddSubDepartment = (props) => {
         </div>
 
         <div>
-            <Button className='bg-[#8bc9f8] capitalize p-2 font-medium' loading={newDesigValue.loading ? true : false} onClick={handleNewDesignations}>Add New Designation</Button>
+            <Button className='bg-[#8bc9f8] capitalize p-2 font-medium cursor-pointer' loading={newDesigValue.loading ? true : false} onClick={handleNewDesignations}>Add New Designation</Button>
         </div>
         <div>
-            <Button className='bg-[#8bc9f8] capitalize p-2 font-medium' onClick={(e)=>submitSubDept(e, data)}>Submit</Button>
+            <Button className='bg-[#8bc9f8] capitalize p-2 font-medium cursor-pointer' onClick={(e)=>submitSubDept(e, data)}>Submit</Button>
         </div>
     </div>
   )

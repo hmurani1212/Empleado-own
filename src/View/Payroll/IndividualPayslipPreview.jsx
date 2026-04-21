@@ -112,6 +112,11 @@ const formatDisplayJoinDate = (raw) => {
   return String(raw)
 }
 
+const formatSmallDescription = (description) => {
+  const text = String(description || '').trim()
+  return text ? `(${text})` : '(No Description)'
+}
+
 // Helper function to get income tax amount from object or value - show 0 if null
 const getIncomeTaxAmount = (incomeTax) => {
   if (incomeTax === null || incomeTax === undefined || incomeTax === '') return 0
@@ -1217,7 +1222,7 @@ const IndividualPayslipPreview = () => {
                            <div className="flex justify-between items-start gap-4">
                              <div className="flex flex-col">
                               <span className="text-xs text-gray-600">{item.title || 'Incentive'}</span>
-                              {item.description && <span style={{ fontSize: '0.65em', color: '#666' }}>({item.description})</span>}
+                              <span style={{ fontSize: '0.65em', color: '#666' }}>{formatSmallDescription(item.description)}</span>
                              </div>
                              <span className="text-xs text-blue-600 text-center">PKR {parseFloat(item.amount || 0).toLocaleString()}</span>
                            </div>
@@ -1252,8 +1257,11 @@ const IndividualPayslipPreview = () => {
                      .map((item, index) => (
                        <tr key={item.id || index}>
                          <td className="border-b border-gray-300 p-2">
-                           <div className="flex justify-between items-center gap-4">
-                             <span className="text-xs text-gray-600">{item.title || 'Deduction'}:</span>
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex flex-col">
+                              <span className="text-xs text-gray-600">{item.title || 'Deduction'}:</span>
+                              <span style={{ fontSize: '0.65em', color: '#666' }}>{formatSmallDescription(item.description)}</span>
+                            </div>
                              <span className="text-xs text-blue-600 text-center">PKR {parseFloat(item.monthly_amount > 0 ? item.monthly_amount : item.amount || 0).toLocaleString()}</span>
                            </div>
                          </td>
@@ -1519,7 +1527,12 @@ const IndividualPayslipPreview = () => {
                           const zebra = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
                           return (
                             <tr key={item.id || index} className={zebra}>
-                              <td className="py-2 px-3 text-slate-600">{item.title || 'Deduction'}</td>
+                              <td className="py-2 px-3 text-slate-600">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="font-medium text-slate-800">{item.title || 'Deduction'}</span>
+                                  <span className="text-xs text-slate-500">{formatSmallDescription(item.description)}</span>
+                                </div>
+                              </td>
                               <td className="py-2 px-3 text-right font-semibold tabular-nums text-slate-900">{formatPkr(amt)}</td>
                             </tr>
                           )

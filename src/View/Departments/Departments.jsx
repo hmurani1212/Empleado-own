@@ -78,7 +78,7 @@ const Departments = () => {
     handleBackDept,
     settingBranchId,
   } = useDepartments();
-  const { triggerRefs, getDropdownPosition } = useDropdownService();
+  const { triggerRefs } = useDropdownService();
   const { handleSubDept } = useSubDept();
   const drawerOpen = useStore((state) => state.drawerOpen);
   const hideCreateDepartmentButton = isDepartmentAdmin(getUserData()?.roleId);
@@ -147,12 +147,12 @@ const Departments = () => {
   const displayDeptDetails = allDeptDetails || [];
 
   const scrollContainerRef = useRef(null);
+  const tableHorizontalScrollRef = useRef(null);
   const [portalState, setPortalState] = useState({
     openIndex: -1,
     top: 0,
     left: 0,
     bottom: undefined,
-    openAbove: false,
   });
 
   const updatePortalPosition = useCallback(() => {
@@ -172,7 +172,6 @@ const Departments = () => {
       left,
       top: openAbove ? undefined : rect.bottom + 0,
       bottom: openAbove ? window.innerHeight - rect.top + 0 : undefined,
-      openAbove,
     });
   }, [openMenuDept, displayDeptDetails]);
 
@@ -182,13 +181,15 @@ const Departments = () => {
 
   useEffect(() => {
     if (portalState.openIndex < 0) return;
-    const scrollEl = scrollContainerRef.current;
     const onScroll = () => updatePortalPosition();
-    scrollEl?.addEventListener("scroll", onScroll, true);
+    const scrollEls = [scrollContainerRef.current, tableHorizontalScrollRef.current].filter(Boolean);
+    scrollEls.forEach((el) => el.addEventListener("scroll", onScroll, true));
     window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
     return () => {
-      scrollEl?.removeEventListener("scroll", onScroll, true);
+      scrollEls.forEach((el) => el.removeEventListener("scroll", onScroll, true));
       window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
     };
   }, [portalState.openIndex, updatePortalPosition]);
 
@@ -242,7 +243,7 @@ const Departments = () => {
 
               {/* Glassy Table Card */}
               <div ref={scrollContainerRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative w-full overflow-auto customScroll">
-                <div className="overflow-x-auto">
+                <div ref={tableHorizontalScrollRef} className="overflow-x-auto">
                   <table className="w-full text-center min-w-[1000px] table-auto border-collapse">
                     <thead className="sticky top-0 z-20 bg-gray-50/80 shadow-sm">
                       <tr className="bg-gray-50/80 border-b border-gray-100">

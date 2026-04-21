@@ -3,11 +3,27 @@ import empAttendanceApi from "../../../Model/Data/EmpData/EmpAttendance/EmpAtten
 const empAttendanceViewModel = (set, get) =>({
 
     empAttendancData:[],
+    empAttendanceCacheKey: null,
+    empAttendancDataCache: {},
 
 
-    gettingEmpAttendanceData :async(data)=>{
+    gettingEmpAttendanceData :async(data = {}, options = {})=>{
+        const forceRefresh = Boolean(options?.forceRefresh);
+        const resolvedMonth = Number(data?.month) || (new Date().getMonth() + 1);
+        const resolvedYear = Number(data?.year) || new Date().getFullYear();
+        const cacheKey = `${resolvedMonth}-${resolvedYear}`;
+        const cache = get().empAttendancDataCache || {};
+
+        if (!forceRefresh && cache[cacheKey]) {
+            set({
+                empAttendancData: cache[cacheKey],
+                empAttendanceCacheKey: cacheKey
+            });
+            return cache[cacheKey];
+        }
+
         try{
-            const response = await empAttendanceApi.getEmpAttendanceData(data)
+            const response = await empAttendanceApi.getEmpAttendanceData({ month: resolvedMonth, year: resolvedYear })
             const responseData = response.data
             if(response.status === 200 && responseData.STATUS === "SUCCESS"){
                 const dbData = responseData.DB_DATA
@@ -152,11 +168,20 @@ const empAttendanceViewModel = (set, get) =>({
                 }
                 
                 
-                set({empAttendancData: transformedData})
+                set((state) => ({
+                    empAttendancData: transformedData,
+                    empAttendanceCacheKey: cacheKey,
+                    empAttendancDataCache: {
+                        ...(state.empAttendancDataCache || {}),
+                        [cacheKey]: transformedData
+                    }
+                }))
+                return transformedData;
             }
         }catch(err){
             console.log(err)
         }
+        return null;
     },
 
 
@@ -172,7 +197,21 @@ const empAttendanceViewModel = (set, get) =>({
                     total_days: data.attendance_detail?.total_days,
                     attendance: data.attendance_detail?.attendance,
                 }
-            }
+            },
+            empAttendancDataCache: state.empAttendanceCacheKey ? {
+                ...(state.empAttendancDataCache || {}),
+                [state.empAttendanceCacheKey]: {
+                    ...state.empAttendancData,
+                    attendance_detail: {
+                        ...state.empAttendancData.attendance_detail,
+                        earned: data.attendance_detail?.earned,
+                        total: data.attendance_detail?.total,
+                        present_days: data.attendance_detail?.present_days,
+                        total_days: data.attendance_detail?.total_days,
+                        attendance: data.attendance_detail?.attendance,
+                    }
+                }
+            } : (state.empAttendancDataCache || {})
         }));
     }
 

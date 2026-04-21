@@ -35,6 +35,20 @@ const EmpDashboardAttendance = (props) => {
         0
       ).getDate();    
 
+    const selectedMonthDays = new Date(
+        calendarData?.year?.value || new Date().getFullYear(),
+        calendarData?.month?.value || (new Date().getMonth() + 1),
+        0
+    ).getDate();
+
+    // Leaves taken in the selected/current calendar month only.
+    const leaveLabels = new Set(["L", "MAL", "LR"]);
+    const totalLeaves = Array.isArray(calendarData?.attendanceAttr)
+        ? calendarData.attendanceAttr.filter((att) => leaveLabels.has(att?.att_label)).length
+        : 0;
+
+    const totalLeavesProgress = Math.min((totalLeaves / Math.max(selectedMonthDays, 1)) * 100, 100);
+
     
   return (
     <>
@@ -85,7 +99,7 @@ const EmpDashboardAttendance = (props) => {
                     <span className='flex-1 p-4 text-customGray-500 text-[13px]'>Annual Leaves (Availed/Total)</span>
                 </div>
             </div> */}
-            <div className='space-y-10 bg-[#FFFFFF] py-4 rounded-[10px] drop-shadow-md px-3'>
+            <div className='space-y-4 bg-[#FFFFFF] py-4 rounded-[10px] drop-shadow-md px-3'>
                 <div className='flex flex-col gap-1'>
                     <div className="flex justify-between items-center">
                         <span className="text-[#292929] text-[14px] font-medium font-Urbanist">Present Days</span>
@@ -114,6 +128,16 @@ const EmpDashboardAttendance = (props) => {
                     
                     <div className='w-full h-[10px] bg-[#DDDDDD] rounded-[7px]'>
                         <div className={`h-full bg-[#ffd81a] rounded-[7px] transition-all duration-500`}  style={{width: `${((attendanceData?.holidays ?? 0) / totalDaysInMonth) * 100}%`,}}></div>
+                    </div>
+                </div>
+                <div className='flex flex-col gap-1'>
+                    <div className="flex justify-between items-center">
+                        <span className="text-[#292929] text-[14px] font-medium font-Urbanist">Total Leaves</span>
+                        <span className="text-[#292929] text-[14px] font-medium font-Urbanist">{totalLeaves}</span>
+                    </div>
+
+                    <div className='w-full h-[10px] bg-[#DDDDDD] rounded-[7px]'>
+                        <div className='h-full bg-[#eb0dbc] rounded-[7px] transition-all duration-500' style={{ width: `${totalLeavesProgress}%` }}></div>
                     </div>
                 </div>
             </div>

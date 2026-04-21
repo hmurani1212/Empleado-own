@@ -275,7 +275,7 @@ const ListNotices = () => {
               />
             </div>
 
-            <div className="w-full md:w-32">
+            <div className="w-full md:w-56">
               <CustomSelect
                 placeHolderTitle="Filter by Year"
                 value={filterNoticeValue?.year}

@@ -79,7 +79,7 @@ const CustomDrawer = (props) => {
             }
             <button
               onClick={handleDrawerClose}
-              className="p-2 -m-2 rounded-lg text-slate-500 hover:text-red-500 hover:bg-slate-100 flex justify-center items-center transition-all duration-200"
+              className="p-2 -m-2 cursor-pointer rounded-lg text-slate-500 hover:text-red-500 hover:bg-slate-100 flex justify-center items-center transition-all duration-200"
               title="Close"
             >
               <FaTimes size={16} />

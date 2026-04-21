@@ -101,9 +101,8 @@ const CalendarView = (props) => {
             const backgroundColor = getBackgroundColor(attLabel);
 
             const attributes = [
-              { key: 'manual_changed', colorClass: '!bg-[#FF9800]' },
-              { key: 'signout_missed', colorClass: '!bg-[#000]' },        // Black for missed logout
-              { key: 'late', colorClass: '!bg-[#FF0000]' },              // Red for late
+              { key: 'signout_missed', colorClass: '!bg-[#000]' }, // Black for missed logout
+              { key: 'late', colorClass: '!bg-[#FF0000]' }, // Red for late
               { key: 'early_leave', colorClass: '!bg-[#1e00ff]' },
             ];
 

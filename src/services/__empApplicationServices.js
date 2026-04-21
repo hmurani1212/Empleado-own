@@ -4,7 +4,6 @@ export const applicationData = [
     { id: 1, title: 'Medical Allowance', icon: <FaBriefcaseMedical />, color: '#0ACF97', bgColor: '#EDFFF0' },
     { id: 2, title: 'TA/DA Application', icon: <FaBusSimple />, color: '#6460FF', bgColor: '#F5F2FF' },
     { id: 3, title: 'Leave Appication', icon: <IoDocumentText />, color: '#F65F7C', bgColor: '#FFF7F2' },
-    { id: 4, title: 'Leave Enchasment', icon: <FaDollarSign />, color: '#FDA006', bgColor: '#FFF1D9' },
     { id: 5, title: 'Loan Application', icon: <FaDollarSign />, color: '#50BFBF', bgColor: '#C9FFFF' },
 ];
 
