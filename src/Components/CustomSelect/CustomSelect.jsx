@@ -13,14 +13,32 @@ const MenuList = (props) => {
     thinScrollbar = false,
     menuLoading = false,
     menuLoadingLabel = 'Loading...',
+    menuDataVersion = '',
   } = props;
   
+  const containerRef = React.useRef(null);
+  const lastScrollTopRef = React.useRef(0);
+
   const handleScroll = (e) => {
     const { target } = e;
+    lastScrollTopRef.current = target.scrollTop;
     if (target.scrollTop + target.offsetHeight === target.scrollHeight && hasMore && !loading && onLoadMore) {
       onLoadMore();
     }
   };
+
+  React.useLayoutEffect(() => {
+    const node = containerRef.current;
+    if (!node) return undefined;
+
+    const desiredTop = lastScrollTopRef.current;
+    const rafId = window.requestAnimationFrame(() => {
+      if (!containerRef.current) return;
+      containerRef.current.scrollTop = Math.min(desiredTop, containerRef.current.scrollHeight);
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [menuDataVersion, menuLoading, hasMore, loading]);
 
   return (
     <>
@@ -49,6 +67,7 @@ const MenuList = (props) => {
         </style>
       )}
       <div 
+        ref={containerRef}
         onScroll={handleScroll} 
         className={thinScrollbar ? 'custom-select-thin-scrollbar' : ''}
         style={{ 
@@ -137,6 +156,19 @@ const CustomSelect = (props) => {
 
   /** Spinner only inside open menu: combine explicit menuLoading with legacy isLoading prop */
   const effectiveMenuLoading = Boolean(menuLoading) || Boolean(isLoading)
+  const menuDataVersion = React.useMemo(() => {
+    if (!Array.isArray(options)) return '';
+    return options
+      .map((option) => {
+        const optionValue = option?.value ?? '';
+        const optionLabel = option?.label ?? '';
+        const parent = option?.parentDepartmentId ?? '';
+        const isChild = option?.isChild ? '1' : '0';
+        const isExpanded = option?.isExpanded ? '1' : '0';
+        return `${optionValue}::${optionLabel}::${parent}::${isChild}::${isExpanded}`;
+      })
+      .join('|');
+  }, [options]);
   // const { customStyles } = useEmployees()
 
   const customStyles = {
@@ -275,41 +307,57 @@ const CustomSelect = (props) => {
     };
   }
 
-  const mergedComponents = {
-    ...userComponents,
-    IndicatorSeparator: null,
-    MenuList: (menuListProps) => (
-      <MenuList
-        {...menuListProps}
-        onLoadMore={onLoadMore}
-        hasMore={hasMore}
-        loading={loading}
-        thinScrollbar={thinScrollbar}
-        menuLoading={effectiveMenuLoading}
-        menuLoadingLabel={menuLoadingLabel}
-      />
-    ),
-  };
-  if (!hideControlLoadingIndicator) {
-    mergedComponents.LoadingIndicator = (indicatorProps) => {
-      if (!indicatorProps.selectProps?.isLoading) return null;
-      return (
-        <div
-          className="flex items-center pr-2 pl-1"
-          aria-live="polite"
-          aria-label="Loading options"
-          {...(indicatorProps.innerProps || {})}
-        >
-          <span
-            className="inline-block h-4 w-4 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin shrink-0"
-            aria-hidden
-          />
-        </div>
-      );
+  const mergedComponents = React.useMemo(() => {
+    const components = {
+      ...userComponents,
+      IndicatorSeparator: null,
+      MenuList: (menuListProps) => (
+        <MenuList
+          {...menuListProps}
+          onLoadMore={onLoadMore}
+          hasMore={hasMore}
+          loading={loading}
+          thinScrollbar={thinScrollbar}
+          menuLoading={effectiveMenuLoading}
+          menuLoadingLabel={menuLoadingLabel}
+          menuDataVersion={menuDataVersion}
+        />
+      ),
     };
-  } else {
-    mergedComponents.LoadingIndicator = () => null;
-  }
+
+    if (!hideControlLoadingIndicator) {
+      components.LoadingIndicator = (indicatorProps) => {
+        if (!indicatorProps.selectProps?.isLoading) return null;
+        return (
+          <div
+            className="flex items-center pr-2 pl-1"
+            aria-live="polite"
+            aria-label="Loading options"
+            {...(indicatorProps.innerProps || {})}
+          >
+            <span
+              className="inline-block h-4 w-4 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin shrink-0"
+              aria-hidden
+            />
+          </div>
+        );
+      };
+    } else {
+      components.LoadingIndicator = () => null;
+    }
+
+    return components;
+  }, [
+    userComponents,
+    onLoadMore,
+    hasMore,
+    loading,
+    thinScrollbar,
+    effectiveMenuLoading,
+    menuLoadingLabel,
+    menuDataVersion,
+    hideControlLoadingIndicator,
+  ]);
 
   const resolvedNoOptionsMessage =
     typeof noOptionsMessageProp === 'function'

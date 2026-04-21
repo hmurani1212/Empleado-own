@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Button, Input, Select, Option, Textarea, Typography } from '@material-tailwind/react';
 import PortalDrawer from '../../Components/CustomDrawer/PortalDrawer';
 import employeesApi from '../../Model/Data/Employees/Employees';
@@ -7,6 +7,56 @@ import CustomSelect from '../../Components/CustomSelect/CustomSelect';
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices';
 import { officialInfoTage } from '../../services/EmpServices';
 import { getUserData } from '../../Authentication/jwt_decode';
+import departmentsApi from '../../Model/Data/Departments/Departments';
+import { components as selectComponents } from 'react-select';
+import { FaChevronDown, FaChevronRight } from 'react-icons/fa6';
+
+const DepartmentOption = (props) => {
+    const { data, selectProps } = props;
+    const toggleDepartment = selectProps?.onDepartmentToggle;
+    const loadingMap = selectProps?.subDepartmentsLoadingByDepartment || {};
+    const isLoading = Boolean(data?.isParent && loadingMap[data.departmentId]);
+
+    const handleArrowMouseDown = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!data?.isParent || !data?.hasSubDepartments || typeof toggleDepartment !== 'function') {
+            return;
+        }
+        toggleDepartment(data.departmentId);
+    };
+
+    const handleArrowClick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
+    return (
+        <selectComponents.Option {...props}>
+            <div className="flex items-center justify-between gap-2">
+                <span className={data?.isChild ? 'pl-4 text-[12px] text-gray-600' : ''}>{data.label}</span>
+                {data?.isParent && data?.hasSubDepartments ? (
+                    <button
+                        type="button"
+                        onMouseDown={handleArrowMouseDown}
+                        onClick={handleArrowClick}
+                        className="shrink-0 rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-800"
+                        aria-label="Toggle sub-departments"
+                        title="Toggle sub-departments"
+                    >
+                        {isLoading ? (
+                            <span className="inline-block h-3 w-3 animate-spin rounded-full border border-[#3DA5F4] border-t-transparent" />
+                        ) : data?.isExpanded ? (
+                            <FaChevronDown size={12} />
+                        ) : (
+                            <FaChevronRight size={12} />
+                        )}
+                    </button>
+                ) : null}
+            </div>
+        </selectComponents.Option>
+    );
+};
 
 const EmployeeOfficialInfo = ({
     employeeData,
@@ -54,6 +104,10 @@ const EmployeeOfficialInfo = ({
     })
 
     const [tagsList] = useState([...officialInfoTage]);
+    const [expandedDepartments, setExpandedDepartments] = useState({});
+    const [subDepartmentsByDepartment, setSubDepartmentsByDepartment] = useState({});
+    const [subDepartmentsLoadingByDepartment, setSubDepartmentsLoadingByDepartment] = useState({});
+    const subDepartmentRequestIdRef = useRef({});
 
     // Use ref to track if data has been fetched to prevent duplicate calls
     const hasFetchedDataRef = useRef(false);
@@ -63,30 +117,102 @@ const EmployeeOfficialInfo = ({
     const hasPopulatedFormRef = useRef(false);
     const lastEmployeeIdRef = useRef(null);
 
-    // Flatten departments function (same as in OfficialEmpProfile.js)
-    const flattenOptions = (data) => {
-        let flattenedOptions = [];
-        if (Array.isArray(data?.departments)) {
-            data.departments.forEach((dept) => {
-                flattenedOptions.push({ label: dept.name, value: dept.id, isParent: true });
-                if (dept.children?.length > 0) {
-                    dept.children.forEach((subDept) => {
-                        flattenedOptions.push({ label: subDept.name, value: subDept.id, isChild: true });
-                    });
-                }
+    const getSubDepartmentsFromResponse = useCallback((responseData, departmentId) => {
+        const dbData = responseData?.DB_DATA;
+        const targetDepartmentId = String(departmentId);
+
+        const normalizeSubDepartment = (item) => {
+            if (!item || typeof item !== 'object') return null;
+            const id = item.id ?? item.dept_id ?? item.department_id;
+            const name = item.name ?? item.dept_name ?? item.department_name ?? '';
+            if (id == null || !name) return null;
+            return { id, name };
+        };
+
+        const extractFromDepartmentRecord = (departmentRecord) => {
+            const rawSub =
+                departmentRecord?.sub_departments ||
+                departmentRecord?.subDepartments ||
+                departmentRecord?.children ||
+                [];
+            if (!Array.isArray(rawSub)) return [];
+            return rawSub.map(normalizeSubDepartment).filter(Boolean);
+        };
+
+        const findSubDepartmentsInDepartmentList = (departmentList) => {
+            if (!Array.isArray(departmentList)) return [];
+            const matchedDepartment = departmentList.find((item) => {
+                const currentId = item?.id ?? item?.dept_id ?? item?.department_id;
+                return String(currentId) === targetDepartmentId;
             });
-        } else if (Array.isArray(data)) {
-            data.forEach((dept) => {
-                flattenedOptions.push({ label: dept.name, value: dept.id, isParent: true });
-                if (dept.children?.length > 0) {
-                    dept.children.forEach((subDept) => {
-                        flattenedOptions.push({ label: subDept.name, value: subDept.id, isChild: true });
-                    });
-                }
-            });
+
+            if (matchedDepartment) return extractFromDepartmentRecord(matchedDepartment);
+            if (departmentList.length === 1) return extractFromDepartmentRecord(departmentList[0]);
+            return [];
+        };
+
+        const fromDepartmentUpper = findSubDepartmentsInDepartmentList(dbData?.DEPARTMENT);
+        if (fromDepartmentUpper.length > 0) return fromDepartmentUpper;
+        const fromDepartmentLower = findSubDepartmentsInDepartmentList(dbData?.departments);
+        if (fromDepartmentLower.length > 0) return fromDepartmentLower;
+
+        if (Array.isArray(dbData?.sub_departments)) {
+            return dbData.sub_departments.map(normalizeSubDepartment).filter(Boolean);
         }
-        return flattenedOptions;
-    };
+        if (Array.isArray(dbData?.subDepartments)) {
+            return dbData.subDepartments.map(normalizeSubDepartment).filter(Boolean);
+        }
+        if (Array.isArray(dbData)) {
+            const fromDbArray = findSubDepartmentsInDepartmentList(dbData);
+            if (fromDbArray.length > 0) return fromDbArray;
+            return dbData.map(normalizeSubDepartment).filter(Boolean);
+        }
+        return [];
+    }, []);
+
+    const handleDepartmentToggle = useCallback(async (departmentId) => {
+        if (!departmentId) return;
+        if (subDepartmentsLoadingByDepartment[departmentId]) return;
+
+        const isAlreadyExpanded = Boolean(expandedDepartments[departmentId]);
+        if (isAlreadyExpanded) {
+            setExpandedDepartments((prev) => ({ ...prev, [departmentId]: false }));
+            return;
+        }
+
+        const cachedSubDepartments = subDepartmentsByDepartment[departmentId];
+        if (Array.isArray(cachedSubDepartments)) {
+            setExpandedDepartments((prev) => ({ ...prev, [departmentId]: true }));
+            return;
+        }
+
+        setSubDepartmentsLoadingByDepartment((prev) => ({ ...prev, [departmentId]: true }));
+        const requestId = `${departmentId}-${Date.now()}-${Math.random()}`;
+        subDepartmentRequestIdRef.current[departmentId] = requestId;
+        try {
+            const response = await departmentsApi.getSubDept({ parent_id: departmentId });
+            const subDepartments = getSubDepartmentsFromResponse(response?.data, departmentId);
+
+            if (subDepartmentRequestIdRef.current[departmentId] !== requestId) {
+                return;
+            }
+
+            setSubDepartmentsByDepartment((prev) => ({ ...prev, [departmentId]: subDepartments }));
+            if (subDepartments.length > 0) {
+                setExpandedDepartments((prev) => ({ ...prev, [departmentId]: true }));
+            }
+        } catch (error) {
+            console.error('Error loading sub-departments:', error);
+            showToast('Failed to load sub-departments', 'error');
+        } finally {
+            setSubDepartmentsLoadingByDepartment((prev) => ({ ...prev, [departmentId]: false }));
+        }
+    }, [
+        expandedDepartments,
+        getSubDepartmentsFromResponse,
+        subDepartmentsByDepartment,
+        subDepartmentsLoadingByDepartment
+    ]);
 
     // Fetch branches when drawer opens (same pattern as AddEditPRC)
     useEffect(() => {
@@ -108,6 +234,10 @@ const EmployeeOfficialInfo = ({
             lastFetchedDeptIdRef.current = null;
             hasPopulatedFormRef.current = false;
             lastEmployeeIdRef.current = null;
+            setExpandedDepartments({});
+            setSubDepartmentsByDepartment({});
+            setSubDepartmentsLoadingByDepartment({});
+            subDepartmentRequestIdRef.current = {};
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openOfficialInfoDrawer]);
@@ -185,10 +315,62 @@ const EmployeeOfficialInfo = ({
         })) || [];
     }, [empBranches]);
 
-    // Memoize department options to prevent recreation on every render
+    // Memoize department options with expandable sub-departments
     const departmentOptions = useMemo(() => {
-        return flattenOptions(dept_subDept);
-    }, [dept_subDept]);
+        const departments = Array.isArray(dept_subDept?.departments)
+            ? dept_subDept.departments
+            : (Array.isArray(dept_subDept) ? dept_subDept : []);
+        const options = [];
+
+        departments.forEach((department) => {
+            const departmentId = department?.id ?? department?.dept_id;
+            if (departmentId == null) return;
+
+            const initialSubDepartments = Array.isArray(department?.sub_departments)
+                ? department.sub_departments
+                : (Array.isArray(department?.children) ? department.children : []);
+            const hasSubDepartments =
+                initialSubDepartments.length > 0 ||
+                Boolean(department?.has_sub_departments) ||
+                Number(department?.children_count || 0) > 0;
+            const cachedSubDepartments = subDepartmentsByDepartment[departmentId];
+            const resolvedSubDepartments = Array.isArray(cachedSubDepartments)
+                ? cachedSubDepartments
+                : initialSubDepartments;
+            const isExpanded = Boolean(expandedDepartments[departmentId]);
+
+            options.push({
+                value: departmentId,
+                label: department?.name ?? department?.dept_name ?? '',
+                isParent: true,
+                isChild: false,
+                hasSubDepartments,
+                isExpanded,
+                departmentId
+            });
+
+            if (isExpanded) {
+                resolvedSubDepartments.forEach((subDepartment) => {
+                    const subDepartmentId = subDepartment?.id ?? subDepartment?.dept_id;
+                    if (subDepartmentId == null) return;
+                    options.push({
+                        value: subDepartmentId,
+                        label: subDepartment?.name ?? subDepartment?.dept_name ?? '',
+                        isParent: false,
+                        isChild: true,
+                        parentDepartmentId: departmentId
+                    });
+                });
+            }
+        });
+
+        return options;
+    }, [dept_subDept, expandedDepartments, subDepartmentsByDepartment]);
+
+    const departmentSelectComponents = useMemo(
+        () => ({ Option: DepartmentOption }),
+        []
+    );
 
     // Memoize designation options to prevent recreation on every render
     const designationOptions = useMemo(() => {
@@ -215,7 +397,32 @@ const EmployeeOfficialInfo = ({
     // Helper function to get selected department value object (must return exact object from options)
     const getSelectedDepartmentValue = () => {
         if (!officialInfoForm.department || departmentOptions.length === 0) return null;
-        return departmentOptions.find(d => d.value === officialInfoForm.department) || null;
+        const selected = departmentOptions.find(
+            (option) => String(option.value) === String(officialInfoForm.department)
+        );
+        if (selected) return selected;
+
+        const departments = Array.isArray(dept_subDept?.departments)
+            ? dept_subDept.departments
+            : (Array.isArray(dept_subDept) ? dept_subDept : []);
+        for (const department of departments) {
+            const subDepartments = Array.isArray(department?.sub_departments)
+                ? department.sub_departments
+                : (Array.isArray(department?.children) ? department.children : []);
+            const matchedSubDepartment = subDepartments.find(
+                (subDepartment) =>
+                    String(subDepartment?.id ?? subDepartment?.dept_id) === String(officialInfoForm.department)
+            );
+            if (matchedSubDepartment) {
+                return {
+                    value: matchedSubDepartment?.id ?? matchedSubDepartment?.dept_id,
+                    label: matchedSubDepartment?.name ?? matchedSubDepartment?.dept_name ?? '',
+                    isChild: true,
+                    parentDepartmentId: department?.id ?? department?.dept_id
+                };
+            }
+        }
+        return null;
     };
 
     // Helper function to get selected designation value object (must return exact object from options)
@@ -256,6 +463,10 @@ const EmployeeOfficialInfo = ({
                     department: null,
                     designation: null
                 }));
+                setExpandedDepartments({});
+                setSubDepartmentsByDepartment({});
+                setSubDepartmentsLoadingByDepartment({});
+                subDepartmentRequestIdRef.current = {};
             }
         }
 
@@ -444,6 +655,9 @@ const EmployeeOfficialInfo = ({
                                     customStyles={true}
                                     isSearchable={true}
                                     isClearable={false}
+                                    components={departmentSelectComponents}
+                                    onDepartmentToggle={handleDepartmentToggle}
+                                    subDepartmentsLoadingByDepartment={subDepartmentsLoadingByDepartment}
                                 />
                             </div>
                             <div>

@@ -8,11 +8,12 @@ import {
   PopoverContent,
   Radio,
 } from "@material-tailwind/react";
-import React, { useMemo, useState, useEffect } from "react";
-import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
+import React, { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { FaAngleLeft, FaAngleRight, FaChevronDown, FaChevronRight } from "react-icons/fa6";
 import { FaUser, FaInfoCircle } from "react-icons/fa";
 import { FaBuildingUser } from "react-icons/fa6";
 import { MdOutlineFindReplace } from "react-icons/md";
+import { components as selectComponents } from "react-select";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
 import { DayPicker } from "react-day-picker";
 import CustomDialog from "../../Components/CustomDialog/CustomDialog";
@@ -28,6 +29,7 @@ import { showToast } from "../../Components/Toaster/Toaster";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import { getContentByLabel } from "../../services/getContentService";
 import { useLocation } from "react-router-dom";
+import departmentsApi from "../../Model/Data/Departments/Departments";
 
 export const UserVerifyComp = (props) => {
   const { findingEmp } = props;
@@ -91,6 +93,53 @@ export const UserVerifyComp = (props) => {
         </div>
       )}
     </div>
+  );
+};
+
+const DepartmentOption = (props) => {
+  const { data, selectProps } = props;
+  const toggleDepartment = selectProps?.onDepartmentToggle;
+  const loadingMap = selectProps?.subDepartmentsLoadingByDepartment || {};
+  const isLoading = Boolean(data?.isParent && loadingMap[data.departmentId]);
+
+  const handleArrowMouseDown = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!data?.isParent || !data?.hasSubDepartments || typeof toggleDepartment !== "function") {
+      return;
+    }
+    toggleDepartment(data.departmentId);
+  };
+
+  const handleArrowClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  return (
+    <selectComponents.Option {...props}>
+      <div className="flex items-center justify-between gap-2">
+        <span className={data?.isChild ? "pl-4 text-[12px] text-gray-600" : ""}>{data.label}</span>
+        {data?.isParent && data?.hasSubDepartments ? (
+          <button
+            type="button"
+            onMouseDown={handleArrowMouseDown}
+            onClick={handleArrowClick}
+            className="shrink-0 rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-800"
+            aria-label="Toggle sub-departments"
+            title="Toggle sub-departments"
+          >
+            {isLoading ? (
+              <span className="inline-block h-3 w-3 animate-spin rounded-full border border-[#3DA5F4] border-t-transparent" />
+            ) : data?.isExpanded ? (
+              <FaChevronDown size={12} />
+            ) : (
+              <FaChevronRight size={12} />
+            )}
+          </button>
+        ) : null}
+      </div>
+    </selectComponents.Option>
   );
 };
 
@@ -267,6 +316,10 @@ const AddNewEmployee = () => {
     branch_option: "selected", // 'selected' or 'all'
   });
   const [newlyCreatedTemplateId, setNewlyCreatedTemplateId] = useState(null);
+  const [expandedDepartments, setExpandedDepartments] = useState({});
+  const [subDepartmentsByDepartment, setSubDepartmentsByDepartment] = useState({});
+  const [subDepartmentsLoadingByDepartment, setSubDepartmentsLoadingByDepartment] = useState({});
+  const subDepartmentRequestIdRef = useRef({});
 
   // Load branches when drawer opens
   useEffect(() => {
@@ -277,6 +330,179 @@ const AddNewEmployee = () => {
       getAllBranchesPayroll();
     }
   }, [showSalaryTemplateDrawer, copyBranchesData, getAllBranchesPayroll]);
+
+  useEffect(() => {
+    setExpandedDepartments({});
+    setSubDepartmentsByDepartment({});
+    setSubDepartmentsLoadingByDepartment({});
+    subDepartmentRequestIdRef.current = {};
+  }, [newEmpValues?.branch?.value]);
+
+  const getSubDepartmentsFromResponse = useCallback((responseData, departmentId) => {
+    const dbData = responseData?.DB_DATA;
+    const targetDepartmentId = String(departmentId);
+
+    const normalizeSubDepartment = (item) => {
+      if (!item || typeof item !== "object") return null;
+      const id = item.id ?? item.dept_id ?? item.department_id;
+      const name = item.name ?? item.dept_name ?? item.department_name ?? "";
+      if (id == null || !name) return null;
+      return { id, name };
+    };
+
+    const extractFromDepartmentRecord = (departmentRecord) => {
+      const rawSub =
+        departmentRecord?.sub_departments ||
+        departmentRecord?.subDepartments ||
+        departmentRecord?.children ||
+        [];
+      if (!Array.isArray(rawSub)) return [];
+      return rawSub.map(normalizeSubDepartment).filter(Boolean);
+    };
+
+    const findSubDepartmentsInDepartmentList = (departmentList) => {
+      if (!Array.isArray(departmentList)) return [];
+      const matchedDepartment = departmentList.find((item) => {
+        const currentId = item?.id ?? item?.dept_id ?? item?.department_id;
+        return String(currentId) === targetDepartmentId;
+      });
+
+      if (matchedDepartment) {
+        return extractFromDepartmentRecord(matchedDepartment);
+      }
+
+      // Some responses send only one department object for this endpoint.
+      if (departmentList.length === 1) {
+        return extractFromDepartmentRecord(departmentList[0]);
+      }
+
+      return [];
+    };
+
+    const fromDepartmentUpper = findSubDepartmentsInDepartmentList(dbData?.DEPARTMENT);
+    if (fromDepartmentUpper.length > 0) {
+      return fromDepartmentUpper;
+    }
+    const fromDepartmentLower = findSubDepartmentsInDepartmentList(dbData?.departments);
+    if (fromDepartmentLower.length > 0) {
+      return fromDepartmentLower;
+    }
+
+    if (Array.isArray(dbData?.sub_departments)) {
+      return dbData.sub_departments.map(normalizeSubDepartment).filter(Boolean);
+    }
+    if (Array.isArray(dbData?.subDepartments)) {
+      return dbData.subDepartments.map(normalizeSubDepartment).filter(Boolean);
+    }
+    if (Array.isArray(dbData)) {
+      const fromDbArray = findSubDepartmentsInDepartmentList(dbData);
+      if (fromDbArray.length > 0) return fromDbArray;
+      return dbData.map(normalizeSubDepartment).filter(Boolean);
+    }
+
+    return [];
+  }, []);
+
+  const handleDepartmentToggle = useCallback(
+    async (departmentId) => {
+      if (!departmentId) return;
+      if (subDepartmentsLoadingByDepartment[departmentId]) return;
+
+      const isAlreadyExpanded = Boolean(expandedDepartments[departmentId]);
+      if (isAlreadyExpanded) {
+        setExpandedDepartments((prev) => ({ ...prev, [departmentId]: false }));
+        return;
+      }
+
+      const cachedSubDepartments = subDepartmentsByDepartment[departmentId];
+      if (Array.isArray(cachedSubDepartments)) {
+        setExpandedDepartments((prev) => ({ ...prev, [departmentId]: true }));
+        return;
+      }
+
+      setSubDepartmentsLoadingByDepartment((prev) => ({ ...prev, [departmentId]: true }));
+      const requestId = `${departmentId}-${Date.now()}-${Math.random()}`;
+      subDepartmentRequestIdRef.current[departmentId] = requestId;
+      try {
+        const response = await departmentsApi.getSubDept({ parent_id: departmentId });
+        const responseData = response?.data;
+        const subDepartments = getSubDepartmentsFromResponse(responseData, departmentId);
+
+        if (subDepartmentRequestIdRef.current[departmentId] !== requestId) {
+          return;
+        }
+
+        setSubDepartmentsByDepartment((prev) => ({ ...prev, [departmentId]: subDepartments }));
+        if (subDepartments.length > 0) {
+          setExpandedDepartments((prev) => ({ ...prev, [departmentId]: true }));
+        }
+      } catch (error) {
+        console.error("Error loading sub-departments:", error);
+        showToast("Failed to load sub-departments", "error");
+      } finally {
+        setSubDepartmentsLoadingByDepartment((prev) => ({ ...prev, [departmentId]: false }));
+      }
+    },
+    [
+      expandedDepartments,
+      getSubDepartmentsFromResponse,
+      subDepartmentsByDepartment,
+      subDepartmentsLoadingByDepartment,
+    ]
+  );
+
+  const departmentOptions = useMemo(() => {
+    const departments = Array.isArray(get_all_department) ? get_all_department : [];
+    const options = [];
+
+    departments.forEach((department) => {
+      const departmentId = department?.id;
+      if (departmentId == null) return;
+
+      const initialSubDepartments = Array.isArray(department?.sub_departments)
+        ? department.sub_departments
+        : [];
+      const hasSubDepartments =
+        initialSubDepartments.length > 0 ||
+        Boolean(department?.has_sub_departments) ||
+        Number(department?.children_count || 0) > 0;
+      const cachedSubDepartments = subDepartmentsByDepartment[departmentId];
+      const resolvedSubDepartments = Array.isArray(cachedSubDepartments)
+        ? cachedSubDepartments
+        : initialSubDepartments;
+      const isExpanded = Boolean(expandedDepartments[departmentId]);
+
+      options.push({
+        value: departmentId,
+        label: department?.name || "",
+        isParent: true,
+        isChild: false,
+        hasSubDepartments,
+        isExpanded,
+        departmentId,
+      });
+
+      if (isExpanded) {
+        resolvedSubDepartments.forEach((subDepartment) => {
+          if (subDepartment?.id == null) return;
+          options.push({
+            value: subDepartment.id,
+            label: subDepartment.name || "",
+            isParent: false,
+            isChild: true,
+            parentDepartmentId: departmentId,
+          });
+        });
+      }
+    });
+
+    return options;
+  }, [expandedDepartments, get_all_department, subDepartmentsByDepartment]);
+
+  const departmentSelectComponents = useMemo(
+    () => ({ Option: DepartmentOption }),
+    []
+  );
 
   // Auto-select newly created template when salaryTemplate updates
   useEffect(() => {
@@ -951,14 +1177,14 @@ const AddNewEmployee = () => {
                   <CustomSelect
                     placeHolderTitle="Department"
                     value={newEmpValues?.department}
-                    options={(get_all_department || []).map((dep) => ({
-                      value: dep.id,
-                      label: dep.name,
-                    }))}
+                    options={departmentOptions}
                     onChangeHandler={(selectedOption) =>
                       handleSelectChange(selectedOption, "department")
                     }
                     cStyle={true}
+                    components={departmentSelectComponents}
+                    onDepartmentToggle={handleDepartmentToggle}
+                    subDepartmentsLoadingByDepartment={subDepartmentsLoadingByDepartment}
                   />
                 </div>
                 <div className="w-full flex flex-col">

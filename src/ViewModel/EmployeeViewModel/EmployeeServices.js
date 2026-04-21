@@ -1013,7 +1013,11 @@ const useEmployees = () => {
                 if (response?.status === 200 && resData?.STATUS === 'SUCCESSFUL') {
                     const deptList = resData.DB_DATA?.departments || resData.DB_DATA || []
                     const raw = Array.isArray(deptList) ? deptList : []
-                    const departments = raw.map((d) => ({ id: d.id ?? d.dept_id, name: d.name ?? d.dept_name }))
+                    const departments = raw.map((d) => ({
+                        id: d.id ?? d.dept_id,
+                        name: d.name ?? d.dept_name,
+                        sub_departments: Array.isArray(d?.sub_departments) ? d.sub_departments : []
+                    }))
                     setDept_subDept({ departments })
                     useStore.setState({ get_all_department: departments })
                     setDesignations([])
@@ -1035,7 +1039,11 @@ const useEmployees = () => {
                 const db = resData.DB_DATA
                 const rawDept = db.DEPARTMENT || db.departments || []
                 const departments = Array.isArray(rawDept)
-                    ? rawDept.map((d) => ({ id: d.id ?? d.dept_id, name: d.name ?? d.dept_name ?? '' }))
+                    ? rawDept.map((d) => ({
+                        id: d.id ?? d.dept_id,
+                        name: d.name ?? d.dept_name ?? '',
+                        sub_departments: Array.isArray(d?.sub_departments) ? d.sub_departments : []
+                    }))
                     : []
                 setDept_subDept({ departments })
                 useStore.setState({ get_all_department: departments })
