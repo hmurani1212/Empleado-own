@@ -3,10 +3,26 @@ import empDashboardApi from "../../../Model/Data/EmpData/EmpDashboard/EmpDashboa
 const empDashboardViewModel = (set, get) => ({
 
     empDashboardData: [],
+    empDashboardCacheKey: null,
+    empDashboardDataCache: {},
 
-    gettingEmpDashboardData: async (month, year) => {
+    gettingEmpDashboardData: async (month, year, options = {}) => {
+        const forceRefresh = Boolean(options?.forceRefresh);
+        const resolvedMonth = Number(month) || (new Date().getMonth() + 1);
+        const resolvedYear = Number(year) || new Date().getFullYear();
+        const cacheKey = `${resolvedMonth}-${resolvedYear}`;
+        const cache = get().empDashboardDataCache || {};
+
+        if (!forceRefresh && cache[cacheKey]) {
+            set({
+                empDashboardData: cache[cacheKey],
+                empDashboardCacheKey: cacheKey
+            });
+            return cache[cacheKey];
+        }
+
         try {
-            const response = await empDashboardApi.getEmpDashboardData(month, year)
+            const response = await empDashboardApi.getEmpDashboardData(resolvedMonth, resolvedYear)
             const responseData = response.data
             // console.log('responseData', response);
             if (responseData.STATUS === "SUCCESS") {
@@ -210,11 +226,20 @@ const empDashboardViewModel = (set, get) => ({
                 }
                 // console.log('transformedData', transformedData.section2)
 
-                set({ empDashboardData: transformedData })
+                set((state) => ({
+                    empDashboardData: transformedData,
+                    empDashboardCacheKey: cacheKey,
+                    empDashboardDataCache: {
+                        ...(state.empDashboardDataCache || {}),
+                        [cacheKey]: transformedData
+                    }
+                }))
+                return transformedData;
             }
         } catch (err) {
             console.log(err)
         }
+        return null;
     },
     adjustNewData: (data) => {
         set((state) => ({

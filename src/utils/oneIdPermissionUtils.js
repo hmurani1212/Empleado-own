@@ -1,5 +1,6 @@
 import { SIDEBAR_TAB_PERMISSION_PREFIXES } from "../constants/employeeSidebarPermissionMap";
 import { isFullAdmin } from "../Authentication/roleHelpers";
+import { SIDEBAR_TAB_ID_ATTENDANCE_ADMIN } from "../Components/SideMenu/data";
 
 /** Backend typo in some responses */
 export function normalizePermissionTag(tag) {
@@ -76,6 +77,17 @@ export function isSidebarTabVisibleForPermissions(tab, ctx) {
     return roleBased;
   }
   if (permissionTagsGrantModule(permissionTags, prefixes)) {
+    // Tabs 2 and 10 both use ATTENDANCE_* prefixes; permission grant must not show
+    // the admin `/attendance` item (id 10) for non-Admin roles that already have self-service (id 2).
+    if (tab.id === SIDEBAR_TAB_ID_ATTENDANCE_ADMIN) {
+      const isAdminShell =
+        isFullAdmin(rawRoleId) ||
+        uiShellRoleId === "Admin" ||
+        rawRoleId === "Admin";
+      if (!isAdminShell) {
+        return roleBased;
+      }
+    }
     return true;
   }
   return roleBased;

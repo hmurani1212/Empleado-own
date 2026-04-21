@@ -45,16 +45,73 @@ function isBirthdayToday(dob) {
   if (isNaN(dobDate.getTime())) return false;
   return today.getMonth() === dobDate.getMonth() && today.getDate() === dobDate.getDate();
 }
+
+function formatWorkingSinceDate(joinDate) {
+  if (!joinDate) return "--";
+
+  let parsedDate = null;
+  if (typeof joinDate === "number") {
+    parsedDate = new Date(joinDate * 1000);
+  } else if (typeof joinDate === "string") {
+    parsedDate = new Date(joinDate);
+  }
+
+  if (!parsedDate || Number.isNaN(parsedDate.getTime())) return "--";
+
+  const formatted = parsedDate.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const [day, month, year] = formatted.split(" ");
+  return `${day} ${month}, ${year}`;
+}
+
+const DashboardPageSkeleton = () => (
+  <div className="flex flex-col gap-4 p-2 animate-pulse">
+    <div className="h-[210px] w-full rounded-[10px] bg-gray-200" />
+    <div className="grid lg:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-3">
+      {[...Array(4)].map((_, idx) => (
+        <div key={idx} className="h-[90px] rounded-[15px] bg-gray-200" />
+      ))}
+    </div>
+    <div className="h-[320px] w-full rounded-[10px] bg-gray-200" />
+    <div className="h-[260px] w-full rounded-[10px] bg-gray-200" />
+    <div className="h-[380px] w-full rounded-[10px] bg-gray-200" />
+  </div>
+);
+
 const EmpDashboard = () => {
   const { empDashboardData, handlePolicyView, gettingEmpDashboardData } = useEmpDashboard();
   const updateEmployeeProfileImage = useStore((state) => state.updateEmployeeProfileImage);
+  const empDashboardCacheKey = useStore((state) => state.empDashboardCacheKey);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(true);
 
   // Single initial fetch for dashboard data (avoids duplicate calls from useEmpDashboard in children)
   useEffect(() => {
-    const d = new Date();
-    gettingEmpDashboardData(d.getMonth() + 1, d.getFullYear());
+    let isMounted = true;
+    const loadDashboard = async () => {
+      const d = new Date();
+      const cacheKey = `${d.getMonth() + 1}-${d.getFullYear()}`;
+      const hasCurrentMonthCache = empDashboardCacheKey === cacheKey;
+      if (hasCurrentMonthCache) {
+        if (isMounted) setIsDashboardLoading(false);
+        return;
+      }
+
+      setIsDashboardLoading(true);
+      try {
+        await gettingEmpDashboardData(d.getMonth() + 1, d.getFullYear());
+      } finally {
+        if (isMounted) setIsDashboardLoading(false);
+      }
+    };
+    loadDashboard();
+    return () => {
+      isMounted = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [empDashboardCacheKey]);
 
   const [showTooltip, setShowTooltip] = useState(false);
   const [showTooltipTwo, setShowTooltipTwo] = useState(false);
@@ -408,7 +465,12 @@ const EmpDashboard = () => {
         setIsCropped(false);
         setCrop({ x: 0, y: 0, width: 0, height: 0 });
         const d = new Date();
-        await gettingEmpDashboardData(d.getMonth() + 1, d.getFullYear());
+        setIsDashboardLoading(true);
+        try {
+          await gettingEmpDashboardData(d.getMonth() + 1, d.getFullYear(), { forceRefresh: true });
+        } finally {
+          setIsDashboardLoading(false);
+        }
       } else {
         showToast(result.error || 'Failed to update profile photo.', 'error');
       }
@@ -462,6 +524,10 @@ const EmpDashboard = () => {
   //  console.log('duration result', result)
 
   // console.log('what is the state date', duration)
+  const workingSinceFormatted = useMemo(
+    () => formatWorkingSinceDate(pInfo?.join_date),
+    [pInfo?.join_date]
+  );
 
 
 
@@ -553,6 +619,10 @@ const EmpDashboard = () => {
   // When `dp` is already https (e.g. elephant.veevotech.com), image utils return it unchanged — no folder/encrypt path.
   const displayProfileSrc =
     getImageUrlFromEmployeeData(pInfo) || 'https://emp-beta.veevotech.com/images/icons/empm.jpg';
+
+  if (isDashboardLoading) {
+    return <DashboardPageSkeleton />;
+  }
 
   return (
     <div className={`flex flex-col gap-4 p-2 relative ${isBirthday ? 'min-h-[100vh]' : ''}`}>
@@ -741,7 +811,7 @@ const EmpDashboard = () => {
                 <InfoItem
                   icon={<PiOfficeChairLight />}
                   label="Working Since"
-                  value={pInfo?.working_from || "--"}
+                  value={workingSinceFormatted}
                   extra={`Experience: ${duration}`}
                   showTooltip={showTooltipTwo}
                   setShowTooltip={setShowTooltipTwo}
@@ -771,7 +841,7 @@ const EmpDashboard = () => {
             </span>
           </div>
           <div className='flex flex-col text-white font-poppins'>
-            <span className="text-[13px]">{dutyInfo?.working_status === "Absent" ? "Login" : dutyInfo?.is_even_or_odd === "Odd" ? "Login" : "Logout"} Time</span>
+            <span className="text-[13px]">Today's {dutyInfo?.working_status === "Absent" ? "Login" : dutyInfo?.is_even_or_odd === "Odd" ? "Login" : "Logout"} Time</span>
             <span className='text-[13px] font-semibold'>{dutyInfo?.login_time}</span>
           </div>
         </div>
@@ -783,7 +853,7 @@ const EmpDashboard = () => {
           </div>
           <div className='flex items-center justify-between w-full'>
             <div className='flex flex-col text-white font-poppins'>
-              <span className='text-[13px]'>Working Policy</span>
+              <span className='text-[13px]'>Current Working Policy</span>
               <span className='text-[13px] font-semibold'>{dutyInfo?.duty_timings}</span>
             </div>
             <IoEyeSharp className='text-[25px] font-bold bg-white text-[#3DA5F4] rounded-full p-1 cursor-pointer hover:bg-gray-100 hover:text-[#3DA5F4]' onClick={() => handlePolicyView()} />
@@ -815,7 +885,7 @@ const EmpDashboard = () => {
       />
 
       {(photo || isPreviewMode) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/45 backdrop-blur-md">
           <div className="bg-white rounded-lg w-2/5 relative text-white" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between bg-bgBlue text-white rounded-tl-lg rounded-tr-lg px-4 py-2">
               <span className="text-[14px] font-medium text-white font-poppins">{isPreviewMode ? 'Preview Photo' : isCropMode ? 'Edit Photo' : 'Edit Photo'}</span>

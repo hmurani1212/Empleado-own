@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { Typography, Card, CardBody, Button, Chip } from '@material-tailwind/react'
 import useNewAdjustRequest from '../../../ViewModel/AttendanceViewModel/newAdjustRequest'
 import PortalDrawer from '../../../Components/CustomDrawer/PortalDrawer'
@@ -21,6 +21,7 @@ const EmpTimeAdjustment = () => {
         getTimeAjustmentData,
         timeAjustmentData,
         timeAdjustmentLoading,
+        timeAdjustmentStats,
         paginationData,
         onNextPage,
         onPreviousPage,
@@ -31,45 +32,16 @@ const EmpTimeAdjustment = () => {
         getTimeAjustmentData()
     },[]);
 
-    // Calculate Stats: use pagination total when available; count pending/approved/rejected from current page
-    const stats = useMemo(() => {
-        const fromPagination = paginationData?.total;
-        if (!timeAjustmentData) {
-            return {
-                total: fromPagination ?? 0,
-                pending: 0,
-                approved: 0,
-                rejected: 0,
-            };
-        }
-        const counts = timeAjustmentData
-            .filter((row) => row != null && typeof row === "object")
-            .reduce(
-                (acc, curr) => {
-                    const s = curr.status;
-                    if (s === 0) acc.pending++;
-                    else if (s === 1) acc.approved++;
-                    else if (s === 2) acc.rejected++;
-                    return acc;
-                },
-                { pending: 0, approved: 0, rejected: 0 }
-            );
-        return {
-            total: typeof fromPagination === 'number' ? fromPagination : timeAjustmentData.length,
-            ...counts,
-        };
-    }, [timeAjustmentData, paginationData?.total]);
-
     const getStatusChip = (status) => {
         switch (status) {
             case 0:
-                return <Chip variant="ghost" color="amber" value="Pending" icon={<FaHourglassHalf />} size="sm" className="rounded-full px-2" />;
+                return <Chip variant="ghost" color="amber" value="Pending" size="sm" className="flex items-center justify-center rounded-full" />;
             case 1:
-                return <Chip variant="ghost" color="green" value="Approved" icon={<FaCheck />} size="sm" className="rounded-full px-2" />;
+                return <Chip variant="ghost" color="green" value="Approved" size="sm" className="flex items-center justify-center rounded-full" />;
             case 2:
-                return <Chip variant="ghost" color="red" value="Rejected" icon={<FaTimes />} size="sm" className="rounded-full px-2" />;
+                return <Chip variant="ghost" color="red" value="Rejected"  size="sm" className="flex items-center justify-center rounded-full" />;
             default:
-                return <Chip variant="ghost" color="blue-gray" value="Unknown" size="sm" className="rounded-full px-2" />;
+                return <Chip variant="ghost" color="blue-gray" value="Unknown" size="sm" className="flex items-center justify-center rounded-full" />;
         }
     }
 
@@ -119,7 +91,7 @@ const EmpTimeAdjustment = () => {
                             <CardBody className='p-4 flex items-center justify-between'>
                                 <div>
                                     <p className='text-xs text-gray-500 font-bold uppercase'>Total Requests</p>
-                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.total}</h3>
+                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{timeAdjustmentStats?.total || 0}</h3>
                                 </div>
                                 <div className='p-3 bg-blue-50 text-blue-500 rounded-full'><FaClock size={20} /></div>
                             </CardBody>
@@ -128,7 +100,7 @@ const EmpTimeAdjustment = () => {
                             <CardBody className='p-4 flex items-center justify-between'>
                                 <div>
                                     <p className='text-xs text-gray-500 font-bold uppercase'>Pending</p>
-                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.pending}</h3>
+                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{timeAdjustmentStats?.pending || 0}</h3>
                                 </div>
                                 <div className='p-3 bg-amber-50 text-amber-500 rounded-full'><FaHourglassHalf size={20} /></div>
                             </CardBody>
@@ -137,7 +109,7 @@ const EmpTimeAdjustment = () => {
                             <CardBody className='p-4 flex items-center justify-between'>
                                 <div>
                                     <p className='text-xs text-gray-500 font-bold uppercase'>Approved</p>
-                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.approved}</h3>
+                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{timeAdjustmentStats?.approved || 0}</h3>
                                 </div>
                                 <div className='p-3 bg-green-50 text-green-500 rounded-full'><FaCheck size={20} /></div>
                             </CardBody>
@@ -146,7 +118,7 @@ const EmpTimeAdjustment = () => {
                             <CardBody className='p-4 flex items-center justify-between'>
                                 <div>
                                     <p className='text-xs text-gray-500 font-bold uppercase'>Rejected</p>
-                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{stats.rejected}</h3>
+                                    <h3 className='text-2xl font-bold text-gray-800 mt-1'>{timeAdjustmentStats?.rejected || 0}</h3>
                                 </div>
                                 <div className='p-3 bg-red-50 text-red-500 rounded-full'><FaTimes size={20} /></div>
                             </CardBody>
@@ -210,7 +182,7 @@ const EmpTimeAdjustment = () => {
                                                             {ele?.form_data?.reason || '-'}
                                                         </p>
                                                     </td>
-                                                    <td className="py-4 px-6">
+                                                    <td className="p-4">
                                                         {getStatusChip(ele?.status)}
                                                     </td>
                                                 </motion.tr>

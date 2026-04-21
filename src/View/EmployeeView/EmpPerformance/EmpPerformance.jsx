@@ -16,6 +16,13 @@ const SkeletonRow = () => (
     <td className="py-4 pl-4"><div className="h-8 w-16 bg-gray-200 rounded"></div></td>
   </tr>
 );
+
+const PerformancePageSkeleton = () => (
+  <div className='flex flex-col gap-6 p-4 animate-pulse'>
+    <div className="h-[360px] w-full rounded-xl bg-gray-200" />
+    <div className="h-[460px] w-full rounded-xl bg-gray-200" />
+  </div>
+);
 import { gettingEmployeePerformance, deleteEmployeeGoal, toggleEmployeeGoalStatus } from "../../../ViewModel/EmpViewModel/EmpPerformanceViewModel/EmpPerformance"
 import SearchReactSelect from "../../../Components/CustomSelect/SearchReactSelect"
 import { prcFormSearchSelectStyles } from "../../Performance/prcFormSelectStyles"
@@ -42,7 +49,7 @@ const EmpPerformance = () => {
   });
 
   // Loading state
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Action dropdown states
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -82,10 +89,10 @@ const EmpPerformance = () => {
     return text && text.length > DESCRIPTION_MAX_LENGTH;
   };
 
-  const get_Performence_data = async (params = {}) => {
+  const get_Performence_data = async (params = {}, options = {}) => {
     try {
       setLoading(true);
-      const res = await gettingEmployeePerformance(params);
+      const res = await gettingEmployeePerformance(params, options);
       if (res && res.STATUS === "SUCCESSFUL") {
         setPerfData(res.DB_DATA || null);
         if (res.pagination) {
@@ -181,7 +188,7 @@ const EmpPerformance = () => {
       feedback_page: 1,
       history_page: 1,
       performance_id: selectedCycle?.value || undefined
-    });
+    }, { forceRefresh: true });
   };
 
   // Handle drawer close
@@ -279,7 +286,7 @@ const EmpPerformance = () => {
           feedback_page: 1,
           history_page: 1,
           performance_id: selectedCycle?.value || undefined
-        });
+        }, { forceRefresh: true });
       }
     } catch (error) {
       console.error('Error toggling goal status:', error);
@@ -303,7 +310,7 @@ const EmpPerformance = () => {
           feedback_page: 1,
           history_page: 1,
           performance_id: selectedCycle?.value || undefined
-        });
+        }, { forceRefresh: true });
       }
     } catch (error) {
       console.error('Error deleting goal:', error);
@@ -348,6 +355,9 @@ const EmpPerformance = () => {
   }, []);
 
   return (
+    loading && !perfData ? (
+      <PerformancePageSkeleton />
+    ) : (
     <div className='flex flex-col gap-6 p-4'>
       {/* Employee Info Card */}
       <Card className="w-full">
@@ -1184,6 +1194,7 @@ const EmpPerformance = () => {
         />
       )}
     </div>
+    )
   )
 }
 

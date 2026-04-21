@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button, Input, Popover, PopoverContent, PopoverHandler, Typography, Card, CardBody } from '@material-tailwind/react';
 import Calendar from 'react-calendar';
 import PayslipDisplay from './PayslipDisplay';
+import ComprehensiveSalaryHistory from './ComprehensiveSalaryHistory';
 import { toast } from 'react-toastify';
 import usePayslipHook from './usePayslipHook';
 import { motion } from 'framer-motion';
@@ -11,11 +12,14 @@ const PayslipExport = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedMonthYear, setSelectedMonthYear] = useState('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('payslip');
   
   // Use custom hook for payslip functionality
   const { 
     isLoading, 
+    isComprehensiveLoading,
     payslipData, 
+    comprehensiveSalaryData,
     showPayslip, 
     downloadPayslip, 
     closePayslip 
@@ -73,6 +77,13 @@ const PayslipExport = () => {
     visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300 } }
   };
 
+  const tabItems = [
+    { id: "payslip", label: "Payslip" },
+    { id: "increments", label: "Increments" },
+    { id: "incentives", label: "Incentives" },
+    { id: "deductions", label: "Deductions" },
+  ];
+
   return (
     <motion.div 
       initial="hidden"
@@ -92,95 +103,144 @@ const PayslipExport = () => {
            </div>
         </div>
       </motion.div>
-      
-      <motion.div variants={itemVariants} className="max-w-xl">
-        <Card className="rounded-2xl shadow-card border border-gray-100">
-          <CardBody className="p-6 space-y-6">
-             <div>
-                <Typography variant="small" color="blue-gray" className="mb-2 font-bold uppercase tracking-wide text-xs">
-                  Select Period
-                </Typography>
-                <Popover 
-                  placement="bottom" 
-                  open={isCalendarOpen} 
-                  handler={setIsCalendarOpen}
-                >
-                  <PopoverHandler>
-                    <div className="relative cursor-pointer group">
-                        <Input
-                          label="Choose month and year"
-                          value={selectedMonthYear}
-                          readOnly
-                          className="cursor-pointer !border-gray-200 focus:!border-brand-500 rounded-lg"
-                          placeholder="Select Month"
-                          labelProps={{
-                            className: "hidden",
-                          }}
-                          containerProps={{
-                            className: "min-w-0",
-                          }}
-                        />
-                        <div className="absolute right-3 top-3 text-gray-400 group-hover:text-brand-500 transition-colors pointer-events-none">
-                            <FaCalendarAlt />
-                        </div>
-                        {!selectedMonthYear && (
-                            <div className="absolute left-3 top-2.5 text-gray-500 pointer-events-none text-sm">
-                                Select Month & Year
-                            </div>
-                        )}
-                    </div>
-                  </PopoverHandler>
-                  <PopoverContent className="p-0 border-0 shadow-xl rounded-xl overflow-hidden z-50">
-                    <Calendar
-                      onChange={handleDateChange}
-                      value={selectedDate}
-                      className='border-0 font-poppins p-2'
-                      maxDetail="year"
-                      minDetail="year"
-                      view="year"
-                      formatYear={(locale, date) => date.getFullYear()}
-                      formatMonth={(locale, date) => {
-                        const month = months[date.getMonth()];
-                        return month.label.substring(0, 3);
-                      }}
-                      tileClassName={({ date, view }) => {
-                        if (view === 'year' && selectedDate) {
-                          const isSelected = date.getMonth() === selectedDate.getMonth() && 
-                                           date.getFullYear() === selectedDate.getFullYear();
-                          return isSelected ? 'bg-brand-500 text-white rounded-lg !text-white' : 'hover:bg-brand-50 rounded-lg text-sm';
-                        }
-                        return 'text-sm font-medium';
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-             </div>
 
-             <Button
-                onClick={handleDownload}
-                disabled={isLoading}
-                className="w-full bg-brand-500 hover:bg-brand-600 shadow-md shadow-brand-500/20 py-3 rounded-xl flex items-center justify-center gap-2 capitalize text-sm font-semibold"
-             >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    <FaCloudDownloadAlt className="text-lg" />
-                    <span>Preview & Download Payslip</span>
-                  </>
-                )}
-             </Button>
-          </CardBody>
-        </Card>
+      <motion.div variants={itemVariants} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 flex flex-wrap gap-2">
+        {tabItems.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-xl cursor-pointer text-sm font-semibold transition-all ${
+              activeTab === tab.id
+                ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
+                : "bg-gray-50 text-gray-600 hover:bg-brand-50 hover:text-brand-600"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </motion.div>
 
-      {showPayslip && (
+      {activeTab === "payslip" && (
+        <motion.div variants={itemVariants} className="max-w-xl">
+          <Card className="rounded-2xl shadow-card border border-gray-100">
+            <CardBody className="p-6 space-y-6">
+               <div>
+                  <Typography variant="small" color="blue-gray" className="mb-2 font-bold uppercase tracking-wide text-xs">
+                    Select Period
+                  </Typography>
+                  <Popover 
+                    placement="bottom" 
+                    open={isCalendarOpen} 
+                    handler={setIsCalendarOpen}
+                  >
+                    <PopoverHandler>
+                      <div className="relative cursor-pointer group">
+                          <Input
+                            label="Choose month and year"
+                            value={selectedMonthYear}
+                            readOnly
+                            className="cursor-pointer !border-gray-200 focus:!border-brand-500 rounded-lg"
+                            placeholder="Select Month"
+                            labelProps={{
+                              className: "hidden",
+                            }}
+                            containerProps={{
+                              className: "min-w-0",
+                            }}
+                          />
+                          <div className="absolute right-3 top-3 text-gray-400 group-hover:text-brand-500 transition-colors pointer-events-none">
+                              <FaCalendarAlt />
+                          </div>
+                          {!selectedMonthYear && (
+                              <div className="absolute left-3 top-2.5 text-gray-500 pointer-events-none text-sm">
+                                  ---- --
+                              </div>
+                          )}
+                      </div>
+                    </PopoverHandler>
+                    <PopoverContent className="p-0 border-0 shadow-xl rounded-xl overflow-hidden z-50">
+                      <Calendar
+                        onChange={handleDateChange}
+                        value={selectedDate}
+                        className='border-0 font-poppins p-2'
+                        maxDetail="year"
+                        minDetail="year"
+                        view="year"
+                        formatYear={(locale, date) => date.getFullYear()}
+                        formatMonth={(locale, date) => {
+                          const month = months[date.getMonth()];
+                          return month.label.substring(0, 3);
+                        }}
+                        tileClassName={({ date, view }) => {
+                          if (view === 'year' && selectedDate) {
+                            const isSelected = date.getMonth() === selectedDate.getMonth() && 
+                                             date.getFullYear() === selectedDate.getFullYear();
+                            return isSelected ? 'bg-brand-500 text-white rounded-lg !text-white' : 'hover:bg-brand-50 rounded-lg text-sm';
+                          }
+                          return 'text-sm font-medium';
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+               </div>
+
+               <Button
+                  onClick={handleDownload}
+                  disabled={isLoading}
+                  className="w-full bg-brand-500 hover:bg-brand-600 shadow-md shadow-brand-500/20 py-3 rounded-xl flex items-center justify-center gap-2 capitalize text-sm font-semibold"
+               >
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaCloudDownloadAlt className="text-lg" />
+                      <span>Preview Payslip</span>
+                    </>
+                  )}
+               </Button>
+            </CardBody>
+          </Card>
+        </motion.div>
+      )}
+
+      {activeTab === "increments" && (
+        <motion.div variants={itemVariants}>
+          <ComprehensiveSalaryHistory
+            comprehensiveSalaryData={comprehensiveSalaryData}
+            isLoading={isComprehensiveLoading}
+            mode="increments"
+          />
+        </motion.div>
+      )}
+
+      {activeTab === "incentives" && (
+        <motion.div variants={itemVariants}>
+          <ComprehensiveSalaryHistory
+            comprehensiveSalaryData={comprehensiveSalaryData}
+            isLoading={isComprehensiveLoading}
+            mode="incentives"
+          />
+        </motion.div>
+      )}
+
+      {activeTab === "deductions" && (
+        <motion.div variants={itemVariants}>
+          <ComprehensiveSalaryHistory
+            comprehensiveSalaryData={comprehensiveSalaryData}
+            isLoading={isComprehensiveLoading}
+            mode="deductions"
+          />
+        </motion.div>
+      )}
+
+      {showPayslip && activeTab === "payslip" && (
         <PayslipDisplay
           monthYear={selectedMonthYear}
           selectedDate={selectedDate}
