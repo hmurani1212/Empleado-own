@@ -422,9 +422,9 @@ function Header() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute left-0 z-20 mt-1 w-48 rounded-xl border border-gray-100 bg-white p-2 shadow-lg shadow-blue-gray-500/10"
+                className="absolute left-0 z-20 mt-1 w-48 max-h-72 overflow-hidden rounded-xl border border-gray-100 bg-white p-2 shadow-lg shadow-blue-gray-500/10"
               >
-                  <ul className="flex flex-col gap-1">
+                  <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto pr-1">
                     {switchAccessMenu.length > 0 ? (
                       switchAccessMenu.map((menuItem) => (
                         <li

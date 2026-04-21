@@ -1,4 +1,4 @@
-import { traininginstancemodeule, axiosFormDataTransformRequest } from "../../base";
+import { traininginstancemodeule, axiosFormDataTransformRequest, NotesPoolinstancemodeule } from "../../base";
 
 const tarining_data = {
     getTrainigDate: function (data = {}) {
@@ -155,6 +155,21 @@ const tarining_data = {
             url: '/api/training_url',
             data: formData,
             headers: { 'Content-Type': 'multipart/form-data' }
+        })
+    },
+
+    // Get notebooks list from Notes Pool for Notes_pool resources
+    getNotesPoolNotebooks: function () {
+        return NotesPoolinstancemodeule.request({
+            method: 'GET',
+            url: '/api/v1/notebooks/get/notebook',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            },
+            params: {
+                _t: Date.now()
+            }
         })
     },
 

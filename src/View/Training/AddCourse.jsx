@@ -5,10 +5,17 @@ import TrainingService from '../../ViewModel/TraingingViewModel/TrainingService'
 import { showToast } from '../../Components/Toaster/Toaster'
 import useStore from '../../Store/store'
 import { TrainingDrawerOverlay } from './TrainingDrawerLoader'
+import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 
 function AddCourse(props) {
   const { closeDrawer } = props
-  const { Add_training_course_fn, Training_datefn } = TrainingService()
+  const {
+    Add_training_course_fn,
+    Training_datefn,
+    getNotesPoolNotebooks,
+    notesPoolNotebooks,
+    isLoadingNotesPoolNotebooks
+  } = TrainingService()
   
   // Get uploadTrainingFile directly from store (for training docs)
   const uploadTrainingFile = useStore((state) => state.uploadTrainingFile)
@@ -29,6 +36,7 @@ function AddCourse(props) {
   }])
 
   const [loading, setLoading] = useState(false)
+  const [hasFetchedNotebooks, setHasFetchedNotebooks] = useState(false)
 
   // Check if form is valid
   const isFormValid = useMemo(() => {
@@ -69,6 +77,37 @@ function AddCourse(props) {
           : resource
       )
     )
+  }
+
+  const fetchNotesPoolNotebooks = async () => {
+    if (hasFetchedNotebooks) return
+    try {
+      await getNotesPoolNotebooks()
+      setHasFetchedNotebooks(true)
+    } catch (error) {
+      showToast('Failed to load notebooks', 'error')
+    }
+  }
+
+  const handleDocumentTypeChange = async (resourceId, value) => {
+    const nextDocumentType = value || ''
+    setResources(prev =>
+      prev.map(resource => {
+        if (resource.id !== resourceId) return resource
+        return {
+          ...resource,
+          document_type: nextDocumentType,
+          link_url: '',
+          file: null,
+          notes_pool_id: '',
+          notes_text: ''
+        }
+      })
+    )
+
+    if (nextDocumentType === 'Notes_pool') {
+      await fetchNotesPoolNotebooks()
+    }
   }
 
   const addNewResource = () => {
@@ -146,7 +185,7 @@ function AddCourse(props) {
             }
           }
         } else if (resource.document_type === 'Notes_pool') {
-          attachment = resource.notes_pool_id
+          attachment = String(resource.notes_pool_id)
           resource_type = 'Notes_pool'
         } else if (resource.document_type === 'Notes') {
           attachment = resource.notes_text
@@ -185,6 +224,7 @@ function AddCourse(props) {
           notes_pool_id: '',
           notes_text: ''
         }])
+        setHasFetchedNotebooks(false)
         // Refresh course list
         Training_datefn({ status: '', text: '', page: 1, limit: 10 })
         // Close drawer
@@ -285,7 +325,7 @@ function AddCourse(props) {
                         label='Document Type'
                         color='blue'
                         value={resource.document_type}
-                        onChange={(val) => handleResourceChange(resource.id, 'document_type', val)}
+                        onChange={(val) => handleDocumentTypeChange(resource.id, val)}
                       >
                         <Option value='Link'>Link</Option>
                         <Option value='Upload docs'>Upload docs</Option>
@@ -341,13 +381,34 @@ function AddCourse(props) {
 
                     {resource.document_type === 'Notes_pool' && (
                       <div className='mb-3'>
-                        <Input
-                          required
-                          label='Notes Pool ID'
-                          color='blue'
-                          value={resource.notes_pool_id}
-                          onChange={(e) => handleResourceChange(resource.id, 'notes_pool_id', e.target.value)}
-                          placeholder='Enter Notes Pool ID'
+                        <label className='block text-[#7a929e] text-sm mb-2'>Select Notebook</label>
+                        <CustomSelect
+                          placeHolderTitle={
+                            isLoadingNotesPoolNotebooks
+                              ? 'Loading notebooks...'
+                              : 'Select notebook'
+                          }
+                          value={
+                            (notesPoolNotebooks || [])
+                              .map((notebook) => ({
+                                value: notebook.id,
+                                label: notebook.notebook_title
+                              }))
+                              .find((option) => String(option.value) === String(resource.notes_pool_id)) || null
+                          }
+                          options={(notesPoolNotebooks || []).map((notebook) => ({
+                            value: notebook.id,
+                            label: notebook.notebook_title
+                          }))}
+                          onChangeHandler={(selectedOption) =>
+                            handleResourceChange(resource.id, 'notes_pool_id', selectedOption?.value ?? '')
+                          }
+                          disabled={isLoadingNotesPoolNotebooks}
+                          isSearchable={true}
+                          isClearable={true}
+                          noOptionsMessage={() =>
+                            isLoadingNotesPoolNotebooks ? 'Loading notebooks...' : 'No notebooks found'
+                          }
                         />
                       </div>
                     )}

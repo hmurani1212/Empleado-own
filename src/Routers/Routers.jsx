@@ -185,9 +185,9 @@ const Routers = () => {
   const showApplicationRoutes = isAdmin || perm.application;
   const showLeavesPlanner = isAdmin || perm.leavesPlanner;
   const showFormApproval = isAdmin || perm.formApproval;
-  const hasPermissionPayload = rolePermsSuccess && Array.isArray(rolePermData?.permissions);
-  // Keep non-admin behavior during permission bootstrap, then enforce ATTENDANCE_DATA-based access.
-  const canAccessSelfAttendance = !isAdmin && (!hasPermissionPayload || perm.attendanceAdmin);
+  // Self attendance is an employee-shell route (Employee / Branch_Admin / Department_Admin and mapped custom roles).
+  // Keep it role-based to stay consistent with sidebar visibility and avoid redirect loops to /dashboard.
+  const canAccessSelfAttendance = !isAdmin;
 
   return (
     <Routes>

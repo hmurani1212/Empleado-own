@@ -26,6 +26,7 @@ const App = () => {
   // Authentication functions
   const checkAuthentication = useStore((state)=> state.checkAuthentication)
   const getUserDataFromToken = useStore((state)=> state.getUserDataFromToken)
+  const getHeaderDatafn = useStore((state)=> state.getHeaderDatafn)
 
   // Removed unused dashboardDataFunc - dashboard API is now handled by individual components
 
@@ -117,6 +118,7 @@ const App = () => {
           // that flag is stale in this effect closure when the token arrives via ?token= on `/` or `/login`).
           checkAuthentication();
           getUserDataFromToken();
+          getHeaderDatafn();
 
           // Set up JWT expiration check - clear any existing interval first
           if (intervalRef.current) {

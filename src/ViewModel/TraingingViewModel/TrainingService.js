@@ -39,6 +39,9 @@ const TrainingService = () => {
     const isLoadingQuestionAssignment = useStore((state) => state.isLoadingQuestionAssignment);
     const addQuestionsToBank = useStore((state) => state.addQuestionsToBank);
     const isLoadingAddQuestionsBank = useStore((state) => state.isLoadingAddQuestionsBank);
+    const getNotesPoolNotebooks = useStore((state) => state.getNotesPoolNotebooks);
+    const notesPoolNotebooks = useStore((state) => state.notesPoolNotebooks);
+    const isLoadingNotesPoolNotebooks = useStore((state) => state.isLoadingNotesPoolNotebooks);
     const getCourseAssignedEmployees = useStore((state) => state.getCourseAssignedEmployees);
     const isLoadingCourseAssignedEmployees = useStore((state) => state.isLoadingCourseAssignedEmployees);
     const getEmployeeResolvedQuestions = useStore((state) => state.getEmployeeResolvedQuestions);
@@ -54,7 +57,7 @@ const TrainingService = () => {
 
 
     return {
-        training_data, Training_datefn, resetTrainingData, Add_training_course_fn, getCourseDetails, getCourseResources, addCourseResources, updateCourseResource, getCourseAssessments, addCourseAssessment, getCourseReviewer, addCourseReviewer, getCourseEmployeeAssignments, addCourseEmployeeAssignment, getCourseComments, addCourseComment, uploadFileToElephant, uploadTrainingFile,
+        training_data, Training_datefn, resetTrainingData, Add_training_course_fn, getCourseDetails, getCourseResources, addCourseResources, updateCourseResource, getCourseAssessments, addCourseAssessment, getCourseReviewer, addCourseReviewer, getCourseEmployeeAssignments, addCourseEmployeeAssignment, getCourseComments, addCourseComment, uploadFileToElephant, uploadTrainingFile, getNotesPoolNotebooks, notesPoolNotebooks, isLoadingNotesPoolNotebooks,
         deteleCoursefn, updateCoursefn, deleteCombinefn, get_assessmen_q_fn, processPdfWithAI, generateQuestionsFromResources, saveQuestion, saveQuestions, getCourseCompleteDetails, updateCourseAndResource, assignCourseToEmployee, assignCourseByBranchDept, isLoadingCourseAssignment, getCourseEmployees, isLoadingCourseEmployees, assignQuestionsByBranchDept, isLoadingQuestionAssignment, addQuestionsToBank, isLoadingAddQuestionsBank, getCourseAssignedEmployees, isLoadingCourseAssignedEmployees, getEmployeeResolvedQuestions, isLoadingResolvedQuestions, updateQuestionCorrectness, isUpdatingQuestionCorrectness, aiGradeAssessment, isAiGrading, 
         delete_course_fn, isLoadingTrainingData, trainingListLoadMoreLoading
     };

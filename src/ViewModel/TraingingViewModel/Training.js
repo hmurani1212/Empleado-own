@@ -37,6 +37,8 @@ const TrainingiewModel = (set, get) => ({
     // Dashboard list: start true so first paint shows skeletons (not empty table)
     isLoadingTrainingData: true,
     trainingListLoadMoreLoading: false,
+    notesPoolNotebooks: [],
+    isLoadingNotesPoolNotebooks: false,
 
     gettingAllTraingiList: async (data = {}) => {
         // console.log("Training API call with data:", data)
@@ -293,6 +295,26 @@ const TrainingiewModel = (set, get) => ({
         } catch (err) {
             console.log('final error', err)
             throw err;
+        }
+    },
+
+    getNotesPoolNotebooks: async () => {
+        set({ isLoadingNotesPoolNotebooks: true })
+        try {
+            const response = await trainingApi.getNotesPoolNotebooks()
+            const result = response?.data
+            if (response.status === 200 && result?.STATUS === 'SUCCESSFUL') {
+                const notebooks = Array.isArray(result?.DB_DATA) ? result.DB_DATA : []
+                set({ notesPoolNotebooks: notebooks, isLoadingNotesPoolNotebooks: false })
+                return notebooks
+            }
+
+            set({ notesPoolNotebooks: [], isLoadingNotesPoolNotebooks: false })
+            return []
+        } catch (err) {
+            console.log('Error fetching notes pool notebooks:', err)
+            set({ notesPoolNotebooks: [], isLoadingNotesPoolNotebooks: false })
+            throw err
         }
     },
 

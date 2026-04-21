@@ -4,6 +4,45 @@ import { showToast } from "../../Components/Toaster/Toaster"
 import { employeesListPageRef } from "./employeesListPageRef"
 import { clearReactQueryCache } from "../../queryClient"
 
+const HEADER_DATA_CACHE_KEY = 'empleado_header_data_cache_v1'
+const HEADER_DATA_CACHE_TTL_MS = 5 * 60 * 1000
+
+const readHeaderDataCache = () => {
+    if (typeof localStorage === 'undefined') return null
+    try {
+        const rawCache = localStorage.getItem(HEADER_DATA_CACHE_KEY)
+        if (!rawCache) return null
+        const parsedCache = JSON.parse(rawCache)
+        if (!parsedCache || typeof parsedCache !== 'object') return null
+        if (!parsedCache.expiresAt || Date.now() >= parsedCache.expiresAt) {
+            localStorage.removeItem(HEADER_DATA_CACHE_KEY)
+            return null
+        }
+        return parsedCache.data ?? null
+    } catch (error) {
+        localStorage.removeItem(HEADER_DATA_CACHE_KEY)
+        return null
+    }
+}
+
+const writeHeaderDataCache = (data) => {
+    if (typeof localStorage === 'undefined') return
+    try {
+        const payload = {
+            data,
+            expiresAt: Date.now() + HEADER_DATA_CACHE_TTL_MS
+        }
+        localStorage.setItem(HEADER_DATA_CACHE_KEY, JSON.stringify(payload))
+    } catch (error) {
+        // Ignore cache write failures silently
+    }
+}
+
+const clearHeaderDataCache = () => {
+    if (typeof localStorage === 'undefined') return
+    localStorage.removeItem(HEADER_DATA_CACHE_KEY)
+}
+
 const employeeViewModel = (set, get) => ({
     allEmployees: [],
     employeesListLoading: true,
@@ -822,9 +861,18 @@ const employeeViewModel = (set, get) => ({
         }
     },
     getHeaderDatafn: async (data) => {
+        const forceRefresh = Boolean(data?.forceRefresh)
+        if (!forceRefresh) {
+            const cachedHeaderData = readHeaderDataCache()
+            if (cachedHeaderData) {
+                set({ getHeaderData: cachedHeaderData })
+                return cachedHeaderData
+            }
+        }
+
         try {
             // Make your API call here
-            const response = await employeesApi.getHeaderData(data);
+            const response = await employeesApi.getHeaderData();
             const responseData = response.data;
 
             ////console.log("Re-interview API response:", responseData.DB_DATA);
@@ -832,12 +880,14 @@ const employeeViewModel = (set, get) => ({
             if (responseData.STATUS === 'SUCCESS') {
                 // Update Zustand state with DB_DATA from the API response
                 set({ getHeaderData: responseData.DB_DATA });
+                writeHeaderDataCache(responseData.DB_DATA)
 
                 return responseData.DB_DATA;
 
                 // Return success status and data
                 ///return { success: true, data: responseData };
             } else {
+                clearHeaderDataCache()
                 // Return failure with error description
                 return { success: false, error: responseData.ERROR_DESCRIPTION };
             }
@@ -1057,6 +1107,7 @@ const employeeViewModel = (set, get) => ({
 
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
                 clearReactQueryCache()
+                clearHeaderDataCache()
                 localStorage.clear()
                 sessionStorage.clear()
 
@@ -1066,6 +1117,7 @@ const employeeViewModel = (set, get) => ({
             }
         } catch (error) {
             clearReactQueryCache()
+            clearHeaderDataCache()
             localStorage.clear()
             sessionStorage.clear()
 

@@ -156,6 +156,16 @@ const CreateQuestion = ({ courseId, courseName, closeDrawer }) => {
         console.log('Questions generated successfully:', response.DB_DATA)
         
         const dbData = response.DB_DATA
+        const firstGenerationError = Array.isArray(dbData?.errors) && dbData.errors.length > 0
+          ? dbData.errors[0]
+          : null
+        if (firstGenerationError?.error) {
+          showToast(firstGenerationError.error, 'error')
+          if ((dbData?.total_questions_generated || 0) === 0) {
+            return
+          }
+        }
+
         // Get total questions generated from response (more accurate)
         const totalQuestionsGenerated = dbData?.total_questions_generated || 0
         let questionsAlreadySaved = false
