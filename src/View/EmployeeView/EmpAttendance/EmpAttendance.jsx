@@ -10,26 +10,66 @@ import { getAllMonths, getAllYears } from '../../../services/__appServicesData'
 import { motion } from 'framer-motion'
 import CustomDialog from '../../../Components/CustomDialog/CustomDialog'
 import SingleAttendanceView from '../EmpDashboard/SingleAttendanceView'
+import useStore from '../../../Store/store'
 
 const tableHeader = [
   "Date", "Attendance Status", "Earned Hours", "Expected Hours", "Arrival Status", "Action"
 ]
 
+const AttendancePageSkeleton = ({ embedded }) => (
+  <div className={embedded ? 'flex flex-col gap-4 animate-pulse' : 'flex flex-col gap-6 p-4 md:p-6 min-h-screen bg-gray-50/50 animate-pulse'}>
+    <div className="h-24 w-full rounded-2xl bg-gray-200" />
+    <div className="grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-6">
+      {[...Array(3)].map((_, idx) => (
+        <div key={idx} className="h-52 rounded-2xl bg-gray-200" />
+      ))}
+    </div>
+    <div className="h-[420px] w-full rounded-2xl bg-gray-200" />
+  </div>
+);
+
 const EmpAttendance = ({ embedded = false }) => {
 
   const { gettingEmpAttendanceData, empAttendancData, selectedValue, handleSelectAttendance, handleMobileBaseAttendance } = useEmpAttendanceServices();
   const { empDashboardData, gettingEmpDashboardData } = useEmpDashboard();
+  const empDashboardCacheKey = useStore((state) => state.empDashboardCacheKey);
+  const empAttendanceCacheKey = useStore((state) => state.empAttendanceCacheKey);
   const [singleAttendance, setSingleAttendance] = useState({ show: false, data: null })
+  const [isAttendancePageLoading, setIsAttendancePageLoading] = useState(true);
   
   // Single fetch on mount and when month/year change; guard against empty params
   useEffect(() => {
     const month = selectedValue.month?.value;
     const year = selectedValue.year?.value;
-    gettingEmpDashboardData();
-    if (month != null && year != null) {
-      gettingEmpAttendanceData({ month, year });
-    }
-  }, [selectedValue.month?.value, selectedValue.year?.value]);
+    const attendanceKey = month != null && year != null ? `${month}-${year}` : null;
+    const now = new Date();
+    const dashboardKey = `${now.getMonth() + 1}-${now.getFullYear()}`;
+    let isMounted = true;
+    const loadAttendancePageData = async () => {
+      const hasAttendanceCache = attendanceKey && empAttendanceCacheKey === attendanceKey;
+      const hasDashboardCache = empDashboardCacheKey === dashboardKey;
+      if (hasAttendanceCache && hasDashboardCache) {
+        if (isMounted) setIsAttendancePageLoading(false);
+        return;
+      }
+
+      setIsAttendancePageLoading(true);
+      try {
+        if (!hasDashboardCache) {
+          await gettingEmpDashboardData(now.getMonth() + 1, now.getFullYear());
+        }
+        if (month != null && year != null) {
+          await gettingEmpAttendanceData({ month, year });
+        }
+      } finally {
+        if (isMounted) setIsAttendancePageLoading(false);
+      }
+    };
+    loadAttendancePageData();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedValue.month?.value, selectedValue.year?.value, empDashboardCacheKey, empAttendanceCacheKey]);
 
 
   const months = getAllMonths()
@@ -95,6 +135,10 @@ const EmpAttendance = ({ embedded = false }) => {
     hidden: { y: 20, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 300 } }
   };
+
+  if (isAttendancePageLoading) {
+    return <AttendancePageSkeleton embedded={embedded} />;
+  }
 
   return (
     <>

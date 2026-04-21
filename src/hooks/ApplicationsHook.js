@@ -27,9 +27,6 @@ const useApplicationHook = ()=>{
         case 3:
             handleToggleLeaveApplication()
             break;
-        case 4:
-            // Leave Encashment - not implemented yet
-            break;
         case 5:
             handleToggleLoanApplication()
             break;

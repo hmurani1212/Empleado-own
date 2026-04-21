@@ -13,7 +13,8 @@ const noticeViewModel = (set, get) => ({
     departmentsLoadedForBranchId: null,
     allNoticesList: [],
     noticeMount: false,
-    viewNoticeData : [],
+    viewNoticeData: null,
+    viewNoticeLoading: false,
     departmentsLoading: false,
     departmentsLoaded: false,
     noticesPagination: {
@@ -253,17 +254,20 @@ const noticeViewModel = (set, get) => ({
         set({noticeMount:true})
     },
 
-    getViewNotice: async(id) => {
-        try{
-            const response = await noticesApi.viewNotice({id:id});
-            const viewData = response.data
+    getViewNotice: async (id) => {
+        set({ viewNoticeLoading: true, viewNoticeData: null });
+        try {
+            const response = await noticesApi.viewNotice({ id });
+            const viewData = response.data;
 
-            if(response.status === 200 && viewData.STATUS === 'SUCCESSFUL') {
-                set ({viewNoticeData: viewData.DB_DATA})
-               
+            if (response.status === 200 && viewData.STATUS === "SUCCESSFUL") {
+                set({ viewNoticeData: viewData.DB_DATA, viewNoticeLoading: false });
+            } else {
+                set({ viewNoticeLoading: false });
             }
         } catch (err) {
-            console.log(err)
+            console.log(err);
+            set({ viewNoticeLoading: false });
         }
     },
     addNewNoticeState: (data) => {

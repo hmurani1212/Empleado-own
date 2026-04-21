@@ -1,6 +1,25 @@
 import employeePerformanceApi from "../../../Model/Data/Employees/EmployeePerformance"
 import { showToast } from "../../../Components/Toaster/Toaster"
 
+const employeePerformanceResponseCache = new Map();
+
+const normalizeParams = (params = {}) => {
+    const source = params || {};
+    const normalized = {};
+    Object.keys(source)
+        .sort()
+        .forEach((key) => {
+            const value = source[key];
+            if (value !== undefined && value !== null && value !== "") {
+                normalized[key] = value;
+            }
+        });
+    return normalized;
+};
+
+const getPerformanceCacheKey = (params = {}) => JSON.stringify(normalizeParams(params));
+const clearEmployeePerformanceCache = () => employeePerformanceResponseCache.clear();
+
 // const empPerformanceViewModel = (set, get) => ({
 //     // State
 //     employeePerformance: {
@@ -132,12 +151,19 @@ import { showToast } from "../../../Components/Toaster/Toaster"
 
 
 
-const gettingEmployeePerformance = async (params = {}) => {
+const gettingEmployeePerformance = async (params = {}, options = {}) => {
+    const forceRefresh = Boolean(options?.forceRefresh);
+    const cacheKey = getPerformanceCacheKey(params);
+    if (!forceRefresh && employeePerformanceResponseCache.has(cacheKey)) {
+        return employeePerformanceResponseCache.get(cacheKey);
+    }
+
     try {
         const response = await employeePerformanceApi.getEmployeePerformance(params)
         const responseData = response.data
 
         if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+            employeePerformanceResponseCache.set(cacheKey, responseData);
             return responseData
         } else {
             console.error('Failed to fetch employee performance:', responseData)
@@ -157,6 +183,7 @@ const deleteEmployeeGoal = async (goalId) => {
         const responseData = response.data
 
         if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+            clearEmployeePerformanceCache();
             showToast('Goal deleted successfully', 'success')
             return responseData
         } else {
@@ -177,6 +204,7 @@ const updateEmployeeGoal = async (data) => {
         const responseData = response.data
 
         if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+            clearEmployeePerformanceCache();
             showToast('Goal updated successfully', 'success')
             return responseData
         } else {
@@ -197,6 +225,7 @@ const toggleEmployeeGoalStatus = async (goalId) => {
         const responseData = response.data
 
         if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+            clearEmployeePerformanceCache();
             showToast(responseData.MESSAGE || 'Goal status updated', 'success')
             return responseData
         } else {
@@ -215,6 +244,6 @@ const toggleEmployeeGoalStatus = async (goalId) => {
 
 
 
-export { gettingEmployeePerformance, deleteEmployeeGoal, updateEmployeeGoal, toggleEmployeeGoalStatus }
+export { gettingEmployeePerformance, deleteEmployeeGoal, updateEmployeeGoal, toggleEmployeeGoalStatus, clearEmployeePerformanceCache }
 
 

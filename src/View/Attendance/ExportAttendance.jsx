@@ -18,12 +18,6 @@ const generateReportRequestId = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
   return `att-report-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
-
-// OLD duplicate from merge (incoming branch — same implementation):
-// const generateReportRequestId = () => {
-//   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
-//   return `att-report-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
-// }
 const ATTENDANCE_PENDING_EXPORT_KEY = 'attendance_pending_export'
 const ExportAttendance = () => {
   const { individualExport, handleCheckboxChangeAtt, excelLayoutOptions } = useAttendance();
@@ -41,7 +35,6 @@ const ExportAttendance = () => {
 
   const scheduleAttendanceLongWaitToast = () => {
     if (longWaitToastTimeoutRef.current) clearTimeout(longWaitToastTimeoutRef.current)
-    // Show a gentle heads-up if report generation takes time.
     longWaitToastTimeoutRef.current = setTimeout(() => {
       showToast('Generating attendance report… this may take a while. You can keep working.', 'info')
     }, 12000)
@@ -162,7 +155,6 @@ const ExportAttendance = () => {
 
       if (!requestIdMatch && !oneIdMatch && !legacyNoId) return
       clearAttendanceLongWaitToast()
-      // OLD: (incoming had no clearAttendanceLongWaitToast here)
       if (pendingReportRequestIdRef.current != null) pendingReportRequestIdRef.current = null
       if (downloadTimeoutRef.current) {
         clearTimeout(downloadTimeoutRef.current)
@@ -494,9 +486,6 @@ const ExportAttendance = () => {
           currentExportMetaRef.current = null
           localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
           clearAttendanceLongWaitToast()
-          // OLD (incoming branch) — minimal timeout body only had:
-          // pendingReportRequestIdRef.current = null
-          // then setIsDownloading(false) + showToast (same as below)
           setIsDownloading(false)
           showToast('Report did not arrive in time. Check Attendance Report Archive or try again.', 'error')
         }, DOWNLOAD_WAIT_MS)
@@ -507,7 +496,6 @@ const ExportAttendance = () => {
         currentExportMetaRef.current = null
         localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
         clearAttendanceLongWaitToast()
-        // OLD (incoming): only pendingReportRequestIdRef.current = null before showToast
         showToast(result.error || 'Failed to schedule report', 'error')
       }
     } catch (error) {
@@ -516,7 +504,6 @@ const ExportAttendance = () => {
       currentExportMetaRef.current = null
       localStorage.removeItem(ATTENDANCE_PENDING_EXPORT_KEY)
       clearAttendanceLongWaitToast()
-      // OLD (incoming): only pendingReportRequestIdRef.current = null before showToast
       showToast('An error occurred while scheduling the report', 'error')
       setIsDownloading(false)
     } finally {

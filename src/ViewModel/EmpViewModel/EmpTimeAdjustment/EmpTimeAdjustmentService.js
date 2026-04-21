@@ -5,6 +5,7 @@ const useEmpTimeAdjustmentServices = () => {
     const timeAjustmentData = useStore((state) => state.timeAjustmentData)
     const timeAdjustmentLoading = useStore((state) => state.timeAdjustmentLoading)
     const timeAdjustmentPagination = useStore((state) => state.timeAdjustmentPagination)
+    const timeAdjustmentStats = useStore((state) => state.timeAdjustmentStats)
     const getTimeAjustmentDataNextPage = useStore((state) => state.getTimeAjustmentDataNextPage)
     const getTimeAjustmentDataPrevPage = useStore((state) => state.getTimeAjustmentDataPrevPage)
     const getTimeAjustmentDataGoToPage = useStore((state) => state.getTimeAjustmentDataGoToPage)
@@ -14,6 +15,7 @@ const useEmpTimeAdjustmentServices = () => {
         timeAjustmentData,
         timeAdjustmentLoading,
         paginationData: timeAdjustmentPagination,
+        timeAdjustmentStats,
         onNextPage: getTimeAjustmentDataNextPage,
         onPreviousPage: getTimeAjustmentDataPrevPage,
         onGoToPage: getTimeAjustmentDataGoToPage,
