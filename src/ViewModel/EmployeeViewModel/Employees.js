@@ -1012,15 +1012,30 @@ const employeeViewModel = (set, get) => ({
             const response = await employeesApi.addSignature(signatureData)
             const data = response.data
             if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                // Add new signature to existing list instead of full refresh
                 const currentSignatures = get().signatures || []
-                set({ signatures: [...currentSignatures, data.BB_DATA] })
-                return { success: true, data: data.BB_DATA }
+                const updatedRow = data.BB_DATA
+                const isUpdate =
+                    signatureData != null &&
+                    signatureData.id != null &&
+                    signatureData.id !== ''
+
+                if (isUpdate) {
+                    const targetId = updatedRow?.id ?? signatureData.id
+                    const next = currentSignatures.map((sig) => {
+                        if (String(sig.id) !== String(targetId)) return sig
+                        if (updatedRow && typeof updatedRow === 'object') return { ...sig, ...updatedRow }
+                        return { ...sig, signature: signatureData.signature }
+                    })
+                    set({ signatures: next })
+                } else {
+                    set({ signatures: [...currentSignatures, updatedRow].filter(Boolean) })
+                }
+                return { success: true, data: updatedRow }
             } else {
-                return { success: false, error: data.ERROR_DESCRIPTION || 'Failed to add signature' }
+                return { success: false, error: data.ERROR_DESCRIPTION || 'Failed to save signature' }
             }
         } catch (error) {
-            return { success: false, error: error.message || 'Failed to add signature' }
+            return { success: false, error: error.message || 'Failed to save signature' }
         }
     },
 

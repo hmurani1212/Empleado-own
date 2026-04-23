@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Button, Textarea, Tooltip } from '@material-tailwind/react';
 import {
   FaPlus,
-  FaTimes,
+  FaPen,
   FaEdit,
   FaFileExcel,
   FaImage,
@@ -16,19 +16,11 @@ import AddSignatureForm from '../../Components/AddSignatureForm/AddSignatureForm
 import AddDigitalSignatureForm from '../../Components/AddDigitalSignatureForm/AddDigitalSignatureForm';
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices';
 import employeesApi from '../../Model/Data/Employees/Employees';
-import ConfirmationDialog from '../../Components/ConfirmationDialog/ConfirmationDialog';
 import { showToast } from '../../Components/Toaster/Toaster';
 import CustomSelect from '../../Components/CustomSelect/CustomSelect';
 
 const Settings = () => {
   const [activeSection, setActiveSection] = useState('signatures');
-  
-  // Confirmation dialog state
-  const [deleteConfirmation, setDeleteConfirmation] = useState({
-    show: false,
-    signatureId: null,
-    loading: false
-  });
 
   // Logo upload state
   const [selectedFile, setSelectedFile] = useState(null);
@@ -63,9 +55,7 @@ const Settings = () => {
   const { 
     signatures, 
     isLoadingSignatures, 
-    getSignatures, 
-    addSignature, 
-    deleteSignature,
+    getSignatures,
     digitalSignature,
     isLoadingDigitalSignature,
     getDigitalSignature,
@@ -176,6 +166,22 @@ const Settings = () => {
     openDrawer();
   };
 
+  const handleEditSignature = (signature) => {
+    const closeDrawer = useStore.getState().closeDrawer;
+    settingComponent(
+      <AddSignatureForm
+        existingSignature={signature}
+        onClose={() => {
+          closeDrawer();
+          getSignatures();
+        }}
+      />
+    );
+    settingDrawerTitle('Edit Signature');
+    settingDrawerSize(500);
+    openDrawer();
+  };
+
   // Handler for opening Add/Edit Digital Signature drawer
   const handleAddDigitalSignature = () => {
     const closeDrawer = useStore.getState().closeDrawer;
@@ -193,47 +199,6 @@ const Settings = () => {
     settingDrawerTitle(title);
     settingDrawerSize(500);
     openDrawer();
-  };
-
-  // Handler for opening delete confirmation
-  const handleDeleteSignature = (signatureId) => {
-    setDeleteConfirmation({
-      show: true,
-      signatureId: signatureId,
-      loading: false
-    });
-  };
-
-  // Handler for confirming delete
-  const confirmDeleteSignature = async () => {
-    setDeleteConfirmation(prev => ({ ...prev, loading: true }));
-    
-    try {
-      const result = await deleteSignature(deleteConfirmation.signatureId);
-      if (result.success) {
-        // Signature will be automatically refreshed by the deleteSignature function
-        console.log('Signature deleted successfully');
-      } else {
-        console.error('Failed to delete signature:', result.error);
-      }
-    } catch (error) {
-      console.error('Error deleting signature:', error);
-    } finally {
-      setDeleteConfirmation({
-        show: false,
-        signatureId: null,
-        loading: false
-      });
-    }
-  };
-
-  // Handler for closing delete confirmation
-  const toggleDeleteConfirmation = () => {
-    setDeleteConfirmation({
-      show: false,
-      signatureId: null,
-      loading: false
-    });
   };
 
   const renderSignaturesSection = () => (
@@ -275,11 +240,13 @@ const Settings = () => {
                     <tr key={signature.id} className="border-b border-gray-100">
                       <td className="py-3 px-4 text-gray-800">{signature.signature}</td>
                       <td className="py-3 px-4">
-                        <button 
-                          className="text-red-500 hover:text-red-700 p-1"
-                          onClick={() => handleDeleteSignature(signature.id)}
+                        <button
+                          type="button"
+                          className="text-[#3DA5F4] hover:text-[#2B8CE6] p-1 rounded"
+                          aria-label="Edit signature"
+                          onClick={() => handleEditSignature(signature)}
                         >
-                          <FaTimes size={14} />
+                          <FaPen size={14} />
                         </button>
                       </td>
                     </tr>
@@ -1249,15 +1216,6 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
-      <ConfirmationDialog 
-        openDialog={deleteConfirmation.show}
-        title="Delete Confirmation"
-        message="Are you sure you want to delete this signature?"
-        handleConfirm={confirmDeleteSignature}
-        handleOpen={toggleDeleteConfirmation}
-        loading={deleteConfirmation.loading}
-      />
     </div>
   );
 };
