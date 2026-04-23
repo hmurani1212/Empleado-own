@@ -480,6 +480,10 @@ const handleDownloadFile = async (file) => {
 
 const EditorData = (props) => {
   const { editorData } = props
+
+  useEffect(() => {
+    console.log('editorData', editorData);
+  });
   const [attachments, setAttachments] = useState([]);
 
   // Process attachments from different possible sources
@@ -718,7 +722,7 @@ const EditorData = (props) => {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-slate-800 sm:text-base">
-                  {editorData?.creator_name || editorData?.created_by || editorData?.user_name || editorData?.author || 'Unknown User'}
+                  {editorData?.creator_name || editorData?.content?.creator_name || editorData?.created_by || editorData?.user_name || editorData?.author || 'Unknown User'}
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
                   <FaClock className="shrink-0 text-slate-400" />

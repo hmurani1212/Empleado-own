@@ -12,6 +12,7 @@ import CustomSelect from '../../Components/CustomSelect/CustomSelect';
 import { motion, AnimatePresence } from 'framer-motion';
 import { showToast } from '../../Components/Toaster/Toaster';
 import useStore from '../../Store/store';
+import { getDigitalOfficeSignature } from '../../services/officeSignatureService';
 
 const SkeletonRow = () => (
   <tr className="animate-pulse border-b border-gray-100">
@@ -340,6 +341,7 @@ function ApplicationsLists() {
       }
       const currentLogo = useStore.getState().orgLogo;
       const logoUrl = currentLogo?.logo ? currentLogo.logo : (orgLogo?.logo ? orgLogo.logo : '');
+      const officeSignatureText = await getDigitalOfficeSignature();
 
       const emptyStr = (v) => (v != null && String(v).trim() !== '' ? String(v).trim() : '--');
       /** Normalize line endings and collapse multiple newlines to one — used only for Application Detail to remove blank lines (\r\n\r\n etc.) */
@@ -411,7 +413,7 @@ function ApplicationsLists() {
           </section>
           <div class="signature-row">
             <div class="signature-block"><div class="signature-line"></div><span>EMPLOYEE SIGNATURE</span></div>
-            <div class="signature-block"><div class="signature-line"></div><span>APPROVAL AUTHORITY</span></div>
+            <div class="signature-block"><div class="signature-line"><span class="signature-value">${esc(officeSignatureText || '')}</span></div><span>APPROVAL AUTHORITY</span></div>
           </div>
         </div>`;
       };
@@ -456,7 +458,8 @@ function ApplicationsLists() {
             .note-card .print-card-body { font-size: 13px; color: #92400e; line-height: 1.65; }
             .signature-row { margin-top: 20px; padding-top: 14px; border-top: 1px dashed #d1d5db; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
             .signature-block { flex: 1; max-width: 200px; }
-            .signature-line { height: 1px; border-bottom: 2px solid #9ca3af; margin-bottom: 8px; min-height: 36px; }
+            .signature-line { height: 1px; border-bottom: 2px solid #9ca3af; margin-bottom: 8px; min-height: 36px; display: flex; align-items: flex-end; justify-content: flex-end; padding-bottom: 4px; }
+            .signature-value { font-size: 11px; color: #334155; font-weight: 500; text-transform: none; letter-spacing: normal; }
             .signature-block span { font-size: 10px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; }
             .signature-block:last-child { text-align: right; }
             .signature-block:last-child .signature-line { margin-left: auto; }

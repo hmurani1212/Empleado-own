@@ -175,6 +175,7 @@ const remindersViewModel = (set, get) => ({
             const responseData = response.data
             
             if (response.status === 200 && responseData.STATUS === "SUCCESSFUL") {
+                set({ loading: false })
                 toast.success("Reminder sent successfully!")
                 return { success: true, data: responseData.DB_DATA }
             } else {

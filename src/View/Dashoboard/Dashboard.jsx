@@ -434,7 +434,7 @@ function Dashboard() {
 
           {/* Charts Section */}
           <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="text-lg font-bold text-gray-800">
                 Attendance Overview
               </h3>
@@ -455,7 +455,7 @@ function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden">
                 <CardBody className="p-6">
-                  <div className="mb-6">
+                  <div className="">
                     <h3 className="text-lg font-bold text-gray-800">Employees Turnaround</h3>
                     <p className="text-sm text-gray-500">Monthly hiring vs attrition</p>
                   </div>

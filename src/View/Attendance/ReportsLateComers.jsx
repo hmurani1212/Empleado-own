@@ -7,6 +7,7 @@ import employeesApi from '../../Model/Data/Employees/Employees'
 import useStore from '../../Store/store'
 import { FaFileExcel, FaFilePdf } from 'react-icons/fa'
 import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
+import { appendExcelSignatureRowExcelJS } from '../../utils/excelExportSignature'
 
 /** Detail columns (per attendance row). Minute fields use “Min” in headers. */
 const DETAIL_COLUMNS = [
@@ -495,6 +496,8 @@ const ReportsLateComers = () => {
         sheet.mergeCells(start, t1, start + gSize - 1, t1)
         sheet.mergeCells(start, t2, start + gSize - 1, t2)
       })
+
+      await appendExcelSignatureRowExcelJS(sheet, ALL_COL_COUNT)
 
       const buffer = await workbook.xlsx.writeBuffer()
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })

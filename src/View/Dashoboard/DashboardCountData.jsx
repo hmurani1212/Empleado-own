@@ -10,6 +10,7 @@ import { showToast } from '../../Components/Toaster/Toaster'
 import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
 import CustomDialog from '../../Components/CustomDialog/CustomDialog'
 import * as XLSX from 'xlsx'
+import { appendExcelSignatureRowExcelJS, appendExcelSignatureRowXLSX } from '../../utils/excelExportSignature'
 
 /** In/out pair key names per index (1-based). API may use in_time/out_time or in1/out1 style. */
 const TODAY_ATTENDANCE_IN_OUT_PAIRS = [
@@ -225,6 +226,7 @@ const DashboardCountData = (props) => {
       const work_sheet = XLSX.utils.json_to_sheet(exportDataToUse)
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, work_sheet, 'Data')
+      await appendExcelSignatureRowXLSX(XLSX, workbook, 'Data')
       const excel_buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' })
       const blob = new Blob([excel_buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = URL.createObjectURL(blob)
@@ -354,6 +356,8 @@ const DashboardCountData = (props) => {
             if (c === 4 || c >= 6) cell.font = { color: { argb: statusFontColor } }
           }
         })
+
+        await appendExcelSignatureRowExcelJS(sheet, colCount)
 
         const buffer = await workbook.xlsx.writeBuffer()
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })

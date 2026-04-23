@@ -29,6 +29,7 @@ const empDashboardViewModel = (set, get) => ({
                 const dbData = responseData.DB_DATA;
                 // console.log('dbData', dbData);
                 const attendanceData = dbData.attendance_data.DB_DATA.attendance || [];
+                console.log('attendanceData', dbData)
                 const lastAttendance = attendanceData[attendanceData.length - 2] || null;
                 // console.log('lastAttendance', lastAttendance)
                 let workingStatus = null;
@@ -172,6 +173,15 @@ const empDashboardViewModel = (set, get) => ({
                     return acc;
                   }, []);
 
+                let absentees = 0;
+
+                attendanceData.map((item) => {
+                    if(item.att_label === "A") {
+                        absentees++;
+                    }
+                });
+
+
                 const transformedData = {
                     section1: {
                         name: dbData?.employee_data?.name || '',
@@ -203,7 +213,7 @@ const empDashboardViewModel = (set, get) => ({
                         overtime_seconds: dbData?.attendance_data?.DB_DATA?.overtime_seconds || 0
                     },
                     attendance: {
-                        absentees: dbData?.attendance_data?.DB_DATA?.absent_days || 0,
+                        absentees: absentees,
                         allowed_leaves: dbData?.attendance_data?.DB_DATA?.last_policy?.allowed_offs || 0,
                         availed: availed || 0,
                         leaves: leaves || 0,

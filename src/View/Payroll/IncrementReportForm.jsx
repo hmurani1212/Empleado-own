@@ -8,6 +8,7 @@ import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import employeesApi from '../../Model/Data/Employees/Employees'
 import jsPDF from 'jspdf'
 import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
+import { appendExcelSignatureRowExcelJS } from '../../utils/excelExportSignature'
 
 const ALL_BRANCHES_OPTION = { value: 0, label: 'All Branches' }
 const ALL_DEPARTMENTS_OPTION = { value: 0, label: 'All Departments' }
@@ -462,6 +463,8 @@ const IncrementReportForm = () => {
 
       // --- Download file ---
       const exportDate = new Date().toISOString().split('T')[0]
+      await appendExcelSignatureRowExcelJS(worksheet, cCount)
+
       const buffer = await workbook.xlsx.writeBuffer()
       const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

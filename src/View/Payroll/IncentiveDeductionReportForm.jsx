@@ -8,6 +8,7 @@ import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import employeesApi from '../../Model/Data/Employees/Employees'
 import jsPDF from 'jspdf'
 import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
+import { appendExcelSignatureRowExcelJS } from '../../utils/excelExportSignature'
 
 // Excel styling constants — matched to Individual Attendance Report
 const ORG_HEADER_BG = 'FF1F4E79'
@@ -438,6 +439,8 @@ const IncentiveDeductionReportForm = () => {
       })
 
       // --- Download file ---
+      await appendExcelSignatureRowExcelJS(worksheet, cCount)
+
       const buffer = await workbook.xlsx.writeBuffer()
       const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@material-tailwind/react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { getDigitalOfficeSignature } from '../../../services/officeSignatureService';
 
 const HEADER_GRADIENT = 'linear-gradient(to right, #4338ca, #2563eb, #06b6d4)';
 
@@ -10,6 +11,7 @@ const PayslipDisplay = ({ monthYear, selectedDate, payslipData, onClose }) => {
   const payslipRef = useRef(null);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [resolvedLogoUrl, setResolvedLogoUrl] = useState(null);
+  const [officeSignature, setOfficeSignature] = useState('');
 
   const formatDate = (date) => {
     if (!date) return new Date().toLocaleDateString();
@@ -144,6 +146,18 @@ const PayslipDisplay = ({ monthYear, selectedDate, payslipData, onClose }) => {
       isMounted = false;
     };
   }, [rawLogoUrl]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadOfficeSignature = async () => {
+      const signature = await getDigitalOfficeSignature();
+      if (isMounted) setOfficeSignature(signature || '');
+    };
+    loadOfficeSignature();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const downloadPDF = async () => {
     if (!payslipRef.current) return;
@@ -506,6 +520,24 @@ const PayslipDisplay = ({ monthYear, selectedDate, payslipData, onClose }) => {
             <p style={{ fontSize: '24px', fontWeight: '700', color: '#0b1d4d', margin: 0 }}>
               {formatCurrency(displayData.totalDeductions)}
             </p>
+          </div>
+        </div>
+
+        {/* Signature fields (match admin-side payslip) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px', marginTop: '28px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569' }}>
+              Officer signature
+            </span>
+            <div style={{ width: '100%', minHeight: '28px', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
+              <span style={{ fontSize: '11px', fontWeight: '500', color: '#334155' }}>{officeSignature || ''}</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569' }}>
+              Employee signature
+            </span>
+            <div style={{ width: '100%', minHeight: '28px', borderBottom: '1px solid #cbd5e1' }} />
           </div>
         </div>
       </div>

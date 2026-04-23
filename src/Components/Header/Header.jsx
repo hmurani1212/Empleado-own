@@ -533,7 +533,7 @@ function Header() {
                           <div className="flex items-center justify-between gap-3 group">
                             <span className="truncate">{device.device_name || 'N/A'}</span>
                             <FaEdit
-                              className="invisible group-hover:visible cursor-pointer text-gray-400 hover:text-brand-500"
+                              className="cursor-pointer text-gray-400 hover:text-brand-500"
                               onClick={() => handleEdit(device)}
                             />
                           </div>

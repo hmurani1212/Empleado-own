@@ -87,7 +87,7 @@ const CustomDrawer = (props) => {
           </div>
         </div>
         {/* Scrollable content area */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden customDrwerScroll px-4 pb-4">
+        <div className="flex-1 min-h-0 pt-4 overflow-y-auto overflow-x-hidden customDrwerScroll px-4 pb-4">
             {compo}
         </div>
       </Drawer>

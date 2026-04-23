@@ -84,16 +84,18 @@ const DashboardPageSkeleton = () => (
 const EmpDashboard = () => {
   const { empDashboardData, handlePolicyView, gettingEmpDashboardData } = useEmpDashboard();
   const updateEmployeeProfileImage = useStore((state) => state.updateEmployeeProfileImage);
-  const empDashboardCacheKey = useStore((state) => state.empDashboardCacheKey);
   const [isDashboardLoading, setIsDashboardLoading] = useState(true);
 
-  // Single initial fetch for dashboard data (avoids duplicate calls from useEmpDashboard in children)
+  // Single initial fetch for the real-world current month only. Do not re-run when the calendar
+  // changes empDashboardCacheKey — that would refetch "today's" month and overwrite the month
+  // the user selected on the attendance calendar.
   useEffect(() => {
     let isMounted = true;
     const loadDashboard = async () => {
       const d = new Date();
       const cacheKey = `${d.getMonth() + 1}-${d.getFullYear()}`;
-      const hasCurrentMonthCache = empDashboardCacheKey === cacheKey;
+      const hasCurrentMonthCache =
+        useStore.getState().empDashboardCacheKey === cacheKey;
       if (hasCurrentMonthCache) {
         if (isMounted) setIsDashboardLoading(false);
         return;
@@ -111,7 +113,7 @@ const EmpDashboard = () => {
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [empDashboardCacheKey]);
+  }, []);
 
   const [showTooltip, setShowTooltip] = useState(false);
   const [showTooltipTwo, setShowTooltipTwo] = useState(false);
