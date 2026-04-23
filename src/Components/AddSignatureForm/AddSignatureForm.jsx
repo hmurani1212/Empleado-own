@@ -1,15 +1,22 @@
 import { Input, Button } from '@material-tailwind/react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices'
 import { showToast } from '../Toaster/Toaster'
 
 function AddSignatureForm(props) {
-  const { onClose } = props
+  const { onClose, existingSignature } = props
   const [signatureValue, setSignatureValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  
-  // Get addSignature function from useEmployees
+
   const { addSignature } = useEmployees()
+
+  useEffect(() => {
+    if (existingSignature?.signature != null) {
+      setSignatureValue(String(existingSignature.signature))
+    } else {
+      setSignatureValue('')
+    }
+  }, [existingSignature])
 
   const handleSignatureChange = (e) => {
     setSignatureValue(e.target.value)
@@ -20,17 +27,36 @@ function AddSignatureForm(props) {
     if (!signatureValue.trim()) return
 
     setIsLoading(true)
-    
+
+    const trimmed = signatureValue.trim()
+    const payload = existingSignature?.id != null
+      ? { id: existingSignature.id, signature: trimmed }
+      : { signature: trimmed }
+
     try {
-      const result = await addSignature({ signature: signatureValue.trim() })
+      const result = await addSignature(payload)
       if (result.success) {
-        showToast('Signature added successfully!', 'success')
-        onClose() // Close drawer after successful submission
+        showToast(
+          existingSignature?.id != null
+            ? 'Signature updated successfully!'
+            : 'Signature added successfully!',
+          'success'
+        )
+        onClose()
       } else {
-        showToast(result.error || 'Failed to add signature', 'error')
+        showToast(
+          result.error ||
+            (existingSignature?.id != null ? 'Failed to update signature' : 'Failed to add signature'),
+          'error'
+        )
       }
     } catch (error) {
-      showToast('An error occurred while adding signature', 'error')
+      showToast(
+        existingSignature?.id != null
+          ? 'An error occurred while updating signature'
+          : 'An error occurred while adding signature',
+        'error'
+      )
     } finally {
       setIsLoading(false)
     }
@@ -67,7 +93,7 @@ function AddSignatureForm(props) {
                 className={`py-[10px] capitalize ${isFormValid ? 'bg-blue-500' : 'bg-blue-200'}`}
                 disabled={!isFormValid}
               >
-                Submit
+                {existingSignature?.id != null ? 'Update' : 'Submit'}
               </Button>
             )}
           </div>
