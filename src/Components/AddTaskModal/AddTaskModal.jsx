@@ -4,8 +4,9 @@ import useStore from '../../Store/store'
 import { toast } from 'react-toastify'
 
 const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
-  const { addReminder, loading } = useStore()
+  const addReminder = useStore((state) => state.addReminder)
   const isSubmittingRef = useRef(false)
+  const [isAdding, setIsAdding] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -54,8 +55,6 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
       case 'By end of this month':
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
         return Math.floor(endOfMonth.getTime() / 1000)
-      case 'Set Manually':
-        return timestamp // Default to current time for manual
       default:
         return timestamp
     }
@@ -75,8 +74,9 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
     e.preventDefault()
 
     // Prevent duplicate submissions (e.g. double/triple click or strict mode)
-    if (isSubmittingRef.current) return
+    if (isSubmittingRef.current || isAdding) return
     isSubmittingRef.current = true
+    setIsAdding(true)
 
     try {
     // Basic validation with toaster
@@ -119,8 +119,21 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
       toast.success('Reminder added successfully!')
 
       // Call the callback to add reminder to local state
-      if (onReminderAdded && result.data) {
-        onReminderAdded(result.data)
+      if (onReminderAdded) {
+        // Provide a normalized reminder shape so UI can render immediately
+        // even before dashboard refresh API finishes.
+        onReminderAdded({
+          ...(result.data || {}),
+          id: result?.data?.id ?? Date.now(),
+          title: result?.data?.title ?? formData.title,
+          text: result?.data?.text ?? formData.description,
+          reminder_time: result?.data?.reminder_time ?? reminderTimestamp,
+          notification_methods: result?.data?.notification_methods ?? {
+            via_push_app: notificationValues.via_push_app,
+            via_email: notificationValues.via_email,
+            via_web: notificationValues.via_web
+          }
+        })
       }
 
       // Reset form and close modal
@@ -136,6 +149,7 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
     }
     } finally {
       isSubmittingRef.current = false
+      setIsAdding(false)
     }
   }
 
@@ -193,7 +207,7 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
               Reminder
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {['Tomorrow', 'After 3 Days', 'By Weekend', 'By end of this month', 'Set Manually'].map((option) => (
+              {['Tomorrow', 'After 3 Days', 'By Weekend', 'By end of this month'].map((option) => (
                 <button
                   key={option}
                   type="button"
@@ -241,10 +255,10 @@ const AddTaskModal = ({ isOpen, onClose, onReminderAdded }) => {
         <div className="px-6 py-4 border-t border-gray-200">
           <button
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={isAdding}
             className="w-full bg-bgBlue text-white py-3 rounded-md font-medium hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Adding...' : 'Add'}
+            {isAdding ? 'Adding...' : 'Add'}
           </button>
         </div>
       </div>

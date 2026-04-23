@@ -8,6 +8,7 @@ import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import employeesApi from '../../Model/Data/Employees/Employees'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
+import { appendExcelSignatureRowXLSX } from '../../utils/excelExportSignature'
 
 const LeaveBalanceSheetForm = () => {
   // Get global drawer close function
@@ -261,7 +262,7 @@ const LeaveBalanceSheetForm = () => {
 
 
   // Export to Excel
-  const exportToExcel = (data, filename) => {
+  const exportToExcel = async (data, filename) => {
     try {
       // Handle different data structures
       const actualData = Array.isArray(data) ? data : (data?.DATA || data?.data || [])
@@ -297,7 +298,9 @@ const LeaveBalanceSheetForm = () => {
 
       const ws = XLSX.utils.json_to_sheet(excelData)
       const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Leave Balance Sheet Report')
+      const sheetName = 'Leave Balance Sheet Report'
+      XLSX.utils.book_append_sheet(wb, ws, sheetName)
+      await appendExcelSignatureRowXLSX(XLSX, wb, sheetName)
       XLSX.writeFile(wb, `${filename}.xlsx`)
 
       console.log('Excel export completed successfully')
@@ -620,7 +623,7 @@ const LeaveBalanceSheetForm = () => {
                 }
 
                 if (formData.exportFormat === 'excel') {
-                  exportToExcel(reportData, filename)
+                  await exportToExcel(reportData, filename)
                   showToast('Excel file downloaded successfully', 'success')
                 } else if (formData.exportFormat === 'pdf') {
                   exportToPDF(reportData, filename)

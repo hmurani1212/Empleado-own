@@ -1,6 +1,25 @@
 import React from 'react'
 import { convertTimeAMPM, secondsIntoHrs } from '../../../services/__dateTimeServices'
 
+const truthyHalf = (v) =>
+    v === true ||
+    v === 1 ||
+    v === '1' ||
+    String(v).toLowerCase() === 'true'
+
+const isHalfDayAttendance = (data) => {
+    if (!data) return false
+    const label = String(data.att_label ?? '').trim().toUpperCase()
+    if (label === 'HD' || label === 'HALF' || label === 'H.D') return true
+    const extra = String(data.extra ?? '').toLowerCase()
+    if (extra.includes('half day') || extra.includes('half-day')) return true
+    return (
+        truthyHalf(data.half_day) ||
+        truthyHalf(data.is_half_day) ||
+        truthyHalf(data.isHalfDay)
+    )
+}
+
 const SingleAttendanceView = (props) => {
     const {data} = props 
     
@@ -40,11 +59,17 @@ const SingleAttendanceView = (props) => {
             )
         }
 
-        // If it's present, show detailed information
-        if (data.att_label === "P") {
+        // Present or half day (same detail layout; half day may use att_label HD or P + half flags)
+        if (data.att_label === "P" || isHalfDayAttendance(data)) {
+            const halfDay = isHalfDayAttendance(data)
             return (
                 <div className='flex flex-col items-center justify-center gap-3 bg-white rounded-[10px] p-2 font-medium'>
                     <div className='flex flex-col items-center justify-center gap-4 bg-white w-full text-gray-500 '>
+                    {halfDay && (
+                        <div className="text-lg font-semibold text-emerald-600 w-full text-center">
+                            Half Day
+                        </div>
+                    )}
                     <div className='text-md mt-2 flex justify-center w-full font-medium'>
                         Policy: {data.daliy_policy_starting} - {data.daliy_policy_closing}
                     </div>

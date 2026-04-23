@@ -76,6 +76,14 @@ const EmpLazinees = () => {
   const { empDashboardData, handleLeaveBalance, handleLateMinutes } = useEmpDashboard();
   const { updateReminderStatus, deleteReminder, loading } = useStore();
 
+  const sortRemindersDesc = (items = []) => {
+    return [...(Array.isArray(items) ? items : [])].sort((a, b) => {
+      const aTime = Number(a?.reminder_time ?? a?.entry_time ?? 0);
+      const bTime = Number(b?.reminder_time ?? b?.entry_time ?? 0);
+      return bTime - aTime;
+    });
+  };
+
   // Get attendance data
   const attendanceData = empDashboardData?.attendance;
 
@@ -83,7 +91,7 @@ const EmpLazinees = () => {
   const dashboardReminders = useMemo(() => {
     const raw = empDashboardData?.reminders || [];
     // Filter out invalid/empty/template entries so we never show NaN/Invalid Date or empty cards
-    return raw.filter((r) => {
+    const validReminders = raw.filter((r) => {
       if (!r || r.id == null) return false;
       const ts = r.reminder_time != null ? Number(r.reminder_time) : NaN;
       if (!Number.isFinite(ts)) return false;
@@ -92,6 +100,7 @@ const EmpLazinees = () => {
       const hasTitle = typeof r.title === "string" && r.title.trim().length > 0;
       return hasTitle;
     });
+    return sortRemindersDesc(validReminders);
   }, [empDashboardData?.reminders]);
 
   // Update local reminders when dashboard data changes (no optimistic add — avoids duplicate + malformed card)
@@ -114,7 +123,18 @@ const EmpLazinees = () => {
   // Called when AddTaskModal reports success. We do not add to local state here:
   // the store already triggers a dashboard refresh (gettingEmpDashboardData), and
   // the effect above syncs from dashboard — so we avoid duplicate + malformed "template" cards.
-  const handleReminderAdded = () => {};
+  const handleReminderAdded = (newReminder) => {
+    if (!newReminder) return;
+    const hasTitle =
+      typeof newReminder.title === "string" && newReminder.title.trim().length > 0;
+    const ts = Number(newReminder.reminder_time ?? newReminder.entry_time);
+    if (!hasTitle || !Number.isFinite(ts)) return;
+
+    setLocalReminders((prev) => {
+      const withoutDuplicate = prev.filter((item) => item?.id !== newReminder?.id);
+      return sortRemindersDesc([newReminder, ...withoutDuplicate]);
+    });
+  };
 
   // Format reminder time — safe for invalid timestamp
   const formatReminderTime = (timestamp) => {

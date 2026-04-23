@@ -43,7 +43,7 @@ export const attendanceColorData = [
   {id:4, title:'Annual Leave', color: '#864bff', att:'L'},
   {id:5, title:'Monthly Allowed Leave', color:'#eb0dbc', att:'MAL'},
   {id:6, title:'Early Leave', color:'#1e00ff', att:'EL'},
-  {id:7, title:'Half Day', color:'#69f0ae', att:'HD'},
+  {id:7, title:'Half Day', color:'#b8f6dd', att:'HD'},
   {id:8, title:'Missed Logout', color:'#000', att:'ML'},
   {id:9, title:'Leave Request Accepted', color:'#008000', att:'LR'},
   {id:10, title:'Manually Adjusted', color:'#FF9800', att:'MA'},

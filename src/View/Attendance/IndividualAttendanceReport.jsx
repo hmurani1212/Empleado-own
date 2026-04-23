@@ -24,6 +24,7 @@ import MonthlyWorkingHoursChart from "./MonthlyWorkingHoursChart";
 import { Card, CardBody } from "@material-tailwind/react";
 import { attendanceColorData } from "../../services/__attendanceServices";
 import { BiSearch } from "react-icons/bi";
+import { appendExcelSignatureRowExcelJS } from "../../utils/excelExportSignature";
 
 // Match ExportPayslip / payroll Excel styling
 const ATTENDANCE_EXPORT_COL_COUNT = 14;
@@ -578,6 +579,8 @@ const IndividualAttendanceReport = () => {
 
     const safeFileEmp = String(displayEmpId || "emp").replace(/[^\w-]+/g, "_");
     const fileName = `individual_attendance_${safeFileEmp}_${year}-${String(month).padStart(2, "0")}_${new Date().toISOString().split("T")[0]}.xlsx`;
+
+    await appendExcelSignatureRowExcelJS(worksheet, cCount);
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {

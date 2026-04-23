@@ -75,7 +75,7 @@ const PortalDrawer = (props) => {
           </button>
         </div>
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden customDrwerScroll px-4 pb-4">
+      <div className="flex-1 min-h-0 pt-4 overflow-y-auto overflow-x-hidden customDrwerScroll px-4 pb-4">
         {shouldRender ? compo : null}
       </div>
     </Drawer>

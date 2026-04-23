@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import * as XLSX from "xlsx";
+import { appendExcelSignatureRowXLSX } from "../../utils/excelExportSignature";
 import useStore from "../../Store/store"
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { formatDateYMD } from "../../services/__dateTimeServices";
@@ -328,7 +329,7 @@ const useBulkService = () => {
         }
     }
 
-    const uploadBulkRecord = () => {
+    const uploadBulkRecord = async () => {
         // Convert bulkFormValue to Excel format
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils.json_to_sheet(
@@ -340,7 +341,9 @@ const useBulkService = () => {
                 return row;
             })
         );
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
+        const sheetName = "Employees";
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+        await appendExcelSignatureRowXLSX(XLSX, workbook, sheetName);
         XLSX.writeFile(workbook, "bulk_employees.xlsx");
     }
 

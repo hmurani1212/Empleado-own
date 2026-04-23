@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { showToast } from '../../Components/Toaster/Toaster'
 import useStore from '../../Store/store'
 import payrollApi from '../../Model/Data/Payroll/Payroll'
+import { getDigitalOfficeSignature } from '../../services/officeSignatureService'
 
 // Helper function to format string values - show "--" if empty/null
 const formatString = (value) => {
@@ -159,6 +160,7 @@ const IndividualPayslipPreview = () => {
   const { id } = useParams()
   const [payslipData, setPayslipData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [officeSignature, setOfficeSignature] = useState('')
   
   // Get payslips from store
   const payslips = useStore((state) => state.payslips)
@@ -387,6 +389,18 @@ const IndividualPayslipPreview = () => {
     loadPayslipData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, navigate, transformPayslipData])
+
+  useEffect(() => {
+    let mounted = true
+    const loadOfficeSignature = async () => {
+      const sig = await getDigitalOfficeSignature()
+      if (mounted) setOfficeSignature(sig || '')
+    }
+    loadOfficeSignature()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const handleClose = (e) => {
     e.preventDefault()
@@ -1578,7 +1592,9 @@ const IndividualPayslipPreview = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 print:gap-6 pt-4 print:pt-5 border-0">
                   <div className="flex flex-col gap-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Officer signature</span>
-                    <div className="w-full min-h-[28px] border-b border-slate-300 print:border-slate-400" />
+                    <div className="w-full min-h-[28px] border-b border-slate-300 print:border-slate-400 flex items-end pb-1">
+                      <span className="text-[11px] font-medium text-slate-700">{officeSignature || ''}</span>
+                    </div>
                   </div>
                   <div className="flex flex-col gap-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">Employee signature</span>

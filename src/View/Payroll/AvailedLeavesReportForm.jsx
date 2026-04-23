@@ -8,6 +8,8 @@ import CustomSelect from '../../Components/CustomSelect/CustomSelect'
 import employeesApi from '../../Model/Data/Employees/Employees'
 import jsPDF from 'jspdf'
 import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
+import * as XLSX from 'xlsx'
+import { appendExcelSignatureRowXLSX } from '../../utils/excelExportSignature'
 
 // Excel styling constants — matched to Individual Attendance Report
 const ORG_HEADER_BG = 'FF1F4E79'
@@ -269,7 +271,7 @@ const AvailedLeavesReportForm = () => {
 
 
   // Export to Excel
-  const exportToExcel = (data, filename) => {
+  const exportToExcel = async (data, filename) => {
     try {
       // Handle different data structures
       const actualData = Array.isArray(data) ? data : (data?.DATA || data?.data || [])
@@ -304,7 +306,9 @@ const AvailedLeavesReportForm = () => {
 
       const ws = XLSX.utils.json_to_sheet(excelData)
       const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Availed Leaves Report')
+      const sheetName = 'Availed Leaves Report'
+      XLSX.utils.book_append_sheet(wb, ws, sheetName)
+      await appendExcelSignatureRowXLSX(XLSX, wb, sheetName)
       XLSX.writeFile(wb, `${filename}.xlsx`)
 
       console.log('Excel export completed successfully')
@@ -616,7 +620,7 @@ const AvailedLeavesReportForm = () => {
                     }
 
                     if (formData.exportFormat === 'excel') {
-                      exportToExcel(reportData, filename)
+                      await exportToExcel(reportData, filename)
                       showToast('Excel file downloaded successfully', 'success')
                     } else if (formData.exportFormat === 'pdf') {
                       exportToPDF(reportData, filename)

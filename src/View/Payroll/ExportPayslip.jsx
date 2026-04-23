@@ -10,6 +10,7 @@ import { useDebouncedValue } from '../../services/__debounceServices'
 // OLD: import { useDebounce } from '../../services/__debounceServices'
 import { getOrganizationData, getUserData } from '../../Authentication/jwt_decode'
 import payrollApi from '../../Model/Data/Payroll/Payroll'
+import { appendExcelSignatureRowExcelJS } from '../../utils/excelExportSignature'
 
 /** Split IDs into batches for bulk-details API (avoid oversized payloads). */
 const chunkIds = (ids, size) => {
@@ -904,6 +905,8 @@ const ExportPayslip = () => {
           }
         })
       }
+
+      await appendExcelSignatureRowExcelJS(sheet, colCount)
 
       const buffer = await workbook.xlsx.writeBuffer()
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })

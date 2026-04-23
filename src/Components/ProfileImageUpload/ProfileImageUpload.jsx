@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { Button, Typography, Input } from '@material-tailwind/react';
-import { FaCamera, FaTimes } from 'react-icons/fa';
+import React, { useState, useRef, useId } from 'react';
+import { Button, Typography } from '@material-tailwind/react';
+import { FaTimes, FaUpload } from 'react-icons/fa';
 import { showToast } from '../Toaster/Toaster';
 import useEmployees from '../../ViewModel/EmployeeViewModel/EmployeeServices';
 
@@ -9,6 +9,7 @@ const ProfileImageUpload = ({ employeeId, onUploadSuccess, onClose }) => {
     const [preview, setPreview] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
+    const fileInputId = useId();
     const { updateEmployeeProfileImage } = useEmployees();
 
     const handleFileSelect = (e) => {
@@ -92,19 +93,23 @@ const ProfileImageUpload = ({ employeeId, onUploadSuccess, onClose }) => {
                     Choose a picture (JPG, PNG) only
                 </Typography>
 
-                {/* File Input */}
-                <div className="flex flex-col gap-2">
-                    <Input
+                {/* File input: hidden native control + upload icon + label text */}
+                <div className="flex min-w-0 flex-col gap-2">
+                    <input
+                        id={fileInputId}
                         type="file"
                         accept="image/jpeg,image/jpg,image/png"
                         onChange={handleFileSelect}
                         ref={fileInputRef}
-                        className="border-gray-300! text-gray-700!"
-                        label="Choose file"
-                        containerProps={{
-                            className: "min-w-0"
-                        }}
+                        className="sr-only"
                     />
+                    <label
+                        htmlFor={fileInputId}
+                        className="flex min-w-0 cursor-pointer items-center justify-center gap-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-4 text-sm font-medium text-gray-700 transition-colors hover:border-brand-400 hover:bg-brand-50/60 font-Urbanist"
+                    >
+                        <FaUpload className="shrink-0 text-lg text-brand-500" aria-hidden />
+                        <span className="text-center">Choose File to Upload</span>
+                    </label>
                 </div>
 
                 {/* Preview */}

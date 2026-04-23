@@ -6,6 +6,7 @@ import { RiCashFill } from 'react-icons/ri'
 import ExcelJS from 'exceljs';
 import { formatNicDigitsWithGroups } from './country/country_nic_formats';
 import payrollApi from '../Model/Data/Payroll/Payroll';
+import { appendExcelSignatureRowExcelJS } from '../utils/excelExportSignature';
 
 export const contractData = [
   { id: 1, name: 'Permanent' },
@@ -480,6 +481,8 @@ export const exportEmployeesToExcel = async (employeesData, options = {}) => {
   columns.forEach((_, i) => {
     sheet.getColumn(i + 1).width = colWidths[i] || 14;
   });
+
+  await appendExcelSignatureRowExcelJS(sheet, columns.length);
 
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });

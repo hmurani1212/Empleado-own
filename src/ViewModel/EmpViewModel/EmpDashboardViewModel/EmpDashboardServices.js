@@ -7,6 +7,48 @@ import LeavesBalance from "../../../Components/EmployeeSide/LeavesBalance"
 import LateMinutes from "../../../Components/EmployeeSide/LateMinutes"
 import ViewEmployeePolicy from "../../../Components/EmployeeSide/ViewEmployeePolicy"
 
+const truthyHalf = (v) =>
+    v === true ||
+    v === 1 ||
+    v === "1" ||
+    String(v).toLowerCase() === "true";
+
+/**
+ * Maps raw attendance rows to the same calendar color codes as admin (`attendanceColorData`),
+ * e.g. half days sometimes arrive as `P` with `half_day` / `extra` instead of `HD`.
+ */
+const resolveCalendarColorLabel = (row) => {
+    if (!row) return null;
+    const raw = row.att_label == null ? "" : String(row.att_label).trim();
+    const upper = raw.toUpperCase();
+
+    if (upper === "HD" || upper === "HALF" || upper === "H.D") return "HD";
+
+    const extra = String(row.extra ?? "").toLowerCase();
+    if (extra.includes("half day") || extra.includes("half-day")) return "HD";
+
+    if (
+        truthyHalf(row.half_day) ||
+        truthyHalf(row.is_half_day) ||
+        truthyHalf(row.isHalfDay)
+    ) {
+        return "HD";
+    }
+
+    return raw || null;
+};
+
+const getBackgroundColorForLabel = (attLabel) => {
+    const code =
+        attLabel == null || attLabel === ""
+            ? ""
+            : String(attLabel).trim().toUpperCase();
+    const colorData = attendanceColorData.find(
+        (data) => String(data.att).toUpperCase() === code
+    );
+    return colorData ? colorData.color : null;
+};
+
 const useEmpDashboard = ()=>{
 
     const gettingEmpDashboardData = useStore((state)=> state.gettingEmpDashboardData)
@@ -127,17 +169,11 @@ const useEmpDashboard = ()=>{
         const attendance = calendarData?.attendanceAttr?.find(
             (att) => att.date_string === dateString
         );
-    
-        return attendance ? attendance.att_label : null;
+
+        return attendance ? resolveCalendarColorLabel(attendance) : null;
     };
 
-    const getBackgroundColor = (attLabel) => {
-        const colorData = attendanceColorData.find(
-            (data) => data.att === attLabel
-        );
-
-        return colorData ? colorData.color : null;
-    };
+    const getBackgroundColor = (attLabel) => getBackgroundColorForLabel(attLabel);
 
 
     let daysArray
@@ -433,17 +469,11 @@ const useEmpDashboardFunctions = () => {
         const attendance = calendarData?.attendanceAttr?.find(
             (att) => att.date_string === dateString
         );
-    
-        return attendance ? attendance.att_label : null;
+
+        return attendance ? resolveCalendarColorLabel(attendance) : null;
     };
 
-    const getBackgroundColor = (attLabel) => {
-        const colorData = attendanceColorData.find(
-            (data) => data.att === attLabel
-        );
-
-        return colorData ? colorData.color : null;
-    };
+    const getBackgroundColor = (attLabel) => getBackgroundColorForLabel(attLabel);
 
     function getCurrentMonthObject(currentDate){
         // Get the month index (0-11)

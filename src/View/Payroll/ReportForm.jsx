@@ -8,6 +8,7 @@ import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { ReportResultsSkeleton } from "./PayrollSkeletons";
 import { getOrganizationData, getUserData } from "../../Authentication/jwt_decode";
+import { appendExcelSignatureRowExcelJS, appendExcelSignatureRowXLSX } from "../../utils/excelExportSignature";
 
 const ALL_BRANCHES_OPTION = { value: 0, label: "All Branches" };
 const ALL_DEPARTMENTS_OPTION = { value: 0, label: "All Departments" };
@@ -504,7 +505,9 @@ const ReportForm = ({ reportType, onClose }) => {
         }));
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.json_to_sheet(excelData);
-        XLSX.utils.book_append_sheet(wb, ws, `${reportType} Report`);
+        const sheetName = `${reportType} Report`;
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        await appendExcelSignatureRowXLSX(XLSX, wb, sheetName);
         const timestamp = new Date().toISOString().split("T")[0];
         XLSX.writeFile(wb, `${reportType}_Report_${timestamp}.xlsx`);
         showToast(`${reportType} report exported successfully`, "success");
@@ -640,6 +643,8 @@ const ReportForm = ({ reportType, onClose }) => {
       // --- Download file ---
       const timestamp = new Date().toISOString().split("T")[0];
       const fileName = `${reportType}_Report_${timestamp}.xlsx`;
+
+      await appendExcelSignatureRowExcelJS(worksheet, cCount);
 
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {

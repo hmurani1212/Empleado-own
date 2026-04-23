@@ -1,15 +1,17 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 // import { RxCross2 } from "react-icons/rx";
 import { Typography } from "@material-tailwind/react";
 // import { BiSolidXCircle } from "react-icons/bi";
 import { FaTimes, FaUser, FaUserCheck, FaCalendar, FaFileAlt, FaUserEdit, FaFile, FaEdit } from "react-icons/fa";
 import { formatTimestamp } from "../Branches/utils";
 import useEmployees from "../../ViewModel/EmployeeViewModel/EmployeeServices";
+import { getDigitalOfficeSignature } from "../../services/officeSignatureService";
 
 function ApplicationLeave({ applicationData, onClose, applicationType }) {
   const typeStr = applicationType ? String(applicationType).toUpperCase().trim() : '';
   const isLeaveApplication = typeStr === 'LEAVE_REQUEST' || Number(applicationData?.form_id) === 7;
   const { orgLogo, getOrgLogo } = useEmployees();
+  const [officeSignature, setOfficeSignature] = useState("");
   const data = [
     "Approval Index",
     "Approval Type",
@@ -92,6 +94,18 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
   useEffect(() => {
     getOrgLogo();
   }, [getOrgLogo]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadOfficeSignature = async () => {
+      const signature = await getDigitalOfficeSignature();
+      if (mounted) setOfficeSignature(signature || "");
+    };
+    loadOfficeSignature();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Show loading or error state if no data
   if (!applicationData) {
@@ -281,7 +295,12 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
             border-bottom: 2px solid #9ca3af;
             margin-bottom: 8px;
             min-height: 36px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            padding-bottom: 4px;
           }
+          .signature-value { font-size: 11px; color: #334155; font-weight: 500; text-transform: none; letter-spacing: normal; }
           .signature-block span {
             font-size: 10px;
             font-weight: 600;
@@ -425,7 +444,7 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
               <span>Employee Signature</span>
             </div>
             <div className="signature-block">
-              <div className="signature-line"></div>
+              <div className="signature-line"><span className="signature-value">{officeSignature || ""}</span></div>
               <span>Approval Authority</span>
             </div>
           </div>

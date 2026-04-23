@@ -8,6 +8,7 @@ import { convertSecondsToTime } from "../../services/__attendanceServices";
 import employeesApi from "../../Model/Data/Employees/Employees";
 import { showToast } from "../../Components/Toaster/Toaster";
 import * as XLSX from 'xlsx';
+import { appendExcelSignatureRowXLSX } from "../../utils/excelExportSignature";
 import { getContentByLabel } from "../../services/getContentService";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
 import { FaInfoCircle } from "react-icons/fa";
@@ -210,7 +211,7 @@ const BranchWiseListReporting = () => {
   };
 
   // Export Branch Wise Attendance to Excel
-  const exportBranchWiseAttendanceToExcel = () => {
+  const exportBranchWiseAttendanceToExcel = async () => {
     if (employeeKeys.length === 0) {
       showToast("No data available to export", "error");
       return;
@@ -313,11 +314,14 @@ const BranchWiseListReporting = () => {
       }
 
       // Add the worksheet to the workbook
+      const sheetName = "Branch Wise Attendance";
       XLSX.utils.book_append_sheet(
         workbook,
         worksheet,
-        "Branch Wise Attendance"
+        sheetName
       );
+
+      await appendExcelSignatureRowXLSX(XLSX, workbook, sheetName);
 
       // Generate filename with current date
       const currentDate = new Date().toISOString().split("T")[0];

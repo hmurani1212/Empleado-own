@@ -8,8 +8,9 @@ const colorRepData = [
     {id:1, title:'Present', color:'#0acf97'},
     {id:2, title:'Holiday', color:'#ffd81a'},
     {id:3, title:'Leave', color:'#6691cc'},
-    {id:4, title:'Missed Logout', color:'#010913'},
-    {id:5, title:'Absent', color:'#FC563B'},
+    {id:4, title:'Half Day', color:'#b8f6dd'},
+    {id:5, title:'Missed Logout', color:'#010913'},
+    {id:6, title:'Absent', color:'#FC563B'},
 ]
 
 const EmpDashboardAttendance = (props) => {
@@ -48,7 +49,6 @@ const EmpDashboardAttendance = (props) => {
         : 0;
 
     const totalLeavesProgress = Math.min((totalLeaves / Math.max(selectedMonthDays, 1)) * 100, 100);
-
     
   return (
     <>
@@ -71,8 +71,7 @@ const EmpDashboardAttendance = (props) => {
         <div className='lg:col-span-4 col-span-12 space-y-3'>
             <div className='flex flex-col gap-2 bg-white drop-shadow-md rounded-[10px] py-4 px-3'>
                 <div className='flex flex-col'>
-                    <span className='text-[16px] text-[#292929] font-semibold font-Urbanist'>Thu Oct 31</span>
-                    <span className='text-[13px] text-[#9B9B9B] font-Urbanist'>Color Representation</span>
+                    <span className='text-[16px] text-[#292929] font-semibold font-Urbanist pb-2'>Color Representation</span>
                 </div>
                 <div className='space-y-3'>
                     {colorRepData.map((ele)=>(

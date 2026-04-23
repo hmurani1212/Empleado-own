@@ -7850,7 +7850,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                         {/* Camera Icon Overlay */}
                         <button
                             onClick={() => setOpenProfileImageUploadDrawer(true)}
-                            className="absolute bottom-2 right-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2.5 shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 z-10"
+                            className="absolute bottom-2 right-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2.5 shadow-lg transition-all duration-200 cursor-pointer z-10"
                             title="Upload profile picture"
                         >
                             <FaCamera className="w-4 h-4" />

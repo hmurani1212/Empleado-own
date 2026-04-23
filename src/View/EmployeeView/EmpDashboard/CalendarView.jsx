@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6'
 import CustomDialog from '../../../Components/CustomDialog/CustomDialog';
@@ -18,9 +18,30 @@ const CalendarView = (props) => {
   const gettingEmpDashboardData = useStore((state) => state.gettingEmpDashboardData);
 
   const today = new Date(); // Current date
+  const [isTodayHighlightActive, setIsTodayHighlightActive] = useState(true);
 
   const currentDate = calendarData?.currentDate
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  useEffect(() => {
+    const now = new Date();
+    const selectedMonth = calendarData?.month?.value;
+    const selectedYear = calendarData?.year?.value;
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    if (selectedMonth === currentMonth && selectedYear === currentYear) {
+      setIsTodayHighlightActive(true);
+      const timer = setTimeout(() => {
+        setIsTodayHighlightActive(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+
+    setIsTodayHighlightActive(false);
+    return undefined;
+  }, [calendarData?.month?.value, calendarData?.year?.value]);
 
   // Wrapper function for next month navigation
   const handleNextMonthWithAPI = () => {
@@ -98,7 +119,14 @@ const CalendarView = (props) => {
 
           {calendarData?.daysArray?.map((day, index) => {
             const attLabel = getAttendanceLabel(day, calendarData.month.value - 1, calendarData.year.value);
-            const backgroundColor = getBackgroundColor(attLabel);
+            const isCurrentDay =
+              day === today.getDate() &&
+              today.getMonth() === calendarData.month.value - 1 &&
+              today.getFullYear() === calendarData.year.value;
+            const backgroundColor =
+              isCurrentDay && isTodayHighlightActive
+                ? '#6691cc'
+                : getBackgroundColor(attLabel);
 
             const attributes = [
               { key: 'signout_missed', colorClass: '!bg-[#000]' }, // Black for missed logout
@@ -118,11 +146,7 @@ const CalendarView = (props) => {
                 whileHover={{ scale: 1.1 }}
                 key={index}
                 // className={`w-10 h-10 flex items-center justify-center rounded-full relative`}
-                className={`w-10 h-10 flex items-center justify-center rounded-full ${day === today.getDate() &&
-                    today.getMonth() == calendarData.month.value - 1
-                    ? "!bg-customGray-blueGray cursor-pointer"
-                    : "hover:border hover:border-customGray-blueGray cursor-pointer"
-                  } relative`}
+                className={`w-10 h-10 flex items-center justify-center transition-all duration-300 rounded-full hover:border hover:border-customGray-blueGray cursor-pointer relative`}
                 style={{ backgroundColor: backgroundColor }}
 
                 onClick={() => handleSingleDayDate(day, calendarData.month.value - 1, calendarData.year.value)}

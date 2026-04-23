@@ -24,6 +24,7 @@ import ExportPayslip from "./ExportPayslip";
 import { useNavigate } from "react-router-dom";
 import payrollApi from "../../Model/Data/Payroll/Payroll";
 import { MakingPaymentsTableBodySkeleton } from "./PayrollSkeletons";
+import { escapeHtml, getDigitalOfficeSignature } from "../../services/officeSignatureService";
 
 // Convert salary_month "0126" (MMYY) to "January/2026" - first 2 digits = month, last 2 = year (use current century)
 const formatSalaryMonthFTM = (salaryMonth) => {
@@ -339,6 +340,8 @@ const MakingPayments = () => {
         return;
       }
       const payslipsToPrint = data.DB_DATA.payslips;
+      const officeSignatureText = await getDigitalOfficeSignature();
+      const officeSignatureEscaped = escapeHtml(officeSignatureText || "");
 
       // Create a temporary div for print content
       const printContent = document.createElement("div");
@@ -587,6 +590,9 @@ const MakingPayments = () => {
           .signature-underline {
             border-bottom: 1px solid #e5e7eb;
             min-height: 24px;
+            display: flex;
+            align-items: flex-end;
+            padding-bottom: 2px;
           }
           .signature-label {
             font-size: 11px;
@@ -594,6 +600,11 @@ const MakingPayments = () => {
             letter-spacing: 0.08em;
             font-weight: 600;
             color: #475569;
+          }
+          .signature-value {
+            font-size: 11px;
+            font-weight: 500;
+            color: #334155;
           }
           * {
             -webkit-print-color-adjust: exact !important;
@@ -959,7 +970,7 @@ const MakingPayments = () => {
                     </div>
 
                     <div class="signatures">
-                      <div class="signature-line"><span class="signature-label">Officer signature</span><div class="signature-underline"></div></div>
+                      <div class="signature-line"><span class="signature-label">Officer signature</span><div class="signature-underline"><span class="signature-value">${officeSignatureEscaped}</span></div></div>
                       <div class="signature-line"><span class="signature-label">Employee signature</span><div class="signature-underline"></div></div>
                     </div>
                   </div>
