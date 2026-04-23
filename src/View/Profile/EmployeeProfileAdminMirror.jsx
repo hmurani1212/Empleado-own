@@ -1,11 +1,14 @@
+/**
+ * Deprecated: `/profile` now renders `EmpProfile` (self-service My Profile) in `Routers.jsx`.
+ * This file is kept only as a reference; do not wire it back to `/profile` or employees will
+ * land on the admin `AdminEmployeeProfile` shell again.
+ */
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import useEmpDashboard from "../../ViewModel/EmpViewModel/EmpDashboardViewModel/EmpDashboardServices";
 import { getDecodedToken } from "../../Authentication/jwt_decode";
 
-/**
- * Resolves current user's employee id and opens the same AdminEmployeeProfile used from Employees.
- */
+/** @deprecated Redirect helper; not used by routes. */
 const EmployeeProfileAdminMirror = () => {
   const { empDashboardData, gettingEmpDashboardData } = useEmpDashboard();
   const [empId, setEmpId] = useState(null);

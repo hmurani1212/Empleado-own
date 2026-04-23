@@ -113,7 +113,7 @@ import AssessmentPage from "../View/EmployeeView/EmpTraining/AssessmentPage";
 import EmpPayslip from "../View/EmployeeView/EmpPayslip/EmpPayslip";
 import EmpDuties from "../View/EmployeeView/EmpDuties/EmpDuties";
 import EmpPerformance from "../View/EmployeeView/EmpPerformance/EmpPerformance";
-import EmployeeProfileAdminMirror from "../View/Profile/EmployeeProfileAdminMirror";
+import EmpProfile from "../View/EmployeeView/EmpProfile/EmpProfile";
 import EmpExpense from "../View/EmployeeView/EmpExpense/EmpExpense";
 import EditDepartment from "../View/Departments/EditDepartment";
 // import HiringPage from "../View/Career/HiringPage";
@@ -544,7 +544,7 @@ const Routers = () => {
 
           <Route path="/inbox" element={<Inbox />}></Route>
           {!isAdmin && (
-            <Route path="/profile" element={<EmployeeProfileAdminMirror />} />
+            <Route path="/profile" element={<EmpProfile />} />
           )}
           {!isAdmin && (
             <Route path="/expense" element={<EmpExpense />} />
