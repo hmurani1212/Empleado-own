@@ -1,8 +1,7 @@
 import { Button } from "@material-tailwind/react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import CustomCard from "../../Components/CustomCard/CustomCard";
 import useHire from "../../ViewModel/HireViewModel/HireServices";
-import useHire_2 from "../../ViewModel/HireViewModel2/hireServices_2";
 //getVacanciesWithFilters
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -12,6 +11,8 @@ import { getUserData } from "../../Authentication/jwt_decode";
 import CustomButton from "../../Components/CustomButton/CustomButton";
 import useStore from "../../Store/store";
 import { HireDashboardCardsSkeleton } from "./HireSkeletons";
+import HireCareerSettingsModal from "./HireCareerSettingsModal";
+
 const Hire = ({ data }) => {
   // Console log the props data
   // console.log("Hire component props data:", data?.response?.DB_DATA);
@@ -30,6 +31,7 @@ const Hire = ({ data }) => {
   const hireCountsLoading = useStore((state) => state.hireCountsLoading);
   const location = useLocation();
   const navigate = useNavigate();
+  const [careerSettingsOpen, setCareerSettingsOpen] = useState(false);
 
   const handleHireNavClickCards = (e, link, id) => {
     e.preventDefault();
@@ -78,6 +80,13 @@ const Hire = ({ data }) => {
           <p className="text-sm text-gray-500">Manage vacancies, applicants, and the hiring pipeline.</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outlined"
+            className="border-slate-300 text-slate-700 capitalize p-3 font-medium shadow-sm"
+            onClick={() => setCareerSettingsOpen(true)}
+          >
+            Settings
+          </Button>
           <CustomButton
             className="bg-[#8bc9f8] capitalize p-2 font-medium justify-center shadow-sm"
             onClick={createVacancy}
@@ -90,6 +99,11 @@ const Hire = ({ data }) => {
           </Link>
         </div>
       </div>
+
+      <HireCareerSettingsModal
+        openDialog={careerSettingsOpen}
+        onClose={() => setCareerSettingsOpen(false)}
+      />
 
       {/* Dashboard Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-5">

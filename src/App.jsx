@@ -13,6 +13,7 @@ import empLogo from './assets/images/empleado-logo.png'
 import { Toaster } from './Components/Toaster/Toaster';
 import GlobalAttendanceReportListener from './Components/GlobalAttendanceReportListener/GlobalAttendanceReportListener';
 import EmployeeRolePermissionsPrefetch from './Components/EmployeeRolePermissionsPrefetch/EmployeeRolePermissionsPrefetch';
+import { clearReactQueryCache, clearReactQueryCacheIfAuthChanged } from './queryClient';
 import 'react-calendar/dist/Calendar.css';
 
 const App = () => {
@@ -74,10 +75,12 @@ const App = () => {
         if (tokenFromUrl) {
           // Clear old localStorage data if token is coming from URL (role switch scenario)
           if (jwtToken) {
+            clearReactQueryCache();
             localStorage.clear();
           }
           // Save new token from URL
           localStorage.setItem("jwt", tokenFromUrl);
+          clearReactQueryCacheIfAuthChanged();
         }
 
         const localStorageItem = localStorage.getItem('jwt')
@@ -87,6 +90,7 @@ const App = () => {
         // screen until a full reload (token in URL / post-login callback).
 
         if (!localStorageItem) {
+          clearReactQueryCacheIfAuthChanged();
           setAuthenticationState(false, false)
           // Full reload to `/` so the app always boots from a URL the static host serves (avoids `/login` 404)
           if (window.location.pathname !== '/') {
@@ -107,6 +111,7 @@ const App = () => {
           window.history.replaceState({}, document.title, currentUrl.origin + currentUrl.pathname);
 
           // Set authentication as ready
+          clearReactQueryCacheIfAuthChanged();
           setAuthenticationState(true, false)
 
           // If user landed on /login with a token, move to `/` so the dashboard route mounts
@@ -130,6 +135,7 @@ const App = () => {
         }
       } catch (error) {
         console.error('Authentication processing error:', error)
+        clearReactQueryCacheIfAuthChanged();
         setAuthenticationState(false, false)
         if (window.location.pathname !== '/') {
           window.location.href = '/'
@@ -149,6 +155,24 @@ const App = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once on mount
+
+  // Clear in-memory query cache when another tab/browser updates auth context in this origin.
+  useEffect(() => {
+    const handleStorageAuthChange = (event) => {
+      if (
+        event.key === null ||
+        event.key === 'jwt' ||
+        event.key === 'oneid' ||
+        event.key === 'org_oneid' ||
+        event.key === 'role_db_id'
+      ) {
+        clearReactQueryCacheIfAuthChanged();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageAuthChange);
+    return () => window.removeEventListener('storage', handleStorageAuthChange);
+  }, []);
 
   // Handle browser back/forward buttons to prevent accessing login when authenticated
   useEffect(() => {

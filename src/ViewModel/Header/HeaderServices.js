@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router';
 import SwitchAccessApi from '../../Model/Data/SwitchAccess/SwitchAccess';
 import useStore from '../../Store/store';
+import { clearReactQueryCache } from '../../queryClient';
 
 const useHeader = () => {
 
@@ -27,6 +28,7 @@ const useHeader = () => {
     const handleSwitchAccessClick = (item) => {
         try {
             // Clear all localStorage before switching roles (new token will come from backend)
+            clearReactQueryCache();
             localStorage.clear();
             
             const roleId = item?.role_id;

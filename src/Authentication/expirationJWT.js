@@ -1,4 +1,5 @@
 import { jwtDecode } from "jwt-decode";
+import { clearReactQueryCache } from "../queryClient";
 
 /**
  * Interval callback: if JWT is expired, clear storage and hard-navigate to `/` (SPA root).
@@ -19,6 +20,7 @@ export const expireJwtLocalStorage = () => {
 
   const currentTime = Math.floor(Date.now() / 1000);
   if (exp < currentTime) {
+    clearReactQueryCache();
     localStorage.clear();
     window.location.href = "/";
   }

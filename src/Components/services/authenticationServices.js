@@ -1,5 +1,6 @@
 import { getUserData, isTokenValid, getDecodedToken } from '../Authentication/jwt_decode';
 import authErrorHandler from './__authErrorHandler'; // Import the centralized handler
+import { clearReactQueryCache } from '../../queryClient';
 
 const authenticationServices = (set, get) => ({
     authRole: 'Employee', // Default fallback role
@@ -55,6 +56,7 @@ const authenticationServices = (set, get) => ({
 
     // Function to handle user logout
     logout: () => {
+        clearReactQueryCache();
         localStorage.clear();
         set({ isAuthenticated: false, userData: null, authRole: 'Employee' });
         authErrorHandler.resetRedirectingFlag(); // Reset the redirect flag

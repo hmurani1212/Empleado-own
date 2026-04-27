@@ -131,7 +131,23 @@ const hireApi = {
             method: 'GET',
             url: '/api/v1/applications/labels'
         })
-    }
+    },
+
+    /** Organization hiring career page application flow (OneID / profile / CV-only) */
+    getHiringSetting: function () {
+        return axiosInstanceHire.request({
+            method: 'GET',
+            url: 'api/v1/organizations/hiring_setting',
+        })
+    },
+
+    updateHiringSetting: function (data) {
+        return axiosInstanceHire.request({
+            method: 'POST',
+            url: 'api/v1/organizations/hiring_setting',
+            data,
+        })
+    },
 };
 
 

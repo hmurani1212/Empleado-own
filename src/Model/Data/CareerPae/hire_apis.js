@@ -23,6 +23,10 @@ export const hire_apis = {
         })
     },
 
+    /**
+     * Unified apply endpoint. Pass `career_apply_mode` (e.g. `cv_only_guest`) for guest CV flow.
+     * Do not use POST /api/v1/applications/cv-only.
+     */
     submit_application: function (applicationData) {
         return axiosInstanceHire.request({
             method: 'POST',

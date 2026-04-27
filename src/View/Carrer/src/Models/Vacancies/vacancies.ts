@@ -1,5 +1,41 @@
 import { axiosInstance, axiosInstanceHire } from "../base";
 
+/**
+ * All career applications (including guest CV-only) use this path.
+ * Legacy `POST /api/v1/applications/cv-only` is not used — send `career_apply_mode: "cv_only_guest"` in the body instead.
+ */
+export const APPLICATIONS_CANDIDATE_PATH = "/api/v1/applications" as const;
+
+export type CareerApplyModeGuest = "cv_only_guest";
+
+export interface ApplicationAnswerPayload {
+  question_id: number;
+  answer: string;
+  option_id: number;
+}
+
+export interface GuestCvOnlyApplicationBody {
+  vacancy_id: number;
+  city_id: number;
+  answers: ApplicationAnswerPayload[];
+  cv_file_path: string;
+  org_id: number;
+  career_apply_mode: CareerApplyModeGuest;
+}
+
+export function buildGuestCvOnlyApplicationBody(params: {
+  vacancy_id: number;
+  city_id: number;
+  answers: ApplicationAnswerPayload[];
+  cv_file_path: string;
+  org_id: number;
+}): GuestCvOnlyApplicationBody {
+  return {
+    ...params,
+    career_apply_mode: "cv_only_guest",
+  };
+}
+
 interface VacancyFilters {
   statusFilter?: string;
   yearFilter?: string;
@@ -59,10 +95,11 @@ const vacancy_apis = {
     });
   },
 
+  /** POST unified candidate/apply; include `career_apply_mode` when required by org hiring settings. */
   submit_application: function(applicationData: any) {
     return axiosInstance.request({
       method: 'POST',
-      url: '/api/v1/applications',
+      url: APPLICATIONS_CANDIDATE_PATH,
       data: applicationData,
       headers: {
         'Content-Type': 'application/json'
