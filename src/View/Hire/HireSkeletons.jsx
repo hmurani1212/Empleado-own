@@ -4,19 +4,38 @@ import { Typography } from "@material-tailwind/react";
 /**
  * Table body skeleton rows for Hire 2.0 — matches VacanciesList / TalentPool table styling.
  */
-const SkeletonCell = ({ className = "" }) => (
-  <td className={`p-4 ${className}`}>
-    <div className="h-4 bg-gray-200 rounded animate-pulse w-full max-w-[120px] mx-auto" />
+const skeletonTd =
+  "px-3 py-3 align-middle border-r border-gray-100 last:border-r-0";
+
+const SkeletonCell = ({ className = "", align = "center" }) => (
+  <td
+    className={`${skeletonTd} ${align === "left" ? "text-left" : "text-center"} ${className}`}
+  >
+    <div
+      className={`h-4 bg-gray-200 rounded animate-pulse w-full max-w-[120px] ${align === "left" ? "mr-auto" : "mx-auto"}`}
+    />
   </td>
 );
 
 export const VacanciesListTableSkeleton = ({ rows = 8, colCount = 9 }) => {
+  const alignForCol = (ci) =>
+    ci === 0 || ci === 6 ? "left" : "center";
+  const widthForCol = (ci) => {
+    if (ci === 0) return "max-w-[16rem]";
+    if (ci === 6) return "w-0 min-w-0 max-w-[11rem]";
+    if (ci === 7 || ci === 8) return "whitespace-nowrap w-[1%]";
+    return "whitespace-nowrap";
+  };
   return (
     <>
       {Array.from({ length: rows }).map((_, ri) => (
-        <tr key={ri} className="border-b border-[#F2F2F9]">
+        <tr key={ri} className="hover:bg-transparent">
           {Array.from({ length: colCount }).map((__, ci) => (
-            <SkeletonCell key={ci} />
+            <SkeletonCell
+              key={ci}
+              align={alignForCol(ci)}
+              className={widthForCol(ci)}
+            />
           ))}
         </tr>
       ))}

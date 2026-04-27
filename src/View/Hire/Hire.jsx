@@ -72,7 +72,7 @@ const Hire = ({ data }) => {
   // })
 
   return (
-    <div className="flex flex-col py-6 px-6 gap-6 min-h-screen bg-background">
+    <div className="flex flex-col py-6 px-3 sm:px-4 gap-6 min-h-screen bg-background w-full max-w-full min-w-0">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex flex-col gap-1">

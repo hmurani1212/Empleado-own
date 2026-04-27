@@ -20,6 +20,15 @@ import useStore from "../../Store/store";
 import { useNavigate } from "react-router";
 import { useDebounce } from "../../services/__debounceServices";
 import { VacanciesListTableSkeleton } from "./HireSkeletons";
+
+function getVacancyCityList(hire, allCities) {
+  const names = getCityNamesFromIds(hire.locations, allCities);
+  if (names.length) return names;
+  if (Array.isArray(hire.city_name) && hire.city_name.length)
+    return hire.city_name.map((x) => String(x));
+  return [];
+}
+
 const VacanciesList = () => {
   const {
     handleAllApps,
@@ -50,17 +59,62 @@ const VacanciesList = () => {
 
   const allCities = useStore((state) => state.allCities);
   const gettingAllLocations = useStore((state) => state.gettingAllLocations);
+  const openDrawer = useStore((state) => state.openDrawer);
+  const settingComponent = useStore((state) => state.settingComponent);
+  const settingDrawerTitle = useStore((state) => state.settingDrawerTitle);
+  const settingDrawerSize = useStore((state) => state.settingDrawerSize);
 
-  const dataVacancies = [
-    "Title",
-    "Age Limit",
-    "Total Applicant",
-    "Gender Ratio",
-    "Valid Through",
-    "Status",
-    "Location",
-    "Share Link",
-    "Actions",
+  const openRemainingLocationsDrawer = useCallback((vacancyTitle, cities) => {
+    const rest = cities.slice(1);
+    settingDrawerTitle("Locations");
+    settingDrawerSize?.();
+    settingComponent(
+      <div className="space-y-4 font-Urbanist">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
+            Vacancy
+          </p>
+          <p className="text-sm font-medium text-slate-800">
+            {vacancyTitle?.trim() ? vacancyTitle : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+            Additional locations ({rest.length})
+          </p>
+          <ul className="list-disc pl-5 space-y-2 text-sm text-[#474747]">
+            {rest.map((city, idx) => (
+              <li key={`${city}-${idx}`}>{city}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+    openDrawer();
+  }, [
+    openDrawer,
+    settingComponent,
+    settingDrawerTitle,
+    settingDrawerSize,
+  ]);
+
+  /** Shared table chrome — vertical rules + uniform padding (standardized grid). */
+  const vacancyThClass =
+    "px-3 py-3.5 align-middle border-r border-gray-200/70 last:border-r-0 bg-gray-50/95";
+  const vacancyTdClass =
+    "px-3 py-3 align-middle border-r border-gray-100 last:border-r-0";
+
+  /** Column labels + header alignment (body alignment set per `<td>`). Matches other admin tables (Departments / Applications). */
+  const vacancyTableColumns = [
+    { label: "Title", headerClass: "text-left" },
+    { label: "Age Limit", headerClass: "text-center" },
+    { label: "Total Applicant", headerClass: "text-center" },
+    { label: "Gender Ratio", headerClass: "text-center" },
+    { label: "Valid Through", headerClass: "text-center" },
+    { label: "Status", headerClass: "text-center" },
+    { label: "Location", headerClass: "text-left" },
+    { label: "Share Link", headerClass: "text-center" },
+    { label: "Actions", headerClass: "text-center" },
   ];
   const months = getAllMonths();
   const years = getAllYearsHire();
@@ -295,7 +349,7 @@ const VacanciesList = () => {
   // console.log("allVacanciesList_data", allVacanciesList_data.response)
   return (
     <>
-      <div className="lg:px-2 md:px-2 px-0 flex flex-col gap-4">
+      <div className="w-full min-w-0 max-w-full flex flex-col gap-4 px-0">
         {/* Filter Section */}
         <div className="bg-white rounded-xl shadow-soft p-5 border border-gray-100">
           <div className="flex flex-wrap items-center gap-4">
@@ -450,35 +504,37 @@ const VacanciesList = () => {
           </div>
         </div>
 
-        {/* Table Section */}
-        <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
-          <div className="min-h-[calc(100vh-100px)] overflow-auto customScroll">
-            <table className="w-full text-center">
-              <thead className="sticky top-[0px] z-20 bg-[#F8F9FA] rounded-[8px]">
+        {/* Table — table-auto + Location w-0/max-w + Share nowrap so no huge gap between those columns */}
+        <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden w-full min-w-0">
+          <div className="min-h-[calc(100vh-100px)] w-full min-w-0 overflow-x-auto overflow-y-auto customScroll">
+            <table className="w-full min-w-[1000px] table-auto border-collapse text-sm">
+              <thead className="sticky top-0 z-20 backdrop-blur-sm border-b border-gray-200">
                 <tr>
-                  {dataVacancies?.map((head, i) => (
-                    <th key={i} className="bg-[#F8F9FA] p-4">
+                  {vacancyTableColumns.map((col) => (
+                    <th
+                      key={col.label}
+                      scope="col"
+                      className={vacancyThClass}
+                    >
                       <Typography
-                        // variant="small"
-                        // color="blue-gray"
-                        className="font-medium leading-none text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
+                        className={`font-semibold uppercase tracking-wider text-[11px] text-gray-500 font-poppins leading-tight ${col.headerClass}`}
                       >
-                        {head}
+                        {col.label}
                       </Typography>
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-white">
                 {showVacanciesSkeleton ? (
                   <VacanciesListTableSkeleton
                     rows={8}
-                    colCount={dataVacancies.length}
+                    colCount={vacancyTableColumns.length}
                   />
                 ) : !vacanciesRows || vacanciesRows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={dataVacancies.length}
+                      colSpan={vacancyTableColumns.length}
                       className="p-4 text-center"
                     >
                       <Typography className="text-gray-500">
@@ -488,48 +544,33 @@ const VacanciesList = () => {
                   </tr>
                 ) : (
                   vacanciesRows.map((hire, index) => {
-                    const isLast = index === vacanciesRows.length - 1;
-                    const classes = isLast
-                      ? "p-4"
-                      : "p-4 border-b border-[#F2F2F9]";
+                    const locationCities = getVacancyCityList(hire, allCities);
 
                     return (
                       <tr key={index} className="hover:bg-brand-50/30 transition-colors">
-                        <td className={classes}>
+                        <td className={`${vacancyTdClass} text-left max-w-[16rem]`}>
                           <Typography
-                            className="font-medium text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] capitalize cursor-pointer hover:text-brand-500 transition-colors"
+                            className="font-medium text-[#474747] font-Urbanist text-[13px] capitalize cursor-pointer hover:text-brand-500 transition-colors line-clamp-2 break-words"
                             onClick={() => handleAllApps(hire.id)}
                           >
                             {hire.title}
                           </Typography>
                         </td>
 
-                        <td className={classes}>
-                          <Typography
-                            // variant="small"
-                            // color="blue-gray"
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                          >
+                        <td className={`${vacancyTdClass} text-center whitespace-nowrap`}>
+                          <Typography className="font-normal text-[#474747] font-Urbanist text-[13px] tabular-nums">
                             {hire.age_from} - {hire.age_upto}
                           </Typography>
                         </td>
 
-                        <td className={classes}>
-                          <Typography
-                            // variant="small"
-                            // color="blue-gray"
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                          >
+                        <td className={`${vacancyTdClass} text-center whitespace-nowrap`}>
+                          <Typography className="font-normal text-[#474747] font-Urbanist text-[13px] tabular-nums">
                             {hire.total_applications}
                           </Typography>
                         </td>
 
-                        <td className={classes}>
-                          <Typography
-                            // variant="small"
-                            // color="blue-gray"
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                          >
+                        <td className={`${vacancyTdClass} text-center whitespace-nowrap`}>
+                          <Typography className="font-normal text-[#474747] font-Urbanist text-[13px]">
                             {hire.req_gender === 0
                               ? "Female"
                               : hire.req_gender === 1
@@ -540,21 +581,17 @@ const VacanciesList = () => {
                           </Typography>
                         </td>
 
-                        <td className={classes}>
-                          <Typography
-                            // variant="small"
-                            // color="blue-gray"
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                          >
+                        <td className={`${vacancyTdClass} text-center whitespace-nowrap`}>
+                          <Typography className="font-normal text-[#474747] font-Urbanist text-[13px] tabular-nums">
                             {formatTimestamp(hire.end_date).split(",")[0] +
                               "," +
                               formatTimestamp(hire.end_date).split(",")[1]}
                           </Typography>
                         </td>
 
-                        <td className={classes}>
+                        <td className={`${vacancyTdClass} text-center whitespace-nowrap`}>
                           <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold font-Urbanist whitespace-nowrap ${
+                            className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[11px] font-semibold font-Urbanist whitespace-nowrap ${
                               hire.status === "ACTIVE"
                                 ? "bg-green-50 text-green-700 border border-green-200"
                                 : hire.status === "EXPIRED"
@@ -574,30 +611,53 @@ const VacanciesList = () => {
                           </span>
                         </td>
 
-                        <td className={classes}>
-                          <Typography
-                            className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize"
-                          >
-                            {(() => {
-                              const names = getCityNamesFromIds(hire.locations, allCities);
-                              if (names.length) return names.join(", ");
-                              if (Array.isArray(hire.city_name) && hire.city_name.length)
-                                return hire.city_name.join(", ");
-                              return "—";
-                            })()}
-                          </Typography>
+                        <td
+                          className={`${vacancyTdClass} w-0 min-w-0 max-w-[11rem] text-left`}
+                        >
+                          {locationCities.length === 0 ? (
+                            <Typography className="font-normal text-[#474747] font-Urbanist text-[13px] text-left">
+                              —
+                            </Typography>
+                          ) : locationCities.length === 1 ? (
+                            <Typography className="font-normal text-[#474747] font-Urbanist text-[13px] text-left line-clamp-2 break-words">
+                              {locationCities[0]}
+                            </Typography>
+                          ) : (
+                            <div className="flex max-w-full min-w-0 flex-nowrap items-center gap-x-1 text-left">
+                              <span className="min-w-0 truncate font-normal text-[#474747] font-Urbanist text-[13px]">
+                                {locationCities[0]}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  openRemainingLocationsDrawer(
+                                    hire.title,
+                                    locationCities
+                                  );
+                                }}
+                                className="inline-flex shrink-0 items-center justify-center self-center rounded px-0.5 py-0 text-[13px] font-semibold leading-none text-[#3da5f4] hover:bg-[#EFF8FF] hover:underline cursor-pointer border-0 bg-transparent font-Urbanist"
+                                aria-label={`Show ${
+                                  locationCities.length - 1
+                                } more locations`}
+                              >
+                                ...
+                              </button>
+                            </div>
+                          )}
                         </td>
 
-                        {/* Tooba */}
-                        {/* share Links */}
-                        <td className={classes}>
+                        <td
+                          className={`${vacancyTdClass} text-center whitespace-nowrap w-[1%]`}
+                        >
                           <div
                             onMouseEnter={() => toggleMenuShare(index, true)}
                             onMouseLeave={() => toggleMenuShare(index, false)}
-                            className="relative flex items-center justify-center"
+                            className="relative inline-flex items-center justify-center"
                           >
                             <Button
-                              className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px] cursor-pointer"
+                              className="flex items-center justify-center gap-1 normal-case font-medium text-[11px] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-2.5 py-1.5 min-w-0 max-w-full cursor-pointer whitespace-nowrap"
                               variant="outlined"
                             >
                               Share Link
@@ -653,14 +713,16 @@ const VacanciesList = () => {
                           </div>
                         </td>
 
-                        <td className={classes}>
+                        <td
+                          className={`${vacancyTdClass} text-center whitespace-nowrap w-[1%]`}
+                        >
                           <div
                             onMouseEnter={() => toggleMenuHire(index, true)}
                             onMouseLeave={() => toggleMenuHire(index, false)}
-                            className="relative flex items-center justify-center"
+                            className="relative inline-flex items-center justify-center"
                           >
                             <Button
-                              className="flex items-center gap-2 capitalize font-normal text-[clamp(10px,0.9vw,12px)] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-[10px] py-[5px] cursor-pointer"
+                              className="flex items-center justify-center gap-1.5 normal-case font-medium text-[11px] bg-[#EFF8FF] border border-[#3da5f4] text-[#3da5f4] px-2.5 py-1.5 cursor-pointer whitespace-nowrap"
                               variant="outlined"
                             >
                               Action
