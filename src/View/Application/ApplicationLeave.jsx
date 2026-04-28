@@ -86,6 +86,55 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
     return emptyDisplay(app?.form_data?.leave_type ?? app?.leave_type);
   };
 
+  /** Inbox / detail API may return flat approval fields (title, approval_type, level, status, entry_time) instead of approvel_flow + approvel_by */
+  const hasLegacyApprovalRow = (app) => {
+    if (!app?.approvel_flow) return false;
+    const by = app?.approvel_by;
+    if (Array.isArray(by)) return by.length > 0;
+    if (typeof by === "string") return by.trim() !== "";
+    return false;
+  };
+
+  const hasFlatApprovalRow = (app) =>
+    !!(app?.title || app?.approval_type || app?.level || app?.approval_hierarchy != null || app?.status || app?.entry_time != null);
+
+  const getApprovalIndexDisplay = (app) => {
+    const h = app?.approval_hierarchy;
+    if (h != null && String(h).trim() !== "") return String(h).trim();
+    return "1";
+  };
+
+  const getApprovalTypeCell = (app) => {
+    const t = app?.approval_type ?? app?.approvel_flow;
+    const lv = app?.level;
+    const typePart = t != null && String(t).trim() !== "" ? converToSnakeCase(String(t).replace(/_/g, " ")) : "";
+    const levelPart = lv != null && String(lv).trim() !== "" ? converToSnakeCase(String(lv).replace(/_/g, " ")) : "";
+    if (typePart && levelPart && typePart !== levelPart) return `${typePart} · ${levelPart}`;
+    if (typePart) return typePart;
+    if (levelPart) return levelPart;
+    return "--";
+  };
+
+  const getApproveByCell = (app) => {
+    const t = app?.title;
+    if (t != null && String(t).trim() !== "") return String(t).trim();
+    const by = app?.approvel_by;
+    if (Array.isArray(by) && by.length) return by.map((x) => (typeof x === "string" ? converToSnakeCase(x) : emptyDisplay(x))).join(", ");
+    if (typeof by === "string" && by.trim() !== "") return converToSnakeCase(by);
+    return "--";
+  };
+
+  const getApprovalStatusLabel = (app) => app?.status ?? app?.type_base_info;
+
+  const formatLastUpdateFromApp = (app) => {
+    const et = app?.entry_time;
+    if (et != null && et !== "") return formatUnixToDate(et);
+    return formatUnixToDate(app?.update_time);
+  };
+
+  const showApprovalListRow = applicationData && (hasLegacyApprovalRow(applicationData) || hasFlatApprovalRow(applicationData));
+  const approvalStatusLabel = applicationData ? getApprovalStatusLabel(applicationData) : "";
+
   useEffect(() => {
     console.log("applicationData", applicationData);
   }, []);
@@ -650,8 +699,7 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
               </thead>
 
               <tbody>
-                {applicationData?.approvel_flow &&
-                  applicationData?.approvel_by?.length > 0 ? (
+                {showApprovalListRow ? (
                   <tr className="hover:bg-gray-50">
                     <td className="p-4 border-b border-gray-200">
                       <Typography
@@ -659,7 +707,7 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
                         color="blue-gray"
                         className="font-normal"
                       >
-                        1
+                        {getApprovalIndexDisplay(applicationData)}
                       </Typography>
                     </td>
 
@@ -669,8 +717,7 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
                         color="blue-gray"
                         className="font-normal"
                       >
-                        {converToSnakeCase(applicationData.approvel_flow) ||
-                          "--"}
+                        {getApprovalTypeCell(applicationData)}
                       </Typography>
                     </td>
 
@@ -680,21 +727,22 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
                         color="blue-gray"
                         className="font-normal"
                       >
-                        {converToSnakeCase(applicationData.approvel_by) || "--"}
+                        {getApproveByCell(applicationData)}
                       </Typography>
                     </td>
 
                     <td className="p-4 border-b border-gray-200">
                       <span
-                        className={`px-4 py-1 text-xs rounded-[7px] w-[110px] font-medium inline-flex items-center justify-center ${applicationData.type_base_info === "PENDING" || applicationData.type_base_info === "Pending"
+                        className={`px-4 py-1 text-xs rounded-[7px] w-[110px] font-medium inline-flex items-center justify-center ${approvalStatusLabel === "PENDING" || approvalStatusLabel === "Pending"
                             ? "bg-[#FFF1D9] text-[#FDA006]"
-                            : applicationData.type_base_info === "APPROVED" || applicationData.type_base_info === "Approved"
+                            : approvalStatusLabel === "APPROVED" || approvalStatusLabel === "Approved"
                               ? "bg-[#DBFFF5] text-[#0ACF97]"
                               : "bg-[#FFF0F4] text-[#FF4979]"
                           }`}
                       >
-                        {converToSnakeCase(applicationData.type_base_info) ||
-                          "--"}
+                        {approvalStatusLabel != null && String(approvalStatusLabel).trim() !== ""
+                          ? converToSnakeCase(approvalStatusLabel)
+                          : "--"}
                       </span>
                     </td>
 
@@ -704,7 +752,7 @@ function ApplicationLeave({ applicationData, onClose, applicationType }) {
                         color="blue-gray"
                         className="font-normal"
                       >
-                        {formatUnixToDate(applicationData?.update_time)}
+                        {formatLastUpdateFromApp(applicationData)}
                       </Typography>
                     </td>
                   </tr>

@@ -25,7 +25,7 @@ export const  one_id_url = 'http://172.18.0.34:7511';
 
 export const notes_pool_url = 'https://emp.veevotech.com/empleado_app/notespool';
 
-export const approve_flow_url = 'http://172.18.0.44:6175';
+export const approve_flow_url = 'https://emp.veevotech.com/empleado_app/inbox';
 
 export const attendance_url = 'https://emp.veevotech.com/empleado_app/attendance';
 
