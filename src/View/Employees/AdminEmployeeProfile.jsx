@@ -2626,11 +2626,11 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
             setIsUploadingFile(true);
             setDomicileFile(file);
 
-            // `/api/make_url` expects the same shape as other elephant uploads (see Training.js uploadFileToElephant).
+            // `organizations/make_url` expects the same shape as other elephant uploads.
             const formData = new FormData();
             formData.append("operation", "store_file");
             // Third arg = filename so the part is not treated as an empty blob on some stacks
-            formData.append("file", file, file.name || "upload");
+            formData.append("fileInput", file, file.name || "upload");
             formData.append("device_id", "abc123");
             formData.append("latitude", "34.123");
             formData.append("longitude", "71.123");
@@ -2643,6 +2643,7 @@ const AdminEmployeeProfile = ({ employeeData: propEmployeeData }) => {
                 (responseData.STATUS === "SUCCESSFUL" ||
                     responseData.status === "SUCCESSFUL");
             const rawUrl =
+                responseData?.url ??
                 responseData?.FILE_URL ??
                 responseData?.file_url ??
                 responseData?.data?.FILE_URL;

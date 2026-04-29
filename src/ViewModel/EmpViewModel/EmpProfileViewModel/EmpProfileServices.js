@@ -108,7 +108,7 @@ const useEmpProfileServices = ()=>{
             
             // Step 1: Upload file to elephant server to get URL
             const fileFormData = new FormData()
-            fileFormData.append('file', formData.file)
+            fileFormData.append('fileInput', formData.file)
             
             const uploadResponse = await applicationApi.uploadFileToElephant(fileFormData)
             
@@ -118,7 +118,7 @@ const useEmpProfileServices = ()=>{
             }
             
             // Get the file URL from upload response
-            const fileUrl = uploadResponse.data.FILE_URL
+            const fileUrl = uploadResponse.data.url || uploadResponse.data.FILE_URL
             
             if (!fileUrl) {
                 toast.error('Failed to get file URL. Please try again.')

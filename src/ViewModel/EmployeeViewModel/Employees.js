@@ -1081,15 +1081,16 @@ const employeeViewModel = (set, get) => ({
         try {
             // Step 1: Upload file to elephant server to get URL
             const uploadFormData = new FormData();
-            uploadFormData.append('file', file);
+            uploadFormData.append('fileInput', file);
 
             const uploadResponse = await employeesApi.uploadFileToElephant(uploadFormData);
             const uploadData = uploadResponse.data;
 
-            if (uploadResponse.status === 200 && uploadData.STATUS === "SUCCESSFUL" && uploadData.FILE_URL) {
+            const uploadedFileUrl = uploadData.url || uploadData.FILE_URL;
+            if (uploadResponse.status === 200 && uploadData.STATUS === "SUCCESSFUL" && uploadedFileUrl) {
                 // Step 2: Update logo with the generated URL
                 const logoData = {
-                    logo: uploadData.FILE_URL
+                    logo: uploadedFileUrl
                 };
 
                 const updateResponse = await employeesApi.updateOrgLogo(logoData);
@@ -1545,7 +1546,7 @@ const employeeViewModel = (set, get) => ({
     },
 
     // Update employee profile image
-    // 1) POST file to training `/api/make_url` → FILE_URL
+    // 1) POST file to organizations `make_url` endpoint → URL
     // 2) POST JSON to core `/api/v1/employee_v3/update_img_profile` with body: { emp_id, image_url }
     updateEmployeeProfileImage: async (payload) => {
         const normalizeEmpId = (id) => {
@@ -1579,7 +1580,7 @@ const employeeViewModel = (set, get) => ({
             const normalizedEmpId = normalizeEmpId(empId)
 
             const uploadFormData = new FormData()
-            uploadFormData.append('file', file)
+            uploadFormData.append('fileInput', file)
             const uploadResponse = await employeesApi.uploadFileToElephant(uploadFormData)
             const uploadData = uploadResponse?.data || {}
 
@@ -1591,9 +1592,9 @@ const employeeViewModel = (set, get) => ({
             }
 
             const fileUrl =
+                uploadData.url ||
                 uploadData.FILE_URL ||
                 uploadData.file_url ||
-                uploadData.url ||
                 ''
 
             if (!fileUrl) {

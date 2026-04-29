@@ -1,4 +1,5 @@
 import { Inboxinstancemodeule, traininginstancemodeule, axiosFormDataTransformRequest } from "../../base.js";
+const MAKE_URL_ENDPOINT = 'https://emp.veevotech.com/empleado_app/hiring/api/v1/organizations/make_url';
 
 const InboxApiData = {
     get_inbox_data: function (page_no = 1, limit = 20) {
@@ -93,9 +94,14 @@ const InboxApiData = {
 
     // Upload file to elephant server (using training instance)
     uploadFileToElephant: function (formData) {
+        if (formData?.get && formData.get('file') && !formData.get('fileInput')) {
+            const file = formData.get('file');
+            formData.delete('file');
+            formData.append('fileInput', file);
+        }
         return traininginstancemodeule.request({
             method: 'POST',
-            url: '/api/make_url',
+            url: MAKE_URL_ENDPOINT,
             data: formData,
             transformRequest: [axiosFormDataTransformRequest],
         })

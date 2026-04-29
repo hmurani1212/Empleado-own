@@ -2,6 +2,7 @@ import { useState } from "react"
 import empApplicationApi from "../../../Model/Data/EmpData/EmpApplication/EmpApplication"
 import { showToast } from "../../../Components/Toaster/Toaster"
 import axios from "axios"
+const MAKE_URL_ENDPOINT = 'https://emp.veevotech.com/empleado_app/hiring/api/v1/organizations/make_url';
 
 const useTADAServices = ()=>{
 
@@ -119,12 +120,12 @@ const useTADAServices = ()=>{
         if (fuleVoucher) {
             try {
                 const uploadFormData = new FormData();
-                uploadFormData.append('file', fuleVoucher);
-                const uploadResponse = await axios.post('http://172.18.0.34:4120/api/make_url', uploadFormData, {
+                uploadFormData.append('fileInput', fuleVoucher);
+                const uploadResponse = await axios.post(MAKE_URL_ENDPOINT, uploadFormData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                if (uploadResponse.data && uploadResponse.data.FILE_URL) {
-                    fuelVoucherUrl = uploadResponse.data.FILE_URL;
+                if (uploadResponse.data && (uploadResponse.data.url || uploadResponse.data.FILE_URL)) {
+                    fuelVoucherUrl = uploadResponse.data.url || uploadResponse.data.FILE_URL;
                 }
             } catch (error) {
                 console.error('Fuel voucher upload error:', error);
@@ -134,12 +135,12 @@ const useTADAServices = ()=>{
         if (taxVoucher) {
             try {
                 const uploadFormData = new FormData();
-                uploadFormData.append('file', taxVoucher);
-                const uploadResponse = await axios.post('http://172.18.0.34:4120/api/make_url', uploadFormData, {
+                uploadFormData.append('fileInput', taxVoucher);
+                const uploadResponse = await axios.post(MAKE_URL_ENDPOINT, uploadFormData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                if (uploadResponse.data && uploadResponse.data.FILE_URL) {
-                    tollVoucherUrl = uploadResponse.data.FILE_URL;
+                if (uploadResponse.data && (uploadResponse.data.url || uploadResponse.data.FILE_URL)) {
+                    tollVoucherUrl = uploadResponse.data.url || uploadResponse.data.FILE_URL;
                 }
             } catch (error) {
                 console.error('Toll voucher upload error:', error);
@@ -149,12 +150,12 @@ const useTADAServices = ()=>{
         if (miscVoucher) {
             try {
                 const uploadFormData = new FormData();
-                uploadFormData.append('file', miscVoucher);
-                const uploadResponse = await axios.post('http://172.18.0.34:4120/api/make_url', uploadFormData, {
+                uploadFormData.append('fileInput', miscVoucher);
+                const uploadResponse = await axios.post(MAKE_URL_ENDPOINT, uploadFormData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                if (uploadResponse.data && uploadResponse.data.FILE_URL) {
-                    miscVoucherUrl = uploadResponse.data.FILE_URL;
+                if (uploadResponse.data && (uploadResponse.data.url || uploadResponse.data.FILE_URL)) {
+                    miscVoucherUrl = uploadResponse.data.url || uploadResponse.data.FILE_URL;
                 }
             } catch (error) {
                 console.error('Misc voucher upload error:', error);

@@ -3,6 +3,7 @@ import axios from "axios"
 import { CORE_BASE_URL } from "../../BaseUri"
 import { getLocalStorage } from "../../../Authentication/localStorageServices"
 import { getUserData } from "../../../Authentication/jwt_decode"
+const MAKE_URL_ENDPOINT = 'https://emp.veevotech.com/empleado_app/hiring/api/v1/organizations/make_url';
 
 const employeesApi = {
     getBranches: function () {
@@ -1313,9 +1314,14 @@ const employeesApi = {
 
     // Upload file to elephant server for logo
     uploadFileToElephant: function (formData) {
+        if (formData?.get && formData.get('file') && !formData.get('fileInput')) {
+            const file = formData.get('file');
+            formData.delete('file');
+            formData.append('fileInput', file);
+        }
         return traininginstancemodeule.request({
             method: 'POST',
-            url: '/api/make_url',
+            url: MAKE_URL_ENDPOINT,
             data: formData,
             transformRequest: [axiosFormDataTransformRequest],
         })

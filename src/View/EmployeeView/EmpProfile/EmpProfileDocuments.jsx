@@ -222,18 +222,19 @@ const EmpProfileDocuments = () => {
                 // Step 1: Upload file to elephant server to get URL
                 console.log('Step 1: Uploading file to elephant server...')
                 const fileFormData = new FormData()
-                fileFormData.append('file', formData.file)
+                fileFormData.append('fileInput', formData.file)
                 
                 const uploadResponse = await trainingApi.uploadFileToElephant(fileFormData)
                 console.log('File upload response:', uploadResponse.data)
                 
-                if (!uploadResponse.data || uploadResponse.data.STATUS !== 'SUCCESSFUL' || !uploadResponse.data.FILE_URL) {
+                const uploadedFileUrl = uploadResponse.data?.url || uploadResponse.data?.FILE_URL
+                if (!uploadResponse.data || uploadResponse.data.STATUS !== 'SUCCESSFUL' || !uploadedFileUrl) {
                     toast.error('Failed to upload file. Please try again.')
                     return
                 }
                 
-                const fileUrl = uploadResponse.data.FILE_URL
-                const fileDetails = uploadResponse.data.ELEPHANT_RESP
+                const fileUrl = uploadedFileUrl
+                const fileDetails = uploadResponse.data.DB_DATA || uploadResponse.data.ELEPHANT_RESP
                 console.log('File URL received:', fileUrl)
                 console.log('File details:', {
                     fileName: fileDetails?.FILE_NAME,

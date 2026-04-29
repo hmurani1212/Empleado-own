@@ -139,7 +139,7 @@ const applicationsViewModel = (set, get) => ({
         try {
             const formData = new FormData();
             formData.append('operation', 'store_file');
-            formData.append('file', file);
+            formData.append('fileInput', file);
             formData.append('device_id', deviceId);
             formData.append('latitude', latitude);
             formData.append('longitude', longitude);
@@ -150,8 +150,8 @@ const applicationsViewModel = (set, get) => ({
             if (data.STATUS === "SUCCESSFUL") {
                 return {
                     success: true,
-                    fileUrl: data.FILE_URL,
-                    fileName: data.ELEPHANT_RESP?.FILE_NAME || file.name
+                    fileUrl: data.url || data.FILE_URL,
+                    fileName: data.DB_DATA?.FILE_NAME || data.ELEPHANT_RESP?.FILE_NAME || file.name
                 };
             } else {
                 throw new Error(data.ERROR_DESCRIPTION || 'Failed to upload file');

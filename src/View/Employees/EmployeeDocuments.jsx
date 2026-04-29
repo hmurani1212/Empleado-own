@@ -85,16 +85,17 @@ const EmployeeDocuments = ({
             setDocumentsForm(prev => ({ ...prev, docFile: file }));
 
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('fileInput', file);
 
             const response = await trainingApi.uploadFileToElephant(formData);
             const responseData = response.data;
+            const uploadedFileUrl = responseData?.url || responseData?.FILE_URL;
 
-            if (responseData.STATUS === "SUCCESSFUL") {
+            if (responseData.STATUS === "SUCCESSFUL" && uploadedFileUrl) {
                 setDocumentsForm(prev => ({ 
                     ...prev, 
-                    docFileUrl: responseData.FILE_URL,
-                    docName: responseData.FILE_URL // Use the full URL instead of just filename
+                    docFileUrl: uploadedFileUrl,
+                    docName: uploadedFileUrl // Use the full URL instead of just filename
                 }));
                 showToast('File uploaded successfully', 'success');
             } else {

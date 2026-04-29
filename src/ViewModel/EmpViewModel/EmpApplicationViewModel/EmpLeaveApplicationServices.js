@@ -5,6 +5,7 @@ import applicationApi from "../../../Model/Data/Applications/Applications"
 import leavesPlannerApi from "../../../Model/Data/LeavesPlanner/LeavesPlanner"
 import { getDecodedToken } from "../../../Authentication/jwt_decode"
 import axios from "axios"
+const MAKE_URL_ENDPOINT = 'https://emp.veevotech.com/empleado_app/hiring/api/v1/organizations/make_url';
 
 const useEmpLeaveApplication = ()=>{
 
@@ -207,11 +208,11 @@ const useEmpLeaveApplication = ()=>{
         if (file && file.name) {
             try {
                 const uploadFormData = new FormData();
-                uploadFormData.append('file', file);
+                uploadFormData.append('fileInput', file);
                 
                 console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
                 
-                const uploadResponse = await axios.post('http://172.18.0.34:4120/api/make_url', uploadFormData, {
+                const uploadResponse = await axios.post(MAKE_URL_ENDPOINT, uploadFormData, {
                     headers: { 
                         'Content-Type': 'multipart/form-data'
                     }
@@ -219,8 +220,8 @@ const useEmpLeaveApplication = ()=>{
                 
                 console.log('Upload response:', uploadResponse.data);
                 
-                if (uploadResponse.data && uploadResponse.data.FILE_URL) {
-                    attachmentUrl = uploadResponse.data.FILE_URL;
+                if (uploadResponse.data && (uploadResponse.data.url || uploadResponse.data.FILE_URL)) {
+                    attachmentUrl = uploadResponse.data.url || uploadResponse.data.FILE_URL;
                     console.log('File uploaded successfully, URL:', attachmentUrl);
                 } else {
                     console.error('No FILE_URL in response:', uploadResponse.data);
