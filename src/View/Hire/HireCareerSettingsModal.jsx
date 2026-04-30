@@ -115,6 +115,13 @@ function BoolSettingRow({ label, namePrefix, value, onChange }) {
   );
 }
 
+function normalizeLimitNoFromApi(value) {
+  if (value == null || value === "") return "10";
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 1) return "10";
+  return String(Math.min(999, Math.trunc(num)));
+}
+
 function stateFromHiringSetting(hs) {
   if (!hs || typeof hs !== "object") {
     return {
@@ -126,6 +133,7 @@ function stateFromHiringSetting(hs) {
       headerColor: "#1E40AF",
       companyTime: "",
       companyAbout: "",
+      limitNo: "10",
     };
   }
   const oneidSetting = !!hs.oneid_setting;
@@ -145,6 +153,7 @@ function stateFromHiringSetting(hs) {
     companyAbout: hs.company_about
       ? String(hs.company_about).slice(0, COMPANY_ABOUT_MAX_LENGTH)
       : "",
+    limitNo: normalizeLimitNoFromApi(hs.limit_no),
   };
 }
 
@@ -161,6 +170,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
   const [headerColor, setHeaderColor] = useState("#1E40AF");
   const [companyTime, setCompanyTime] = useState("");
   const [companyAbout, setCompanyAbout] = useState("");
+  const [limitNo, setLimitNo] = useState("10");
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageFileInputRef = useRef(null);
   const aboutLimitToastShownRef = useRef(false);
@@ -182,6 +192,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
         setHeaderColor(next.headerColor);
         setCompanyTime(next.companyTime);
         setCompanyAbout(next.companyAbout);
+        setLimitNo(next.limitNo);
       } else {
         showToast(
           data?.ERROR_DESCRIPTION || "Could not load settings.",
@@ -221,6 +232,15 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
       return;
     }
 
+    const limitNum = parseInt(String(limitNo).trim(), 10);
+    if (!Number.isFinite(limitNum) || limitNum < 1 || limitNum > 999) {
+      showToast(
+        "Please enter a valid number of vacancies to show per career page (1–999).",
+        "error"
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const contact_form = contactFormEnabled
@@ -237,6 +257,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
         company_about: String(companyAbout || "")
           .trim()
           .slice(0, COMPANY_ABOUT_MAX_LENGTH),
+        limit_no: limitNum,
         ...(loadedSetting?._id != null && { _id: loadedSetting._id }),
         ...(loadedSetting?.org_id != null && {
           org_id: loadedSetting.org_id,
@@ -406,6 +427,32 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                 />
                 <span className="text-xs text-slate-500">{headerColor}</span>
               </div>
+            </div>
+            <div className="py-3 border-b border-slate-200/80 last:border-0">
+              <Input
+                type="number"
+                label="Vacancies per career page"
+                placeholder="e.g. 10"
+                value={limitNo}
+                onChange={(e) => {
+                  const raw = String(e.target.value ?? "");
+                  if (raw === "") {
+                    setLimitNo("");
+                    return;
+                  }
+                  const digitsOnly = raw.replace(/\D/g, "").slice(0, 3);
+                  setLimitNo(digitsOnly);
+                }}
+                min={1}
+                max={999}
+                className="text-slate-800"
+                color="blue"
+                labelProps={{ className: "text-slate-700" }}
+              />
+              <p className="text-xs text-slate-500 mt-2">
+                Please enter the number of vacancies you want to show on each
+                career page.
+              </p>
             </div>
             <div className="py-3 border-b border-slate-200/80 last:border-0">
               <Typography className="text-slate-700 text-sm mb-2">
