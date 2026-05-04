@@ -26,6 +26,14 @@ export const SIDEBAR_TAB_PERMISSION_PREFIXES = Object.freeze({
     "ATTENDANCE_RAW_LOGS",
     "ATTEANDANCE_RAW_LOGS",
   ],
+  /** Employee shell — same gate as tab 10 (`buildRoutePermissionAccess().attendanceAdmin`). */
+  27: [
+    "ATTENDANCE_DATA",
+    "ATTENDANCE_EXPORT",
+    "BRANCH_WISE_ATTENDANCE",
+    "ATTENDANCE_RAW_LOGS",
+    "ATTEANDANCE_RAW_LOGS",
+  ],
   11: ["SHIFT_PLANNER"],
   12: ["HIRE2_0"],
   13: ["APPLICATIONS"],

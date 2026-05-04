@@ -56,6 +56,9 @@ export default defineConfig({
   server: {
     host: true,
     allowedHosts: ['entrepreneur-tmp-administered-spoke.trycloudflare.com'],
+    ...(process.env.VITE_USE_POLLING === '1'
+      ? { watch: { usePolling: true } }
+      : {}),
   },
 })
 

@@ -32,7 +32,13 @@ const useSocket = () => {
             transports: ['polling', 'websocket'],
             auth: {
                 token: localStorage.getItem('jwt')
-            }
+            },
+            timeout: 10000,
+            forceNew: false,
+            reconnection: true,
+            reconnectionAttempts: 3,
+            reconnectionDelay: 1000,
+            withCredentials: false
         });
 
         socketRef.current.on('connect', () => {
@@ -53,7 +59,13 @@ const useSocket = () => {
             transports: ['polling', 'websocket'],
             auth: {
                 token: localStorage.getItem('jwt')
-            }
+            },
+            timeout: 10000,
+            forceNew: false,
+            reconnection: true,
+            reconnectionAttempts: 3,
+            reconnectionDelay: 1000,
+            withCredentials: false
         });
 
         socketIoRef.current.on('connect', () => {

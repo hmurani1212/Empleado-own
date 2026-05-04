@@ -39,6 +39,9 @@ const applyPersistedReadStatus = (stories) => {
     });
 };
 
+/** Monotonic id so overlapping inbox list requests cannot clear or overwrite data after a newer fetch started. */
+let inboxListFetchSeq = 0;
+
 const InboxViewModel = (set, get) => ({
     InboxData: [],
     selectedEmployeeStories: [],
@@ -79,8 +82,24 @@ const InboxViewModel = (set, get) => ({
         app_type: null
     },
 
+    // Cache timestamp to prevent duplicate calls within short time window
+    lastApiCallTime: 0,
+
     getEmployeesAll: async () => {
-        set({ isLoadingInbox: true, currentPage: 1 });
+        // Prevent duplicate calls if already loading or called within 2 seconds
+        const currentState = get();
+        const now = Date.now();
+        if (currentState.isLoadingInbox) {
+            console.log('Inbox API already loading, skipping duplicate call');
+            return;
+        }
+        if (now - currentState.lastApiCallTime < 2000) {
+            console.log('Inbox API called too recently, skipping duplicate call');
+            return;
+        }
+
+        const seq = ++inboxListFetchSeq;
+        set({ isLoadingInbox: true, currentPage: 1, lastApiCallTime: now });
         try {
             // Reset filter state when loading all data
             set({ currentFilters: { name: '', status: null, read_status: null, app_type: null } });
@@ -93,6 +112,8 @@ const InboxViewModel = (set, get) => ({
             const response = isAdmin 
                 ? await InboxApi.get_inbox_data(1)
                 : await InboxApi.get_employee_inbox_data(1);
+
+            if (seq !== inboxListFetchSeq) return;
             
             const data = response.data;
             if (response.status === 200 && data?.STATUS === 'SUCCESSFUL') {
@@ -116,7 +137,8 @@ const InboxViewModel = (set, get) => ({
                     isLoadingInbox: false,
                     currentPage: 1
                 })
-            } else if (response.status === 200 && data.STATUS === 'ERROR') {
+            } else if (response.status === 200 && data?.STATUS === 'ERROR') {
+                if (seq !== inboxListFetchSeq) return;
                 set({
                     InboxData: [],
                     hasMorePages: false,
@@ -125,12 +147,19 @@ const InboxViewModel = (set, get) => ({
                 })
             }
         } catch (error) {
-            set({
-                InboxData: [],
-                hasMorePages: false,
-                nextPageUrl: null,
-                isLoadingInbox: false
-            })
+            if (seq !== inboxListFetchSeq) return;
+            const hadStories = (get().InboxData || []).length > 0;
+            // Timeout / network on a duplicate or slow second request must not wipe a successful first load
+            if (hadStories) {
+                set({ isLoadingInbox: false });
+            } else {
+                set({
+                    InboxData: [],
+                    hasMorePages: false,
+                    nextPageUrl: null,
+                    isLoadingInbox: false
+                })
+            }
         }
     },
 
@@ -171,7 +200,20 @@ const InboxViewModel = (set, get) => ({
     },
 
     getFilteredInboxData: async (name = '', status = null, read_status = null, appType = null) => {
-        set({ isLoadingInbox: true, currentPage: 1 });
+        // Prevent duplicate calls if already loading or called within 2 seconds
+        const currentState = get();
+        const now = Date.now();
+        if (currentState.isLoadingInbox) {
+            console.log('Filtered inbox API already loading, skipping duplicate call');
+            return;
+        }
+        if (now - currentState.lastApiCallTime < 2000) {
+            console.log('Filtered inbox API called too recently, skipping duplicate call');
+            return;
+        }
+
+        const seq = ++inboxListFetchSeq;
+        set({ isLoadingInbox: true, currentPage: 1, lastApiCallTime: now });
         try {
             // Store current filter state for pagination
             set({ currentFilters: { name, status, read_status, app_type: appType } });
@@ -184,6 +226,8 @@ const InboxViewModel = (set, get) => ({
             const response = isAdmin 
                 ? await InboxApi.get_filtered_inbox_data(name, status, read_status, 1, appType)
                 : await InboxApi.get_filtered_employee_inbox_data(name, status, read_status, 1, appType);
+
+            if (seq !== inboxListFetchSeq) return;
             
             const data = response.data;
             if (response.status === 200 && data?.STATUS === 'SUCCESSFUL') {
@@ -207,7 +251,8 @@ const InboxViewModel = (set, get) => ({
                     isLoadingInbox: false,
                     currentPage: 1
                 })
-            } else if (response.status === 200 && data.STATUS === 'ERROR') {
+            } else if (response.status === 200 && data?.STATUS === 'ERROR') {
+                if (seq !== inboxListFetchSeq) return;
                 set({
                     InboxData: [],
                     hasMorePages: false,
@@ -216,12 +261,18 @@ const InboxViewModel = (set, get) => ({
                 })
             }
         } catch (error) {
-            set({
-                InboxData: [],
-                hasMorePages: false,
-                nextPageUrl: null,
-                isLoadingInbox: false
-            })
+            if (seq !== inboxListFetchSeq) return;
+            const hadStories = (get().InboxData || []).length > 0;
+            if (hadStories) {
+                set({ isLoadingInbox: false });
+            } else {
+                set({
+                    InboxData: [],
+                    hasMorePages: false,
+                    nextPageUrl: null,
+                    isLoadingInbox: false
+                })
+            }
         }
     },
 
@@ -744,7 +795,7 @@ const InboxViewModel = (set, get) => ({
     },
 
     // Check if accept/reject icons should be shown for a story
-    // Returns true only if: current user is receiver AND user is NOT Employee role
+    // Returns true if: current user is receiver (allows both admin and employee roles when ID matches)
     shouldShowAcceptRejectIcons: (story) => {
         if (!story || !story.users || !Array.isArray(story.users) || story.users.length === 0) {
             return false;
@@ -753,13 +804,6 @@ const InboxViewModel = (set, get) => ({
         // Get current user data
         const userData = getUserData();
         if (!userData || !userData.oneid) {
-            return false;
-        }
-
-        // Check if user is Employee role - don't show icons to employees
-        const userRole = userData.roleId || userData.roleDbId;
-        const isEmployee = userRole === 'Employee' || userRole === 'employee';
-        if (isEmployee) {
             return false;
         }
 
@@ -772,7 +816,22 @@ const InboxViewModel = (set, get) => ({
             return receiver === userReceiverId;
         });
 
-        // Only show icons if user is receiver AND not an Employee
+        // If user is not a receiver, don't show icons
+        if (!isReceiver) {
+            return false;
+        }
+
+        // Check if user is Employee role
+        const userRole = userData.roleId || userData.roleDbId;
+        const isEmployee = userRole === 'Employee' || userRole === 'employee';
+        
+        // For non-employees (admins), always show icons if they are receiver
+        if (!isEmployee) {
+            return true;
+        }
+
+        // For employees, only show icons if they are the specific receiver
+        // This allows employees to accept/reject when their oneid matches the receiver ID
         return isReceiver;
     },
 });

@@ -227,7 +227,19 @@ const Routers = () => {
                 <Navigate to="/dashboard" replace />
               )
             }
-          />
+          >
+            <Route index element={<EmpAttendance />} />
+            <Route
+              path="admin-individual-report"
+              element={
+                perm.attendanceAdmin ? (
+                  <IndividualAttendanceReport />
+                ) : (
+                  <Navigate to="/my-attendance" replace />
+                )
+              }
+            />
+          </Route>
           {showEmployeesAdmin && (
             <Route path="/employees/" element={<Employees />}>
               <Route path="all_employess" element={<AllEmployess />}>

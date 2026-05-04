@@ -19,12 +19,18 @@ export function useLiveBiometricDevices(enabled = true) {
   const query = useQuery({
     queryKey: [LIVE_BIOMETRIC_DEVICES_QUERY_KEY],
     queryFn: async () => {
-      const response = await attendanceApi.getLiveBiometricDevices();
-      const data = response?.data;
-      if (data?.STATUS === 'SUCCESSFUL' && data?.DB_DATA != null) {
-        return data.DB_DATA;
+      try {
+        const response = await attendanceApi.getLiveBiometricDevices();
+        const data = response?.data;
+        if (data?.STATUS === 'SUCCESSFUL' && data?.DB_DATA != null) {
+          return data.DB_DATA;
+        }
+        return defaultData;
+      } catch (error) {
+        // Handle CORS errors and other network issues gracefully
+        console.warn('Live biometric devices API call failed:', error?.message || 'Network error');
+        return defaultData;
       }
-      return defaultData;
     },
     enabled: Boolean(enabled),
     staleTime: LIVE_BIOMETRIC_CACHE_MS,

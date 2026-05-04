@@ -9,7 +9,7 @@ const InboxApiData = {
         return Inboxinstancemodeule.request({
             method: 'GET',
             url: `/api/v1/inbox/main_list_stories${params.toString() ? `?${params.toString()}` : ''}`,
-            timeout: 10000 // 10 second timeout
+            timeout: 30000
         })
     },
     get_filtered_inbox_data: function (name = '', status = null, read_status = null, page_no = 1, appType = null, limit = 20) {
@@ -31,7 +31,7 @@ const InboxApiData = {
         return Inboxinstancemodeule.request({
             method: 'GET',
             url: `/api/v1/inbox/main_list_stories?${params.toString()}`,
-            timeout: 10000 // 10 second timeout
+            timeout: 30000
         })
     },
     get_employee_stories: function (org_id, one_id, page_no = 1) {
@@ -47,7 +47,7 @@ const InboxApiData = {
         return Inboxinstancemodeule.request({
             method: 'GET',
             url: `/api/v1/inbox/employee_inbox_data?${params.toString()}`,
-            timeout: 10000 // 10 second timeout
+            timeout: 30000
         })
     },
     get_filtered_employee_inbox_data: function (name = '', status = null, read_status = null, page_no = 1, appType = null, limit = 20) {
@@ -69,7 +69,7 @@ const InboxApiData = {
         return Inboxinstancemodeule.request({
             method: 'GET',
             url: `/api/v1/inbox/employee_inbox_data?${params.toString()}`,
-            timeout: 10000 // 10 second timeout
+            timeout: 30000
         })
     },
     loadMoreStories: function (nextPageUrl) {

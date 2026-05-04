@@ -1,7 +1,64 @@
 import attendanceApi from "../../Model/Data/Attendance/Attendance"
 import employeesApi from "../../Model/Data/Employees/Employees"
 import InboxApiData from "../../Model/Data/inboxDate/InboxApiData"
-import { createApiKey, executeApiCall } from "../../services/__apiManager"
+
+/** Cache for attendance employee dropdowns (individual report, raw logs, etc.) — GET get_all_employee once per session. */
+let empSuggestionFullListCache = null
+let empSuggestionFetchPromise = null
+
+const normalizeSuggestionEmployees = (raw) => {
+    if (!Array.isArray(raw)) return []
+    return raw.map((row) => {
+        if (!row || typeof row !== "object") return row
+        const id = row.id != null ? String(row.id) : ""
+        const name = row.name != null ? String(row.name) : ""
+        return {
+            ...row,
+            id: id || row.id,
+            name,
+            emp_id: row.emp_id != null ? String(row.emp_id) : row.emp_id,
+            bio_id: row.bio_id != null ? row.bio_id : row.bio_id,
+        }
+    })
+}
+
+const fetchEmpSuggestionFullList = async () => {
+    if (empSuggestionFullListCache != null) return empSuggestionFullListCache
+    if (!empSuggestionFetchPromise) {
+        empSuggestionFetchPromise = employeesApi
+            .get_all_employeee()
+            .then((response) => {
+                const data = response?.data
+                if (response?.status === 200 && data?.STATUS === "SUCCESSFUL") {
+                    const list = Array.isArray(data.DB_DATA) ? data.DB_DATA : []
+                    empSuggestionFullListCache = normalizeSuggestionEmployees(list)
+                    return empSuggestionFullListCache
+                }
+                empSuggestionFullListCache = []
+                return empSuggestionFullListCache
+            })
+            .catch((err) => {
+                console.error("get_all_employee (attendance suggestions):", err)
+                empSuggestionFullListCache = []
+                return empSuggestionFullListCache
+            })
+            .finally(() => {
+                empSuggestionFetchPromise = null
+            })
+    }
+    return empSuggestionFetchPromise
+}
+
+const applyActiveStatusOnly = (fullList, searchData = {}) => {
+    let list = Array.isArray(fullList) ? fullList : []
+    if (searchData.emp_status === "active") {
+        list = list.filter((e) => {
+            const s = e?.emp_status ?? e?.status ?? "active"
+            return s === "active" || s === 1 || s === "1"
+        })
+    }
+    return list
+}
 
 const attendanceViewModel = (set, get) => ({
     allLateComers: [],
@@ -235,19 +292,15 @@ const attendanceViewModel = (set, get) => ({
         }
     },
 
-    empSuggestionListAtt: async () => {
-        const apiKey = createApiKey('/api/v1/employees/employee/get_all_employee', {});
+    /** Loads employees via GET …/employee/get_all_employee (not POST /employees). Full list in store; UIs filter by name/ID locally. */
+    empSuggestionListAtt: async (searchData = {}) => {
         try {
-            const response = await executeApiCall(apiKey, () => employeesApi.get_all_employeee())
-            const data = response.data
-
-            if (response.status === 200 && data.STATUS === "SUCCESSFUL") {
-                // Support both DB_DATA as array and DB_DATA.employees; include all employees (e.g. same name)
-                const list = Array.isArray(data.DB_DATA) ? data.DB_DATA : (data.DB_DATA?.employees || []);
-                set({ empListAtt: list })
-            }
+            const fullList = await fetchEmpSuggestionFullList()
+            const list = applyActiveStatusOnly(fullList, searchData)
+            set({ empListAtt: list })
         } catch (err) {
             console.log(err)
+            set({ empListAtt: [] })
         }
     },
 

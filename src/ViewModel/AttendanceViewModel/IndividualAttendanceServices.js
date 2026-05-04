@@ -10,6 +10,7 @@ import { useLocation, useNavigate } from "react-router"
 import useStore from "../../Store/store";
 import { formatAttendanceData } from "../../services/__attendanceDataFormatter";
 import { getUserData } from "../../Authentication/jwt_decode";
+import { isFullAdmin } from "../../Authentication/roleHelpers";
 
 
 const useIndividualAttendanceServices = ()=>{
@@ -271,11 +272,10 @@ const useIndividualAttendanceServices = ()=>{
 
     const getEmpSuggestedList  = async(data)=>{
         try{
-            // Always call the API to get fresh data
-            await empSuggestionListAtt();
+            // Call the API with search parameters
+            await empSuggestionListAtt(data);
             // The empListAtt will be updated via the useEffect above
-            
-            // The empListAtt will be updated via the useEffect above, which will trigger the filtering
+            // which will trigger the filtering
 
         }catch(err){
             console.error(err)
@@ -365,13 +365,13 @@ const useIndividualAttendanceServices = ()=>{
 
     }
 
-
     // Load all employees on component mount
     useEffect(() => {
         const loadEmployees = async () => {
             try {
-                // Call the API function
+                // Call the API function without search parameters to get all employees
                 await empSuggestionListAtt();
+                console.log('Employees loaded successfully');
             } catch (error) {
                 console.error('Error loading employees:', error);
             }
@@ -380,26 +380,13 @@ const useIndividualAttendanceServices = ()=>{
         loadEmployees();
     }, []);
 
-    // Watch for changes in empListAtt and update local state
+    // Keep local empList in sync with store (GET get_all_employee + client filter in empSuggestionListAtt)
     useEffect(() => {
-        if (empListAtt && empListAtt.length > 0) {
-            // console.log('empListAtt updated, setting employee list:', empListAtt.length);
-            
-            // Apply any current search filter if there's a search term
-            let filteredEmployees = empListAtt;
-            
-            // You can add search filtering here if needed
-            // if (searchingEmpValue.searchTerm) {
-            //     filteredEmployees = empListAtt.filter(emp => 
-            //         emp.name && emp.name.toLowerCase().includes(searchingEmpValue.searchTerm.toLowerCase())
-            //     );
-            // }
-            
-            setSearchingEmpValue((prevState)=>({
-                ...prevState,
-                empList: filteredEmployees
-            }))
-        }
+        if (!Array.isArray(empListAtt)) return;
+        setSearchingEmpValue((prevState) => ({
+            ...prevState,
+            empList: empListAtt,
+        }));
     }, [empListAtt]);
 
     useEffect(()=>{
@@ -410,9 +397,13 @@ const useIndividualAttendanceServices = ()=>{
         
         // Only call API if we have a valid employee ID and we're on the correct page
         // Add additional check to prevent multiple calls for the same employee
-        if (searchingEmpValue.empId && 
-            !searchingEmpValue.fromEmp && 
-            location.pathname.includes('individual-attendance') &&
+        const onIndividualReportRoute =
+            location.pathname.includes("individual-attendance") ||
+            location.pathname.includes("/my-attendance/admin-individual-report");
+
+        if (searchingEmpValue.empId &&
+            !searchingEmpValue.fromEmp &&
+            onIndividualReportRoute &&
             searchingEmpValue.empId !== null) {
            /// console.log('Calling gettingAttendanceData...');
             gettingAttendanceData();
@@ -813,9 +804,14 @@ const useIndividualAttendanceServices = ()=>{
         
         settingcalendarEmp({value:data.id, label:data.name})
 
-        setTimeout(()=>{
-            navigation('/attendance/individual-attendance/individual_attendance_report');
-        }, 200)
+        const user = getUserData();
+        const roleId = user?.roleId || "Employee";
+        const reportPath = isFullAdmin(roleId)
+            ? "/attendance/individual-attendance/individual_attendance_report"
+            : "/my-attendance/admin-individual-report";
+        setTimeout(() => {
+            navigation(reportPath);
+        }, 200);
     }
     
 
@@ -848,7 +844,11 @@ const useIndividualAttendanceServices = ()=>{
             },
             chartData:[] // Reset to empty array
         }))
-        navigation('/employees/all_employess')
+        if (location.pathname.includes("/my-attendance/")) {
+            navigation("/my-attendance");
+        } else {
+            navigation("/employees/all_employess");
+        }
 
     }
 

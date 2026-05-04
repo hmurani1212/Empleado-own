@@ -3,6 +3,7 @@ import {
   SidebarTabsContainer,
   SIDEBAR_TAB_ID_ATTENDANCE_SELF,
   SIDEBAR_TAB_ID_ATTENDANCE_ADMIN,
+  SIDEBAR_TAB_ID_ADMIN_ATTENDANCE_EMP,
 } from './data'
 import { NavLink, useLocation } from 'react-router-dom'
 import useSideMenu from './sideMenuServices'
@@ -20,10 +21,12 @@ const SideMenu = (props) => {
     if (!tabUrl || tabUrl === '#') return false;
     if (tabUrl === '/') return location.pathname === '/';
     if (tabId === SIDEBAR_TAB_ID_ATTENDANCE_SELF && tabUrl === '/my-attendance') {
-      return (
-        location.pathname === '/my-attendance' ||
-        location.pathname.startsWith('/my-attendance/')
-      );
+      const p = location.pathname;
+      if (p.includes('admin-individual-report')) return false;
+      return p === '/my-attendance' || p === '/my-attendance/';
+    }
+    if (tabId === SIDEBAR_TAB_ID_ADMIN_ATTENDANCE_EMP) {
+      return location.pathname.includes('admin-individual-report');
     }
     if (tabId === SIDEBAR_TAB_ID_ATTENDANCE_ADMIN && tabUrl === '/attendance') {
       const p = location.pathname;

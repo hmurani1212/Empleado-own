@@ -28,10 +28,13 @@ const useAdminIcons = role === 'Admin';
 export const SIDEBAR_TAB_ID_ATTENDANCE_SELF = 2;
 /** Sidebar tab id: admin attendance management — routes to `/attendance`. */
 export const SIDEBAR_TAB_ID_ATTENDANCE_ADMIN = 10;
+/** Employee-shell: individual / team attendance report — routes to `/my-attendance/admin-individual-report` (same permission gate as tab 10). */
+export const SIDEBAR_TAB_ID_ADMIN_ATTENDANCE_EMP = 27;
 
 export const SidebarTabs = [
     { id: 1, tabName: 'Dashboard', icon: useAdminIcons ? <BsSpeedometer2 /> : <GoHomeFill />, roles: ['Admin', 'Employee', 'Branch_Admin', 'Department_Admin'] },
     { id: SIDEBAR_TAB_ID_ATTENDANCE_SELF, tabName: 'Attendance', icon: <FaUserCheck />, roles: ['Employee', 'Branch_Admin', 'Department_Admin'] },
+    { id: SIDEBAR_TAB_ID_ADMIN_ATTENDANCE_EMP, tabName: 'Admin Attendance', icon: <BiSolidUserCheck />, roles: [] },
     { id: 3, tabName: 'Employees', icon: <HiUser />, roles: ['Admin'] },
     { id: 4, tabName: 'Departments', icon: <HiUserGroup />, roles: ['Admin', 'Department_Admin'] },
     { id: 5, tabName: 'Branches', icon: <BsFillBuildingFill />, roles: ['Admin', 'Branch_Admin'] },
@@ -61,6 +64,7 @@ export const SidebarTabs = [
 export const SidebarTabsContainer = [
     { id: 1, tabUrl: '/' },
     { id: SIDEBAR_TAB_ID_ATTENDANCE_SELF, tabUrl: '/my-attendance' },
+    { id: SIDEBAR_TAB_ID_ADMIN_ATTENDANCE_EMP, tabUrl: '/my-attendance/admin-individual-report' },
     { id: 3, tabUrl: '/employees/all_employess' },
     { id: 4, tabUrl: '/departments' },
     { id: 5, tabUrl: '/branches' },

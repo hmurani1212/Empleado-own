@@ -7,6 +7,7 @@ const useCustomFormService = ()=>{
     const [approvalFlowValue, setApprovalFlowSerivce] = useState({
         show:false,
         currentFlow:{},
+        currentAssignedFlow: "",
         approvalFlowList:[],
         approvalFlowId:null,
         loading:false,
@@ -21,21 +22,50 @@ const useCustomFormService = ()=>{
         formType: null // 'leave', 'time_adjustment', 'loan', etc.
     })
 
+    const resolveCurrentAssignedFlow = (formData, responseData) => {
+        const normalizedLabel = String(formData?.form_label || '').toUpperCase()
+        const normalizedName = String(formData?.form_name || '').toUpperCase()
+        const isTimeAdjustment =
+            normalizedLabel.includes('TIME_ADJUSTMENT') ||
+            normalizedName.includes('TIME ADJUSTMENT')
+        const isLeave =
+            normalizedLabel.includes('LEAVE') ||
+            normalizedName.includes('LEAVE')
+
+        if (isTimeAdjustment) {
+            return responseData?.Current_TimeAdjustment_approvel_flow || ""
+        }
+        if (isLeave) {
+            return responseData?.Current_Leave_approvel_flow || ""
+        }
+        return responseData?.Current_approvel_flow || ""
+    }
+
     const viewAssignAF = async(data)=>{
         setAssignAFLoadingId(data.id || data._id)
+        setApprovalFlowSerivce((prevState)=>({
+            ...prevState,
+            currentFlow: data,
+            currentAssignedFlow: "",
+            approvalFlowList: [],
+            approvalFlowId: null,
+            show: true,
+        }))
         try{
-            // Call gettingCustomForm to get approval flow templates
             const response = await formApprovalApi.getApprovalFlowList()
             console.log('Approval Flow Templates response:', response)
             const responseData = response.data 
             
             if(response.status === 200 && responseData.STATUS === "SUCCESSFUL"){
-                const approvalFlowTemplates = responseData.DB_DATA
+                const approvalFlowTemplates = Array.isArray(responseData.DB_DATA) ? responseData.DB_DATA : []
+                const currentAssignedFlow = resolveCurrentAssignedFlow(data, responseData)
+
                 console.log('Approval Flow Templates:', approvalFlowTemplates)
                 
                 setApprovalFlowSerivce((prevState)=>({
                     ...prevState,
-                    approvalFlowList: approvalFlowTemplates
+                    approvalFlowList: approvalFlowTemplates,
+                    currentAssignedFlow: currentAssignedFlow || "",
                 }))
             }else{
                 const error = responseData.ERROR_DESCRIPTION 
@@ -47,17 +77,12 @@ const useCustomFormService = ()=>{
         } finally {
             setAssignAFLoadingId(null)
         }
-        
-        setApprovalFlowSerivce((prevState)=>({
-            ...prevState,
-            currentFlow: data,
-            show:true
-        }))
     }
     const toggleAssignAF = ()=>{
         setApprovalFlowSerivce((prevState)=>({
             ...prevState,
             show:false,
+            currentAssignedFlow: "",
             approvalFlowId:null
         }))
     }

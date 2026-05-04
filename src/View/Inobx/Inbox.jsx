@@ -239,9 +239,14 @@ const Inbox = () => {
 
   // Reference to the inbox list scroll container to maintain scroll position
   const inboxListRef = useRef(null);
+  // Avoid double main_list_stories: mount effect + this effect both used to call StoryLisyAll with no filters
+  const skipSearchEffectInitialLoadAllRef = useRef(true);
 
   useEffect(() => {
-    StoryLisyAll();
+    // Only fetch inbox data if it's not already loaded and not currently loading
+    if (!InboxData || InboxData.length === 0) {
+      StoryLisyAll();
+    }
   }, []);
 
   // Reset current story status when selectedStory or story_link changes
@@ -293,8 +298,16 @@ const Inbox = () => {
       const hasReadStatus = readStatusFilter !== null;
       const hasTypeFilter = readTypeFilter !== null;
 
+      if (hasSearch || hasReadStatus || hasTypeFilter) {
+        skipSearchEffectInitialLoadAllRef.current = false;
+      }
+
       if (!hasSearch && !hasReadStatus && !hasTypeFilter) {
-        // If no filters are applied, load all data
+        // If no filters: first run is handled by the mount effect (or Header prefetch) — do not fire a second list request
+        if (skipSearchEffectInitialLoadAllRef.current) {
+          skipSearchEffectInitialLoadAllRef.current = false;
+          return;
+        }
         if (!isCancelled) {
           await StoryLisyAll();
         }
@@ -1265,7 +1278,7 @@ const Inbox = () => {
                   })()
                 ) : (
                   // Non-admin users (Employees) - show Accept/Reject if they are the receiver
-                  // BUT: If user's oneid matches receiver, show ONLY view icon (user is the initiator)
+                  // Allow employees to accept/reject when their oneid matches the receiver ID
                   (() => {
                     // Check if user is receiver - ensure selectedStory exists
                     if (!selectedStory) {
@@ -1276,7 +1289,7 @@ const Inbox = () => {
                     const matchedUser = getUserReceiverInfo(selectedStory);
                     
                     // Check if current user's oneid matches the receiver
-                    // If it matches, user is the initiator (they created the request), so show only view icon
+                    // If it matches, user is authorized to accept/reject this application
                     const userReceiverId = userOneId ? `ID${String(userOneId)}` : null;
                     const isUserReceiver = matchedUser && userReceiverId && matchedUser.receiver === userReceiverId;
                     
@@ -1297,11 +1310,50 @@ const Inbox = () => {
                       );
                     }
                     
-                    // If user's oneid matches receiver, show ONLY view icon (user is the initiator)
+                    // If user's oneid matches receiver, they can accept/reject (authorized employee)
                     if (isUserReceiver) {
-                      return (
-                        <div className="flex items-center gap-3">
-                           <motion.button
+                      // Get status from the matched user's type_base_info
+                      const userStatus = matchedUser?.type_base_info?.trim() || '';
+                      const isPending = userStatus === 'PENDING';
+                      const isAccepted = userStatus === 'ACCEPTED';
+                      const isRejected = userStatus === 'REJECTED';
+                      
+                      if (isPending) {
+                        return (
+                          <div className="flex items-center gap-2">
+                             <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
+                                onClick={() => handleViewApplication(selectedStory)}
+                                title="View Application"
+                              >
+                                <HiOutlineEye className="w-5 h-5" />
+                              </motion.button>
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-green-600 hover:text-green-700 bg-green-50/80 hover:bg-green-100 backdrop-blur-sm rounded-xl shadow-sm border border-green-100/50 transition-all" 
+                              onClick={() => handleApprove(selectedStory.story_id)}
+                              title="Approve"
+                            >
+                              <HiCheckCircle className="w-5 h-5" />
+                            </motion.button>
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="p-2 text-red-600 hover:text-red-700 bg-red-50/80 hover:bg-red-100 backdrop-blur-sm rounded-xl shadow-sm border border-red-100/50 transition-all" 
+                              onClick={() => handleReject(selectedStory.story_id)}
+                              title="Reject"
+                            >
+                              <HiXCircle className="w-5 h-5" />
+                            </motion.button>
+                          </div>
+                        );
+                      } else if (isAccepted) {
+                        return (
+                          <div className="flex items-center gap-3">
+                            <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
@@ -1310,21 +1362,16 @@ const Inbox = () => {
                             >
                               <HiOutlineEye className="w-5 h-5" />
                             </motion.button>
-                        </div>
-                      );
-                    }
-                    
-                    // Get status from the matched user's type_base_info (not the story's type_base_info)
-                    const userStatus = matchedUser?.type_base_info?.trim() || '';
-                    const isPending = userStatus === 'PENDING';
-                    const isAccepted = userStatus === 'ACCEPTED';
-                    const isRejected = userStatus === 'REJECTED';
-                    
-                    // If user is receiver (but not the initiator) and their status is PENDING, show Accept/Reject buttons
-                    if (isPending) {
-                      return (
-                        <div className="flex items-center gap-2">
-                           <motion.button
+                            <div className="px-3 py-1.5 bg-green-50/80 border border-green-100/50 rounded-xl flex items-center gap-2">
+                              <BsCheckCircleFill className="w-4 h-4 text-green-600" />
+                              <span className="text-xs font-medium text-green-700">Accepted</span>
+                            </div>
+                          </div>
+                        );
+                      } else if (isRejected) {
+                        return (
+                          <div className="flex items-center gap-3">
+                            <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
@@ -1333,82 +1380,27 @@ const Inbox = () => {
                             >
                               <HiOutlineEye className="w-5 h-5" />
                             </motion.button>
-                          <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="p-2 text-green-600 hover:text-green-700 bg-green-50/80 hover:bg-green-100 backdrop-blur-sm rounded-xl shadow-sm border border-green-100/50 transition-all" 
-                            onClick={() => handleApprove(selectedStory.story_id)}
-                            title="Approve"
-                          >
-                            <HiCheckCircle className="w-5 h-5" />
-                          </motion.button>
-                          <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="p-2 text-red-600 hover:text-red-700 bg-red-50/80 hover:bg-red-100 backdrop-blur-sm rounded-xl shadow-sm border border-red-100/50 transition-all" 
-                            onClick={() => handleReject(selectedStory.story_id)}
-                            title="Reject"
-                          >
-                            <HiXCircle className="w-5 h-5" />
-                          </motion.button>
-                        </div>
-                      );
+                            <div className="px-3 py-1.5 bg-red-50/80 border border-red-100/50 rounded-xl flex items-center gap-2">
+                              <BsXCircleFill className="w-4 h-4 text-red-600" />
+                              <span className="text-xs font-medium text-red-700">Rejected</span>
+                            </div>
+                          </div>
+                        );
+                      }
                     }
                     
-                    // If user's status is ACCEPTED, show accepted badge
-                    if (isAccepted) {
-                      return (
-                        <div className="flex items-center gap-2">
-                           <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
-                              onClick={() => handleViewApplication(selectedStory)}
-                              title="View Application"
-                            >
-                              <HiOutlineEye className="w-5 h-5" />
-                            </motion.button>
-                          <span className="bg-green-50/80 backdrop-blur-sm text-green-700 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-green-200/50 shadow-sm flex items-center gap-1.5">
-                            <BsCheckCircleFill className="text-green-500 text-[12px]" />
-                            ACCEPTED
-                          </span>
-                        </div>
-                      );
-                    }
-                    
-                    // If user's status is REJECTED, show rejected badge
-                    if (isRejected) {
-                      return (
-                        <div className="flex items-center gap-2">
-                           <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
-                              onClick={() => handleViewApplication(selectedStory)}
-                              title="View Application"
-                            >
-                              <HiOutlineEye className="w-5 h-5" />
-                            </motion.button>
-                          <span className="bg-red-50/80 backdrop-blur-sm text-red-700 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-red-200/50 shadow-sm flex items-center gap-1.5">
-                            <BsXCircleFill className="text-red-500 text-[12px]" />
-                            REJECTED
-                          </span>
-                        </div>
-                      );
-                    }
-                    
-                    // Default: only show view button
+                    // Default fallback - show only view button for non-receivers
                     return (
                       <div className="flex items-center gap-3">
-                         <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
-                              onClick={() => handleViewApplication(selectedStory)}
-                              title="View Application"
-                            >
-                              <HiOutlineEye className="w-5 h-5" />
-                            </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 backdrop-blur-sm rounded-xl shadow-sm border border-blue-100/50 transition-all"
+                          onClick={() => handleViewApplication(selectedStory)}
+                          title="View Application"
+                        >
+                          <HiOutlineEye className="w-5 h-5" />
+                        </motion.button>
                       </div>
                     );
                   })()

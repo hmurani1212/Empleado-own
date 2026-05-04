@@ -19,7 +19,7 @@ import useRawAttendanceLog from "../../ViewModel/AttendanceViewModel/rawAttendan
 import useTrackPolicy from "../../ViewModel/AttendanceViewModel/trackPolicyServices";
 import RawAttendanceLog from "./RawAttendanceLog";
 import TrackPolicy from "./TrackPolicy";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import MonthlyWorkingHoursChart from "./MonthlyWorkingHoursChart";
 import { Card, CardBody } from "@material-tailwind/react";
 import { attendanceColorData } from "../../services/__attendanceServices";
@@ -127,7 +127,8 @@ const pickEmployeeFromList = (empList, empIdSelect) => {
         String(emp.id) === sel ||
         String(emp.emp_id) === sel ||
         String(emp.bio_id) === sel ||
-        String(emp.employee_id) === sel
+        String(emp.employee_id) === sel ||
+        (emp.oneid != null && String(emp.oneid) === sel)
     ) || null
   );
 };
@@ -157,6 +158,10 @@ const getBranchLabel = (emp) => {
 
 const IndividualAttendanceReport = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const attendanceHubPath = location.pathname.includes("/my-attendance/")
+    ? "/my-attendance"
+    : "/attendance";
   const months = getAllMonths();
   const years = getAllYears();
   const {
@@ -209,12 +214,15 @@ const IndividualAttendanceReport = () => {
           const empId = String(emp.id || "");
           const empBioId = String(emp.bio_id || "");
           const empEmpId = String(emp.emp_id || "");
+          const empOneId =
+            emp.oneid != null && emp.oneid !== "" ? String(emp.oneid) : "";
 
           return (
             empName.includes(search) ||
             empId.includes(search) ||
             empBioId.includes(search) ||
-            empEmpId.includes(search)
+            empEmpId.includes(search) ||
+            (empOneId && empOneId.includes(search))
           );
         })
         .sort((a, b) => {
@@ -225,6 +233,7 @@ const IndividualAttendanceReport = () => {
               String(emp.id || ""),
               String(emp.emp_id || ""),
               String(emp.bio_id || ""),
+              emp.oneid != null && emp.oneid !== "" ? String(emp.oneid) : "",
               String(emp.name || "").toLowerCase(),
             ];
 
@@ -728,7 +737,7 @@ const IndividualAttendanceReport = () => {
               ) : (
                 <CustomButton
                   title="Back"
-                  onClick={() => navigate("/attendance")}
+                  onClick={() => navigate(attendanceHubPath)}
                 />
               )}
           </div>
