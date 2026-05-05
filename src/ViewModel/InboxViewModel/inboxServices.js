@@ -6,7 +6,6 @@ const useInboxServives = () => {
     const StoryLisyAll = useStore((state) => state.getEmployeesAll);
     const markAllInboxAsRead = useStore((state) => state.markAllInboxAsRead);
     const markInboxStoriesAsRead = useStore((state) => state.markInboxStoriesAsRead);
-    const getFilteredInboxData = useStore((state) => state.getFilteredInboxData);
     const loadMoreInboxData = useStore((state) => state.loadMoreInboxData);
     const hasMorePages = useStore((state) => state.hasMorePages);
     const isLoadingMoreInbox = useStore((state) => state.isLoadingMoreInbox);
@@ -154,7 +153,6 @@ const useInboxServives = () => {
         markAllInboxAsRead,
         markInboxStoriesAsRead,
         InboxData,
-        getFilteredInboxData,
         loadMoreInboxData: handleLoadMoreInbox,
         hasMorePages,
         isLoadingMoreInbox,

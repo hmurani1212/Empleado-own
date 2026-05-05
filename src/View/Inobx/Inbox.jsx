@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import useStore from "../../Store/store";
 import useInboxServives from "../../ViewModel/InboxViewModel/inboxServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { BiSearch } from "react-icons/bi";
@@ -103,7 +104,6 @@ const Inbox = () => {
     markAllInboxAsRead,
     markInboxStoriesAsRead,
     InboxData,
-    getFilteredInboxData,
     loadMoreInboxData,
     hasMorePages,
     isLoadingMoreInbox,
@@ -239,14 +239,19 @@ const Inbox = () => {
 
   // Reference to the inbox list scroll container to maintain scroll position
   const inboxListRef = useRef(null);
-  // Avoid double main_list_stories: mount effect + this effect both used to call StoryLisyAll with no filters
-  const skipSearchEffectInitialLoadAllRef = useRef(true);
 
   useEffect(() => {
     // Only fetch inbox data if it's not already loaded and not currently loading
     if (!InboxData || InboxData.length === 0) {
       StoryLisyAll();
     }
+  }, []);
+
+  // Drop accumulated list (load-more) when leaving inbox; next visit loads page 1 again
+  useEffect(() => {
+    return () => {
+      useStore.getState().resetInboxListSession();
+    };
   }, []);
 
   // Reset current story status when selectedStory or story_link changes
@@ -288,59 +293,30 @@ const Inbox = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Handle search and filter with request cancellation
-  useEffect(() => {
-    let isCancelled = false;
-    
-    const performSearch = async () => {
-      const trimmedSearch = debouncedSearchTerm.trim();
-      const hasSearch = trimmedSearch !== "";
-      const hasReadStatus = readStatusFilter !== null;
-      const hasTypeFilter = readTypeFilter !== null;
-
-      if (hasSearch || hasReadStatus || hasTypeFilter) {
-        skipSearchEffectInitialLoadAllRef.current = false;
-      }
-
-      if (!hasSearch && !hasReadStatus && !hasTypeFilter) {
-        // If no filters: first run is handled by the mount effect (or Header prefetch) — do not fire a second list request
-        if (skipSearchEffectInitialLoadAllRef.current) {
-          skipSearchEffectInitialLoadAllRef.current = false;
-          return;
-        }
-        if (!isCancelled) {
-          await StoryLisyAll();
-        }
-        return;
-      }
-
-      // Perform filtered search with the selected app_type
-      if (!isCancelled) {
-        await getFilteredInboxData(
-          trimmedSearch,
-          null,
-          readStatusFilter,
-          readTypeFilter
-        );
-      }
-    };
-
-    performSearch();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [debouncedSearchTerm, readStatusFilter, readTypeFilter]);
+  // Search / read / type filters are applied client-side on InboxData so "Load more" (e.g. 60 items) is preserved
 
   // Update filtered data when InboxData changes
   useEffect(() => {
     let filteredData = InboxData || [];
 
-    // Apply local search filter if needed
+    // Apply local search filter if needed (matches name + title; does not refetch or shrink loaded pages)
     if (debouncedSearchTerm.trim() !== "") {
-      filteredData = filteredData.filter(story =>
-        (story.emp_name || story.full_name || story.initiator_name || story.name || story.user_name || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-      );
+      const q = debouncedSearchTerm.toLowerCase();
+      filteredData = filteredData.filter((story) => {
+        const hay = [
+          story.emp_name,
+          story.full_name,
+          story.initiator_name,
+          story.name,
+          story.user_name,
+          story.title,
+          story.subject,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(q);
+      });
     }
 
     // Apply local read status filter: use receiver in users, or story-level read_status when users is empty (API format)
@@ -799,31 +775,12 @@ const Inbox = () => {
       </div>
 
       <div className="flex-1 min-h-0 p-3 md:p-6 overflow-hidden flex flex-col relative z-10">
-      <AnimatePresence mode="wait">
-      {/* Application Info Full Page View */}
-      {showApplicationInfo && selectedApplicationData ? (
-        <motion.div 
-          key="application-info"
-          initial={{ opacity: 0, y: 20, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.98 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="h-full bg-white/80 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl border border-white/50 relative"
-        >
-          <ApplicationInfo
-            data={application_data}
-            isLoading={isLoadingApplicationDetails}
-            onClose={handleCloseApplicationInfo}
-            applicationType={story_status}
-          />
-        </motion.div>
-      ) : (
-        /* Regular Inbox Layout */
+      {/* Relative wrapper: inbox grid stays mounted under Application Info overlay so list scroll is preserved */}
+      <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden w-full">
         <motion.div 
           key="inbox-layout"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
           className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full flex-1 min-h-0"
         >
           {/* Left Column - Inbox List */}
@@ -1464,8 +1421,26 @@ const Inbox = () => {
               </motion.div>
           )}
         </motion.div>
-          )}
-      </AnimatePresence>
+        <AnimatePresence>
+          {showApplicationInfo && selectedApplicationData ? (
+            <motion.div
+              key="application-info-overlay"
+              initial={{ opacity: 0, y: 16, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.99 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="absolute inset-0 z-[100] flex min-h-0 flex-col overflow-hidden rounded-2xl border border-white/50 bg-white/95 shadow-2xl backdrop-blur-xl"
+            >
+              <ApplicationInfo
+                data={application_data}
+                isLoading={isLoadingApplicationDetails}
+                onClose={handleCloseApplicationInfo}
+                applicationType={story_status}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
       </div>
     </div>
   );

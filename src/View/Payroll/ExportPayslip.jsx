@@ -141,6 +141,20 @@ const PAYSLIP_TRAILING_COLUMNS = [
 const PAYSLIP_DEDUCTIONS_COLUMNS = [
   { key: 'incomeTax', header: 'Income Tax', pdfHeader: 'Tax', width: 12, hideWhenAllZero: true },
   { key: 'eobi', header: 'EOBI', pdfHeader: 'EOBI', width: 10, hideWhenAllZero: true },
+  {
+    key: 'calculatedLateDeduction',
+    header: 'calculated_late_deduction',
+    pdfHeader: 'calc_late_ded',
+    width: 20,
+    hideWhenAllZero: false,
+  },
+  {
+    key: 'calculatedAbsenteeDeduction',
+    header: 'calculated_absentee_deduction',
+    pdfHeader: 'calc_abs_ded',
+    width: 24,
+    hideWhenAllZero: false,
+  },
   { key: 'provident', header: 'Provident Fund', pdfHeader: 'PF', width: 16, hideWhenAllZero: true },
   { key: 'bikeLoan', header: 'Bike Loan', pdfHeader: 'Bike', width: 11, hideWhenAllZero: true },
   { key: 'loan', header: 'Loan', pdfHeader: 'Loan', width: 11, hideWhenAllZero: true },
@@ -435,6 +449,12 @@ const mapPayslipToExportRow = (payslip, index, columnMeta) => {
     eobi: toExportNum(
       payslip.eobi_record?.emp_contribution ?? payslip.eobi_record?.amount ?? payslip.eobi
     ),
+    calculatedLateDeduction: toExportNum(
+      payslip.calculated_late_deduction ?? payslip.attendance_summary?.calculated_late_deduction
+    ),
+    calculatedAbsenteeDeduction: toExportNum(
+      payslip.calculated_absentee_deduction ?? payslip.attendance_summary?.calculated_absentee_deduction
+    ),
     provident: extractProvidentFundTotal(payslip.provident_fund),
     bikeLoan: toExportNum(payslip.bike_loan),
     loan: toExportNum(payslip.loan_deduction),
@@ -696,7 +716,22 @@ const ExportPayslip = () => {
     if (
       col.key.startsWith('earn_dyn_') ||
       col.key.startsWith('ded_dyn_') ||
-      ['taDa', 'overtimeAmount', 'overtimeMinutes', 'fuel', 'lateMins', 'incomeTax', 'eobi', 'provident', 'bikeLoan', 'loan', 'medAllowance', 'increments'].includes(col.key)
+      [
+        'taDa',
+        'overtimeAmount',
+        'overtimeMinutes',
+        'fuel',
+        'lateMins',
+        'incomeTax',
+        'eobi',
+        'calculatedLateDeduction',
+        'calculatedAbsenteeDeduction',
+        'provident',
+        'bikeLoan',
+        'loan',
+        'medAllowance',
+        'increments',
+      ].includes(col.key)
     ) {
       return formatOptionalNum(val)
     }
@@ -758,6 +793,8 @@ const ExportPayslip = () => {
         'lateMins',
         'incomeTax',
         'eobi',
+        'calculatedLateDeduction',
+        'calculatedAbsenteeDeduction',
         'provident',
         'bikeLoan',
         'loan',
@@ -957,6 +994,8 @@ const ExportPayslip = () => {
         'lateMins',
         'incomeTax',
         'eobi',
+        'calculatedLateDeduction',
+        'calculatedAbsenteeDeduction',
         'provident',
         'bikeLoan',
         'loan',

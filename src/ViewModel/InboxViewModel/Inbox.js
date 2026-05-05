@@ -182,6 +182,27 @@ const InboxViewModel = (set, get) => ({
         set({ InboxData: updatedInboxData });
     },
 
+    /** Clears accumulated inbox list (load-more buffer). Call when leaving /inbox so the next visit starts from page 1. */
+    resetInboxListSession: () => {
+        set({
+            InboxData: [],
+            currentPage: 1,
+            hasMorePages: false,
+            nextPageUrl: null,
+            isLoadingMoreInbox: false,
+            isLoadingInbox: false,
+            currentFilters: { name: '', status: null, read_status: null, app_type: null },
+            selectedStory: null,
+            showChat: false,
+            chatMessages: [],
+            messagePage: 1,
+            hasMoreMessages: false,
+            messageScrollPosition: 0,
+            story_link: [],
+            type_ref: null,
+        });
+    },
+
     markInboxStoriesAsRead: (storyIds) => {
         if (!storyIds || storyIds.length === 0) return;
         const idSet = new Set(storyIds.map(String));
