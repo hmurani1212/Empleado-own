@@ -76,9 +76,12 @@ const TalentPool = () => {
 
   const containerBlur = useCallback((setIx) => ({
     onBlur: (e) => {
-      const next = e.relatedTarget;
-      if (next && e.currentTarget.contains(next)) return;
-      setIx(false);
+      // Delay the blur handling to avoid conflicts with click events
+      setTimeout(() => {
+        const next = e.relatedTarget;
+        if (next && e.currentTarget.contains(next)) return;
+        setIx(false);
+      }, 100);
     },
   }), []);
 
@@ -164,14 +167,14 @@ const TalentPool = () => {
         <div className="bg-white rounded-xl shadow-soft p-5 border border-gray-100">
           <div className="flex flex-wrap items-center gap-4">
             <div>
-              <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">
+              <label className="text-customBlack-100 text-[12px] px-2 font-medium font-Urbanist">
                 All Labels
               </label>
               <Select
                 ref={labelRef}
                 labelProps={{ className: "hidden" }}
                 color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-customBlack-100 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 value={filters.label_id}
                 onChange={(val) => {
                   handleFilterChange("label_id", val);
@@ -217,7 +220,7 @@ const TalentPool = () => {
                 ref={labelRef}
                 labelProps={{ className: "hidden" }}
                 color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-customBlack-100 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 value={String(filters.label_id) || undefined}
                 onChange={(val) => {
                   handleFilterChange("label_id", val);
@@ -238,14 +241,14 @@ const TalentPool = () => {
             </div>
 
             <div>
-              <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">
+              <label className="text-customBlack-100 text-[12px] px-2 font-medium font-Urbanist">
                 Gender Filter
               </label>
               <Select
                 ref={genderRef}
                 labelProps={{ className: "hidden" }}
                 color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-customBlack-100 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 value={filters.gender ? String(filters.gender) : ""}
                 onChange={(val) => {
                   handleFilterChange("gender", val);
@@ -281,7 +284,7 @@ const TalentPool = () => {
                 ref={genderRef}
                 labelProps={{ className: "hidden" }}
                 color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-customBlack-100 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 value={genderSelectValue}
                 onChange={(val) => {
                   handleFilterChange("gender", val);
@@ -297,7 +300,7 @@ const TalentPool = () => {
                     );
                   }
                   return (
-                    <span className="text-[12px] font-Urbanist text-[#474747]">
+                    <span className="text-[12px] font-Urbanist text-customBlack-100">
                       &nbsp;
                     </span>
                   );
@@ -313,7 +316,7 @@ const TalentPool = () => {
             </div>
 
             <div>
-              <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">
+              <label className="text-customBlack-100 text-[12px] px-2 font-medium font-Urbanist">
                 Age From
               </label>
               <Select
@@ -326,14 +329,12 @@ const TalentPool = () => {
                   handleFilterChange("age_from", val);
                   setAgeFromIx(false);
                 }}
-                selected={(optionEl) => {
+                selected={() => {
                   if (hasAgeFromValue) {
                     return (
-                      optionEl ?? (
-                        <span className="text-[12px] font-Urbanist font-medium text-[#474747]">
-                          {filters.age_from}
-                        </span>
-                      )
+                      <span className="text-[12px] font-Urbanist font-medium text-customBlack-100">
+                        {filters.age_from}
+                      </span>
                     );
                   }
                   if (showAgeFromPh) {
@@ -344,7 +345,7 @@ const TalentPool = () => {
                     );
                   }
                   return (
-                    <span className="text-[12px] font-Urbanist text-[#474747]">
+                    <span className="text-[12px] font-Urbanist text-customBlack-100">
                       &nbsp;
                     </span>
                   );
@@ -354,36 +355,34 @@ const TalentPool = () => {
                 containerProps={containerBlur(setAgeFromIx)}
               >
                 <Option value="">Age From</Option>
-                {age.map((a, i) => (
-                  <Option key={i} value={String(a)}>
-                    {a}
+                {age.map((ageValue) => (
+                  <Option key={`age-from-${ageValue}`} value={String(ageValue)}>
+                    {ageValue}
                   </Option>
                 ))}
               </Select>
             </div>
 
             <div>
-              <label className="text-[#474747] text-[12px] px-2 font-medium font-Urbanist">
+              <label className="text-customBlack-100 text-[12px] px-2 font-medium font-Urbanist">
                 Age To
               </label>
               <Select
                 ref={ageToRef}
                 labelProps={{ className: "hidden" }}
                 color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-[#474747] w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-customBlack-100 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 value={filters.age_to ? String(filters.age_to) : ""}
                 onChange={(val) => {
                   handleFilterChange("age_to", val);
                   setAgeToIx(false);
                 }}
-                selected={(optionEl) => {
+                selected={() => {
                   if (hasAgeToValue) {
                     return (
-                      optionEl ?? (
-                        <span className="text-[12px] font-Urbanist font-medium text-[#474747]">
-                          {filters.age_to}
-                        </span>
-                      )
+                      <span className="text-[12px] font-Urbanist font-medium text-customBlack-100">
+                        {filters.age_to}
+                      </span>
                     );
                   }
                   if (showAgeToPh) {
@@ -394,7 +393,7 @@ const TalentPool = () => {
                     );
                   }
                   return (
-                    <span className="text-[12px] font-Urbanist text-[#474747]">
+                    <span className="text-[12px] font-Urbanist text-customBlack-100">
                       &nbsp;
                     </span>
                   );
@@ -404,9 +403,9 @@ const TalentPool = () => {
                 containerProps={containerBlur(setAgeToIx)}
               >
                 <Option value="">Age To</Option>
-                {age.map((a, i) => (
-                  <Option key={i} value={String(a)}>
-                    {a}
+                {age.map((ageValue) => (
+                  <Option key={`age-to-${ageValue}`} value={String(ageValue)}>
+                    {ageValue}
                   </Option>
                 ))}
               </Select>
@@ -427,7 +426,7 @@ const TalentPool = () => {
                   <tr>
                     {talentHead?.map((head, i) => (
                       <th key={i} className="bg-[#F8F9FA] p-4">
-                        <Typography className="font-medium leading-none text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
+                        <Typography className="font-medium leading-none text-customBlack-100 font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
                           {head}
                         </Typography>
                       </th>
@@ -464,20 +463,20 @@ const TalentPool = () => {
                                 }
                                 alt={ele?.candidate?.name || "Profile"}
                               />
-                              <Typography className="font-medium text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] capitalize">
+                              <Typography className="font-medium text-customBlack-100 font-Urbanist text-[clamp(12px,0.9vw,14px)] capitalize">
                                 {ele?.candidate?.name || "--"}
                               </Typography>
                             </div>
                           </td>
 
                           <td className={classes}>
-                            <Typography className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
+                            <Typography className="font-normal text-customBlack-100 font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
                               {ele?.candidate?.city?.city_name || "--"}
                             </Typography>
                           </td>
 
                           <td className={classes}>
-                            <Typography className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
+                            <Typography className="font-normal text-customBlack-100 font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
                               {ele?.candidate?.cv_name ? (
                                 <a
                                   href={`https://hiring.veevotech.com/candidate_cv/${ele.candidate.cv_folder}/${ele.candidate.cv_name}`}
@@ -493,13 +492,13 @@ const TalentPool = () => {
                           </td>
 
                           <td className={classes}>
-                            <Typography className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
+                            <Typography className="font-normal text-customBlack-100 font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
                               {ele.talent || "--"}
                             </Typography>
                           </td>
 
                           <td className={classes}>
-                            <Typography className="font-normal text-[#474747] font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
+                            <Typography className="font-normal text-customBlack-100 font-Urbanist text-[clamp(12px,0.9vw,14px)] whitespace-nowrap capitalize">
                               {ele.unix_timestamp
                                 ? formatTimestamp(ele.unix_timestamp)
                                 : "--"}

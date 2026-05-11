@@ -81,19 +81,18 @@ const Hire = ({ data }) => {
         </div>
         <div className="flex items-center gap-3">
           <Button
-            variant="outlined"
-            className="border-slate-300 text-slate-700 capitalize p-3 font-medium shadow-sm"
+            className="bg-[#8bc9f8] capitalize px-4 py-2.5 font-medium shadow-sm h-10 min-w-[140px] text-white"
             onClick={() => setCareerSettingsOpen(true)}
           >
-            Settings
+            Career Page Settings
           </Button>
           <CustomButton
-            className="bg-[#8bc9f8] capitalize p-2 font-medium justify-center shadow-sm"
+            className="bg-[#8bc9f8] capitalize px-4 py-2.5 font-medium justify-center shadow-sm h-10 min-w-[140px]"
             onClick={createVacancy}
             title="Announce new Vacancy"
           />
           <Link to={`https://hiring.veevotech.com/company/${org_id}/veevo-tech`} target="_blank">
-            <Button className="bg-[#0ACF97] capitalize p-3 font-medium shadow-sm cursor-pointer">
+            <Button className="bg-[#8bc9f8] capitalize px-4 py-2.5 font-medium shadow-sm h-10 min-w-[140px] text-white cursor-pointer">
               Career Page
             </Button>
           </Link>

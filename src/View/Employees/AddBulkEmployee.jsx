@@ -545,9 +545,27 @@ const AddBulkEmployee = () => {
       return dateString;
     }
 
+    // Convert from yyyy/mm/dd or yyyy.mm.dd to yyyy-mm-dd
+    if (/^\d{4}[\/.]\d{2}[\/.]\d{2}$/.test(dateString)) {
+      const parts = dateString.split(/[/.]/);
+      const year = parts[0];
+      const month = parts[1];
+      const day = parts[2];
+      return `${year}-${month}-${day}`;
+    }
+
     // Convert from dd/mm/yyyy to yyyy-mm-dd
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
       const parts = dateString.split('/');
+      const day = parts[0];
+      const month = parts[1];
+      const year = parts[2];
+      return `${year}-${month}-${day}`;
+    }
+
+    // Convert from dd-mm-yyyy to yyyy-mm-dd
+    if (/^\d{2}-\d{2}-\d{4}$/.test(dateString)) {
+      const parts = dateString.split('-');
       const day = parts[0];
       const month = parts[1];
       const year = parts[2];
@@ -560,6 +578,15 @@ const AddBulkEmployee = () => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // If it's a Date object or parseable date string, normalize to yyyy-mm-dd
+    const parsed = new Date(dateString);
+    if (!Number.isNaN(parsed.getTime())) {
+      const year = parsed.getFullYear();
+      const month = String(parsed.getMonth() + 1).padStart(2, '0');
+      const day = String(parsed.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     }
 
@@ -786,10 +813,27 @@ const AddBulkEmployee = () => {
             };
             // Map any "Mobile No (...)" variant to "Mobile No" (e.g. Excel template with example number)
             const getMappedHeader = (normalized, original) => {
-              const raw = (original !== undefined && original !== null) ? original.toString().replace(/\n/g, ' ').trim() : '';
+              const raw = (original !== undefined && original !== null) ? original.toString().replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : '';
+              const candidate = normalized || raw;
+
+              // Accept all "Mobile No (...)" variants
               if (/^Mobile No(\s*\([^)]*\))?$/i.test(normalized) || /^Mobile No(\s*\([^)]*\))?$/i.test(raw)) {
                 return 'Mobile No';
               }
+
+              // Accept DOB headers with extra wrappers/labels, e.g. "Date of Birth (Date of Birth(yyyy-mm-dd))"
+              if (/date\s*of\s*birth/i.test(candidate) && /(yyyy[\s/-]*mm[\s/-]*dd)/i.test(candidate)) {
+                return 'Date of Birth';
+              }
+
+              // Accept joining date/data variants with wrappers/line breaks
+              if (/(joining\s*(date|data))/i.test(candidate) && /(yyyy[\s/-]*mm[\s/-]*dd)/i.test(candidate)) {
+                return 'Joining Data';
+              }
+              if (/^joining\s*(date|data)$/i.test(candidate)) {
+                return 'Joining Data';
+              }
+
               return headerMapping[normalized] || headerMapping[raw] || normalized;
             };
 
@@ -1021,11 +1065,29 @@ const AddBulkEmployee = () => {
   // Validate imported data
   const validateData = (data) => {
     const errors = [];
-
-    // Core required fields that must always be present
-    const coreRequiredFields = [
-      'Employee ID', 'Full Name', 'Father Name', 'Email'
+    const requiredFields = [
+      'Employee ID',
+      'Full Name',
+      'Father Name',
+      'Email',
+      'Mobile No',
+      'Date of Birth',
+      'Joining Data',
+      'Branch',
+      'Department'
     ];
+
+    const fieldLabelMap = {
+      'Employee ID': 'employee ID',
+      'Full Name': 'full name',
+      'Father Name': 'father name',
+      'Email': 'email',
+      'Mobile No': 'mobile no',
+      'Date of Birth': 'date of birth',
+      'Joining Data': 'joining date',
+      'Branch': 'branch',
+      'Department': 'department'
+    };
 
     data.forEach((row, index) => {
       // Check if this row has any meaningful data (not just empty strings)
@@ -1039,23 +1101,22 @@ const AddBulkEmployee = () => {
 
       // Only validate rows that have actual data
       if (hasData) {
-        // Check core required fields
-        coreRequiredFields.forEach(field => {
-          if (!row[field] || row[field].toString().trim() === '') {
-            errors.push(`Row ${index + 1}: ${field} is required`);
+        requiredFields.forEach(field => {
+          const value = row[field];
+          if (!value || value.toString().trim() === '') {
+            const fieldLabel = fieldLabelMap[field] || field.toLowerCase();
+            errors.push(`Please enter the ${fieldLabel} of row ${index + 1}`);
           }
         });
 
-        // Check essential fields for data rows
-        const essentialFields = [
-          'Mobile No', 'Date of Birth', 'Joining Data', 'Branch', 'Department'
-        ];
-
-        essentialFields.forEach(field => {
-          if (row.hasOwnProperty(field) && (!row[field] || row[field].toString().trim() === '')) {
-            errors.push(`Row ${index + 1}: ${field} is required when adding employee data`);
+        // Validate email format when provided
+        const emailValue = row['Email'] ? row['Email'].toString().trim() : '';
+        if (emailValue) {
+          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailPattern.test(emailValue)) {
+            errors.push(`Please enter a valid email of row ${index + 1}`);
           }
-        });
+        }
       }
     });
 
