@@ -1,5 +1,6 @@
-import { Button, Input, Radio, Typography } from "@material-tailwind/react";
+import { Button, Input } from "@material-tailwind/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import hireApi from "../../Model/Data/Hire/Hire_2";
 import { showToast } from "../../Components/Toaster/Toaster";
@@ -11,6 +12,30 @@ const COMPANY_ABOUT_MAX_LENGTH = 448;
 const CARD_HEADING_MAX_LENGTH = 20;
 const CARD_BODY_MAX_LENGTH = 66;
 const SMALL_CARD_TEXT_MAX_LENGTH = 12;
+
+/** Full-screen preview gallery (remote assets). Buttons open viewer one image at a time; Prev/Next cycles all four. */
+const CAREER_PREVIEW_SLIDES = [
+  {
+    id: "image_1",
+    label: "image_1 — Hero & header",
+    src: "https://elephant.veevotech.com/files/4d7a41314e6a4d34/1_d07d1b94a38e7e8.png",
+  },
+  {
+    id: "image_2",
+    label: "image_2 — Vacancies",
+    src: "https://elephant.veevotech.com/files/4d7a41314e6a4d35/1_866cb32d0387000.png",
+  },
+  {
+    id: "image_3",
+    label: "image_3 — Why / About",
+    src: "https://elephant.veevotech.com/files/4d7a41314e6a4d35/1_866cb32d0387000.png",
+  },
+  {
+    id: "image_4",
+    label: "image_4 — About section",
+    src: "https://elephant.veevotech.com/files/4d7a41314e6a5177/1_380c67eb3198944.png",
+  },
+];
 
 function isValidUrl(value) {
   if (value == null || typeof value !== "string") return false;
@@ -49,73 +74,394 @@ function normalizeHexColor(value, fallback = "#1E40AF") {
   return fallback;
 }
 
-function normalizeCompanyYear(value) {
-  const raw = String(value ?? "").trim();
-  if (!raw) return "";
-  const num = Number(raw);
-  if (!Number.isNaN(num)) {
-    // Already a year like 2025
-    if (num >= 1900 && num <= 3000) return String(Math.trunc(num));
-    // Unix timestamp seconds/ms -> year
-    const date = new Date(num > 1e12 ? num : num * 1000);
-    if (!Number.isNaN(date.getTime())) return String(date.getUTCFullYear());
-  }
-  // Fallback for date-like strings
-  const parsed = new Date(raw);
-  if (!Number.isNaN(parsed.getTime())) return String(parsed.getUTCFullYear());
-  return "";
+/** Editor-only; payload stores `<bulit>…</bulit>` instead of HTML `<ul>`. */
+const ABOUT_BULLET_UL_STYLE = "list-style-type:disc;padding-left:1.25rem;";
+
+/**
+ * Payload bullets: `<bulit>line html</bulit><bulit>…</bulit>` (italic e.g. `<bulit>this is <i>text</i> ok</bulit>`).
+ * Legacy: `<lst disc><ln>…</ln></lst>`.
+ */
+function deserializeAboutListsAndSizes(customFormat) {
+  if (!customFormat) return "";
+  let converted = String(customFormat);
+
+  converted = converted.replace(
+    /<lst\s+([\w-]+)>([\s\S]*?)<\/lst>/gi,
+    (_m, _type, inner) => {
+      const items = [];
+      inner.replace(/<ln>([\s\S]*?)<\/ln>/gi, (_, body) => {
+        items.push(`<li>${body}</li>`);
+        return "";
+      });
+      return `<ul data-lst="disc" style="${ABOUT_BULLET_UL_STYLE}">${items.join("")}</ul>`;
+    }
+  );
+
+  converted = converted.replace(
+    /<bulit>[\s\S]*?(?:<\/bulit>|<\/built>|<\/builit>)(?:\s*<bulit>[\s\S]*?(?:<\/bulit>|<\/built>|<\/builit>))*/gi,
+    (block) => {
+      const items = [];
+      const row = /<bulit>([\s\S]*?)(<\/bulit>|<\/built>|<\/builit>)/gi;
+      let m;
+      while ((m = row.exec(block)) !== null) {
+        items.push(`<li>${m[1]}</li>`);
+      }
+      return `<ul data-lst="disc" style="${ABOUT_BULLET_UL_STYLE}">${items.join("")}</ul>`;
+    }
+  );
+
+  converted = converted.replace(
+    /<(\d+)px>(.*?)<\/\1px>/gi,
+    '<span style="font-size: $1px">$2</span>'
+  );
+
+  return converted;
 }
 
-const NOTE_COPY = (
-  <div className="space-y-3 text-sm text-slate-700 leading-relaxed">
-    <p className="font-medium text-slate-800">Note</p>
-    <p>
-      These settings control how candidates interact with your public hiring
-      career page.
-    </p>
-    <ul className="list-disc pl-5 space-y-2">
-      <li>
-        <span className="font-medium">OneID login:</span> When enabled,
-        candidates sign in with OneID and complete their profile before they can
-        apply.
-      </li>
-      <li>
-        <span className="font-medium">Contact form:</span> When enabled,
-        candidates can contact your organization from the hiring page. Provide
-        your support email address.
-      </li>
-    </ul>
-  </div>
-);
+function serializeAboutLists(html) {
+  if (!html || typeof document === "undefined") return html;
+  const wrap = document.createElement("div");
+  wrap.innerHTML = html;
+  const uls = [...wrap.querySelectorAll("ul")];
+  uls.forEach((ul) => {
+    const lis = [...ul.querySelectorAll(":scope > li")];
+    const frag = document.createDocumentFragment();
+    lis.forEach((li) => {
+      const t = document.createElement("template");
+      t.innerHTML = `<bulit>${li.innerHTML}</bulit>`;
+      const node = t.content.firstChild;
+      if (node) frag.appendChild(node);
+    });
+    ul.replaceWith(frag);
+  });
+  return wrap.innerHTML;
+}
 
-function BoolSettingRow({ label, namePrefix, value, onChange }) {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3 min-w-0">
-      <Typography className="text-slate-800 font-medium text-sm min-w-0 sm:pr-2">
-        {label}
-      </Typography>
-      <div className="flex flex-wrap items-center gap-6 shrink-0">
-        <Radio
-          color="blue"
-          name={`${namePrefix}_yes`}
-          label="Yes"
-          checked={value === true}
-          onChange={() => onChange(true)}
-          className="text-sm"
-          labelProps={{ className: "text-slate-700" }}
-        />
-        <Radio
-          color="blue"
-          name={`${namePrefix}_no`}
-          label="No"
-          checked={value === false}
-          onChange={() => onChange(false)}
-          className="text-sm"
-          labelProps={{ className: "text-slate-700" }}
-        />
-      </div>
-    </div>
+function mergeRootLevelUls(editor) {
+  const uls = [...editor.querySelectorAll(":scope > ul")];
+  if (uls.length <= 1) return;
+  const first = uls[0];
+  for (let i = 1; i < uls.length; i++) {
+    const u = uls[i];
+    while (u.firstChild) first.appendChild(u.firstChild);
+    u.remove();
+  }
+}
+
+function isLiEmpty(li) {
+  if (!li) return true;
+  const t = li.innerText.replace(/\u200b/g, "").replace(/\n/g, "").trim();
+  return t.length === 0;
+}
+
+/** Keep at most one empty <li> before the first line that has text; collapse all-empty lists to one row. */
+function pruneLeadingStackedEmptyLis(ul) {
+  if (!ul) return;
+  const lis = [...ul.querySelectorAll(":scope > li")];
+  if (lis.length === 0) return;
+  let firstNonEmpty = -1;
+  for (let i = 0; i < lis.length; i++) {
+    if (!isLiEmpty(lis[i])) {
+      firstNonEmpty = i;
+      break;
+    }
+  }
+  if (firstNonEmpty === -1) {
+    while (ul.querySelector(":scope > li:nth-child(2)")) {
+      ul.removeChild(ul.lastElementChild);
+    }
+    return;
+  }
+  if (firstNonEmpty <= 1) return;
+  for (let i = 0; i < firstNonEmpty - 1; i++) {
+    ul.firstElementChild?.remove();
+  }
+}
+
+function isEditorMeaningfullyEmpty(editor) {
+  if (!editor) return true;
+  const t = editor.innerText.replace(/\uFEFF/g, "").replace(/\n/g, "").trim();
+  return t.length === 0;
+}
+
+function placeCaretAtStartOf(node) {
+  const sel = window.getSelection();
+  if (!sel || !node) return;
+  const r = document.createRange();
+  if (node.nodeType === Node.TEXT_NODE) {
+    r.setStart(node, 0);
+  } else {
+    let n = node.firstChild;
+    while (n && n.nodeType !== Node.TEXT_NODE && n.firstChild) n = n.firstChild;
+    if (n && n.nodeType === Node.TEXT_NODE) r.setStart(n, 0);
+    else if (node.firstChild) r.setStart(node.firstChild, 0);
+    else r.setStart(node, 0);
+  }
+  r.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+function placeCaretAtEndOfNode(node) {
+  const sel = window.getSelection();
+  if (!sel || !node) return;
+  const r = document.createRange();
+  r.selectNodeContents(node);
+  r.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(r);
+}
+
+function rootUl(editor) {
+  return editor.querySelector(":scope > ul");
+}
+
+/** Remove bullet from the line containing `li`: unwrap to a plain `<div>` (toggle off). */
+function unwrapBulletLine(editor, li) {
+  const ul = li.parentElement;
+  if (!ul || ul.tagName !== "UL" || !editor.contains(ul)) return;
+
+  const allLis = [...ul.querySelectorAll(":scope > li")];
+  const idx = allLis.indexOf(li);
+  if (idx === -1) return;
+
+  const beforeLis = allLis.slice(0, idx);
+  const afterLis = allLis.slice(idx + 1);
+
+  const block = document.createElement("div");
+  while (li.firstChild) block.appendChild(li.firstChild);
+  if (block.childNodes.length === 0) block.appendChild(document.createElement("br"));
+  li.remove();
+
+  const parent = ul.parentNode;
+  if (!parent) return;
+
+  if (beforeLis.length === 0 && afterLis.length === 0) {
+    ul.replaceWith(block);
+  } else {
+    const frag = document.createDocumentFragment();
+    if (beforeLis.length > 0) {
+      const u1 = document.createElement("ul");
+      u1.setAttribute("data-lst", "disc");
+      u1.setAttribute("style", ABOUT_BULLET_UL_STYLE);
+      beforeLis.forEach((n) => u1.appendChild(n));
+      frag.appendChild(u1);
+    }
+    frag.appendChild(block);
+    if (afterLis.length > 0) {
+      const u2 = document.createElement("ul");
+      u2.setAttribute("data-lst", "disc");
+      u2.setAttribute("style", ABOUT_BULLET_UL_STYLE);
+      afterLis.forEach((n) => u2.appendChild(n));
+      frag.appendChild(u2);
+    }
+    parent.insertBefore(frag, ul);
+    ul.remove();
+  }
+
+  mergeRootLevelUls(editor);
+  placeCaretAtStartOf(block);
+}
+
+/**
+ * Bullets: plain text → add bullet line(s). Caret already inside `<li>` → remove bullet from that line (toggle off).
+ */
+function insertAboutBullet(editor) {
+  if (!editor || typeof document === "undefined") return;
+  editor.focus();
+  mergeRootLevelUls(editor);
+  const sel = window.getSelection();
+  if (!sel?.rangeCount || !editor.contains(sel.anchorNode)) return;
+  const range = sel.getRangeAt(0);
+
+  const getLi = () => {
+    let n = range.startContainer;
+    if (n.nodeType === Node.TEXT_NODE) n = n.parentElement;
+    return n?.closest?.("li");
+  };
+
+  const finishUl = (ul) => {
+    if (!ul) return;
+    ul.setAttribute("data-lst", "disc");
+    ul.setAttribute("style", ABOUT_BULLET_UL_STYLE);
+    pruneLeadingStackedEmptyLis(ul);
+    mergeRootLevelUls(editor);
+  };
+
+  const li = getLi();
+  if (li && editor.contains(li)) {
+    const ul = li.parentElement;
+    if (ul?.tagName === "UL" && editor.contains(ul)) {
+      unwrapBulletLine(editor, li);
+      return;
+    }
+  }
+
+  const ulExisting = rootUl(editor);
+  if (ulExisting && !ulExisting.contains(range.startContainer)) {
+    const rel = ulExisting.compareDocumentPosition(range.startContainer);
+    const caretAfterUl = (rel & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+    if (caretAfterUl) {
+      const afterR = document.createRange();
+      afterR.setStart(range.startContainer, range.startOffset);
+      afterR.setEndAfter(editor.lastChild);
+      if (!afterR.collapsed) {
+        const frag = afterR.extractContents();
+        const newLi = document.createElement("li");
+        newLi.appendChild(frag);
+        if (newLi.childNodes.length === 0) newLi.appendChild(document.createElement("br"));
+        ulExisting.appendChild(newLi);
+        placeCaretAtStartOf(newLi);
+      } else {
+        const lastLi = ulExisting.querySelector(":scope > li:last-child");
+        if (lastLi && isLiEmpty(lastLi)) {
+          placeCaretAtStartOf(lastLi);
+        } else {
+          const newLi = document.createElement("li");
+          newLi.appendChild(document.createElement("br"));
+          ulExisting.appendChild(newLi);
+          placeCaretAtStartOf(newLi);
+        }
+      }
+    } else {
+      const pre = document.createRange();
+      pre.selectNodeContents(editor);
+      pre.setEnd(range.startContainer, range.startOffset);
+      if (!pre.collapsed) {
+        const frag = pre.extractContents();
+        const firstLi = ulExisting.querySelector(":scope > li");
+        if (firstLi) {
+          firstLi.insertBefore(frag, firstLi.firstChild);
+          placeCaretAtStartOf(firstLi);
+        }
+      }
+    }
+    finishUl(ulExisting);
+    return;
+  }
+
+  if (!range.collapsed) {
+    const frag = range.extractContents();
+    const ul = document.createElement("ul");
+    ul.setAttribute("data-lst", "disc");
+    ul.setAttribute("style", ABOUT_BULLET_UL_STYLE);
+    const newLi = document.createElement("li");
+    newLi.appendChild(frag);
+    if (newLi.childNodes.length === 0) newLi.appendChild(document.createElement("br"));
+    ul.appendChild(newLi);
+    editor.appendChild(ul);
+    finishUl(ul);
+    placeCaretAtStartOf(newLi);
+    return;
+  }
+
+  if (isEditorMeaningfullyEmpty(editor)) {
+    while (editor.firstChild) editor.removeChild(editor.firstChild);
+    const ul = document.createElement("ul");
+    ul.setAttribute("data-lst", "disc");
+    ul.setAttribute("style", ABOUT_BULLET_UL_STYLE);
+    const lone = document.createElement("li");
+    lone.appendChild(document.createElement("br"));
+    ul.appendChild(lone);
+    editor.appendChild(ul);
+    finishUl(ul);
+    placeCaretAtStartOf(lone);
+    return;
+  }
+
+  const beforeR = document.createRange();
+  beforeR.selectNodeContents(editor);
+  beforeR.setEnd(range.startContainer, range.startOffset);
+  const beforeFrag = beforeR.cloneContents();
+
+  const afterR = document.createRange();
+  afterR.setStart(range.startContainer, range.startOffset);
+  afterR.selectNodeContents(editor);
+  const afterFrag = afterR.cloneContents();
+
+  while (editor.firstChild) editor.removeChild(editor.firstChild);
+
+  const ul = document.createElement("ul");
+  ul.setAttribute("data-lst", "disc");
+  ul.setAttribute("style", ABOUT_BULLET_UL_STYLE);
+  const li1 = document.createElement("li");
+  const li2 = document.createElement("li");
+  li1.appendChild(beforeFrag);
+  li2.appendChild(afterFrag);
+  if (li1.childNodes.length === 0) li1.appendChild(document.createElement("br"));
+  if (li2.childNodes.length === 0) li2.appendChild(document.createElement("br"));
+
+  const empty1 = isLiEmpty(li1);
+  const empty2 = isLiEmpty(li2);
+  let caretTarget = li2;
+
+  if (empty1 && empty2) {
+    li1.innerHTML = "";
+    li1.appendChild(document.createElement("br"));
+    ul.appendChild(li1);
+    caretTarget = li1;
+  } else if (empty1 && !empty2) {
+    /* Caret at start of text — one bullet row with all content (no empty first line) */
+    ul.appendChild(li2);
+    caretTarget = li2;
+  } else if (!empty1 && empty2) {
+    /* Caret at end — one bullet row with all content */
+    ul.appendChild(li1);
+    caretTarget = li1;
+  } else {
+    ul.appendChild(li1);
+    ul.appendChild(li2);
+    caretTarget = li2;
+  }
+
+  editor.appendChild(ul);
+  finishUl(ul);
+  if (caretTarget === li1 && !empty1 && empty2) {
+    placeCaretAtEndOfNode(li1);
+  } else {
+    placeCaretAtStartOf(caretTarget);
+  }
+}
+
+function convertToCustomFormat(html) {
+  if (!html) return "";
+  let converted = serializeAboutLists(html);
+
+  converted = converted.replace(/<strong>/gi, "<b>");
+  converted = converted.replace(/<\/strong>/gi, "</b>");
+  converted = converted.replace(/<em>/gi, "<i>");
+  converted = converted.replace(/<\/em>/gi, "</i>");
+  converted = converted.replace(/<strike>/gi, "<s>");
+  converted = converted.replace(/<\/strike>/gi, "</s>");
+  converted = converted.replace(/<del>/gi, "<s>");
+  converted = converted.replace(/<\/del>/gi, "</s>");
+
+  converted = converted.replace(
+    /<span[^>]*style="[^"]*font-weight:\s*bold[^"]*"[^>]*>(.*?)<\/span>/gi,
+    "<b>$1</b>"
   );
+  converted = converted.replace(
+    /<span[^>]*style="[^"]*font-style:\s*italic[^"]*"[^>]*>(.*?)<\/span>/gi,
+    "<i>$1</i>"
+  );
+  converted = converted.replace(
+    /<span[^>]*style="[^"]*text-decoration:\s*underline[^"]*"[^>]*>(.*?)<\/span>/gi,
+    "<u>$1</u>"
+  );
+  converted = converted.replace(
+    /<span[^>]*style="[^"]*text-decoration[^"]*line-through[^"]*"[^>]*>(.*?)<\/span>/gi,
+    "<s>$1</s>"
+  );
+  converted = converted.replace(
+    /<span[^>]*style="[^"]*font-size:\s*(\d+)px[^"]*"[^>]*>(.*?)<\/span>/gi,
+    "<$1px>$2</$1px>"
+  );
+
+  converted = converted.replace(/<span[^>]*>/gi, "");
+  converted = converted.replace(/<\/span>/gi, "");
+
+  return converted;
 }
 
 function normalizeLimitNoFromApi(value) {
@@ -125,7 +471,22 @@ function normalizeLimitNoFromApi(value) {
   return String(Math.min(999, Math.trunc(num)));
 }
 
+function convertCardBodyFromApi(customFormat) {
+  if (!customFormat) return "";
+  return String(customFormat).replace(
+    /<(\d+)px>(.*?)<\/\1px>/gi,
+    '<span style="font-size: $1px">$2</span>'
+  );
+}
+
 function stateFromHiringSetting(hs) {
+  const emptySmallCards = () => ({
+    card1: { value: "", visible: true },
+    card2: { value: "", visible: true },
+    card3: { value: "", visible: true },
+    card4: { value: "", visible: true },
+  });
+
   if (!hs || typeof hs !== "object") {
     return {
       oneidSetting: true,
@@ -135,7 +496,6 @@ function stateFromHiringSetting(hs) {
       sybHeading: "",
       image: "",
       headerColor: "#1E40AF",
-      companyTime: "",
       companyAbout: "",
       limitNo: "10",
       cards: [
@@ -143,12 +503,7 @@ function stateFromHiringSetting(hs) {
         { id: 2, heading: "", body: "", visible: true },
         { id: 3, heading: "", body: "", visible: true },
       ],
-      smallCardText: {
-        card1: "",
-        card2: "",
-        card3: "",
-        card4: "",
-      },
+      smallCardText: emptySmallCards(),
     };
   }
   const oneidSetting = !!hs.oneid_setting;
@@ -158,23 +513,12 @@ function stateFromHiringSetting(hs) {
     String(raw).trim() !== "" &&
     String(raw).trim().toLowerCase() !== "null";
 
-  // Convert custom format back to HTML for display
-  const convertFromCustomFormat = (customFormat) => {
-    if (!customFormat) return "";
-    let converted = customFormat;
-
-    // Convert <Xpx>text</Xpx> to <span style="font-size: Xpx">text</span>
-    converted = converted.replace(/<(\d+)px>(.*?)<\/\1px>/gi, '<span style="font-size: $1px">$2</span>');
-
-    return converted;
-  };
-
   // Load card data
   const cards = hs.card_data && Array.isArray(hs.card_data)
     ? hs.card_data.map((card, index) => ({
         id: index + 1,
         heading: card.heading || "",
-        body: convertFromCustomFormat(card.body || ""),
+        body: convertCardBodyFromApi(card.body || ""),
         visible: true,
       }))
     : [
@@ -191,12 +535,7 @@ function stateFromHiringSetting(hs) {
         card3: { value: hs.small_card_text.card3 || "", visible: true },
         card4: { value: hs.small_card_text.card4 || "", visible: true },
       }
-    : {
-        card1: { value: "", visible: true },
-        card2: { value: "", visible: true },
-        card3: { value: "", visible: true },
-        card4: { value: "", visible: true },
-      };
+    : emptySmallCards();
 
   return {
     oneidSetting,
@@ -211,9 +550,11 @@ function stateFromHiringSetting(hs) {
         : "",
     image: hs.image ? String(hs.image) : "",
     headerColor: normalizeHexColor(hs.header_color, "#1E40AF"),
-    companyTime: normalizeCompanyYear(hs.company_time),
     companyAbout: hs.company_about
-      ? convertFromCustomFormat(String(hs.company_about)).slice(0, COMPANY_ABOUT_MAX_LENGTH)
+      ? deserializeAboutListsAndSizes(String(hs.company_about)).slice(
+          0,
+          COMPANY_ABOUT_MAX_LENGTH
+        )
       : "",
     limitNo: normalizeLimitNoFromApi(hs.limit_no),
     cards,
@@ -233,8 +574,10 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
   const [sybHeading, setSybHeading] = useState("");
   const [image, setImage] = useState("");
   const [headerColor, setHeaderColor] = useState("#1E40AF");
-  const [companyTime, setCompanyTime] = useState("");
   const [companyAbout, setCompanyAbout] = useState("");
+  const [aboutPlainLength, setAboutPlainLength] = useState(0);
+  const [aboutEditorTick, setAboutEditorTick] = useState(0);
+  const [fontSizePick, setFontSizePick] = useState("12px");
   const [limitNo, setLimitNo] = useState("10");
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageFileInputRef = useRef(null);
@@ -253,6 +596,43 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     card3: { value: "", visible: true },
     card4: { value: "", visible: true },
   });
+
+  const [careerPreviewOpen, setCareerPreviewOpen] = useState(false);
+  const [careerPreviewFocus, setCareerPreviewFocus] = useState(0);
+
+  useEffect(() => {
+    if (!openDialog) setCareerPreviewOpen(false);
+  }, [openDialog]);
+
+  useEffect(() => {
+    if (!careerPreviewOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [careerPreviewOpen]);
+
+  useEffect(() => {
+    if (!careerPreviewOpen) return;
+    const len = CAREER_PREVIEW_SLIDES.length;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setCareerPreviewOpen(false);
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setCareerPreviewFocus((i) => (i - 1 + len) % len);
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setCareerPreviewFocus((i) => (i + 1) % len);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [careerPreviewOpen]);
 
   // Card handlers
   const handleCardHeadingChange = (id, value) => {
@@ -290,18 +670,56 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     }));
   };
 
-  // Rich text editor handlers - disabled for textarea
   const handleFormatText = (command, value = null) => {
-    // Rich text formatting is not available with textarea
-    // This is a temporary fix for the text direction issue
-    showToast("Rich text formatting is currently disabled to fix text direction issues.", "info");
+    if (aboutEditorRef.current) {
+      document.execCommand("styleWithCSS", false, true);
+
+      if (command === "fontSize") {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0 && !selection.isCollapsed) {
+          const range = selection.getRangeAt(0);
+          const selectedText = range.toString();
+          const span = document.createElement("span");
+          span.style.fontSize = value;
+          span.textContent = selectedText;
+          range.deleteContents();
+          range.insertNode(span);
+          range.setStartAfter(span);
+          range.setEndAfter(span);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          setCompanyAbout(aboutEditorRef.current.innerHTML);
+          setAboutPlainLength(aboutEditorRef.current.innerText?.length || 0);
+        }
+      } else {
+        document.execCommand(command, false, value);
+        setCompanyAbout(aboutEditorRef.current.innerHTML);
+        setAboutPlainLength(aboutEditorRef.current.innerText?.length || 0);
+      }
+    }
+  };
+
+  const handleInsertBullet = () => {
+    const ed = aboutEditorRef.current;
+    if (!ed) return;
+    insertAboutBullet(ed);
+    const len = ed.innerText?.length || 0;
+    if (len > COMPANY_ABOUT_MAX_LENGTH) {
+      showToast(
+        `About Company cannot exceed ${COMPANY_ABOUT_MAX_LENGTH} characters.`,
+        "error"
+      );
+      return;
+    }
+    setCompanyAbout(ed.innerHTML);
+    setAboutPlainLength(len);
   };
 
   const handleAboutInput = () => {
     if (aboutEditorRef.current) {
-      const textContent = aboutEditorRef.current.value || "";
-      
-      if (textContent.length > COMPANY_ABOUT_MAX_LENGTH) {
+      const plain = aboutEditorRef.current.innerText || "";
+
+      if (plain.length > COMPANY_ABOUT_MAX_LENGTH) {
         if (!aboutLimitToastShownRef.current) {
           showToast(
             `About Company cannot exceed ${COMPANY_ABOUT_MAX_LENGTH} characters.`,
@@ -312,71 +730,24 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
         return;
       }
       aboutLimitToastShownRef.current = false;
-      setCompanyAbout(textContent);
+      setCompanyAbout(aboutEditorRef.current.innerHTML);
+      setAboutPlainLength(plain.length);
     }
   };
 
-  // Convert HTML to custom format for database storage
-  const convertToCustomFormat = (html) => {
-    if (!html) return "";
-    let converted = html;
-
-    // Convert <strong> to <b>
-    converted = converted.replace(/<strong>/gi, '<b>');
-    converted = converted.replace(/<\/strong>/gi, '</b>');
-
-    // Convert <em> to <i>
-    converted = converted.replace(/<em>/gi, '<i>');
-    converted = converted.replace(/<\/em>/gi, '</i>');
-
-    // Convert <span style="font-weight: bold"> to <b>
-    converted = converted.replace(/<span[^>]*style="[^"]*font-weight:\s*bold[^"]*"[^>]*>(.*?)<\/span>/gi, '<b>$1</b>');
-
-    // Convert <span style="font-style: italic"> to <i>
-    converted = converted.replace(/<span[^>]*style="[^"]*font-style:\s*italic[^"]*"[^>]*>(.*?)<\/span>/gi, '<i>$1</i>');
-
-    // Convert <span style="font-size: Xpx"> to <Xpx>
-    converted = converted.replace(/<span[^>]*style="[^"]*font-size:\s*(\d+)px[^"]*"[^>]*>(.*?)<\/span>/gi, '<$1px>$2</$1px>');
-
-    // Convert inline style="font-weight: bold" to <b>
-    converted = converted.replace(/<[^>]+style="[^"]*font-weight:\s*bold[^"]*"[^>]*>/gi, (match) => {
-      const tag = match.match(/<(\w+)/)[1];
-      const content = match.replace(/<[^>]+>/gi, '');
-      return `<b>${content}</b>`;
-    });
-
-    // Convert inline style="font-style: italic" to <i>
-    converted = converted.replace(/<[^>]+style="[^"]*font-style:\s*italic[^"]*"[^>]*>/gi, (match) => {
-      const tag = match.match(/<(\w+)/)[1];
-      const content = match.replace(/<[^>]+>/gi, '');
-      return `<i>${content}</i>`;
-    });
-
-    // Remove any remaining span tags with empty styles
-    converted = converted.replace(/<span[^>]*>/gi, '');
-    converted = converted.replace(/<\/span>/gi, '');
-
-    return converted;
-  };
-
-  // Convert custom format back to HTML for display
-  const convertFromCustomFormat = (customFormat) => {
-    if (!customFormat) return "";
-    let converted = customFormat;
-
-    // Convert <Xpx>text</Xpx> to <span style="font-size: Xpx">text</span>
-    converted = converted.replace(/<(\d+)px>(.*?)<\/\1px>/gi, '<span style="font-size: $1px">$2</span>');
-
-    // Convert <b> to <strong> (or keep as <b>)
-    converted = converted.replace(/<b>/gi, '<b>');
-    converted = converted.replace(/<\/b>/gi, '</b>');
-
-    // Convert <i> to <em> (or keep as <i>)
-    converted = converted.replace(/<i>/gi, '<i>');
-    converted = converted.replace(/<\/i>/gi, '</i>');
-
-    return converted;
-  };
+  useEffect(() => {
+    if (!openDialog || loading) return;
+    if (aboutEditorRef.current) {
+      const raw = companyAbout || "";
+      aboutEditorRef.current.innerHTML = raw;
+      aboutEditorRef.current.querySelectorAll(":scope > ul").forEach(pruneLeadingStackedEmptyLis);
+      const cleaned = aboutEditorRef.current.innerHTML;
+      if (cleaned !== raw) {
+        setCompanyAbout(cleaned);
+      }
+      setAboutPlainLength(aboutEditorRef.current.innerText?.length || 0);
+    }
+  }, [openDialog, loading, aboutEditorTick]);
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
@@ -394,8 +765,8 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
         setSybHeading(next.sybHeading);
         setImage(next.image);
         setHeaderColor(next.headerColor);
-        setCompanyTime(next.companyTime);
         setCompanyAbout(next.companyAbout);
+        setAboutEditorTick((t) => t + 1);
         setLimitNo(next.limitNo);
         setCards(next.cards);
         setSmallCardText(next.smallCardText);
@@ -453,10 +824,8 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
         ? contactFormEmail.trim()
         : null;
 
-      // Convert company_about to custom format
       const companyAboutFormatted = convertToCustomFormat(companyAbout);
 
-      // Prepare card_data JSON
       const cardData = cards
         .filter(card => card.visible && (card.heading || card.body))
         .map(card => ({
@@ -480,7 +849,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
         syb_heading: String(sybHeading || "").trim(),
         image: String(image || "").trim(),
         header_color: normalizeHexColor(headerColor, "#1E40AF"),
-        company_time: normalizeCompanyYear(companyTime),
+        company_time: null,
         company_about: companyAboutFormatted
           .trim()
           .slice(0, COMPANY_ABOUT_MAX_LENGTH),
@@ -547,6 +916,23 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
           <p className="text-sm text-slate-500 py-6 text-center">Loading…</p>
         ) : (
           <div className="space-y-6">
+            <div className="bg-white p-5 rounded-xl border border-slate-200/80">
+              <p className="text-xs text-slate-500 mb-4">
+                Opens a full-screen preview over the whole page. The Career page settings form is hidden until you close the
+                preview (✕ or Escape). Use Prev / Next or arrow keys for images 1–4.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setCareerPreviewFocus(0);
+                  setCareerPreviewOpen(true);
+                }}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-center text-base font-semibold text-slate-800 shadow-sm transition-colors hover:bg-[#8bc9f8]/15 hover:border-[#8bc9f8]/50 sm:text-lg"
+              >
+                Career page layout reference
+              </button>
+            </div>
+
             {/* Settings Section */}
             <div className="bg-white p-5 rounded-xl">
               <h3 className="text-base font-semibold text-slate-800 mb-5 flex items-center gap-2">
@@ -643,9 +1029,14 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                 Branding & Appearance
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Company Image */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Company Logo</label>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Background company logo
+                  </label>
+                  <p className="text-xs text-slate-500">
+                    Wide image shown behind the career header (same field as before:
+                    <span className="font-mono"> image</span> in hiring settings).
+                  </p>
                   <input
                     ref={imageFileInputRef}
                     type="file"
@@ -653,27 +1044,32 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                     onChange={handleUploadImage}
                     className="hidden"
                   />
-                  <div className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg bg-slate-50">
-                    {image ? (
-                      <img
-                        src={image}
-                        alt="Company"
-                        className="h-16 w-16 rounded-lg border border-slate-200 object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="h-16 w-16 rounded-lg border-2 border-dashed border-slate-300 bg-slate-100 flex items-center justify-center shrink-0">
-                        <span className="text-xs text-slate-400">No image</span>
-                      </div>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outlined"
-                      className="border-slate-300 text-slate-700 normal-case"
-                      onClick={() => imageFileInputRef.current?.click()}
-                      disabled={uploadingImage}
-                    >
-                      {uploadingImage ? "Uploading..." : "Upload Logo"}
-                    </Button>
+                  <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
+                    <div className="relative h-32 sm:h-40 w-full">
+                      {image ? (
+                        <img
+                          src={image}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
+                          No background image
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent pointer-events-none" />
+                    </div>
+                    <div className="flex items-center justify-end gap-2 p-3 bg-slate-50 border-t border-slate-200">
+                      <Button
+                        size="sm"
+                        variant="outlined"
+                        className="border-slate-300 text-slate-700 normal-case"
+                        onClick={() => imageFileInputRef.current?.click()}
+                        disabled={uploadingImage}
+                      >
+                        {uploadingImage ? "Uploading…" : "Upload background image"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -724,26 +1120,6 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                     labelProps={{ className: "text-slate-700" }}
                   />
                 </div>
-
-                {/* Company Year */}
-                <div className="space-y-2">
-                  <Input
-                    type="number"
-                    label="Company Year"
-                    placeholder="2025"
-                    value={companyTime}
-                    onChange={(e) => {
-                      const raw = String(e.target.value || "");
-                      const digitsOnly = raw.replace(/\D/g, "").slice(0, 4);
-                      setCompanyTime(digitsOnly);
-                    }}
-                    min={1900}
-                    max={3000}
-                    className="text-slate-800"
-                    color="blue"
-                    labelProps={{ className: "text-slate-700" }}
-                  />
-                </div>
               </div>
             </div>
 
@@ -756,60 +1132,105 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">About Company</label>
+                  <p className="text-xs text-slate-500">
+                    One bullet style (disc). Use “• Bullets” on plain text to add a list; use it again with the
+                    caret on a bulleted line to remove that line’s bullet. Payload:{" "}
+                    <span className="font-mono text-[11px]">&lt;bulit&gt;…&lt;/bulit&gt;</span> per line,{" "}
+                    <span className="font-mono text-[11px]">&lt;i&gt;…&lt;/i&gt;</span> for italics.
+                  </p>
                   <div className="border border-slate-300 rounded-lg overflow-hidden">
-                    {/* Formatting Toolbar */}
-                    <div className="flex items-center gap-2 p-2 bg-slate-50 border-b border-slate-200">
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 p-2 bg-slate-50 border-b border-slate-200">
                       <button
                         type="button"
                         onMouseDown={(e) => {
                           e.preventDefault();
                           aboutEditorRef.current?.focus();
-                          handleFormatText('bold');
+                          handleFormatText("bold");
                         }}
-                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700"
+                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700 font-bold"
                         title="Bold"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h8a4 4 0 014 4 4 4 0 01-4 4H6z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 12h9a4 4 0 014 4 4 4 0 01-4 4H6z" />
-                        </svg>
+                        B
                       </button>
                       <button
                         type="button"
                         onMouseDown={(e) => {
                           e.preventDefault();
                           aboutEditorRef.current?.focus();
-                          handleFormatText('italic');
+                          handleFormatText("italic");
                         }}
-                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700"
+                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700 italic"
                         title="Italic"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 4h4m-2 0v16m-4 0h8" />
-                        </svg>
+                        I
                       </button>
-                      <div className="w-px h-6 bg-slate-300 mx-2"></div>
-                      <select
-                        onChange={(e) => handleFormatText('fontSize', e.target.value)}
-                        className="px-2 py-1 rounded border border-slate-300 text-sm text-slate-700 bg-white"
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          aboutEditorRef.current?.focus();
+                          handleFormatText("underline");
+                        }}
+                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700 underline"
+                        title="Underline"
                       >
-                        {[1, 2, 4, 6, 8, 9, 10, 11, 12, 14, 16, 18, 20].map(size => (
-                          <option key={size} value={`${size}px`} selected={size === 12}>{size}px</option>
+                        U
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          aboutEditorRef.current?.focus();
+                          handleFormatText("strikeThrough");
+                        }}
+                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700 line-through"
+                        title="Strikethrough"
+                      >
+                        S
+                      </button>
+                      <div className="w-px h-6 bg-slate-300 mx-1 hidden sm:block" />
+                      <select
+                        value={fontSizePick}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setFontSizePick(v);
+                          aboutEditorRef.current?.focus();
+                          if (v) handleFormatText("fontSize", v);
+                        }}
+                        className="px-2 py-1.5 rounded border border-slate-300 text-sm text-slate-700 bg-white max-w-[120px]"
+                      >
+                        <option value="">Font size</option>
+                        {[10, 11, 12, 14, 16, 18, 20, 24].map((size) => (
+                          <option key={size} value={`${size}px`}>
+                            {size}px
+                          </option>
                         ))}
                       </select>
+                      <div className="w-px h-6 bg-slate-300 mx-1 hidden sm:block" />
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleInsertBullet();
+                        }}
+                        className="px-3 py-1.5 rounded border border-slate-300 text-sm text-slate-700 bg-white hover:bg-slate-100"
+                        title="Add bullets on plain text; click again on a bullet line to remove it"
+                      >
+                        • Bullets
+                      </button>
                     </div>
-                    {/* Content Editable Div */}
-                    <textarea
+                    <div
                       ref={aboutEditorRef}
-                      value={companyAbout}
-                      onChange={handleAboutInput}
-                      placeholder="Write a short description about your company..."
-                      className="w-full px-4 py-3 text-sm text-slate-800 outline-none min-h-[100px] focus:border-[#8bc9f8] focus:ring-1 focus:ring-[#8bc9f8] resize-none"
-                      style={{ minHeight: '100px', direction: 'ltr', unicodeBidi: 'normal', textAlign: 'left' }}
+                      contentEditable
+                      suppressContentEditableWarning
+                      onInput={handleAboutInput}
+                      className="w-full px-4 py-3 text-sm text-slate-800 outline-none min-h-[120px] focus-visible:ring-1 focus-visible:ring-[#8bc9f8]"
+                      style={{ minHeight: "120px", direction: "ltr", unicodeBidi: "normal", textAlign: "left" }}
+                      aria-label="About company — rich text"
                     />
                   </div>
                   <p className="text-xs text-slate-500 text-right">
-                    {companyAbout.length}/{COMPANY_ABOUT_MAX_LENGTH}
+                    {aboutPlainLength}/{COMPANY_ABOUT_MAX_LENGTH} (plain text length)
                   </p>
                 </div>
               </div>
@@ -1067,16 +1488,96 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     </div>
   );
 
+  const previewSlide = CAREER_PREVIEW_SLIDES[careerPreviewFocus] ?? CAREER_PREVIEW_SLIDES[0];
+  const previewLen = CAREER_PREVIEW_SLIDES.length;
+
+  const careerPreviewModal =
+    typeof document !== "undefined" &&
+    careerPreviewOpen &&
+    createPortal(
+      <div
+        className="fixed inset-0 z-[99999] flex flex-col bg-black"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="career-preview-title"
+      >
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 py-3 text-white">
+          <h2 id="career-preview-title" className="min-w-0 flex-1 truncate font-poppins text-base font-semibold sm:text-lg">
+            {previewSlide.label}
+          </h2>
+          <span className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-sm tabular-nums text-white/90">
+            {careerPreviewFocus + 1} / {previewLen}
+          </span>
+          <button
+            type="button"
+            aria-label="Close preview"
+            className="shrink-0 rounded-lg p-2 text-white/90 transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/40"
+            onClick={() => setCareerPreviewOpen(false)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="relative flex min-h-0 flex-1 items-center justify-center px-2 py-2 sm:px-6">
+          <button
+            type="button"
+            aria-label="Previous image"
+            className="absolute left-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:left-4"
+            onClick={() =>
+              setCareerPreviewFocus((i) => (i - 1 + previewLen) % previewLen)
+            }
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <img
+            src={previewSlide.src}
+            alt={previewSlide.label}
+            className="max-h-[calc(100dvh-8rem)] w-auto max-w-full object-contain"
+            draggable={false}
+          />
+
+          <button
+            type="button"
+            aria-label="Next image"
+            className="absolute right-1 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:right-4"
+            onClick={() => setCareerPreviewFocus((i) => (i + 1) % previewLen)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <p className="shrink-0 px-4 pb-4 text-center text-xs text-white/50">
+          Arrow keys ← → to step through images · Escape to close
+        </p>
+      </div>,
+      document.body
+    );
+
+  /** Hide the Career page settings dialog while full-screen preview is active — only the image viewer is shown. */
+  const showSettingsDialog = openDialog && !careerPreviewOpen;
+
   return (
-    <CustomDialog
-      openDialog={openDialog}
-      handleOpen={onClose}
-      title="Career page settings"
-      size="xl"
-      footer={false}
-      scrollableBody
-      compo={body}
-    />
+    <>
+      {showSettingsDialog && (
+        <CustomDialog
+          openDialog={showSettingsDialog}
+          handleOpen={onClose}
+          title="Career page settings"
+          size="xl"
+          footer={false}
+          scrollableBody
+          compo={body}
+        />
+      )}
+      {careerPreviewModal}
+    </>
   );
 };
 
