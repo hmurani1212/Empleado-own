@@ -7,10 +7,29 @@ const formatMoney = (value) => {
     return numeric.toLocaleString();
 };
 
-const formatUnixDate = (timestamp, fallbackDate = "") => {
-    if (timestamp) {
+const resolveDeductionDescription = (item = {}) => {
+    const candidate =
+        item?.description ??
+        item?.detail ??
+        item?.details ??
+        item?.remarks ??
+        item?.remark ??
+        item?.note ??
+        item?.notes ??
+        item?.desc;
+
+    if (candidate == null) return "---";
+    const value = String(candidate).trim();
+    return value ? value : "---";
+};
+
+const formatUnixDate = (timestamp, fallbackDate = "", placeholder = "---", rejectEpoch = false) => {
+    if (timestamp != null && timestamp !== "" && Number(timestamp) > 0) {
         const date = new Date(Number(timestamp) * 1000);
         if (!Number.isNaN(date.getTime())) {
+            if (rejectEpoch && date.getFullYear() === 1970) {
+                return placeholder;
+            }
             return date.toLocaleDateString("en-GB", {
                 day: "2-digit",
                 month: "short",
@@ -22,6 +41,9 @@ const formatUnixDate = (timestamp, fallbackDate = "") => {
     if (fallbackDate) {
         const date = new Date(fallbackDate);
         if (!Number.isNaN(date.getTime())) {
+            if (rejectEpoch && date.getFullYear() === 1970) {
+                return placeholder;
+            }
             return date.toLocaleDateString("en-GB", {
                 day: "2-digit",
                 month: "short",
@@ -29,7 +51,7 @@ const formatUnixDate = (timestamp, fallbackDate = "") => {
             });
         }
     }
-    return "---";
+    return placeholder;
 };
 
 const HistorySection = ({ title, count, headers, rows, emptyMessage }) => {
@@ -97,7 +119,11 @@ const ComprehensiveSalaryHistory = ({ comprehensiveSalaryData, isLoading, mode =
                     <td className="py-3 px-4 text-gray-700">{formatMoney(item.amount)}/-</td>
                     <td className="py-3 px-4 text-gray-700">{item.re_occuring || "---"}</td>
                     <td className="py-3 px-4 text-gray-700">{formatUnixDate(item.start_date, item.start_date_formatted)}</td>
-                    <td className="py-3 px-4 text-gray-700">{formatUnixDate(item.end_date, item.end_date_formatted)}</td>
+                    <td className="py-3 px-4 text-gray-700">
+                        {String(item?.re_occuring || "").trim().toLowerCase() === "yes"
+                            ? "Unlimited"
+                            : formatUnixDate(item.end_date, item.end_date_formatted, "--", true)}
+                    </td>
                 </tr>
             ))}
             emptyMessage="No incentive history found."
@@ -114,7 +140,7 @@ const ComprehensiveSalaryHistory = ({ comprehensiveSalaryData, isLoading, mode =
                     <td className="py-3 px-4 text-gray-700">{item.title || "---"}</td>
                     <td className="py-3 px-4 text-gray-700">{formatMoney(item.amount)}/-</td>
                     <td className="py-3 px-4 text-gray-700">{item.re_occuring || "---"}</td>
-                    <td className="py-3 px-4 text-gray-600">{item.description || "---"}</td>
+                    <td className="py-3 px-4 text-gray-600">{resolveDeductionDescription(item)}</td>
                 </tr>
             ))}
             emptyMessage="No deduction history found."

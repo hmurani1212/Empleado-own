@@ -78,16 +78,40 @@ const AddNotice = () => {
     String(departmentsLoadedForBranchId) !== String(selectedBranchIdRaw);
 
   const isEmployeeDropdownLoading = Boolean(employeesLoading);
+  const selectedBranchValue =
+    addNoticeValue?.branch_id?.value !== undefined
+      ? addNoticeValue.branch_id.value
+      : addNoticeValue?.branch_id;
+  const selectedDepartmentValue =
+    addNoticeValue?.deptt_id?.value !== undefined
+      ? addNoticeValue.deptt_id.value
+      : addNoticeValue?.deptt_id;
+  const hasBranchSelected =
+    selectedBranchValue !== undefined &&
+    selectedBranchValue !== null &&
+    String(selectedBranchValue) !== "";
+  const hasDepartmentSelected =
+    selectedDepartmentValue !== undefined &&
+    selectedDepartmentValue !== null &&
+    String(selectedDepartmentValue) !== "";
+  const disableSpecificEmployeeOnly = !(hasBranchSelected && hasDepartmentSelected);
+  const disableEmployeeField = !(hasBranchSelected && hasDepartmentSelected);
+
+  useEffect(() => {
+    if (disableSpecificEmployeeOnly && showEmployeeName) {
+      handleCheckboxChange({ target: { checked: false } });
+    }
+  }, [disableSpecificEmployeeOnly, showEmployeeName, handleCheckboxChange]);
 
   return (
     <div className="bg-white rounded-2xl">
       <form onSubmit={addNewNotice} className="flex flex-col gap-6 p-4">
 
         {/* Branch and Department */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
+        <div className="w-full max-w-[640px] mx-auto flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <label className="text-sm font-semibold text-gray-700">
+              <label className="text-xs font-semibold text-gray-700">
                 Select Branch
               </label>
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('BRANCH_NOTICES_EMP')} />
@@ -113,9 +137,9 @@ const AddNotice = () => {
             />
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-<label className="text-sm font-semibold text-gray-700">
+<label className="text-xs font-semibold text-gray-700">
               Select Department
               </label>
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('DEPARTMENT_NOTICES_EMP')} />
@@ -144,20 +168,28 @@ const AddNotice = () => {
         </div>
 
         {/* Send to specific employee */}
-        <div className="flex items-center">
+        <div className="w-full max-w-[640px] mx-auto flex items-center">
           <Checkbox
             color="blue"
             label="Send to specific employee only"
             checked={showEmployeeName}
             onChange={handleCheckboxChange}
+            disabled={disableSpecificEmployeeOnly}
+            labelProps={{ className: "text-xs text-gray-700 font-medium" }}
+            className="h-4 w-4"
           />
+          {disableSpecificEmployeeOnly && (
+            <span className="text-[11px] text-gray-400 ml-1">
+              (Select branch and department first.)
+            </span>
+          )}
         </div>
 
         {/* Employee (when Send to specific employee only) */}
-        {showEmployeeName && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+        {showEmployeeName && !disableSpecificEmployeeOnly && (
+          <div className="w-full max-w-[640px] mx-auto flex flex-col animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-gray-700">
+              <label className="text-xs font-semibold text-gray-700">
                 Employee
               </label>
               <CustomSelect
@@ -170,19 +202,25 @@ const AddNotice = () => {
                   handleAddNoticeBranch('emp_id', option)
                 }
                 customStyles={false}
+                disabled={disableEmployeeField}
                 menuLoading={isEmployeeDropdownLoading}
                 menuLoadingLabel="Loading employees..."
                 hideControlLoadingIndicator
               />
+              {disableEmployeeField && (
+                <span className="text-[11px] text-gray-400">
+                  Select both branch and department first.
+                </span>
+              )}
             </div>
           </div>
         )}
 
         {/* Notice Content */}
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-[640px] w-full mx-auto">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-1.5">
-              <label className="text-sm font-semibold text-gray-700">
+              <label className="text-xs font-semibold text-gray-700">
                 Title
               </label>
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('NOTICETITLE_NOTICES_EMP')} />
@@ -195,13 +233,13 @@ const AddNotice = () => {
               name="title"
               onChange={handleNewNotice}
               labelProps={{ className: 'hidden' }}
-              className="!border !border-gray-200 bg-white text-gray-900 focus:!border-blue-500 rounded-lg"
+              className="!border !border-gray-200 bg-white text-gray-900 placeholder:text-gray-500 placeholder:opacity-100 [&::placeholder]:opacity-100 focus:!border-blue-500 rounded-lg text-sm py-2"
             />
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-1.5">
-              <label className="text-sm font-semibold text-gray-700">
+              <label className="text-xs font-semibold text-gray-700">
                 Details
               </label>
               <FaInfoCircle className="text-gray-400 text-sm cursor-pointer hover:text-[#3DA5F4] shrink-0" onClick={() => openContentDrawer('NOTICEDETAIL_NOTICES_EMP')} />
@@ -213,19 +251,21 @@ const AddNotice = () => {
               value={addNoticeValue.notice}
               onChange={handleNewNotice}
               labelProps={{ className: 'hidden' }}
-              className="!border !border-gray-200 bg-white text-gray-900 focus:!border-blue-500 rounded-lg min-h-[120px]"
+              className="!border !border-gray-200 bg-white text-gray-900 focus:!border-blue-500 rounded-lg min-h-[100px] text-sm"
             />
           </div>
         </div>
 
         {/* Notification Options */}
-        <div className="flex gap-6 py-2 border-t border-gray-100">
+        <div className="flex justify-center items-center gap-6 py-2 border-t border-gray-100 max-w-[640px] w-full mx-auto">
           <Checkbox
             color="blue"
             label="Send SMS"
             name="send_sms_notice"
             checked={addNoticeValue.send_sms_notice}
             onChange={handleNewNotice}
+            labelProps={{ className: "text-xs text-gray-700 font-medium" }}
+            className="h-4 w-4"
           />
           <Checkbox
             color="blue"
@@ -233,19 +273,13 @@ const AddNotice = () => {
             name="send_email_notice"
             checked={addNoticeValue.send_email_notice}
             onChange={handleNewNotice}
+            labelProps={{ className: "text-xs text-gray-700 font-medium" }}
+            className="h-4 w-4"
           />
         </div>
 
         {/* Buttons */}
         <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-gray-100">
-          <Button
-            variant="text"
-            color="gray"
-            className="capitalize cursor-pointer"
-          >
-            Cancel
-          </Button>
-
           <Button
             color="blue"
             type="submit"

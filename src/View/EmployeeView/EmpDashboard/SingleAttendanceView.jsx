@@ -62,6 +62,14 @@ const SingleAttendanceView = (props) => {
         // Present or half day (same detail layout; half day may use att_label HD or P + half flags)
         if (data.att_label === "P" || isHalfDayAttendance(data)) {
             const halfDay = isHalfDayAttendance(data)
+            const timingPairs = Array.isArray(data?.timings)
+                ? data.timings.reduce((acc, current, index) => {
+                    if (index % 2 === 0) {
+                        acc.push({ inTime: current, outTime: data.timings[index + 1] ?? null })
+                    }
+                    return acc
+                }, [])
+                : []
             return (
                 <div className='flex flex-col items-center justify-center gap-3 bg-white rounded-[10px] p-2 font-medium'>
                     <div className='flex flex-col items-center justify-center gap-4 bg-white w-full text-gray-500 '>
@@ -87,16 +95,22 @@ const SingleAttendanceView = (props) => {
                             {/* <span>{secondsIntoHrs(data?.overtime || 0)}</span> */}
                         {/* </div> */}
                     </div>
-                        {data?.timings && data.timings.length > 0 ? (
-                            <div className='flex items-center gap-2 text-[13px] justify-center w-full font-medium'>
-                                <div className='flex items-center justify-center gap-2'>
-                                    <span>In :</span>
-                                    <span>{convertTimeAMPM(data.timings[0])}</span>
-                                </div>
-                                <div className='flex items-center justify-center gap-2 font-medium'>
-                                    <span>Out :</span>
-                                    <span>{data.timings[1] ? convertTimeAMPM(data.timings[1]) : 'Not logged out'}</span>
-                                </div>
+                        {timingPairs.length > 0 ? (
+                            <div className='flex flex-wrap items-center justify-center gap-2 w-full'>
+                            {timingPairs.map((timing, index) => {
+                                return (
+                                    <div key={index} className='flex items-center gap-2 text-[13px] justify-center font-medium bg-gray-50 px-3 py-1.5 rounded-md'>
+                                        <div className='flex items-center justify-center gap-2'>
+                                            <span>In {index !== 0 && index + 1}:</span>
+                                            <span>{timing?.inTime ? convertTimeAMPM(timing.inTime) : '--'}</span>
+                                        </div>
+                                        <div className='flex items-center justify-center gap-2 font-medium'>
+                                            <span>Out {index !== 0 && index + 1}:</span>
+                                            <span>{timing?.outTime ? convertTimeAMPM(timing.outTime) : 'Not logged out'}</span>
+                                        </div>
+                                    </div>
+                                )
+                            })}
                             </div>
                         ) : (
                             <div className="text-sm text-gray-500">No timing data available</div>

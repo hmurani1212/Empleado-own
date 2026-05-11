@@ -7,7 +7,19 @@ const MonthLateComers = () => {
     // Read directly from store instead of props - component will update reactively when data arrives
     const allLateComers = useStore((state) => state.allLateComers)
     const loading = useStore((state) => state.loading)
-    const lateComersdata = ['Employee ID', 'Name', 'Late Coming Days', 'Bucket Used Minutes', 'Late Time']
+    const lateComersdata = ['Emp ID', 'Name', 'Late Minutes', 'Early Leave Min', 'Bucket Used Min']
+
+    const formatMinutesFromSeconds = (seconds) => {
+        const n = Number(seconds)
+        if (!Number.isFinite(n) || n <= 0) return '0m'
+        return `${Math.floor(n / 60)}m`
+    }
+
+    const formatMinutesValue = (minutes) => {
+        const n = Number(minutes)
+        if (!Number.isFinite(n) || n <= 0) return '0m'
+        return `${Math.floor(n)}m`
+    }
 
     // console.log('allLateComers222222222222222', allLateComers)
   return (
@@ -90,7 +102,7 @@ const MonthLateComers = () => {
                                         color='blue-gray'
                                         className="font-normal text-center"
                                         >
-                                            {ele.total_late_coming_days}
+                                            {formatMinutesFromSeconds(ele.late_coming_seconds)}
                                         </Typography>
                                     </td>
 
@@ -100,7 +112,7 @@ const MonthLateComers = () => {
                                         color='blue-gray'
                                         className="font-normal text-center"
                                         >
-                                            {ele.total_adjusted_late_min}
+                                            {formatMinutesValue(ele.total_early_leave_minutes)}
                                         </Typography>
                                     </td>
                                     <td className={classes}>
@@ -109,7 +121,7 @@ const MonthLateComers = () => {
                                         color='blue-gray'
                                         className="font-normal text-center"
                                         >
-                                            {ele.late_coming_in_words || '0'}
+                                            {formatMinutesValue(ele.total_adjusted_late_min)}
                                         </Typography>
                                     </td>
 

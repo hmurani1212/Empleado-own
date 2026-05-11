@@ -27,7 +27,7 @@ import { BiSearch } from "react-icons/bi";
 import { appendExcelSignatureRowExcelJS } from "../../utils/excelExportSignature";
 
 // Match ExportPayslip / payroll Excel styling
-const ATTENDANCE_EXPORT_COL_COUNT = 14;
+const ATTENDANCE_EXPORT_COL_COUNT = 15;
 const ORG_HEADER_BG = "FF1F4E79";
 const DATE_HEADER_BG = "FF2E75B6";
 const COLUMN_HEADER_BG = "FF1F4E79";
@@ -112,6 +112,17 @@ const getLateMinutesFromRecord = (record) => {
     record.late_minute ??
     record.late_mins_adjusted ??
     record.late_mins ??
+    null;
+  if (v == null || v === "") return "";
+  const n = Number(v);
+  return Number.isFinite(n) ? n : String(v);
+};
+
+const getEarlyLeaveMinutesFromRecord = (record) => {
+  const v =
+    record.early_leave_minutes ??
+    record.early_leave_min ??
+    record.early_leave ??
     null;
   if (v == null || v === "") return "";
   const n = Number(v);
@@ -387,6 +398,7 @@ const IndividualAttendanceReport = () => {
         "In time": inTime,
         "Out time": outTime,
         "Late min": getLateMinutesFromRecord(record),
+        "Early Leave Min": getEarlyLeaveMinutesFromRecord(record),
         Status: statusText,
         StatusCode: originalCode,
         "Earned Hours": earned.hours,
@@ -409,7 +421,7 @@ const IndividualAttendanceReport = () => {
     worksheet.columns = [
       { width: 12 }, { width: 8 }, { width: 10 }, { width: 10 }, { width: 10 },
       { width: 14 }, { width: 9 }, { width: 9 }, { width: 9 }, { width: 9 },
-      { width: 9 }, { width: 9 }, { width: 11 }, { width: 10 },
+      { width: 9 }, { width: 9 }, { width: 13 }, { width: 11 }, { width: 10 },
     ];
 
     const thinGrid = {
@@ -470,7 +482,7 @@ const IndividualAttendanceReport = () => {
 
     const row5 = worksheet.addRow([
       "Date", "Day", "In time", "Out time", "Late min", "Status",
-      "Earned Hours", "", "Overtime", "", "Expected Hours", "", "Policy #", "Shift #",
+      "Earned Hours", "", "Overtime", "", "Expected Hours", "", "Early Leave Min", "Policy #", "Shift #",
     ]);
     row5.height = 22;
     worksheet.mergeCells(4, 7, 4, 8);
@@ -489,7 +501,7 @@ const IndividualAttendanceReport = () => {
     }
 
     const row6 = worksheet.addRow([
-      "", "", "", "", "", "", "Hours", "Minutes", "Hours", "Minutes", "Hours", "Minutes", "", "",
+      "", "", "", "", "", "", "Hours", "Minutes", "Hours", "Minutes", "Hours", "Minutes", "", "", "",
     ]);
     row6.height = 20;
     for (let c = 1; c <= cCount; c++) {
@@ -560,6 +572,7 @@ const IndividualAttendanceReport = () => {
         record["Overtime Minutes"],
         record["Expected Hours"],
         record["Expected Minutes"],
+        record["Early Leave Min"],
         record["Policy #"],
         record["Shift #"],
       ]);
@@ -767,8 +780,8 @@ const IndividualAttendanceReport = () => {
           
           <div className="lg:col-span-4 md:col-span-4 col-span-12 flex flex-col gap-6">
             {/* Attendance Summary Section */}
-            <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Attendance Details</h3>
+            <div className="bg-white rounded-2xl shadow-card border border-gray-100 py-4 px-6">
+                <h3 className="text-lg font-bold text-gray-800">Attendance Details</h3>
                 <AttendanceSummary attendanceData={attendanceData} />
             </div>
           </div>
@@ -798,7 +811,7 @@ const IndividualAttendanceReport = () => {
           {/* Color Legend - separate section (same pattern as Attendance Details) */}
           <div className="lg:col-span-4 md:col-span-4 col-span-12">
             <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Legend</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-2">Color Representation</h3>
               <div className="grid grid-cols-2 gap-3">
                 {attendanceColorData.map((ele) => (
                   <div key={ele.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">

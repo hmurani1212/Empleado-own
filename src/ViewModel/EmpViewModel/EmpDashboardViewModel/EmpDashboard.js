@@ -123,6 +123,12 @@ const empDashboardViewModel = (set, get) => ({
                     totalUsedLateMin += usedLateMin[i].adjusted_late_min || 0;
                     totalLateMinutes += usedLateMin[i].late_minutes || 0;
                 };
+                const earlyLeaveSummary = dbData?.attendance_data?.DB_DATA?.early_leave_summary || {};
+                const totalEarlyLeaveMinutes = Number(earlyLeaveSummary?.total_early_leave_minutes) || 0;
+                const isEarlyLeaveAdjustmentEnabled =
+                    String(dbData?.attendance_data?.DB_DATA?.last_policy?.early_leave_adjustment ?? "0") === "1";
+                const bucketUsedMinutes =
+                    totalUsedLateMin + (isEarlyLeaveAdjustmentEnabled ? totalEarlyLeaveMinutes : 0);
 
                 // const allowedLateMin = dbData.attendance_data.DB_DATA.last_policy?.late_time_in_minutes || 0;
                 // let adjusted_late_min = 0;
@@ -219,6 +225,9 @@ const empDashboardViewModel = (set, get) => ({
                         leaves: leaves || 0,
                         total_used_late_min: totalUsedLateMin || 0,
                         total_late_minutes: totalLateMinutes || 0,
+                        total_early_leave_minutes: totalEarlyLeaveMinutes,
+                        early_leave_adjustment_enabled: isEarlyLeaveAdjustmentEnabled,
+                        bucket_used_minutes: bucketUsedMinutes || 0,
                         allowed_late_min: dbData?.attendance_data?.DB_DATA?.last_policy?.late_time_in_minutes || 0,
                         leave_balance: leaveBalance || 0,
                         monthly_allowed_leaves: dbData?.attendance_data?.DB_DATA?.monthly_allowed_leaves || 0,
@@ -226,6 +235,7 @@ const empDashboardViewModel = (set, get) => ({
                         presents: dbData?.attendance_data?.DB_DATA?.present_days || 0,
                     },
                     view_policy: dbData?.attendance_data?.DB_DATA?.last_policy || null,
+                    early_leave_summary: earlyLeaveSummary,
                     leave_balance: leaveBalance || [],
                     attendance_history: matchedAttendance || [],
                     // leave_balance: {

@@ -1,7 +1,7 @@
 import React from 'react'
 
 const ViewOnlyCreateNewRequest = (props) => {
-    const { formValue, handleChangeAdjustRequest } = props
+    const { formValue, handleChangeAdjustRequest, isReadOnly = false } = props
     
     return (
         <div className='space-y-2 p-4'>
@@ -13,6 +13,7 @@ const ViewOnlyCreateNewRequest = (props) => {
                     name='date' 
                     onChange={handleChangeAdjustRequest}
                     value={formValue.date}
+                    disabled={isReadOnly}
                 />
             </div>
             <div className='space-y-2'>
@@ -23,6 +24,7 @@ const ViewOnlyCreateNewRequest = (props) => {
                     name='inTime'
                     onChange={handleChangeAdjustRequest}
                     value={formValue.inTime} 
+                    disabled={isReadOnly}
                 />
             </div>
             <div className='space-y-2'>
@@ -33,6 +35,7 @@ const ViewOnlyCreateNewRequest = (props) => {
                     name='outTime'
                     onChange={handleChangeAdjustRequest}
                     value={formValue.outTime} 
+                    disabled={isReadOnly}
                 />
             </div>
             <div className='flex items-center justify-between'>
@@ -44,6 +47,7 @@ const ViewOnlyCreateNewRequest = (props) => {
                       className='text-[#333333] text-[12px] rounded-md py-[10px] px-[17px] border border-[#cccccc] outline-none resize-none'
                       onChange={handleChangeAdjustRequest}
                       value={formValue.reason}
+                      disabled={isReadOnly}
                     >
                     </textarea>
                 </div>

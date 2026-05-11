@@ -4,7 +4,6 @@ import interviewedlogo from '../../assets/images/interviewed.png'
 import shortlistlogo from '../../assets/images/shortlisted.png'
 import acceptlogo from '../../assets/images/accepted.png'
 import rejectlogo from '../../assets/images/rejected.png'
-import talentlogo from '../../assets/images/talent-pool.png'
 import { useState, useEffect } from "react"
 import { FaInstagram, FaFacebookF, FaLinkedinIn } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
@@ -118,7 +117,6 @@ const useHire = () => {
     { id: 3, title: 'Interviewed', imgSrc: interviewedlogo, legendBg: '#2ABFCC', count: record_data.total_interviewed, link: `/hire/vacancies_list/all_applicants/${0}/interviewed` },
     { id: 4, title: 'Accepted', imgSrc: acceptlogo, legendBg: '#0ACF97', count: record_data.total_accepted, link: `/hire/vacancies_list/all_applicants/${0}/accepted` },
     { id: 5, title: 'Rejected', imgSrc: rejectlogo, legendBg: '#FF5E5E', count: record_data.total_rejected, link: `/hire/vacancies_list/all_applicants/${0}/rejected` },
-    { id: 6, title: 'Talent Pool', imgSrc: talentlogo, legendBg: '#97CEF8', count: record_data.talent_pool, link: '/hire/talent_pool' },
   ]
 
   const hireItems = [

@@ -6,6 +6,7 @@ import useEmpDashboard from '../../../ViewModel/EmpViewModel/EmpDashboardViewMod
 import { getFormattedDate, formatDateDMY, secondsIntoHrs } from '../../../services/__dateTimeServices'
 import { FaCheck, FaExclamation, FaXmark, FaCalendarCheck, FaClock } from 'react-icons/fa6'
 import { IoTimeOutline, IoCalendarOutline, IoFingerPrintOutline } from "react-icons/io5";
+import { FaSpinner } from "react-icons/fa";
 import { getAllMonths, getAllYears } from '../../../services/__appServicesData'
 import { motion } from 'framer-motion'
 import CustomDialog from '../../../Components/CustomDialog/CustomDialog'
@@ -36,6 +37,7 @@ const EmpAttendance = ({ embedded = false }) => {
   const empAttendanceCacheKey = useStore((state) => state.empAttendanceCacheKey);
   const [singleAttendance, setSingleAttendance] = useState({ show: false, data: null })
   const [isAttendancePageLoading, setIsAttendancePageLoading] = useState(true);
+  const [isCheckingAttendance, setIsCheckingAttendance] = useState(false);
   
   // Single fetch on mount and when month/year change; guard against empty params
   useEffect(() => {
@@ -164,15 +166,29 @@ const EmpAttendance = ({ embedded = false }) => {
             </div>
             {webAttendance === "ENABLED" && (
               <button
-                className="bg-brand-500 text-white py-2 px-6 rounded-xl text-sm cursor-pointer font-bold shadow-md shadow-brand-500/20 hover:bg-brand-600 transition-all active:scale-95 flex items-center gap-2"
-                onClick={() =>
-                  handleMobileBaseAttendance({
+                className="bg-brand-500 text-white py-2 px-6 rounded-xl text-sm cursor-pointer font-bold shadow-md shadow-brand-500/20 hover:bg-brand-600 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
+                onClick={async () => {
+                  if (isCheckingAttendance) return;
+                  setIsCheckingAttendance(true);
+                  await handleMobileBaseAttendance({
                     user_id: personalInfo?.emp_id,
                     action: workingStatus === 'Duty Time' ? 'checkout' : 'checkin',
-                  })
-                }
+                  });
+                  setIsCheckingAttendance(false);
+                }}
+                disabled={isCheckingAttendance}
               >
-                <IoFingerPrintOutline className="text-lg" /> {workingStatus === 'Duty Time' ? 'Check Out' : 'Check In'}
+                {isCheckingAttendance ? (
+                  <>
+                    <FaSpinner className="text-base animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <IoFingerPrintOutline className="text-lg" />
+                    {workingStatus === 'Duty Time' ? 'Check Out' : 'Check In'}
+                  </>
+                )}
               </button>
             )}
         </div>
@@ -303,13 +319,31 @@ const EmpAttendance = ({ embedded = false }) => {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {(() => {
+                            const today = new Date();
+                            const isViewingCurrentMonth =
+                                selectedValue?.month?.value === today.getMonth() + 1 &&
+                                selectedValue?.year?.value === today.getFullYear();
+
                             const filteredAttendance = attendance?.filter((ele) => {
                                 const attendanceDate = new Date(ele.date * 1000);
                                 const attendanceMonth = attendanceDate.getMonth() + 1;
                                 const attendanceYear = attendanceDate.getFullYear();
-                                return attendanceMonth === selectedValue.month.value && 
+                                const inSelectedMonth =
+                                    attendanceMonth === selectedValue.month.value &&
                                     attendanceYear === selectedValue.year.value &&
                                     ele.att_label !== "H";
+                                if (!inSelectedMonth) return false;
+
+                                // Hide today's row in monthly logs only for the current calendar month
+                                // (today is already reflected in the header / Today's Status card).
+                                if (isViewingCurrentMonth) {
+                                    const isToday =
+                                        attendanceDate.getDate() === today.getDate() &&
+                                        attendanceDate.getMonth() === today.getMonth() &&
+                                        attendanceDate.getFullYear() === today.getFullYear();
+                                    if (isToday) return false;
+                                }
+                                return true;
                             }) || [];
 
                             return filteredAttendance.length > 0 ? (
