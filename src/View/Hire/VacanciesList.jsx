@@ -728,7 +728,7 @@ const VacanciesList = () => {
                               Action
                               <FaChevronDown
                                 strokeWidth={2.5}
-                                className={`transition-transform transform ${
+                                className={`h-2.5 w-2.5 shrink-0 transition-transform transform ${
                                   openMenuHire[index] ? "rotate-180" : ""
                                 }`}
                               />

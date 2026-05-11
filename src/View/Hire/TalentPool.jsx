@@ -158,8 +158,6 @@ const TalentPool = () => {
     return format(new Date(timestamp * 1000), "dd MMM yyyy");
   };
 
-  console.log(filters)
-
   return (
     <>
       <div className="flex flex-col gap-4">

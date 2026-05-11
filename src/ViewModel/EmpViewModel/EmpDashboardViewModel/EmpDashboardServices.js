@@ -341,7 +341,7 @@ const useEmpDashboard = ()=>{
     const handleLateMinutes = async () => {
         openDrawer()
         settingDrawerSize(800)
-        settingDrawerTitle('Late Minutes History')
+        settingDrawerTitle('Bucket Used Minutes History')
         settingComponent(<LateMinutes
         />)
     }

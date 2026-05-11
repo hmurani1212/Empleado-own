@@ -1,16 +1,16 @@
 import React from "react";
 import { Typography } from "@material-tailwind/react";
 import { secondsToHoursMinutes } from "../../services/__attendanceDataFormatter";
-import AttendanceLoading from "./AttendanceLoading";
-import { IoIosTime } from "react-icons/io";
+import { BsFileEarmarkCheckFill } from "react-icons/bs";
 import {
-  BsFileEarmarkCheckFill,
-  BsGraphUp,
-  BsGraphUpArrow,
-} from "react-icons/bs";
-import { ImParagraphRight } from "react-icons/im";
-import { FaCalendarAlt } from "react-icons/fa";
-import { RiUserFollowFill } from "react-icons/ri";
+  FaBusinessTime,
+  FaChartLine,
+  FaClock,
+  FaShoppingBasket,
+  FaSignOutAlt,
+  FaUserCheck,
+} from "react-icons/fa";
+import { MdWatchLater } from "react-icons/md";
 
 const AttendanceSummary = ({ attendanceData }) => {
   // Default values when no data is available
@@ -36,6 +36,14 @@ const AttendanceSummary = ({ attendanceData }) => {
   const attendanceAttr = attendanceData?.attendanceAttr || defaultValues;
   const summary = attendanceAttr?.summary || defaultValues.summary;
 
+  let total_absentees = 0;
+
+  attendanceData?.attendanceAttr?.attendance?.map((item) => {
+    if(item.att_label === "A") {
+      total_absentees++;
+    }
+  });
+
   const data = attendanceAttr?.attendance || [];
 
   const summary_late_minut = data.reduce(
@@ -46,6 +54,21 @@ const AttendanceSummary = ({ attendanceData }) => {
     { late_minutes: 0 }
   );
 
+  const bucketMinutes =
+    Number(attendanceAttr?.last_policy?.late_time_in_minutes) || 0;
+  const earlyLeaveMinutes =
+    Number(attendanceAttr?.early_leave_summary?.total_early_leave_minutes) || 0;
+
+  const lateSecondsRaw = attendanceAttr?.late_coming_seconds;
+  const lateMinutesTotal =
+    lateSecondsRaw != null && lateSecondsRaw !== ""
+      ? Math.round(Number(lateSecondsRaw) / 60)
+      : Math.round(Number(summary_late_minut?.late_minutes) || 0);
+
+  /** Keeps a perfect circle on all breakpoints (no flex shrink). */
+  const summaryIconCircleClass =
+    "inline-flex size-8 shrink-0 flex-none items-center justify-center rounded-full bg-bgBlue text-white [&_svg]:h-[17px] [&_svg]:w-[17px]";
+
   // console.log(summary_late_minut);
   // Output: { totalExpected: 61200, totalEarned: 0 }
 
@@ -54,10 +77,10 @@ const AttendanceSummary = ({ attendanceData }) => {
       {attendanceAttr?.last_policy?.payroll !== "TWO" ? (
         <div className="space-y-4 py-4">
           {/* Main Summary */}
-          <div className="grid grid-cols-2 gap-2 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
             <div className="flex items-center gap-2 select-text">
-              <div className="w-[32px] h-[32px] flex items-center justify-center bg-bgBlue rounded-full text-white p-2">
-                <IoIosTime className="w-full h-full" />
+              <div className={summaryIconCircleClass}>
+                <FaClock />
               </div>
               <div className="flex flex-col">
                 <span className="text-[#474747] font-light text-[12px] font-Urbanist">
@@ -69,8 +92,8 @@ const AttendanceSummary = ({ attendanceData }) => {
               </div>
             </div>
             <div className="flex items-center gap-2 select-text">
-              <div className="w-[32px] h-[32px] flex items-center justify-center bg-bgBlue rounded-full text-white p-2">
-                <BsFileEarmarkCheckFill className="w-full h-full" />
+              <div className={summaryIconCircleClass}>
+                <BsFileEarmarkCheckFill />
               </div>
               <div className="flex flex-col">
                 <span className="text-[#474747] font-light text-[12px] font-Urbanist">
@@ -83,8 +106,8 @@ const AttendanceSummary = ({ attendanceData }) => {
             </div>
             <div className="border border-dashed border-gray-200 w-full col-span-2"></div>
             <div className="flex items-center gap-2 select-text">
-              <div className="w-[32px] h-[32px] flex items-center justify-center bg-bgBlue rounded-full text-white p-2">
-                <ImParagraphRight className="w-full h-full rotate-90" />
+              <div className={summaryIconCircleClass}>
+                <FaBusinessTime />
               </div>
               <div className="flex flex-col">
                 <span className="text-[#474747] font-light text-[12px] font-Urbanist">
@@ -96,22 +119,49 @@ const AttendanceSummary = ({ attendanceData }) => {
               </div>
             </div>
             <div className="flex items-center gap-2 select-text text-red-500">
-              <div className="w-[32px] h-[32px] flex items-center justify-center bg-bgBlue rounded-full text-white p-2">
-                <FaCalendarAlt className="w-full h-full" />
+              <div className={summaryIconCircleClass}>
+                <FaShoppingBasket />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[#474747] font-light text-[12px] font-Urbanist">
+                  Bucket Minutes
+                </span>
+                <span className="font-medium font-Urbanist text-[14px] text-[#474747]">
+                  {bucketMinutes}m
+                </span>
+              </div>
+            </div>
+            <div className="border border-dashed border-gray-200 w-full col-span-2"></div>
+            <div className="flex items-center gap-2 select-text">
+              <div className={summaryIconCircleClass}>
+                <MdWatchLater />
               </div>
               <div className="flex flex-col">
                 <span className="text-[#474747] font-light text-[12px] font-Urbanist">
                   Late Minutes
                 </span>
                 <span className="font-medium font-Urbanist text-[14px] text-[#474747]">
-                  {summary_late_minut?.late_minutes || 0}m
+                  {lateMinutesTotal}m
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 select-text text-red-500">
+              <div className={summaryIconCircleClass}>
+                <FaSignOutAlt />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[#474747] font-light text-[12px] font-Urbanist">
+                  Early Leave Minutes
+                </span>
+                <span className="font-medium font-Urbanist text-[14px] text-[#474747]">
+                  {earlyLeaveMinutes}m
                 </span>
               </div>
             </div>
             <div className="border border-dashed border-gray-200 w-full col-span-2"></div>
             <div className="flex items-center gap-2 select-text">
-              <div className="w-[32px] h-[32px] flex items-center justify-center bg-bgBlue rounded-full text-white p-2">
-                <RiUserFollowFill className="w-full h-full" />
+              <div className={summaryIconCircleClass}>
+                <FaUserCheck />
               </div>
               <div className="flex flex-col">
                 <span className="text-[#474747] font-light text-[11px] font-Urbanist">
@@ -123,8 +173,8 @@ const AttendanceSummary = ({ attendanceData }) => {
               </div>
             </div>
             <div className="flex items-center gap-2 select-text">
-              <div className="w-[32px] h-[32px] flex items-center justify-center bg-bgBlue rounded-full text-white p-2">
-                <BsGraphUpArrow className="w-full h-full" />
+              <div className={summaryIconCircleClass}>
+                <FaChartLine />
               </div>
               <div className="flex flex-col">
                 <span className="text-[#474747] font-light text-[12px] font-Urbanist">
@@ -162,7 +212,7 @@ const AttendanceSummary = ({ attendanceData }) => {
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex items-center justify-center rounded-full border-[3px] border-[#FF4979] w-[50px] h-[50px]">
                     <span className="font-medium text-[14px] text-red-500 font-Urbanist">
-                      {summary.absentees || 0}
+                      {total_absentees}
                     </span>
                   </div>
                   <span className="text-[#474747] font-light text-[12px] font-Urbanist">
@@ -233,9 +283,7 @@ const AttendanceSummary = ({ attendanceData }) => {
               <div className="border border-dashed border-gray-200 w-full my-3" />
               <div className="flex items-center justify-between select-text">
                 <span className="text-customGray-100">Late Minutes</span>
-                <span className="font-medium">
-                  {summary_late_minut?.late_minutes || 0}m
-                </span>
+                <span className="font-medium">{lateMinutesTotal}m</span>
               </div>
               {summary && (
                 <>

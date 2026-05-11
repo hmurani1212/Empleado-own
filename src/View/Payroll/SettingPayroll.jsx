@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Button, Input, Radio, Typography } from "@material-tailwind/react";
+import { Button, Radio, Typography } from "@material-tailwind/react";
 import { FaInfoCircle, FaPlus, FaTimes } from "react-icons/fa";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import useStore from "../../Store/store";
@@ -10,6 +10,17 @@ import { SettingsSkeleton } from "./PayrollSkeletons";
 import { getOrganizationData, getUserData } from "../../Authentication/jwt_decode";
 // OLD (incoming): import { getUserData } from "../../Authentication/jwt_decode";
 import payrollApi from "../../Model/Data/Payroll/Payroll";
+
+/**
+ * Plain native inputs — Material Tailwind `<Input>` is always wrapped with an
+ * outlined `<label>` using ::before/::after notches (see theme `inputOutlinedLabel`)
+ * and `focus:border-*` color jumps (`inputOutlinedColors`). That causes the
+ * floating “legend” and hover/focus border styling users want to avoid here.
+ */
+const PAYROLL_SETTINGS_NATIVE_INPUT_CLASS =
+  "w-full px-3 py-2.5 border border-gray-200 rounded-lg font-Urbanist text-sm text-[#474747] bg-white shadow-sm outline-none transition-shadow " +
+  "hover:border-gray-200 focus:border-gray-200 focus:ring-2 focus:ring-bgBlue/15 focus:shadow-sm " +
+  "disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed";
 
 const SettingPayroll = () => {
   const [activeSection, setActiveSection] = useState("social_security");
@@ -47,6 +58,8 @@ const SettingPayroll = () => {
   // Modal state for tax slab form
   const [isTaxSlabModalOpen, setIsTaxSlabModalOpen] = useState(false);
   const [isTaxExemptionModalOpen, setIsTaxExemptionModalOpen] = useState(false);
+  const [isTaxSlabsLoading, setIsTaxSlabsLoading] = useState(false);
+  const [isTaxExemptionsLoading, setIsTaxExemptionsLoading] = useState(false);
 
   // Content drawer (info icon) – right-side panel with ENGLISH/URDU
   const [contentDrawerOpen, setContentDrawerOpen] = useState(false);
@@ -222,9 +235,25 @@ const SettingPayroll = () => {
   // Fetch data when navigating to specific sections
   useEffect(() => {
     if (activeSection === "income_tax_slabs") {
-      getIncomeTaxSlabs();
+      const fetchIncomeTaxSlabs = async () => {
+        setIsTaxSlabsLoading(true);
+        try {
+          await getIncomeTaxSlabs();
+        } finally {
+          setIsTaxSlabsLoading(false);
+        }
+      };
+      fetchIncomeTaxSlabs();
     } else if (activeSection === "tax_exemptions") {
-      getTaxExemptions();
+      const fetchTaxExemptions = async () => {
+        setIsTaxExemptionsLoading(true);
+        try {
+          await getTaxExemptions();
+        } finally {
+          setIsTaxExemptionsLoading(false);
+        }
+      };
+      fetchTaxExemptions();
     } else if (ORG_SETTINGS_SECTIONS.includes(activeSection)) {
       setOrgSettingId(null);
     }
@@ -553,6 +582,7 @@ const SettingPayroll = () => {
 
   const handleDeleteSlab = async (id) => {
     try {
+      setIsTaxSlabsLoading(true);
       const result = await deleteIncomeTaxSlab(id);
 
       // Check if deletion was successful - store returns { success: true } on success
@@ -566,6 +596,8 @@ const SettingPayroll = () => {
     } catch (error) {
       console.error("Error deleting tax slab:", error);
       showToast("Failed to delete tax slab", "error");
+    } finally {
+      setIsTaxSlabsLoading(false);
     }
   };
 
@@ -573,6 +605,7 @@ const SettingPayroll = () => {
 
   const handleDeleteTaxExemption = async (id) => {
     try {
+      setIsTaxExemptionsLoading(true);
       const result = await deleteTaxExemption(id);
 
       // Check if deletion was successful - store returns { success: true } on success
@@ -586,6 +619,8 @@ const SettingPayroll = () => {
     } catch (error) {
       console.error("Error deleting tax exemption:", error);
       showToast("Failed to delete tax exemption", "error");
+    } finally {
+      setIsTaxExemptionsLoading(false);
     }
   };
 
@@ -654,6 +689,7 @@ const SettingPayroll = () => {
         handleCloseTaxSlabModal();
         // Refresh the data using store method with force reload
         console.log("Refreshing tax slabs data after successful save...");
+        setIsTaxSlabsLoading(true);
         await getIncomeTaxSlabs(true); // Force reload
       } else {
         showToast(
@@ -665,6 +701,7 @@ const SettingPayroll = () => {
       console.error("Error adding tax slab:", error);
       showToast("Failed to add tax slab", "error");
     } finally {
+      setIsTaxSlabsLoading(false);
       setIsSaving(false);
     }
   };
@@ -740,6 +777,7 @@ const SettingPayroll = () => {
         handleCloseTaxExemptionModal();
         // Refresh the data using store method with force reload
         console.log("Refreshing tax exemptions data after successful save...");
+        setIsTaxExemptionsLoading(true);
         await getTaxExemptions(true); // Force reload
       } else {
         showToast(
@@ -751,6 +789,7 @@ const SettingPayroll = () => {
       console.error("Error adding tax exemption:", error);
       showToast("Failed to add tax exemption", "error");
     } finally {
+      setIsTaxExemptionsLoading(false);
       setIsSaving(false);
     }
   };
@@ -824,7 +863,18 @@ const SettingPayroll = () => {
                 </tr>
               </thead>
               <tbody>
-                {taxSlabs.length > 0 ? (
+                {isTaxSlabsLoading ? (
+                  <tr>
+                    <td colSpan="4" className="p-8 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="w-7 h-7 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+                        <Typography className="text-[12px] text-[#6B7C8E] font-Urbanist font-medium">
+                          Loading tax slabs...
+                        </Typography>
+                      </div>
+                    </td>
+                  </tr>
+                ) : taxSlabs.length > 0 ? (
                   taxSlabs.map((slab, i) => {
                     const isLast = i === taxSlabs.length - 1;
                     const classes = isLast
@@ -941,7 +991,18 @@ const SettingPayroll = () => {
                 </tr>
               </thead>
               <tbody>
-                {taxExemptions.length === 0 ? (
+                {isTaxExemptionsLoading ? (
+                  <tr>
+                    <td colSpan="3" className="p-8 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="w-7 h-7 border-2 border-[#3DA5F4] border-t-transparent rounded-full animate-spin" />
+                        <Typography className="text-[12px] text-[#6B7C8E] font-Urbanist font-medium">
+                          Loading tax exemptions...
+                        </Typography>
+                      </div>
+                    </td>
+                  </tr>
+                ) : taxExemptions.length === 0 ? (
                   <tr>
                     <td colSpan="3" className="p-4 text-center">
                       <Typography
@@ -1031,9 +1092,10 @@ const SettingPayroll = () => {
                 />
               </div>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter percentage"
-                  color="blue"
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.employeeSalaryPercentage}
                   onChange={(e) =>
                     handleInputChange(
@@ -1058,9 +1120,10 @@ const SettingPayroll = () => {
                 />
               </div>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter limit"
-                  color="blue"
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.limitAbovePercentage}
                   onChange={(e) =>
                     handleInputChange("limitAbovePercentage", e.target.value)
@@ -1154,9 +1217,10 @@ const SettingPayroll = () => {
                 />
               </div>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter percentage"
-                  color="blue"
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.employeeSalaryPercentage}
                   onChange={(e) =>
                     handleInputChange(
@@ -1181,9 +1245,10 @@ const SettingPayroll = () => {
                 />
               </div>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter limit"
-                  color="blue"
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.limitAbovePercentage}
                   onChange={(e) =>
                     handleInputChange("limitAbovePercentage", e.target.value)
@@ -1271,9 +1336,10 @@ const SettingPayroll = () => {
                 Salary
               </label>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter salary"
-                  color="blue"
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.eobiSalary}
                   onChange={(e) =>
                     handleInputChange("eobiSalary", e.target.value)
@@ -1295,9 +1361,10 @@ const SettingPayroll = () => {
                 />
               </div>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter employee contribution"
-                  color="blue"
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.empContribution}
                   onChange={(e) =>
                     handleInputChange("empContribution", e.target.value)
@@ -1319,9 +1386,10 @@ const SettingPayroll = () => {
                 />
               </div>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter employer contribution"
-                  color="blue"
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.employerContribution}
                   onChange={(e) =>
                     handleInputChange("employerContribution", e.target.value)
@@ -1407,12 +1475,11 @@ const SettingPayroll = () => {
                 />
               </div>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter minimum duration"
-                  color="blue"
+                <input
                   type="number"
                   step="1"
                   min="0"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.minDuration}
                   onChange={(e) =>
                     handleInputChange("minDuration", e.target.value)
@@ -1434,13 +1501,12 @@ const SettingPayroll = () => {
                 />
               </div>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter employee contribution percentage"
-                  color="blue"
+                <input
                   type="number"
                   step="0.01"
                   min="0"
                   max="100"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.empContributionPF}
                   onChange={(e) =>
                     handleInputChange("empContributionPF", e.target.value)
@@ -1462,13 +1528,12 @@ const SettingPayroll = () => {
                 />
               </div>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter employer contribution percentage"
-                  color="blue"
+                <input
                   type="number"
                   step="0.01"
                   min="0"
                   max="100"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.employerContributionPF}
                   onChange={(e) =>
                     handleInputChange("employerContributionPF", e.target.value)
@@ -1484,16 +1549,15 @@ const SettingPayroll = () => {
                 Max salary limit
               </label>
               <div className="w-full max-w-md">
-                <Input
-                  label="Enter max salary limit (0 = no limit)"
-                  color="blue"
+                <input
                   type="number"
                   min="0"
+                  className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                   value={formData.limitAbovePercentagePF}
                   onChange={(e) =>
                     handleInputChange("limitAbovePercentagePF", e.target.value)
                   }
-                  placeholder="0"
+                  placeholder="0 (no limit)"
                 />
               </div>
             </div>
@@ -1640,7 +1704,7 @@ const SettingPayroll = () => {
       {/* Tax Slab Form */}
       {isTaxSlabModalOpen && (
         <div
-          className="fixed top-0 right-0 w-1/2 h-[100vh] bg-white shadow-xl border-l border-gray-200 z-[9999] overflow-y-auto"
+          className="fixed top-0 right-0 h-[100vh] bg-[#F8FBFF] shadow-2xl border-l border-[#DCE8F5] z-[9999] overflow-y-auto"
           style={{
             top: 0,
             right: 0,
@@ -1655,29 +1719,36 @@ const SettingPayroll = () => {
         >
           <div className="min-h-full flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-2 border-b border-[#F2F2F9] bg-white">
-              <h2 className="font-Urbanist text-[14px] font-medium text-[#474747]">
-                Add Tax Slab
-              </h2>
+            <div className="sticky top-0 z-10 flex items-start justify-between px-6 py-4 border-b border-[#E6EEF7] bg-white/95 backdrop-blur-sm">
+              <div>
+                <h2 className="font-Urbanist text-[18px] font-semibold text-[#1E3A56]">
+                  Add Tax Slab
+                </h2>
+                <p className="font-Urbanist text-[12px] text-[#7A8A9B] mt-1">
+                  Configure slab range and tax deduction values.
+                </p>
+              </div>
               <button
                 onClick={handleCloseTaxSlabModal}
-                className="text-red-500 hover:text-red-600 transition-colors"
+                className="mt-1 h-8 w-8 rounded-lg flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
               >
                 <FaTimes size={15} />
               </button>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSaveTaxSlab} className="flex-1 p-6 w-full">
-              <div className="space-y-6">
-                {/* Form Fields */}
-                <div className="space-y-6">
+            <form onSubmit={handleSaveTaxSlab} className="flex-1 p-6 w-full flex flex-col">
+              <div className="space-y-5 flex-1">
+                <div className="rounded-2xl border border-[#E6EEF7] bg-white p-5">
+                  <h3 className="font-Urbanist text-[14px] font-semibold text-[#2A4A66] mb-4">
+                    Tax Slab Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Branch Selection */}
-                  <div className="grid grid-cols-3 gap-5 items-center">
-                    <label className="text-[#698592] text-[12px] font-medium">
-                      Branch
-                    </label>
-                    <div className="col-span-2">
+                    <div className="rounded-xl border border-[#EAF1F8] bg-[#FBFDFF] p-3.5">
+                      <label className="text-[#698592] text-[12px] font-semibold block mb-2">
+                        Branch
+                      </label>
                       <CustomSelect
                         placeHolderTitle="Select Branch"
                         value={newSlab.branch}
@@ -1696,14 +1767,13 @@ const SettingPayroll = () => {
                         isClearable={false}
                       />
                     </div>
-                  </div>
 
                   {/* Amount From */}
-                  <div className="grid grid-cols-3 gap-5 items-center">
-                    <label className="text-[#698592] text-[12px] font-medium">
-                      Amount From
-                    </label>
-                    <div className="col-span-2 relative">
+                    <div className="rounded-xl border border-[#EAF1F8] bg-[#FBFDFF] p-3.5">
+                      <label className="text-[#698592] text-[12px] font-semibold block mb-2">
+                        Amount From
+                      </label>
+                      <div className="relative">
                       <input
                         type="number"
                         placeholder="Enter amount from"
@@ -1711,21 +1781,21 @@ const SettingPayroll = () => {
                         onChange={(e) =>
                           handleNewSlabChange("amountFrom", e.target.value)
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                         required
                       />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                         PKR
                       </span>
                     </div>
-                  </div>
+                    </div>
 
                   {/* Amount Upto */}
-                  <div className="grid grid-cols-3 gap-5 items-center">
-                    <label className="text-[#698592] text-[12px] font-medium">
-                      Amount Upto
-                    </label>
-                    <div className="col-span-2 relative">
+                    <div className="rounded-xl border border-[#EAF1F8] bg-[#FBFDFF] p-3.5">
+                      <label className="text-[#698592] text-[12px] font-semibold block mb-2">
+                        Amount Upto
+                      </label>
+                      <div className="relative">
                       <input
                         type="number"
                         placeholder="Enter amount upto"
@@ -1733,21 +1803,21 @@ const SettingPayroll = () => {
                         onChange={(e) =>
                           handleNewSlabChange("amountUpto", e.target.value)
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                         required
                       />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                         PKR
                       </span>
                     </div>
-                  </div>
+                    </div>
 
                   {/* Tax Rate % */}
-                  <div className="grid grid-cols-3 gap-5 items-center">
-                    <label className="text-[#698592] text-[12px] font-medium">
-                      Tax Rate %
-                    </label>
-                    <div className="col-span-2 relative">
+                    <div className="rounded-xl border border-[#EAF1F8] bg-[#FBFDFF] p-3.5">
+                      <label className="text-[#698592] text-[12px] font-semibold block mb-2">
+                        Tax Rate %
+                      </label>
+                      <div className="relative">
                       <input
                         type="number"
                         placeholder="0"
@@ -1755,21 +1825,21 @@ const SettingPayroll = () => {
                         onChange={(e) =>
                           handleNewSlabChange("taxRatePercent", e.target.value)
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                         required
                       />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                         %
                       </span>
                     </div>
-                  </div>
+                    </div>
 
                   {/* Tax Rate Amount */}
-                  <div className="grid grid-cols-3 gap-5 items-center">
-                    <label className="text-[#698592] text-[12px] font-medium">
-                      Tax Rate Amount
-                    </label>
-                    <div className="col-span-2 relative">
+                    <div className="rounded-xl border border-[#EAF1F8] bg-[#FBFDFF] p-3.5 md:col-span-2">
+                      <label className="text-[#698592] text-[12px] font-semibold block mb-2">
+                        Tax Rate Amount
+                      </label>
+                      <div className="relative">
                       <input
                         type="number"
                         placeholder="Enter tax rate amount"
@@ -1777,25 +1847,27 @@ const SettingPayroll = () => {
                         onChange={(e) =>
                           handleNewSlabChange("taxRateAmount", e.target.value)
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                         required
                       />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                         PKR
                       </span>
                     </div>
+                    </div>
                   </div>
                 </div>
+              </div>
 
                 {/* Submit Button */}
-                <div className="flex items-center justify-end gap-3 pt-4">
+                <div className="sticky bottom-0 flex items-center justify-end gap-3 pt-4 mt-6 border-t border-[#E6EEF7] bg-[#F8FBFF]">
                   <Button
                     type="button"
                     // variant="outlined"
                     color="gray"
                     onClick={handleCloseTaxSlabModal}
                     disabled={isSaving}
-                    className="px-8 py-2 bg-red-500 text-white capitalize font-medium text-[12px] font-Urbanist py-2 px-4 rounded-[7px] hover:bg-red-600 cursor-pointer"
+                    className="px-6 py-2.5 bg-red-500 text-white capitalize font-semibold text-[12px] font-Urbanist rounded-[10px] hover:bg-red-600 cursor-pointer"
                   >
                     Cancel
                   </Button>
@@ -1803,7 +1875,7 @@ const SettingPayroll = () => {
                     type="submit"
                     color="blue"
                     disabled={isSaving}
-                    className="flex items-center gap-2 px-8 py-2 bg-bgBlue text-white capitalize font-medium text-[12px] font-Urbanist py-2 px-4 rounded-[7px] hover:bg-blue-600 cursor-pointer"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-bgBlue text-white capitalize font-semibold text-[12px] font-Urbanist rounded-[10px] hover:bg-blue-600 cursor-pointer"
                   >
                     {isSaving ? (
                       <>
@@ -1818,7 +1890,6 @@ const SettingPayroll = () => {
                     )}
                   </Button>
                 </div>
-              </div>
             </form>
           </div>
         </div>
@@ -1826,31 +1897,38 @@ const SettingPayroll = () => {
 
       {/* Tax Exemption Form */}
       {isTaxExemptionModalOpen && (
-        <div className="fixed top-0 right-0 w-1/2 h-[100vh] bg-white shadow-xl border-l border-gray-200 z-[9999] overflow-y-auto">
+        <div className="fixed top-0 right-0 w-1/2 h-[100vh] bg-[#F8FBFF] shadow-2xl border-l border-[#DCE8F5] z-[9999] overflow-y-auto">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-2 border-b border-[#F2F2F9]">
-            <h2 className="font-Urbanist text-[14px] font-medium text-[#474747]">
-              Add Tax Exemption
-            </h2>
+          <div className="sticky top-0 z-10 flex items-start justify-between px-6 py-4 border-b border-[#E6EEF7] bg-white/95 backdrop-blur-sm">
+            <div>
+              <h2 className="font-Urbanist text-[18px] font-semibold text-[#1E3A56]">
+                Add Tax Exemption
+              </h2>
+              <p className="font-Urbanist text-[12px] text-[#7A8A9B] mt-1">
+                Add exemption title and percentage value.
+              </p>
+            </div>
             <button
               onClick={handleCloseTaxExemptionModal}
-              className="text-red-500 hover:text-red-600 transition-colors"
+              className="mt-1 h-8 w-8 rounded-lg flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
             >
               <FaTimes size={15} />
             </button>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSaveTaxExemption} className="flex-1 p-6 w-full">
-            <div className="space-y-6">
-              {/* Form Fields */}
-              <div className="space-y-6">
+          <form onSubmit={handleSaveTaxExemption} className="flex-1 p-6 w-full flex flex-col min-h-[calc(100vh-88px)]">
+            <div className="space-y-5 flex-1">
+              <div className="rounded-2xl border border-[#E6EEF7] bg-white p-5">
+                <h3 className="font-Urbanist text-[14px] font-semibold text-[#2A4A66] mb-4">
+                  Exemption Details
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
                 {/* Title Field */}
-                <div className="grid grid-cols-3 gap-5 items-center">
-                  <label className="text-[#698592] text-[12px] font-medium">
-                    Title
-                  </label>
-                  <div className="col-span-2 relative">
+                  <div className="rounded-xl border border-[#EAF1F8] bg-[#FBFDFF] p-3.5">
+                    <label className="text-[#698592] text-[12px] font-semibold block mb-2">
+                      Title
+                    </label>
                     <input
                       type="text"
                       placeholder="e.g. medical allowances"
@@ -1858,18 +1936,17 @@ const SettingPayroll = () => {
                       onChange={(e) =>
                         handleNewExemptionChange("title", e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                       required
                     />
                   </div>
-                </div>
 
                 {/* Percentage Field */}
-                <div className="grid grid-cols-3 gap-5 items-center">
-                  <label className="text-[#698592] text-[12px] font-medium">
-                    Percentage
-                  </label>
-                  <div className="col-span-2 relative">
+                  <div className="rounded-xl border border-[#EAF1F8] bg-[#FBFDFF] p-3.5">
+                    <label className="text-[#698592] text-[12px] font-semibold block mb-2">
+                      Percentage
+                    </label>
+                    <div className="relative">
                     <input
                       type="number"
                       placeholder="Enter percentage"
@@ -1877,7 +1954,7 @@ const SettingPayroll = () => {
                       onChange={(e) =>
                         handleNewExemptionChange("percentage", e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={PAYROLL_SETTINGS_NATIVE_INPUT_CLASS}
                       required
                     />
                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
@@ -1886,16 +1963,18 @@ const SettingPayroll = () => {
                   </div>
                 </div>
               </div>
+              </div>
+            </div>
 
               {/* Submit Button */}
-              <div className="flex items-center justify-end gap-3 pt-4">
+              <div className="sticky bottom-0 flex items-center justify-end gap-3 pt-4 mt-6 border-t border-[#E6EEF7] bg-[#F8FBFF]">
                 <Button
                   type="button"
                   // variant="outlined"
                   color="gray"
                   onClick={handleCloseTaxExemptionModal}
                   disabled={isSaving}
-                  className="px-8 py-2 bg-red-500 text-white capitalize font-medium text-[12px] font-Urbanist py-2 px-4 rounded-[7px] hover:bg-red-600 cursor-pointer"
+                  className="px-6 py-2.5 bg-red-500 text-white capitalize font-semibold text-[12px] font-Urbanist rounded-[10px] hover:bg-red-600 cursor-pointer"
                 >
                   Cancel
                 </Button>
@@ -1903,7 +1982,7 @@ const SettingPayroll = () => {
                   type="submit"
                   // color="blue"
                   disabled={isSaving}
-                  className="flex items-center gap-2 px-8 py-2 bg-bgBlue text-white capitalize font-medium text-[12px] font-Urbanist py-2 px-4 rounded-[7px] hover:bg-blue-600 cursor-pointer"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-bgBlue text-white capitalize font-semibold text-[12px] font-Urbanist rounded-[10px] hover:bg-blue-600 cursor-pointer"
                 >
                   {isSaving ? (
                     <>
@@ -1918,7 +1997,6 @@ const SettingPayroll = () => {
                   )}
                 </Button>
               </div>
-            </div>
           </form>
         </div>
       )}

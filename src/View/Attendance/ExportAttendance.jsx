@@ -109,6 +109,7 @@ const ExportAttendance = () => {
     complianceReport: false,
     individualExport: false,
     sendViaEmail: false, // New field for send via email option
+    includeEarlyLeaveMin: true, // Request Early Leave Min column in exported report
     // Date fields
     fromDate: '',
     toDate: '',
@@ -444,6 +445,8 @@ const ExportAttendance = () => {
                            formData.exportType === 'Export Comprehensive Report' ? 'comprehensive_attendance' :
                            formData.exportType === 'Export Leave Report only' ? 'leave_report' :
                            formData.exportType === 'Export Absentees only' ? 'absentees_report' : 'attendance',
+        include_early_leave_min: formData.includeEarlyLeaveMin ? '1' : '0',
+        early_leave_min_position: 'before_notes',
         compliance_report: formData.complianceReport ? '1' : '',
         send_email: isSendEmail ? true : false
       }

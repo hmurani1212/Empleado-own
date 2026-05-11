@@ -16,18 +16,11 @@ const Calendar = (props) => {
 
   } = props;
 
-
-
-
   const today = new Date(); // Current date
 
   const currentDate = data?.currentDate
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   // const [currentDate, setCurrentDate] = useState(new Date());
-
-
-
- 
 
   return (
     <>

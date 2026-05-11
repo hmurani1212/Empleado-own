@@ -43,10 +43,10 @@ export const VacanciesListTableSkeleton = ({ rows = 8, colCount = 9 }) => {
   );
 };
 
-/** Six stat cards — render as direct children of the same grid as `Hire.jsx` uses for `CustomCard`. */
+/** Five stat cards — render as direct children of the same grid as `Hire.jsx` uses for `CustomCard`. */
 export const HireDashboardCardsSkeleton = () => (
   <>
-    {Array.from({ length: 6 }).map((_, i) => (
+    {Array.from({ length: 5 }).map((_, i) => (
       <div
         key={i}
         className="relative block w-full min-w-0 rounded-2xl border border-gray-100 bg-white shadow-card overflow-visible animate-pulse"

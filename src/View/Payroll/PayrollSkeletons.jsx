@@ -7,77 +7,41 @@ import { Card, CardBody } from "@material-tailwind/react";
 export const PayrollOverviewSkeleton = () => {
   return (
     <div className="flex flex-col gap-6 animate-pulse">
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-        <Card className="relative rounded-2xl shadow-card border border-gray-100 overflow-hidden bg-gray-100">
-          <CardBody className="relative z-10 p-5">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-gray-200 shrink-0" />
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-28" />
-                <div className="h-3 bg-gray-200 rounded w-24" />
-                <div className="h-6 bg-gray-200 rounded w-20 mt-1" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card
+            key={i}
+            className="rounded-2xl shadow-card border border-gray-200 overflow-hidden bg-white"
+          >
+            <CardBody className="p-5">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-gray-100 border border-gray-200 shrink-0" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 bg-gray-100 rounded w-28" />
+                  <div className="h-3 bg-gray-100 rounded w-24" />
+                  <div className="h-6 bg-gray-100 rounded w-24 mt-1" />
+                </div>
               </div>
-            </div>
-          </CardBody>
-        </Card>
-        <Card className="relative rounded-2xl shadow-card border border-gray-100 overflow-hidden bg-gray-100">
-          <CardBody className="relative z-10 p-5">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-gray-200 shrink-0" />
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-24" />
-                <div className="h-3 bg-gray-200 rounded w-24" />
-                <div className="h-6 bg-gray-200 rounded w-20 mt-1" />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+            </CardBody>
+          </Card>
+        ))}
       </div>
 
-      {/* Charts grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="lg:row-span-2">
-          <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden h-full bg-white">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <Card
+            key={`chart-${i}`}
+            className="rounded-2xl shadow-card border border-gray-200 overflow-hidden bg-white"
+          >
             <CardBody className="p-5">
               <div className="flex justify-between items-center gap-4 mb-4">
                 <div className="h-5 bg-gray-100 rounded w-40" />
                 <div className="h-10 bg-gray-100 rounded-lg w-24" />
               </div>
-              <div className="min-h-[320px] h-[380px] bg-gray-50 rounded-xl flex items-end justify-around gap-2 p-4">
-                {[40, 65, 45, 80, 55, 70, 50].map((h, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 bg-gray-200 rounded-t"
-                    style={{ height: `${h}%` }}
-                  />
-                ))}
-              </div>
+              <div className="min-h-[280px] bg-gray-50 rounded-xl border border-gray-100" />
             </CardBody>
           </Card>
-        </div>
-        <div>
-          <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden bg-white">
-            <CardBody className="p-5">
-              <div className="flex justify-between items-center gap-4 mb-4">
-                <div className="h-5 bg-gray-100 rounded w-28" />
-                <div className="h-10 bg-gray-100 rounded-lg w-24" />
-              </div>
-              <div className="min-h-[200px] bg-gray-50 rounded-xl" />
-            </CardBody>
-          </Card>
-        </div>
-        <div>
-          <Card className="rounded-2xl shadow-card border border-gray-100 overflow-hidden bg-white">
-            <CardBody className="p-5">
-              <div className="flex justify-between items-center gap-4 mb-4">
-                <div className="h-5 bg-gray-100 rounded w-24" />
-                <div className="h-10 bg-gray-100 rounded-lg w-24" />
-              </div>
-              <div className="min-h-[200px] bg-gray-50 rounded-xl" />
-            </CardBody>
-          </Card>
-        </div>
+        ))}
       </div>
     </div>
   );

@@ -91,7 +91,8 @@ const EditNoticeForm = (props) => {
                 <label className="text-sm font-semibold text-gray-700 font-poppins">Notice Title</label>
                 <Input 
                     color='blue' 
-                    className='!border !border-gray-200 bg-white text-gray-900 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-blue-500 focus:!border-t-blue-500 focus:ring-blue-500/10 rounded-lg'
+                    placeholder='Enter notice title'
+                    className='!border !border-gray-200 bg-white text-gray-900 ring-4 ring-transparent placeholder:text-gray-500 placeholder:opacity-100 [&::placeholder]:opacity-100 focus:!border-blue-500 focus:!border-t-blue-500 focus:ring-blue-500/10 rounded-lg'
                     labelProps={{
                         className: "hidden",
                     }}
