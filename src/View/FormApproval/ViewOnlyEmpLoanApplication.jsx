@@ -1,7 +1,7 @@
 import React from 'react'
 
 const ViewOnlyEmpLoanApplication = (props) => {
-    const { loanApplicationValue, handleApplicationChange } = props
+    const { loanApplicationValue, handleApplicationChange, isReadOnly = false } = props
     
     return (
         <div className='space-y-4 p-4'>
@@ -14,6 +14,7 @@ const ViewOnlyEmpLoanApplication = (props) => {
                     value={loanApplicationValue.subject}
                     placeholder='Subject'
                     onChange={handleApplicationChange}
+                    disabled={isReadOnly}
                 />
             </div>
             
@@ -26,6 +27,7 @@ const ViewOnlyEmpLoanApplication = (props) => {
                     name='application'
                     value={loanApplicationValue.application}
                     onChange={handleApplicationChange}
+                    disabled={isReadOnly}
                 />
             </div>
         </div>

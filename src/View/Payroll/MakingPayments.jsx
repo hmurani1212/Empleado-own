@@ -1509,72 +1509,76 @@ const MakingPayments = () => {
     return params;
   };
 
-  // Pagination helpers (same pattern as AttAdustmentRequest) - API uses 0-based page
+  // Pagination — API uses 0-based page_id (local `currentPageId`); UI matches EmployeesList (1-based).
+  // Use local page for the active pill while a request is in flight (store `page_id` updates after fetch).
   const getPaginationData = () => {
-    const totalPages = payslipsPagination?.totalPages ?? 0;
-    const currentPageDisplay = currentPageId + 1; // 1-based for UI
-    const hasMore = payslipsPagination?.hasMore ?? false;
+    const totalPages = Number(payslipsPagination?.totalPages) || 0;
+    const rawOneBased = currentPageId + 1;
+    const currentPage =
+      totalPages > 0 ? Math.min(Math.max(1, rawOneBased), totalPages) : Math.max(1, rawOneBased);
     return {
-      currentPage: currentPageDisplay,
-      totalPages: Math.max(1, totalPages),
-      hasMore,
+      currentPage,
+      totalPages,
+      hasMore: payslipsPagination?.hasMore ?? false,
     };
   };
 
   const goToNextPage = async () => {
-    if (isLoadingMore) return;
+    if (isLoadingMore || tableLoading) return;
     const paginationData = getPaginationData();
-    if (paginationData.currentPage < paginationData.totalPages) {
-      setIsLoadingMore(true);
-      const nextPage0Based = currentPageId + 1;
-      setCurrentPageId(nextPage0Based);
-      try {
-        const params = buildFilterParams(false, nextPage0Based);
-        await gettingPayslips(params, true);
-      } catch (error) {
-        showToast("Failed to load next page", "error");
-        setCurrentPageId(currentPageId);
-      } finally {
-        setIsLoadingMore(false);
-      }
+    if (paginationData.totalPages <= 1 || paginationData.currentPage >= paginationData.totalPages) return;
+    const previousPage0Based = currentPageId;
+    const nextPage0Based = previousPage0Based + 1;
+    setIsLoadingMore(true);
+    setCurrentPageId(nextPage0Based);
+    try {
+      const params = buildFilterParams(false, nextPage0Based);
+      await gettingPayslips(params, true, false);
+    } catch (error) {
+      showToast("Failed to load next page", "error");
+      setCurrentPageId(previousPage0Based);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
   const goToPreviousPage = async () => {
-    if (isLoadingMore) return;
-    if (currentPageId > 0) {
-      setIsLoadingMore(true);
-      const prevPage0Based = currentPageId - 1;
-      setCurrentPageId(prevPage0Based);
-      try {
-        const params = buildFilterParams(false, prevPage0Based);
-        await gettingPayslips(params, true);
-      } catch (error) {
-        showToast("Failed to load previous page", "error");
-        setCurrentPageId(currentPageId);
-      } finally {
-        setIsLoadingMore(false);
-      }
+    if (isLoadingMore || tableLoading) return;
+    if (currentPageId <= 0) return;
+    const previousPage0Based = currentPageId;
+    const prevPage0Based = previousPage0Based - 1;
+    setIsLoadingMore(true);
+    setCurrentPageId(prevPage0Based);
+    try {
+      const params = buildFilterParams(false, prevPage0Based);
+      await gettingPayslips(params, true, false);
+    } catch (error) {
+      showToast("Failed to load previous page", "error");
+      setCurrentPageId(previousPage0Based);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
   const goToPage = async (pageNumber) => {
-    if (isLoadingMore) return;
+    if (isLoadingMore || tableLoading) return;
     const targetPage1Based = parseInt(pageNumber, 10);
-    const targetPage0Based = targetPage1Based - 1;
+    if (!Number.isFinite(targetPage1Based)) return;
     const paginationData = getPaginationData();
-    if (targetPage1Based >= 1 && targetPage1Based <= paginationData.totalPages) {
-      setIsLoadingMore(true);
-      setCurrentPageId(targetPage0Based);
-      try {
-        const params = buildFilterParams(false, targetPage0Based);
-        await gettingPayslips(params, true);
-      } catch (error) {
-        showToast("Failed to load page", "error");
-        setCurrentPageId(currentPageId);
-      } finally {
-        setIsLoadingMore(false);
-      }
+    if (targetPage1Based < 1 || targetPage1Based > paginationData.totalPages) return;
+    const targetPage0Based = targetPage1Based - 1;
+    if (targetPage0Based === currentPageId) return;
+    const previousPage0Based = currentPageId;
+    setIsLoadingMore(true);
+    setCurrentPageId(targetPage0Based);
+    try {
+      const params = buildFilterParams(false, targetPage0Based);
+      await gettingPayslips(params, true, false);
+    } catch (error) {
+      showToast("Failed to load page", "error");
+      setCurrentPageId(previousPage0Based);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -2355,124 +2359,101 @@ const MakingPayments = () => {
                   </td>
                 </tr>
               )}
-              {/* Pagination row - same pattern as AttAdustmentRequest */}
-              {!tableLoading && employees && employees.length > 0 && (() => {
-                const paginationData = getPaginationData();
-                return paginationData.totalPages >= 1 && (
-                  <tr>
-                    <td colSpan={11} className="p-4 w-full" style={{ width: "100%" }}>
-                      <div className="w-full flex justify-center items-center gap-1">
-                        {/* Previous Button */}
-                        {paginationData.currentPage > 1 ? (
-                          <button
-                            title="Previous Page"
-                            className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={goToPreviousPage}
-                            disabled={isLoadingMore}
-                          >
-                            <span>‹</span>
-                            <span>Previous</span>
-                          </button>
-                        ) : (
-                          <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1">
-                            <span>‹</span>
-                            <span>Previous</span>
-                          </div>
-                        )}
-                        {/* Page Numbers */}
-                        <div className="flex items-center gap-1 flex-wrap justify-center">
-                          {paginationData.totalPages <= 10 ? (
-                            Array.from({ length: paginationData.totalPages }, (_, i) => i + 1).map((pageNum) => (
-                              <button
-                                key={pageNum}
-                                onClick={() => goToPage(pageNum)}
-                                disabled={isLoadingMore}
-                                className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                  pageNum === paginationData.currentPage
-                                    ? "bg-[#1a73e8] text-white font-medium"
-                                    : "text-[#1a73e8] hover:bg-gray-100"
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            ))
-                          ) : (
-                            (() => {
-                              const currentPage = paginationData.currentPage;
-                              const totalPages = paginationData.totalPages;
-                              const pages = [];
-                              pages.push(1);
-                              if (currentPage > 3) pages.push("ellipsis-start");
-                              const startPage = Math.max(2, currentPage - 1);
-                              const endPage = Math.min(totalPages - 1, currentPage + 1);
-                              for (let i = startPage; i <= endPage; i++) {
-                                if (i !== 1 && i !== totalPages) pages.push(i);
-                              }
-                              if (currentPage < totalPages - 2) pages.push("ellipsis-end");
-                              pages.push(totalPages);
-                              const uniquePages = [];
-                              const seen = new Set();
-                              pages.forEach((page) => {
-                                if (typeof page === "number" && !seen.has(page)) {
-                                  seen.add(page);
-                                  uniquePages.push(page);
-                                } else if (typeof page === "string") {
-                                  uniquePages.push(page);
-                                }
-                              });
-                              return uniquePages.map((page, index) => {
-                                if (page === "ellipsis-start" || page === "ellipsis-end") {
-                                  return (
-                                    <span
-                                      key={`ellipsis-${index}`}
-                                      className="px-2 text-[clamp(12px,1vw,14px)] text-[#1a73e8]"
-                                    >
-                                      ...
-                                    </span>
-                                  );
-                                }
-                                return (
-                                  <button
-                                    key={page}
-                                    onClick={() => goToPage(page)}
-                                    disabled={isLoadingMore}
-                                    className={`px-3 py-1.5 cursor-pointer text-[clamp(12px,1vw,14px)] rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                      page === currentPage
-                                        ? "bg-[#1a73e8] text-white font-medium"
-                                        : "text-[#1a73e8] hover:bg-gray-100"
-                                    }`}
-                                  >
-                                    {page}
-                                  </button>
-                                );
-                              });
-                            })()
-                          )}
-                        </div>
-                        {/* Next Button */}
-                        {paginationData.currentPage < paginationData.totalPages ? (
-                          <button
-                            title="Next Page"
-                            className="px-3 py-2 cursor-pointer text-[clamp(12px,1vw,14px)] text-[#1a73e8] hover:bg-gray-100 rounded transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={goToNextPage}
-                            disabled={isLoadingMore}
-                          >
-                            <span>Next</span>
-                            <span>›</span>
-                          </button>
-                        ) : (
-                          <div className="px-3 py-2 text-[clamp(12px,1vw,14px)] text-gray-400 cursor-not-allowed flex items-center gap-1">
-                            <span>Next</span>
-                            <span>›</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })()}
             </tbody>
           </table>
+
+          {/* Pagination — same UX as EmployeesList (EmployeesList.jsx) */}
+          {!tableLoading &&
+            employees.length > 0 &&
+            (() => {
+              const paginationData = getPaginationData();
+              if (!paginationData || paginationData.totalPages <= 1) return null;
+
+              const { currentPage, totalPages } = paginationData;
+              const navDisabled = isLoadingMore;
+
+              const renderPageButton = (page) => (
+                <button
+                  key={page}
+                  type="button"
+                  title={`Page ${page}`}
+                  onClick={() => goToPage(page)}
+                  disabled={navDisabled}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                    page === currentPage
+                      ? "bg-brand-500 text-white shadow-md shadow-brand-500/20 cursor-pointer"
+                      : navDisabled
+                        ? "bg-gray-50 text-gray-300 border border-gray-100 cursor-not-allowed"
+                        : "bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200 cursor-pointer"
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+
+              let pageControls = null;
+              if (totalPages <= 7) {
+                pageControls = Array.from({ length: totalPages }, (_, i) => i + 1).map(renderPageButton);
+              } else {
+                const pages = [];
+                pages.push(renderPageButton(1));
+                if (currentPage > 3) {
+                  pages.push(
+                    <span key="start-ellipsis" className="text-gray-400 px-1">
+                      ...
+                    </span>
+                  );
+                }
+                const startPage = Math.max(2, currentPage - 1);
+                const endPage = Math.min(totalPages - 1, currentPage + 1);
+                for (let i = startPage; i <= endPage; i++) {
+                  pages.push(renderPageButton(i));
+                }
+                if (currentPage < totalPages - 2) {
+                  pages.push(
+                    <span key="end-ellipsis" className="text-gray-400 px-1">
+                      ...
+                    </span>
+                  );
+                }
+                pages.push(renderPageButton(totalPages));
+                pageControls = pages;
+              }
+
+              return (
+                <div className="w-full flex justify-center items-center gap-2 mt-4 mb-1 px-2">
+                  <button
+                    type="button"
+                    title="Previous Page"
+                    disabled={currentPage <= 1 || navDisabled}
+                    className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                      currentPage > 1 && !navDisabled
+                        ? "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm cursor-pointer"
+                        : "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
+                    }`}
+                    onClick={goToPreviousPage}
+                  >
+                    ‹
+                  </button>
+
+                  <div className="flex items-center gap-1.5 flex-wrap justify-center">{pageControls}</div>
+
+                  <button
+                    type="button"
+                    title="Next Page"
+                    disabled={currentPage >= totalPages || navDisabled}
+                    className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                      currentPage < totalPages && !navDisabled
+                        ? "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm cursor-pointer"
+                        : "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
+                    }`}
+                    onClick={goToNextPage}
+                  >
+                    ›
+                  </button>
+                </div>
+              );
+            })()}
         </div>
       </div>
 

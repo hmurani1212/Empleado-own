@@ -457,8 +457,18 @@ const DashboardCountData = (props) => {
             
             {/* Summary Section for Today's Attendance */}
             {isTodayAttendance && (() => {
-              const todayPresent = filteredData.filter(ele => 
-                ele.in_time && ele.in_time !== "Absent" && ele.in_time !== "Off"
+              const isLeaveRecord = (row) => {
+                const statusValue = String(row?.status || '').toLowerCase();
+                const attendanceStatusValue = String(row?.attendance_status || '').toLowerCase();
+                const inTimeValue = String(row?.in_time || '').toLowerCase();
+                return statusValue === 'leave' || attendanceStatusValue === 'leave' || inTimeValue === 'leave';
+              };
+
+              const todayPresent = filteredData.filter(ele =>
+                ele.in_time &&
+                ele.in_time !== "Absent" &&
+                ele.in_time !== "Off" &&
+                !isLeaveRecord(ele)
               ).length;
               
               return (
@@ -483,6 +493,10 @@ const DashboardCountData = (props) => {
                         <span className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-200"></span>
                         <span className="text-gray-600">Off</span>
                       </div>
+                      <div className="flex items-center gap-1">
+                        <span className="w-3 h-3 rounded-full bg-purple-100 border border-purple-200"></span>
+                        <span className="text-gray-600">Leave</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -495,20 +509,27 @@ const DashboardCountData = (props) => {
                   const rowKey = ele.id || ele.emp_id || `row-${index}`;
                   const isAbsent = ele.in_time === "Absent";
                   const isOff = ele.in_time === "Off";
+                  const statusValue = String(ele?.status || '').toLowerCase();
+                  const attendanceStatusValue = String(ele?.attendance_status || '').toLowerCase();
+                  const inTimeValue = String(ele?.in_time || '').toLowerCase();
+                  const isLeave = statusValue === 'leave' || attendanceStatusValue === 'leave' || inTimeValue === 'leave';
                   const initials = (ele.name || '??').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
                   const statusConfig = isAbsent 
                     ? { label: 'Absent', bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' }
+                    : isLeave
+                    ? { label: 'Leave', bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' }
                     : isOff 
                     ? { label: 'Off', bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' }
                     : { label: 'Present', bg: 'bg-lightGreen', text: 'text-green-800', border: 'border-green-800' };
-                  const avatarBg = isAbsent ? 'bg-red-100' : isOff ? 'bg-amber-100' : 'bg-green-200';
-                  const avatarText = isAbsent ? 'text-red-700' : isOff ? 'text-amber-700' : 'text-green-600';
+                  const avatarBg = isAbsent ? 'bg-red-100' : isLeave ? 'bg-purple-100' : isOff ? 'bg-amber-100' : 'bg-green-200';
+                  const avatarText = isAbsent ? 'text-red-700' : isLeave ? 'text-purple-700' : isOff ? 'text-amber-700' : 'text-green-600';
 
                   return (
                     <div
                       key={rowKey}
                       className={`group flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-200 hover:shadow-md ${
                         isAbsent ? 'bg-red-50/60 border-red-100 hover:border-red-200' 
+                        : isLeave ? 'bg-purple-50/60 border-purple-100 hover:border-purple-200'
                         : isOff ? 'bg-amber-50/40 border-amber-100 hover:border-amber-200' 
                         : 'bg-green-100/70 border-green-200 hover:border-green-300 hover:bg-slate-50/50'
                       }`}

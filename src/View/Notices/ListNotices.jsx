@@ -6,11 +6,9 @@ import EditNoticeForm from "./EditNoticeForm";
 import ConfirmationDialog from "../../Components/ConfirmationDialog/ConfirmationDialog";
 import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import NoticesView from "./NoticesView";
-import { formatTimestamp } from "../Branches/utils";
 import { FaChevronDown } from "react-icons/fa";
 import { motion } from "framer-motion";
 import PortalDrawer from "../../Components/CustomDrawer/PortalDrawer";
-import { hexToRGBA, titleNameAlpha } from "../../services/appServices";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import { getAllYears } from "../../services/__appServicesData";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
@@ -19,9 +17,6 @@ import useStore from "../../Store/store";
 
 const SkeletonRow = () => (
   <tr className="animate-pulse border-b border-gray-100">
-    <td className="p-4">
-      <div className="h-4 w-16 bg-gray-200 rounded mx-auto" />
-    </td>
     <td className="p-4">
       <div className="h-4 w-12 bg-gray-200 rounded mx-auto" />
     </td>
@@ -76,8 +71,8 @@ const ListNotices = () => {
   const drawerOpen = useStore((state) => state.drawerOpen);
 
   const [currentPageId, setCurrentPageId] = useState(1);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
 
   const displayNotices = useMemo(
     () =>
@@ -142,13 +137,23 @@ const ListNotices = () => {
   }, [drawerOpen, addNoticeValue?.show]);
 
   const tableHeads = [
-    "Month",
     "Notice ID",
-    "Notice Title",
+    "Title",
+    "Description",
     "Recipient",
     "Created Date",
     "Actions",
   ];
+
+  const formatDateOnly = (timestamp) => {
+    if (!timestamp) return "N/A";
+    const date = new Date(Number(timestamp) * 1000);
+    if (Number.isNaN(date.getTime())) return "N/A";
+    const day = date.toLocaleString("en-US", { day: "2-digit" });
+    const month = date.toLocaleString("en-US", { month: "short" });
+    const year = date.getFullYear();
+    return `${day} ${month}, ${year}`;
+  };
 
   // Fetch notices list once on mount (page 1). Ref guard avoids duplicate call from Strict Mode or double mount.
   const hasFetchedRef = React.useRef(false);
@@ -170,16 +175,19 @@ const ListNotices = () => {
   // Reset pagination when filters change (wrap original handler)
   const handleFilterChange = async (selectedOption, field) => {
     setCurrentPageId(1);
-    await handleSelectFilterNotice(selectedOption, field);
+    setPageLoading(true);
+    try {
+      await handleSelectFilterNotice(selectedOption, field);
+    } finally {
+      setPageLoading(false);
+    }
   };
 
-  // Load More supports filtered + unfiltered
-  const handleLoadMore = async () => {
-    if (isLoadingMore || !noticesPagination?.hasMore) return;
+  const handlePageChange = async (page) => {
+    const nextPage = Number(page);
+    if (!Number.isFinite(nextPage) || nextPage <= 0 || nextPage === currentPageId) return;
 
-    setIsLoadingMore(true);
-    const nextPageId = currentPageId + 1;
-
+    setPageLoading(true);
     try {
       const { branch_id, dept_id, year } = filterNoticeValue;
 
@@ -196,21 +204,47 @@ const ListNotices = () => {
           branch_id?.value || "",
           dept_id?.value || "",
           year?.value || "",
-          nextPageId,
+          nextPage,
           10,
-          true
+          false
         );
       } else {
-        await getAllNoticesList({ page: nextPageId, limit: 10 }, false, true);
+        await getAllNoticesList({ page: nextPage, limit: 10 }, true, false);
       }
 
-      setCurrentPageId(nextPageId);
+      setCurrentPageId(nextPage);
     } catch (error) {
-      console.error("Error loading more notices:", error);
+      console.error("Error changing page:", error);
     } finally {
-      setIsLoadingMore(false);
+      setPageLoading(false);
     }
   };
+
+  const currentPage = noticesPagination?.currentPage || currentPageId || 1;
+  const totalPages = noticesPagination?.totalPages || 1;
+
+  const visiblePages = useMemo(() => {
+    if (totalPages <= 4) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    // Sliding 3-page window:
+    // Page 1 -> 1 2 3 ... last
+    // Page 3 -> 2 3 4 ... last
+    // Near end -> (last-3) (last-2) (last-1) last
+    const startPage = Math.max(1, Math.min(currentPage - 1, totalPages - 3));
+    const endPage = Math.min(totalPages - 1, startPage + 2);
+
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    if (endPage < totalPages - 1) {
+      pages.push("ellipsis-end");
+    }
+    pages.push(totalPages);
+    return pages;
+  }, [currentPage, totalPages]);
 
   const years = getAllYears();
 
@@ -291,14 +325,24 @@ const ListNotices = () => {
         {/* Notices Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div ref={scrollContainerRef} className="relative w-full min-h-[calc(100vh-250px)] overflow-auto customScroll">
-            <table className="min-w-full table-auto text-center">
+            <table className="min-w-full table-fixed text-center">
               <thead className="sticky top-0 z-20 bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
                 <tr>
                   {tableHeads.map((head, i) => (
                     <th
                       key={i}
-                      className={`p-4 first:pl-6 last:pr-6 whitespace-nowrap ${
-                        head === "Notice Title" ? "text-left" : "text-center"
+                      className={`p-4 first:pl-6 last:pr-6 ${
+                        head === "Title"
+                          ? "text-left w-[26%]"
+                          : head === "Description"
+                          ? "text-left w-[24%]"
+                          : head === "Recipient"
+                          ? "text-center w-[16%]"
+                          : head === "Created Date"
+                          ? "text-center w-[18%]"
+                          : head === "Actions"
+                          ? "text-center w-[12%]"
+                          : "text-center whitespace-nowrap"
                       }`}
                     >
                       <Typography className="font-semibold text-[11px] uppercase tracking-wider text-gray-500 font-poppins">
@@ -310,88 +354,50 @@ const ListNotices = () => {
               </thead>
 
               <tbody className="divide-y divide-gray-50">
-                {initialLoading ? (
+                {initialLoading || pageLoading ? (
                   Array.from({ length: 8 }).map((_, idx) => (
                     <SkeletonRow key={idx} />
                   ))
                 ) : displayNotices.length > 0 ? (
                   displayNotices.map((ele, index) => {
-                      const currentMonth = new Date(
-                        ele?.timestamp ? ele.timestamp * 1000 : 0
-                      ).toLocaleString("en-US", { month: "short" });
-
-                      const previousMonth =
-                        index > 0
-                          ? new Date(
-                              displayNotices[index - 1].timestamp * 1000
-                            ).toLocaleString("en-US", { month: "short" })
-                          : null;
-
-                      const isFirstRowOfMonth = currentMonth !== previousMonth;
-
-                      const rowSpan = displayNotices.filter(
-                        (item) =>
-                          item?.timestamp &&
-                          new Date(item.timestamp * 1000).toLocaleString(
-                            "en-US",
-                            { month: "short" }
-                          ) === currentMonth
-                      ).length;
-
-                      const { bgColor } = titleNameAlpha(currentMonth);
-                      const rgbaColor = hexToRGBA(bgColor, 0.1);
-
                       return (
                         <motion.tr
                           key={`${ele.id}-${index}`}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.03 }}
-                          className="hover:bg-blue-50/30 transition-colors group"
+                          className="bg-white hover:bg-gray-50/60 transition-colors group"
                         >
-                          {/* Month */}
-                          {isFirstRowOfMonth && (
-                            <td
-                              rowSpan={rowSpan}
-                              className="p-4 align-middle border-r border-gray-50 bg-gray-50/30"
-                            >
-                              <div className="flex items-center justify-center h-full">
-                                <div
-                                  className="h-20 w-10 text-[11px] font-bold flex items-center justify-center rounded-lg leading-none shadow-sm"
-                                  style={{
-                                    writingMode: "vertical-rl",
-                                    textOrientation: "upright",
-                                    border: `1px solid ${bgColor}`,
-                                    backgroundColor: rgbaColor,
-                                    color: bgColor,
-                                  }}
-                                >
-                                  {currentMonth.toUpperCase()}
-                                </div>
-                              </div>
-                            </td>
-                          )}
-
                           {/* ID */}
                           <td className="p-4">
                             <Typography className="font-medium text-xs text-gray-500 font-poppins">
-                              #{ele.id}
+                              {ele.id}
                             </Typography>
                           </td>
 
                           {/* Title */}
                           <td className="p-4 text-left">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 max-w-[320px]">
                               <div className="p-2 bg-blue-50 rounded-lg text-blue-500 group-hover:bg-blue-100 transition-colors">
                                 <HiOutlineSpeakerphone size={16} />
                               </div>
                               <Typography
-                                className="text-sm font-semibold text-gray-900 font-poppins line-clamp-1"
+                                className="text-sm font-semibold text-gray-900 font-poppins line-clamp-2 break-words leading-5"
                                 title={ele.title}
                               >
                                 {ele.title}
                               </Typography>
                             </div>
+                          </td>
+
+                          {/* Description */}
+                          <td className="p-4 text-left">
+                            <Typography
+                              className="text-xs text-gray-500 font-poppins line-clamp-2 break-words leading-5"
+                              title={ele.description || ""}
+                            >
+                              {ele.description || "-"}
+                            </Typography>
                           </td>
 
                           {/* Recipient */}
@@ -410,7 +416,7 @@ const ListNotices = () => {
                           {/* Date */}
                           <td className="p-4">
                             <Typography className="text-xs text-gray-500 font-poppins">
-                              {formatTimestamp(ele.timestamp)}
+                              {formatDateOnly(ele.timestamp)}
                             </Typography>
                           </td>
 
@@ -498,19 +504,60 @@ const ListNotices = () => {
                 );
               })()}
 
-            {/* Load More */}
-            {displayNotices.length > 0 && noticesPagination?.hasMore && (
-              <div className="flex justify-center mt-6 pb-6">
-                <Button
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
-                  className="px-6 py-2.5 text-xs font-semibold cursor-pointer capitalize bg-white text-blue-600 border border-blue-100 hover:bg-blue-50 hover:border-blue-200 rounded-xl shadow-sm transition-all flex items-center gap-2"
+            {/* Pagination (inside table box) */}
+            {displayNotices.length > 0 && totalPages > 1 && (
+              <div className="w-full flex justify-center items-center gap-2 mt-6 mb-2 pb-6">
+                <button
+                  title="Previous Page"
+                  disabled={currentPage <= 1}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                    currentPage > 1
+                      ? "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm"
+                      : "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
+                  }`}
+                  onClick={() => handlePageChange(currentPage - 1)}
                 >
-                  {isLoadingMore && (
-                    <div className="w-3 h-3 border-2 cursor-pointer border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
-                  )}
-                  {isLoadingMore ? "Loading..." : "Load More Notices"}
-                </Button>
+                  ‹
+                </button>
+
+                <div className="flex items-center gap-1.5">
+                  {visiblePages.map((page, index) => {
+                    if (page === "ellipsis-start" || page === "ellipsis-end") {
+                      return (
+                        <span key={`ellipsis-${index}`} className="text-gray-400 px-1">
+                          ...
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`w-8 h-8 flex items-center cursor-pointer justify-center rounded-lg text-xs font-medium transition-all ${
+                          page === currentPage
+                            ? "bg-bgBlue text-white shadow-md shadow-blue-500/20"
+                            : "bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  title="Next Page"
+                  disabled={currentPage >= totalPages}
+                  className={`flex items-center justify-center cursor-pointer w-8 h-8 rounded-lg border transition-all ${
+                    currentPage < totalPages
+                      ? "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm"
+                      : "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
+                  }`}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                >
+                  ›
+                </button>
               </div>
             )}
           </div>
@@ -533,6 +580,7 @@ const ListNotices = () => {
         title="View Notice Detail"
         compo={<NoticesView />}
         showBtns={false}
+        size="h-[62vh] w-[560px]"
       />
 
       {addNoticeValue?.show && (

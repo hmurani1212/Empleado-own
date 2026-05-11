@@ -12,6 +12,79 @@ import { formatAttendanceData } from "../../services/__attendanceDataFormatter";
 import { getUserData } from "../../Authentication/jwt_decode";
 import { isFullAdmin } from "../../Authentication/roleHelpers";
 
+const parseDdMmYyyyToTime = (dateString) => {
+    const parts = String(dateString || "").split("-").map(Number);
+    if (parts.length !== 3) return 0;
+    const [d, m, y] = parts;
+    if (!y || !m || !d) return 0;
+    const t = new Date(y, m - 1, d).getTime();
+    return Number.isNaN(t) ? 0 : t;
+};
+
+/**
+ * Build chart matrix for MonthlyWorkingHoursChart from
+ * `/api/attendance/individual-attendance` DB_DATA (attendance[] + optional late_coming_days).
+ */
+const buildChartMatrixFromIndividualAttendanceDb = (db) => {
+    const header = ["Date", "Working Hours", "Late Minutes", "Overtime (hrs)", "Early Leave (min)"];
+    if (!db || !Array.isArray(db.attendance) || db.attendance.length === 0) {
+        return [header];
+    }
+
+    const lateByDate = new Map();
+    (Array.isArray(db.late_coming_days) ? db.late_coming_days : []).forEach((row) => {
+        const key = String(row?.date ?? "").trim();
+        if (!key) return;
+        const lm = Number(row?.late_minutes);
+        lateByDate.set(key, Number.isFinite(lm) ? lm : 0);
+    });
+
+    const earlyByDate = new Map();
+    (Array.isArray(db.early_leave_summary?.days) ? db.early_leave_summary.days : []).forEach((row) => {
+        const key = String(row?.date ?? "").trim();
+        if (!key) return;
+        const m = Number(row?.early_leave_minutes);
+        earlyByDate.set(key, Number.isFinite(m) ? m : 0);
+    });
+
+    const records = [...db.attendance].sort((a, b) => {
+        const ta = Number(a?.date);
+        const tb = Number(b?.date);
+        if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return ta - tb;
+        return parseDdMmYyyyToTime(a?.date_string) - parseDdMmYyyyToTime(b?.date_string);
+    });
+
+    const chartLateMinutes = (record) => {
+        const key = String(record?.date_string ?? "").trim();
+        if (lateByDate.has(key)) return lateByDate.get(key);
+        const v =
+            record?.late_minutes ??
+            record?.late_minute ??
+            record?.late_mins_adjusted ??
+            record?.late_mins ??
+            0;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+    };
+
+    const chartEarlyLeaveMinutes = (record) => {
+        const key = String(record?.date_string ?? "").trim();
+        if (earlyByDate.has(key)) return earlyByDate.get(key);
+        const m = Number(record?.early_leave_minutes ?? 0);
+        return Number.isFinite(m) ? m : 0;
+    };
+
+    const rows = records.map((record) => {
+        const label = String(record?.date_string ?? "");
+        const earnedSec = Number(record?.earned) || 0;
+        const workingHrs = Math.round((earnedSec / 3600) * 100) / 100;
+        const otSec = Number(record?.overtime) || 0;
+        const otHrs = Math.round((otSec / 3600) * 100) / 100;
+        return [label, workingHrs, chartLateMinutes(record), otHrs, chartEarlyLeaveMinutes(record)];
+    });
+
+    return [header, ...rows];
+};
 
 const useIndividualAttendanceServices = ()=>{
 
@@ -49,7 +122,7 @@ const useIndividualAttendanceServices = ()=>{
 
     const {gettingSingleData, toggleSingleAttendance, singleDayService, addMoreInput, closeModal, updateSingleDayData} = useSingleAttendanceService()
 
-    const onDataRefreshed = (refreshedData, graphResponse) => {
+    const onDataRefreshed = (refreshedData) => {
         // Accept either axios response or plain payload
         const res = refreshedData?.data ? refreshedData.data : refreshedData;
         const db = res?.DB_DATA || null;
@@ -98,6 +171,8 @@ const useIndividualAttendanceServices = ()=>{
             ot_percentage: otPercentage,
             attendance: Array.isArray(db.attendance) ? db.attendance : [],
             last_policy: db.last_policy || {},
+            early_leave_summary: db.early_leave_summary ?? null,
+            late_coming_seconds: db.late_coming_seconds ?? null,
             policy_closeing_time: db.policy_closeing_time || null,
             employeeSnapshot,
             summary: {
@@ -108,41 +183,21 @@ const useIndividualAttendanceServices = ()=>{
                 absentees: db.absent_days ?? 0,
                 holidays: db.holidays ?? 0,
                 allowedLeaves: db.allowed_leaves ?? 0,
-                leaveAvailed: db.leave_availed ?? 0
+                leaveAvailed: db.leaves ?? db.leave_availed ?? 0
             }
         };
 
-        // Decide chart data: if graphResponse provided and valid, use it; else keep existing and trigger fetch
-        let nextChart = null;
-        const graphRes = graphResponse?.data ? graphResponse.data : graphResponse;
-        if (graphRes && Array.isArray(graphRes.data) && graphRes.STATUS === 'SUCCESSFUL') {
-            // Dedupe chart matrix by date label
-            const matrix = graphRes.data;
-            const header = matrix[0] || [];
-            const rows = matrix.slice(1);
-            const indexByLabel = new Map();
-            const deduped = [];
-            rows.forEach((row) => {
-                const label = String(row?.[0] ?? '');
-                if (indexByLabel.has(label)) {
-                    const idx = indexByLabel.get(label);
-                    deduped[idx] = row; // replace with latest
-                } else {
-                    indexByLabel.set(label, deduped.length);
-                    deduped.push(row);
-                }
-            });
-            nextChart = [header, ...deduped];
-        }
+        const chartFromIndividual = buildChartMatrixFromIndividualAttendanceDb(db);
 
         setAttendanceData((prevState) => ({
             ...prevState,
             attendanceAttr: transformedData,
-            chartData: nextChart ? nextChart : prevState.chartData
+            chartData: chartFromIndividual,
         }));
 
         // Also update the calendar data in the store
         settingcalendarData(transformedData);
+        settingcalendarChartData(chartFromIndividual);
         // Store last_policy in store for route access
         const lastPolicy = db.last_policy || {};
         setLastHRPolicy(lastPolicy);
@@ -152,12 +207,6 @@ const useIndividualAttendanceServices = ()=>{
             if (transformedPolicy && Object.keys(transformedPolicy).length > 0) {
                 setViewPolicy(transformedPolicy);
             }
-        }
-        if (nextChart) {
-            settingcalendarChartData(nextChart);
-        } else {
-            // Refresh the chart from the dedicated graph API
-            gettingGraphData();
         }
     }
 
@@ -217,7 +266,9 @@ const useIndividualAttendanceServices = ()=>{
                 lateComings: 0,
                 absentees: 0,
                 holidays: 0,
-                availedLeaves: 0
+                availedLeaves: 0,
+                early_leave_min: 0,
+                bucket_minutes: 0
             }
         },
         currentDate: getInitialMonthYear().month,
@@ -515,6 +566,8 @@ const useIndividualAttendanceServices = ()=>{
                         ot_percentage: otPercentage,
                         attendance: Array.isArray(db.attendance) ? db.attendance : [],
                         last_policy: db.last_policy || {},
+                        early_leave_summary: db.early_leave_summary ?? null,
+                        late_coming_seconds: db.late_coming_seconds ?? null,
                         policy_closeing_time: db.policy_closeing_time || null,
                         employeeSnapshot,
                         summary: {
@@ -526,17 +579,19 @@ const useIndividualAttendanceServices = ()=>{
                             absentees: db.absent_days ?? 0,
                             holidays: db.holidays ?? 0,
                             allowedLeaves: db.allowed_leaves ?? 0,
-                            leaveAvailed: db.leaves ?? 0
+                            leaveAvailed: db.leaves ?? db.leave_availed ?? 0
                         }
                     };
 
-                    // Create chart data format for the chart component
+                    const chartDataFromIndividual = buildChartMatrixFromIndividualAttendanceDb(db);
+
                     setAttendanceData((prevState)=>(
                         {
                         ...prevState,
                         attendanceAttr: transformedData,
-                        chartData: prevState.chartData
+                        chartData: chartDataFromIndividual,
                     }))
+                    settingcalendarChartData(chartDataFromIndividual)
                     settingcalendarData(transformedData)
                     // Store last_policy in store for route access
                     const lastPolicy = db.last_policy || {};
@@ -548,9 +603,6 @@ const useIndividualAttendanceServices = ()=>{
                             setViewPolicy(transformedPolicy);
                         }
                     }
-                    // Fetch chart data from graph API (separate endpoint)
-                    gettingGraphData();
-                    // console.log('Attendance data set successfully:', transformedData);
                 }
                 
                 // console.log('response', response)
@@ -755,17 +807,25 @@ const useIndividualAttendanceServices = ()=>{
                     return
                 }
 
-                // Case 2: Flexible shape handling for records
+                // Case 2: Flexible shape handling for records (same shape as individual-attendance DB_DATA)
                 const payload = res.DB_DATA || res.data || res
                 const records = payload?.attendance || payload?.records || []
-
-                // Build and dedupe by date_string
-                const header = ['Date', 'Working Hours'];
+                const built = buildChartMatrixFromIndividualAttendanceDb({
+                    attendance: records,
+                    late_coming_days: payload?.late_coming_days,
+                    early_leave_summary: payload?.early_leave_summary,
+                });
+                const header = built[0] || [
+                    "Date",
+                    "Working Hours",
+                    "Late Minutes",
+                    "Overtime (hrs)",
+                    "Early Leave (min)",
+                ];
                 const indexByLabel = new Map();
                 const dedupedRows = [];
-                records.forEach((record) => {
-                    const label = record.date_string;
-                    const row = [label, Math.round((record.earned || 0) / 3600 * 100) / 100];
+                built.slice(1).forEach((row) => {
+                    const label = String(row?.[0] ?? "");
                     if (indexByLabel.has(label)) {
                         const idx = indexByLabel.get(label);
                         dedupedRows[idx] = row;

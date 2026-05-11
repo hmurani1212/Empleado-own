@@ -86,6 +86,21 @@ const EmpLazinees = () => {
 
   // Get attendance data
   const attendanceData = empDashboardData?.attendance;
+  const earlyAdjustmentEnabled =
+    String(
+      attendanceData?.early_leave_adjustment ??
+        attendanceData?.early_leave_adjustment_enabled ??
+        empDashboardData?.view_policy?.early_leave_adjustment ??
+        "0"
+    ) === "1";
+  const usedLateMinutes =
+    attendanceData?.total_used_late_min ??
+    (attendanceData?.total_late_minutes > 0 ? attendanceData?.total_late_minutes : 0);
+  const earlyLeaveMinutes = Number(attendanceData?.total_early_leave_minutes) || 0;
+  const usedBucketMinutes = Math.max(
+    0,
+    (Number(usedLateMinutes) || 0) + (earlyAdjustmentEnabled ? earlyLeaveMinutes : 0)
+  );
 
   // Get reminders from dashboard data and sync with local state (single source of truth)
   const dashboardReminders = useMemo(() => {
@@ -550,11 +565,11 @@ const EmpLazinees = () => {
               </div>
             </div>
 
-            {/* Late Minutes Circular Progress */}
+            {/* Bucket Minutes Circular Progress */}
             <div className="flex flex-col items-center bg-[#FEF2F2] p-4 rounded-[8px] shadow-md">
               <div className="mb-2">
                 <span className="text-[#292929] text-[14px] font-semibold font-Urbanist truncate">
-                  Late Minutes
+                  Bucket Minutes
                 </span>
               </div>
               <div className="relative w-32 h-32 mb-3 cursor-pointer rounded-full" onClick={handleLateMinutes}>
@@ -569,13 +584,10 @@ const EmpLazinees = () => {
                   />
                   {(() => {
                     const allowedLateMin = attendanceData?.allowed_late_min || 1;
-                    const usedLateMin =
-                      attendanceData?.total_used_late_min ??
-                      (attendanceData?.total_late_minutes > 0 ? attendanceData.total_late_minutes : 0);
                     const percentage =
                       allowedLateMin <= 0
                         ? 0
-                        : Math.min(100, (usedLateMin / allowedLateMin) * 100);
+                        : Math.min(100, (usedBucketMinutes / allowedLateMin) * 100);
                     const circumference = 2 * Math.PI * 52;
                     const offset = circumference * (1 - percentage / 100);
                     const strokeColor =
@@ -607,7 +619,7 @@ const EmpLazinees = () => {
                         : "text-[#212529]"
                     }`}
                   >
-                    {Math.abs(attendanceData?.total_late_minutes > 0 ? attendanceData?.total_late_minutes : attendanceData?.total_used_late_min || 0)}/
+                    {Math.abs(usedBucketMinutes)}/
                     {attendanceData?.allowed_late_min || 0}
                   </span>
                   <span className="text-[10px] text-gray-500">
@@ -616,11 +628,7 @@ const EmpLazinees = () => {
                 </div>
               </div>
 
-              <span className="text-[12px] text-[#212529]">
-                {attendanceData?.total_late_minutes > 0
-                  ? "Deducted Minutes"
-                  : "Late Minutes"}
-              </span>
+              <span className="text-[12px] text-[#212529]">Bucket Minutes</span>
             </div>
           </div>
         </div>

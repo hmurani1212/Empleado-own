@@ -1,17 +1,83 @@
 import { Card, CardBody } from '@material-tailwind/react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import useEmpNoticesServices from '../../../ViewModel/EmpViewModel/EmpNoticesViewModel/EmpNotices';
 import noRecordFound from '../../../assets/employee_side_images/no record found.gif';
 import { motion } from 'framer-motion';
 import { HiSpeakerphone } from "react-icons/hi";
 import EmpNoticesTableSkeleton from './EmpNoticesSkeleton';
+import CustomSelect from '../../../Components/CustomSelect/CustomSelect';
+import { getAllMonths, getAllYears } from '../../../services/__appServicesData';
 
 const EmpNotices = () => {
-  const { getEmpNoticesData, noticesData, noticesLoading } = useEmpNoticesServices();
+  const { getEmpNoticesData, noticesData, noticesLoading, noticesPagination } = useEmpNoticesServices();
+  const [filters, setFilters] = useState({
+    month: null,
+    year: null,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const months = getAllMonths();
+  const years = getAllYears();
+  const monthOptions = useMemo(
+    () => [{ value: '', label: 'Select Month' }, ...(months?.map((month) => ({ value: month.id, label: month.title })) || [])],
+    [months]
+  );
+  const yearOptions = useMemo(
+    () => [{ value: '', label: 'Select Year' }, ...(years?.map((year) => ({ value: year, label: year })) || [])],
+    [years]
+  );
+  const monthValue = filters?.month?.value;
+  const yearValue = filters?.year?.value;
+  const hasMonth = Boolean(monthValue);
+  const hasYear = Boolean(yearValue);
 
   useEffect(() => {
-    getEmpNoticesData();
-  }, []);
+    const selectedMonthPlaceholder = monthValue === '' || monthValue == null;
+    const selectedYearPlaceholder = yearValue === '' || yearValue == null;
+    const shouldFetchFiltered = hasMonth && hasYear;
+    const shouldFetchUnfiltered = selectedMonthPlaceholder && selectedYearPlaceholder;
+
+    // Call API only when both values are chosen:
+    // 1) both real values -> filtered call
+    // 2) both reset options -> unfiltered call
+    if (!shouldFetchFiltered && !shouldFetchUnfiltered) return;
+
+    getEmpNoticesData({
+      ...(shouldFetchFiltered ? { month: monthValue, year: yearValue } : {}),
+      page: currentPage,
+      limit: 15,
+    });
+  }, [hasMonth, hasYear, monthValue, yearValue, currentPage]);
+
+  const handleFilterChange = (selectedOption, key) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: selectedOption,
+    }));
+    setCurrentPage(1);
+  };
+
+  const totalPages = noticesPagination?.totalPages || 1;
+  const safeCurrentPage = noticesPagination?.currentPage || currentPage || 1;
+
+  const visiblePages = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages = [];
+    pages.push(1);
+    if (safeCurrentPage > 3) pages.push("ellipsis-start");
+    const startPage = Math.max(2, safeCurrentPage - 1);
+    const endPage = Math.min(totalPages - 1, safeCurrentPage + 1);
+    for (let i = startPage; i <= endPage; i += 1) pages.push(i);
+    if (safeCurrentPage < totalPages - 2) pages.push("ellipsis-end");
+    pages.push(totalPages);
+    return pages;
+  }, [safeCurrentPage, totalPages]);
+
+  const handlePageChange = (page) => {
+    if (!Number.isFinite(page) || page < 1 || page > totalPages || page === safeCurrentPage) return;
+    setCurrentPage(page);
+  };
 
   const formatDate = (timestamp) => {
     const date = new Date(timestamp * 1000);
@@ -53,6 +119,24 @@ const EmpNotices = () => {
               <p className='text-sm text-gray-500 mt-1'>Stay updated with latest announcements</p>
            </div>
         </div>
+        <div className='flex items-center gap-3 w-full md:w-auto'>
+          <div className='w-full md:w-40'>
+            <CustomSelect
+              placeHolderTitle='Month'
+              value={filters.month}
+              options={monthOptions}
+              onChangeHandler={(selectedOption) => handleFilterChange(selectedOption, 'month')}
+            />
+          </div>
+          <div className='w-full md:w-32'>
+            <CustomSelect
+              placeHolderTitle='Year'
+              value={filters.year}
+              options={yearOptions}
+              onChangeHandler={(selectedOption) => handleFilterChange(selectedOption, 'year')}
+            />
+          </div>
+        </div>
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -68,7 +152,7 @@ const EmpNotices = () => {
                  <div className="col-span-12 md:col-span-7 text-xs font-bold text-gray-500 uppercase tracking-wider">Description</div>
              </div>
 
-             <div className="divide-y divide-gray-100 max-h-[calc(100vh-250px)] overflow-y-auto customScroll">
+             <div className="divide-y divide-gray-100">
                 {noticesData?.length > 0 ? (
                     noticesData.map((ele, index) => (
                        <motion.div 
@@ -101,6 +185,58 @@ const EmpNotices = () => {
                     </div>
                 )}
              </div>
+
+             {noticesData?.length > 0 && totalPages > 1 && (
+               <div className="w-full flex justify-center items-center gap-2 py-4 border-t border-gray-100">
+                 <button
+                   title="Previous Page"
+                   disabled={safeCurrentPage <= 1}
+                   className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                     safeCurrentPage > 1
+                       ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                       : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                   }`}
+                   onClick={() => handlePageChange(safeCurrentPage - 1)}
+                 >
+                   ‹
+                 </button>
+
+                 <div className="flex items-center gap-1.5">
+                   {visiblePages.map((page, index) =>
+                     page === "ellipsis-start" || page === "ellipsis-end" ? (
+                       <span key={`ellipsis-${index}`} className="text-gray-400 px-1">
+                         ...
+                       </span>
+                     ) : (
+                       <button
+                         key={page}
+                         onClick={() => handlePageChange(page)}
+                         className={`w-8 h-8 flex items-center cursor-pointer justify-center rounded-lg text-xs font-medium transition-all ${
+                           page === safeCurrentPage
+                             ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                             : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200'
+                         }`}
+                       >
+                         {page}
+                       </button>
+                     )
+                   )}
+                 </div>
+
+                 <button
+                   title="Next Page"
+                   disabled={safeCurrentPage >= totalPages}
+                   className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+                     safeCurrentPage < totalPages
+                       ? 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 shadow-sm'
+                       : 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
+                   }`}
+                   onClick={() => handlePageChange(safeCurrentPage + 1)}
+                 >
+                   ›
+                 </button>
+               </div>
+             )}
           </CardBody>
         </Card>
         )}

@@ -155,8 +155,6 @@ const TalentPool = () => {
     return format(new Date(timestamp * 1000), "dd MMM yyyy");
   };
 
-  console.log(filters)
-
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -326,14 +324,12 @@ const TalentPool = () => {
                   handleFilterChange("age_from", val);
                   setAgeFromIx(false);
                 }}
-                selected={(optionEl) => {
+                selected={() => {
                   if (hasAgeFromValue) {
                     return (
-                      optionEl ?? (
-                        <span className="text-[12px] font-Urbanist font-medium text-[#474747]">
-                          {filters.age_from}
-                        </span>
-                      )
+                      <span className="text-[12px] font-Urbanist font-medium text-[#474747]">
+                        {filters.age_from}
+                      </span>
                     );
                   }
                   if (showAgeFromPh) {
@@ -376,14 +372,12 @@ const TalentPool = () => {
                   handleFilterChange("age_to", val);
                   setAgeToIx(false);
                 }}
-                selected={(optionEl) => {
+                selected={() => {
                   if (hasAgeToValue) {
                     return (
-                      optionEl ?? (
-                        <span className="text-[12px] font-Urbanist font-medium text-[#474747]">
-                          {filters.age_to}
-                        </span>
-                      )
+                      <span className="text-[12px] font-Urbanist font-medium text-[#474747]">
+                        {filters.age_to}
+                      </span>
                     );
                   }
                   if (showAgeToPh) {

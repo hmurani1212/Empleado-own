@@ -557,6 +557,34 @@ const usePayroll = () => {
   const annual_gross_salary_labels = annualGrossSalary?.map(item => item.month || item.month_name || item.label || item.name || '');
   const annual_gross_salary_data = annualGrossSalary?.map(item => item.value ?? item.amount ?? item.total ?? 0);
 
+  const parseSeriesValue = (value) => {
+    if (typeof value === "number") return value;
+    const parsed = parseFloat(String(value ?? "").replace(/,/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const normalizeChartSeries = (series) => {
+    if (!Array.isArray(series)) return [];
+    return series.map((item) => ({
+      date: formatDateString(
+        item?.date || item?.month || item?.month_name || item?.label || item?.name || ""
+      ),
+      value: parseSeriesValue(
+        item?.value ?? item?.amount ?? item?.total ?? item?.emp_contribution ?? 0
+      ),
+    }));
+  };
+
+  const getSeriesFromObject = (source, keys) => {
+    if (!source || typeof source !== "object") return [];
+    const matchedKey = keys.find((key) => Array.isArray(source?.[key]));
+    if (!matchedKey) return [];
+    return normalizeChartSeries(source[matchedKey]);
+  };
+
+  const sumSeries = (series) =>
+    normalizeChartSeries(series).reduce((acc, curr) => acc + curr.value, 0);
+
   const formattedData = grossSalary?.map(item => ({
     date: formatDateString(item.date),
     value: item.value
@@ -573,10 +601,42 @@ const usePayroll = () => {
   const net_salary_label = formattedDataNet?.map(item => item.date)
   const net_salary_value = netSalary?.map(item => item.value)
 
+  const eobiSeries = getSeriesFromObject(grossNetValues, [
+    "eobi_salary",
+    "eobi",
+    "eobi_data",
+    "eobi_series",
+    "annual_eobi",
+  ]);
+  const providentFundSeries = getSeriesFromObject(grossNetValues, [
+    "provident_fund_salary",
+    "provident_fund",
+    "pf_salary",
+    "pf_data",
+    "provident_fund_data",
+    "annual_provident_fund",
+  ]);
+
+  const eobi_label = eobiSeries.map((item) => item.date);
+  const eobi_value = eobiSeries.map((item) => item.value);
+  const provident_fund_label = providentFundSeries.map((item) => item.date);
+  const provident_fund_value = providentFundSeries.map((item) => item.value);
+  const eobi_total =
+    parseSeriesValue(grossNetValues?.eobi_total ?? grossNetValues?.eobi_amount) ||
+    sumSeries(eobiSeries);
+  const provident_fund_total =
+    parseSeriesValue(
+      grossNetValues?.provident_fund_total ??
+        grossNetValues?.pf_total ??
+        grossNetValues?.provident_fund_amount
+    ) || sumSeries(providentFundSeries);
+
   const [payrollChartValues, setPayrollChartValues] = useState({
     annual_year : '',
     gross_salary:'',
-    netSalary:''
+    netSalary:'',
+    eobiSalary: "",
+    providentFund: "",
   })
 
   const handleChangeYear = (selectedOption, field) => {
@@ -592,7 +652,7 @@ const usePayroll = () => {
 
     if (field === 'annual_year' || field === 'gross_salary') {
       getGrossSalary(selectedOption.value)
-    } else if (field === 'netSalary') {
+    } else if (field === 'netSalary' || field === "eobiSalary" || field === "providentFund") {
       getNetSalary(selectedOption.value)
     }
   }
@@ -622,7 +682,7 @@ const usePayroll = () => {
  
 
   return {payrollNavTitles, openMenuEmpSalary, payrollActionMenu, gettingSalaryTemp, allSalaryTemp, listViewPayroll, handleListTogglePayroll, handleGridTogglePayroll, openMenuPayroll, toggleMenuPayroll, gettingManageEmpSalary, allEmpSalary, toggleMenuEmpSalary, empSalaryActionMenu, empSalaryTemplate, empSalaryLoaded, mountEmpSalary, handleMountEmp, manageEmpSalarySearch, handleEmpSalaryChange, empSalarySearch, handleSalaryTempSearch, salaryTemplateSearch, handleMenuPayroll,handleIncrementTypeChange,
-    handleIncrement, incNewValues,handleChangeIncValues, openDialogDelTemp, salaryTempDialog, handleDelete, editValues, dataEditSingle, dataEditBranch, handleChangeBranchEdit, handleChangeEditValues, handleEdit, singleTemp, getDataGrossNet, getDashboardData, grossNetValues, mountPayrollOverview, annualGrossSalary, annual_gross_salary_labels, annual_gross_salary_data, getGrossSalary, getAnnualGrossSalary, gross_label, gross_value, getNetSalary, net_salary_label, net_salary_value,
+    handleIncrement, incNewValues,handleChangeIncValues, openDialogDelTemp, salaryTempDialog, handleDelete, editValues, dataEditSingle, dataEditBranch, handleChangeBranchEdit, handleChangeEditValues, handleEdit, singleTemp, getDataGrossNet, getDashboardData, grossNetValues, mountPayrollOverview, annualGrossSalary, annual_gross_salary_labels, annual_gross_salary_data, getGrossSalary, getAnnualGrossSalary, gross_label, gross_value, getNetSalary, net_salary_label, net_salary_value, eobi_label, eobi_value, provident_fund_label, provident_fund_value, eobi_total, provident_fund_total,
     payrollChartValues, handleChangeYear, branches_payroll, copyBranchesData, getAllBranchesPayroll, handleBranchFilterPayroll, branchFilter, handleCreateSalaryTemplate, handleCreateTemplateDrawer, handleIncrementDrawer, loading, payrollOverviewLoading, salaryTemplatesLoaded, branchesLoaded
   }
 }

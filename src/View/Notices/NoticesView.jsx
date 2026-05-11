@@ -1,15 +1,14 @@
 import React from 'react';
 import { FaBullhorn, FaUserAlt, FaRegCalendarAlt } from "react-icons/fa";
 import useNotice from '../../ViewModel/NoticeViewModel/NoticeServices';
-import { formatTimestamp } from '../Branches/utils';
 import { TbFileDescription } from 'react-icons/tb';
 
 const NoticeViewSkeleton = () => (
   <div className="w-full p-1 animate-pulse">
-    <div className="bg-white rounded-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-50 to-white p-6 border-b border-blue-100">
-        <div className="flex gap-4">
-          <div className="bg-gray-200 p-3 rounded-xl h-[48px] w-[48px] shrink-0" />
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex gap-3">
+          <div className="bg-gray-200 p-2 rounded-lg h-[40px] w-[40px] shrink-0" />
           <div className="flex-1 space-y-3 pt-1">
             <div className="h-7 bg-gray-200 rounded-lg w-3/4 max-w-md" />
             <div className="flex gap-2">
@@ -19,20 +18,20 @@ const NoticeViewSkeleton = () => (
           </div>
         </div>
       </div>
-      <div className="p-6 space-y-6">
-        <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
+      <div className="p-4 space-y-4">
+        <div className="p-1 space-y-2">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+            <div className="h-4 w-4 bg-gray-200 rounded" />
             <div className="h-4 bg-gray-200 rounded w-28" />
           </div>
-          <div className="ml-11 h-8 bg-gray-200 rounded-full w-36" />
+          <div className="ml-5 h-7 bg-gray-200 rounded-full w-32" />
         </div>
         <div className="space-y-3">
           <div className="flex items-center gap-3 pl-0">
-            <div className="h-9 w-9 bg-gray-200 rounded-lg" />
+            <div className="h-4 w-4 bg-gray-200 rounded" />
             <div className="h-4 bg-gray-200 rounded w-24" />
           </div>
-          <div className="pl-11 space-y-2">
+          <div className="pl-5 space-y-2">
             <div className="h-4 bg-gray-200 rounded w-full" />
             <div className="h-4 bg-gray-200 rounded w-full" />
             <div className="h-4 bg-gray-200 rounded w-5/6" />
@@ -52,86 +51,108 @@ const NoticesView = () => {
 
   if (!viewNoticeData) return null;
 
-  const recipientLabel =
-    viewNoticeData.emp_name ||
-    viewNoticeData.branch_name ||
-    "All Branches";
+  const formatDateOnly = (timestamp) => {
+    if (!timestamp) return "N/A";
+    const date = new Date(Number(timestamp) * 1000);
+    if (Number.isNaN(date.getTime())) return "N/A";
+    const day = date.toLocaleString("en-US", { day: "2-digit" });
+    const month = date.toLocaleString("en-US", { month: "short" });
+    const year = date.getFullYear();
+    return `${day} ${month}, ${year}`;
+  };
 
-  const recipientStyles = viewNoticeData.emp_name
-    ? "bg-purple-100 text-purple-700 border border-purple-200"
-    : "bg-blue-100 text-blue-700 border border-blue-200";
+  const pickFirstNonEmpty = (...values) => {
+    for (const v of values) {
+      if (v === null || v === undefined) continue;
+      const s = String(v).trim();
+      if (s && s !== "0" && s.toLowerCase() !== "null" && s.toLowerCase() !== "undefined") {
+        return s;
+      }
+    }
+    return "";
+  };
+
+  const branchLabel = pickFirstNonEmpty(
+    viewNoticeData.branch_name,
+    viewNoticeData.branch,
+    viewNoticeData.branch_title
+  );
+  const audienceBranch = branchLabel || "All Branches";
 
   return (
     <div className="w-full p-1">
-      <div className="bg-white rounded-xl overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-white p-6 border-b border-blue-100">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex gap-4">
-              <div className="bg-blue-100 p-3 rounded-xl text-blue-600 h-fit">
-                <FaBullhorn size={24} />
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="bg-gray-100 border border-gray-200 p-2 rounded-lg text-gray-700 h-fit mt-0.5">
+                <FaBullhorn size={14} />
               </div>
 
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 font-poppins mb-1">
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-1">
+                  Title
+                </p>
+                <h2 className="text-base leading-6 font-semibold text-gray-900 font-poppins break-words">
                   {viewNoticeData.title}
                 </h2>
-
-                <div className="flex items-center gap-2 text-gray-500 text-sm">
-                  <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium">
-                    #{viewNoticeData.id}
-                  </span>
-                  <span>•</span>
-                  <div className="flex items-center gap-1.5">
-                    <FaRegCalendarAlt size={12} />
-                    <span>
-                      {formatTimestamp(viewNoticeData.timestamp)}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
+
+            <div className="shrink-0 flex flex-col gap-1.5">
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">
+                Notice ID
+              </div>
+              <div className="bg-gray-50 border border-gray-200 px-2 py-1 rounded-md text-[11px] font-semibold text-gray-700 text-center">
+                {viewNoticeData.id}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-1.5 text-[11px] text-gray-600">
+            <FaRegCalendarAlt size={10} />
+            <span>{formatDateOnly(viewNoticeData.timestamp)}</span>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
 
           {/* Target Audience */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-white p-1.5 rounded-lg shadow-sm text-gray-400">
-                <FaUserAlt size={14} />
+          <div className="p-1">
+            <div className="flex items-center gap-2.5 mb-2.5">
+              <div className="text-gray-500">
+                <FaUserAlt size={12} />
               </div>
-              <span className="text-sm font-semibold text-gray-700 font-poppins">
+              <span className="text-xs font-semibold text-gray-800 font-poppins">
                 Target Audience
               </span>
             </div>
 
-            <div className="ml-11">
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${recipientStyles}`}
-              >
-                {recipientLabel}
-              </span>
+            <div className="ml-5 flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-violet-50 text-violet-700 border border-violet-200">
+                <span className="opacity-80">Branch:</span>
+                <span className="font-semibold">{audienceBranch}</span>
+              </div>
             </div>
           </div>
 
           {/* Description */}
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="bg-blue-50 p-1.5 rounded-lg text-blue-500">
-                <TbFileDescription size={18} />
+          <div className="p-1">
+            <div className="flex items-center gap-2.5 mb-2.5">
+              <div className="text-gray-600">
+                <TbFileDescription size={15} />
               </div>
-              <span className="text-sm font-semibold text-gray-900 font-poppins">
+              <span className="text-xs font-semibold text-gray-900 font-poppins">
                 Description
               </span>
             </div>
 
-            <div className="pl-11">
-              <div className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap bg-white border border-gray-100 p-4 rounded-xl shadow-sm">
-                {viewNoticeData.description || viewNoticeData.notice}
+            <div className="pl-5">
+              <div className="text-gray-700 text-xs leading-6 whitespace-pre-wrap min-h-[90px]">
+                {viewNoticeData.description || viewNoticeData.notice || "No description available"}
               </div>
             </div>
           </div>

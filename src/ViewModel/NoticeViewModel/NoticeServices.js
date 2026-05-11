@@ -41,9 +41,9 @@ const useNotice = () => {
     ]
 
     const noticesMenuItems = [
-        {id:1, title:'View', icon:<BiEditAlt className="text-green-500" />, link:'/notices/list_notices/notices_view'},
-        {id:2, title:'Edit',icon:<FaEye  className="text-indigo-500" />},
-        {id:3, title:'Delete',  icon: <FaTrash className="text-red-500" />}
+        {id:1, title:'View', icon:<FaEye className="text-indigo-500" />, link:'/notices/list_notices/notices_view'},
+        {id:2, title:'Edit', icon:<BiEditAlt className="text-green-500" />},
+        {id:3, title:'Delete', icon:<FaTrash className="text-red-500" />}
     ]
 
     const [noticeId, setNoticeId] = useState('')
@@ -639,7 +639,7 @@ const useNotice = () => {
                         ...prevState,
                     departmentList: noticesDepartment
                     }))
-                getAllNoticesList({ page: 1, limit: 10 }, true, false)
+                await getAllNoticesList({ page: 1, limit: 10 }, true, false)
             } else if(selected && selected.value) {
                 const branchDepartments = noticesDepartment.filter(dept =>
                     dept.branch_id === selected.value || dept.id === '0'
@@ -649,7 +649,7 @@ const useNotice = () => {
                             ...prevState,
                     departmentList: branchDepartments
                 }))
-                getFilterNotice(selected?.value, "", year?.value || "", 1, 10, false)
+                await getFilterNotice(selected?.value, "", year?.value || "", 1, 10, false)
             }
         }
         
@@ -658,7 +658,7 @@ const useNotice = () => {
                 ...prevState,
                 [field]: selected,
             }))
-            getFilterNotice(branch_id?.value || "", selected?.value || "", year?.value || "", 1, 10, false)
+            await getFilterNotice(branch_id?.value || "", selected?.value || "", year?.value || "", 1, 10, false)
         }
         
         if(field === 'year'){
@@ -666,7 +666,7 @@ const useNotice = () => {
                 ...prevState,
                 [field]: selected,
             }))
-            getFilterNotice(branch_id?.value || "", dept_id?.value || "", selected?.value || "", 1, 10, false)
+            await getFilterNotice(branch_id?.value || "", dept_id?.value || "", selected?.value || "", 1, 10, false)
         }
     }
     

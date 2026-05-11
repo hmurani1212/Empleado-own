@@ -22,7 +22,6 @@ const empDashboardApi = {
         })
     },
     getAnnualRemLeaves: function (data){
-        console.log("+++++++++++++++", data)
         return axiosInstancecoremodule.request({
             method: 'GET',
             url: `http://172.18.0.34:8007/api/v1/holidays/employee-leave-balance?emp_id=${data}`,
@@ -30,10 +29,10 @@ const empDashboardApi = {
     },
 
     mobileBaseAttendance: function (data){
-        console.log("+++++++++++++++", data)
         return MobileAttendanceinstancemodule.request({
             method: 'POST',
             url: `http://172.18.0.34:8005/api/attendance/web-attendance`,
+            withCredentials: true,
             data: data
         })
     },
