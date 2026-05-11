@@ -290,48 +290,18 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     }));
   };
 
-  // Rich text editor handlers
+  // Rich text editor handlers - disabled for textarea
   const handleFormatText = (command, value = null) => {
-    if (aboutEditorRef.current) {
-      // Enable styleWithCSS to use inline styles
-      document.execCommand('styleWithCSS', false, true);
-
-      if (command === 'fontSize') {
-        // Apply font size by creating span with inline style
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0 && !selection.isCollapsed) {
-          const range = selection.getRangeAt(0);
-          const selectedText = range.toString();
-
-          // Create span with font size
-          const span = document.createElement('span');
-          span.style.fontSize = value;
-          span.textContent = selectedText;
-
-          // Replace selection with span
-          range.deleteContents();
-          range.insertNode(span);
-
-          // Move cursor after the span
-          range.setStartAfter(span);
-          range.setEndAfter(span);
-          selection.removeAllRanges();
-          selection.addRange(range);
-
-          setCompanyAbout(aboutEditorRef.current.innerHTML);
-        }
-      } else {
-        // For bold and italic, use execCommand (handles toggle automatically)
-        document.execCommand(command, false, value);
-        setCompanyAbout(aboutEditorRef.current.innerHTML);
-      }
-    }
+    // Rich text formatting is not available with textarea
+    // This is a temporary fix for the text direction issue
+    showToast("Rich text formatting is currently disabled to fix text direction issues.", "info");
   };
 
   const handleAboutInput = () => {
     if (aboutEditorRef.current) {
-      const content = aboutEditorRef.current.innerText || "";
-      if (content.length > COMPANY_ABOUT_MAX_LENGTH) {
+      const textContent = aboutEditorRef.current.value || "";
+      
+      if (textContent.length > COMPANY_ABOUT_MAX_LENGTH) {
         if (!aboutLimitToastShownRef.current) {
           showToast(
             `About Company cannot exceed ${COMPANY_ABOUT_MAX_LENGTH} characters.`,
@@ -342,7 +312,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
         return;
       }
       aboutLimitToastShownRef.current = false;
-      setCompanyAbout(aboutEditorRef.current.innerHTML);
+      setCompanyAbout(textContent);
     }
   };
 
@@ -829,18 +799,17 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                       </select>
                     </div>
                     {/* Content Editable Div */}
-                    <div
+                    <textarea
                       ref={aboutEditorRef}
-                      contentEditable
-                      onInput={handleAboutInput}
-                      dangerouslySetInnerHTML={{ __html: companyAbout }}
+                      value={companyAbout}
+                      onChange={handleAboutInput}
                       placeholder="Write a short description about your company..."
-                      className="w-full px-4 py-3 text-sm text-slate-800 outline-none min-h-[100px] focus:border-[#8bc9f8] focus:ring-1 focus:ring-[#8bc9f8]"
-                      style={{ minHeight: '100px' }}
+                      className="w-full px-4 py-3 text-sm text-slate-800 outline-none min-h-[100px] focus:border-[#8bc9f8] focus:ring-1 focus:ring-[#8bc9f8] resize-none"
+                      style={{ minHeight: '100px', direction: 'ltr', unicodeBidi: 'normal', textAlign: 'left' }}
                     />
                   </div>
                   <p className="text-xs text-slate-500 text-right">
-                    {aboutEditorRef.current?.innerText?.length || companyAbout.length}/{COMPANY_ABOUT_MAX_LENGTH}
+                    {companyAbout.length}/{COMPANY_ABOUT_MAX_LENGTH}
                   </p>
                 </div>
               </div>
