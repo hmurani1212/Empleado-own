@@ -1,17 +1,18 @@
 import { Button, Option, Select, Typography } from "@material-tailwind/react";
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { getAllAge } from "../../services/__hireServices";
 import { FaEye } from "react-icons/fa";
-import { format, set } from "date-fns";
+import { format } from "date-fns";
 import useStore from "../../Store/store";
 import { useTalentPoolServices } from "../../ViewModel/HireViewModel2/hireServices_2";
 import useHire from "../../ViewModel/HireViewModel/HireServices";
+import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 
 import { TalentPoolTableSkeleton } from "./HireSkeletons";
 
 const TalentPool = () => {
   const { getTalentPoolData, resetTalentPool } = useTalentPoolServices();
-  const { GetLabel_def, Label_data } = useHire();
+  const { GetLabel_def } = useHire();
   // console.log('what is this', Label_data)
   // console.log('what is this', GetLabel_def)
   // console.log('what is this', Label_data)
@@ -29,15 +30,11 @@ const TalentPool = () => {
     label_id: "",
   });
 
-  /** Placeholder UX (same as Vacancies Year/Month): outer label only; inner grey hint toggles with open/focus. */
-  const [labelIx, setLabelIx] = useState(false);
+  /** Placeholder UX for non–react-select filters only */
   const [genderIx, setGenderIx] = useState(false);
   const [ageFromIx, setAgeFromIx] = useState(false);
   const [ageToIx, setAgeToIx] = useState(false);
-  const [Label_data_1, setLabelData] = useState([]);
-  // console.log('what is this', Label_data_1);
 
-  const labelRef = useRef(null);
   const genderRef = useRef(null);
   const ageFromRef = useRef(null);
   const ageToRef = useRef(null);
@@ -59,7 +56,6 @@ const TalentPool = () => {
     filters.age_to !== null &&
     String(filters.age_to).trim() !== "";
 
-  const showLabelPh = !hasLabelFilterValue && !labelIx;
   const showGenderPh = !hasGenderValue && !genderIx;
   const showAgeFromPh = !hasAgeFromValue && !ageFromIx;
   const showAgeToPh = !hasAgeToValue && !ageToIx;
@@ -91,7 +87,6 @@ const TalentPool = () => {
     // Initial load of talent pool data
     fetchData(filters);
     GetLabel_def();
-    setLabelData(Label_data);
 
     // Cleanup on unmount
     return () => {
@@ -158,84 +153,85 @@ const TalentPool = () => {
     return format(new Date(timestamp * 1000), "dd MMM yyyy");
   };
 
+  const labelSelectOptions = useMemo(() => {
+    if (!labelData?.length) {
+      return [{ value: "", label: "No labels available" }];
+    }
+    return [
+      { value: "", label: "All Labels" },
+      ...labelData.map((l) => ({
+        value: String(l.id),
+        label: l.label_name ?? String(l.id),
+      })),
+    ];
+  }, [labelData]);
+
+  const labelSelectValue = useMemo(() => {
+    if (!labelSelectOptions.length) return null;
+    if (!labelData?.length) return labelSelectOptions[0];
+    if (!hasLabelFilterValue) {
+      return labelSelectOptions.find((o) => o.value === "") ?? labelSelectOptions[0];
+    }
+    return (
+      labelSelectOptions.find((o) => String(o.value) === String(filters.label_id)) ??
+      labelSelectOptions[0]
+    );
+  }, [labelSelectOptions, labelData, hasLabelFilterValue, filters.label_id]);
+
+  const labelSelectStyles = useMemo(
+    () => ({
+      control: (base) => ({
+        ...base,
+        minHeight: 38,
+        borderRadius: 8,
+        border: "none",
+        boxShadow: "0px 0px 10px 0px rgba(0, 0, 0, 0.1)",
+        fontSize: 12,
+      }),
+      option: (base, state) => ({
+        ...base,
+        fontSize: 12,
+        cursor: state.isDisabled ? "not-allowed" : "pointer",
+        backgroundColor: state.isSelected
+          ? "#dbeafe"
+          : state.isFocused
+            ? "#eff6ff"
+            : "#ffffff",
+        color: state.isDisabled ? "#9ca3af" : "#374151",
+        fontWeight: state.isSelected ? 600 : 400,
+      }),
+    }),
+    []
+  );
+
   return (
     <>
       <div className="flex flex-col gap-4">
         {/* Filter Section */}
         <div className="bg-white rounded-xl shadow-soft p-5 border border-gray-100">
           <div className="flex flex-wrap items-center gap-4">
-            <div>
+            <div className="min-w-[200px] w-full max-w-[280px]">
               <label className="text-customBlack-100 text-[12px] px-2 font-medium font-Urbanist">
                 All Labels
               </label>
-              <Select
-                ref={labelRef}
-                labelProps={{ className: "hidden" }}
-                color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-customBlack-100 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                value={filters.label_id}
-                onChange={(val) => {
-                  handleFilterChange("label_id", val);
-                  setLabelIx(true);
-                }}
-                selected={() => {
-                  if (filters.label_id) {
-                    const selectedLabel = labelData?.find(
-                      (label) => String(label.id) === String(filters.label_id)
-                    );
-                    return (
-                      <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                        {selectedLabel?.label_name || filters.label_id}
-                      </span>
-                    );
-                  }
-                  return (
-                    <span className="text-[12px] font-Urbanist font-medium text-gray-400">
-                      All Labels
-                    </span>
-                  );
-                }}
-                onClick={() => clickSelect(labelRef, setLabelIx)}
-                onFocus={() => setLabelIx(true)}
-                containerProps={containerBlur(setLabelIx)}
-              >
-                {!labelData?.length ? (
-                  <Option value="" disabled>
-                    No labels available
-                  </Option>
-                ) : (
-                  <>
-                    <Option value="">All Labels</Option>
-                    {labelData.map((label) => (
-                      <Option key={label.id} value={String(label.id)}>
-                        {label.label_name}
-                      </Option>
-                    ))}
-                  </>
-                )}
-              </Select>
-              {/* <Select
-                ref={labelRef}
-                labelProps={{ className: "hidden" }}
-                color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-customBlack-100 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
-                value={String(filters.label_id) || undefined}
-                onChange={(val) => {
-                  handleFilterChange("label_id", val);
-                  setLabelIx(false);
-                }}
-                label="All Labels"
-                onClick={() => clickSelect(labelRef, setLabelIx)}
-                onFocus={() => setLabelIx(true)}
-                containerProps={containerBlur(setLabelIx)}
-              >
-                <Option value="">All Labels</Option>
-                {labelData?.map((label, index) => (
-                  <Option key={index} value={String(label.id)}>
-                    {label.label_name}
-                  </Option>
-                ))}
-              </Select> */}
+              <div className="mt-1">
+                <CustomSelect
+                  isTrue
+                  placeHolderTitle="All Labels"
+                  options={labelSelectOptions}
+                  value={labelSelectValue}
+                  onChangeHandler={(opt) => {
+                    if (!labelData?.length) return;
+                    handleFilterChange("label_id", opt?.value ?? "");
+                  }}
+                  isSearchable={false}
+                  isClearable={false}
+                  disabled={!labelData?.length}
+                  customStyles={labelSelectStyles}
+                  menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                />
+              </div>
+              {/* Legacy Material Select removed — react-select highlights only the selected option */}
             </div>
 
             <div>
@@ -246,7 +242,7 @@ const TalentPool = () => {
                 ref={genderRef}
                 labelProps={{ className: "hidden" }}
                 color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-customBlack-100 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                className="bg-white text-[12px] font-Urbanist font-medium px-4 text-customBlack-100 w-full h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 value={filters.gender ? String(filters.gender) : ""}
                 onChange={(val) => {
                   handleFilterChange("gender", val);
@@ -321,7 +317,7 @@ const TalentPool = () => {
                 ref={ageFromRef}
                 labelProps={{ className: "hidden" }}
                 color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-gray-400 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                className="bg-white text-[12px] font-Urbanist font-medium px-4 text-gray-400 w-full h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 value={filters.age_from ? String(filters.age_from) : ""}
                 onChange={(val) => {
                   handleFilterChange("age_from", val);
@@ -369,7 +365,7 @@ const TalentPool = () => {
                 ref={ageToRef}
                 labelProps={{ className: "hidden" }}
                 color="blue"
-                className="bg-white text-[12px] font-Urbanist font-medium px-2 text-customBlack-100 w-full px-4 h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
+                className="bg-white text-[12px] font-Urbanist font-medium px-4 text-customBlack-100 w-full h-[38px] outline-none border-none rounded-[8px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.1)]"
                 value={filters.age_to ? String(filters.age_to) : ""}
                 onChange={(val) => {
                   handleFilterChange("age_to", val);

@@ -1,6 +1,7 @@
-import { Button, Input } from "@material-tailwind/react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { Button, Input, Switch } from "@material-tailwind/react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { HiOutlineEye, HiArrowUpTray } from "react-icons/hi2";
+import { FaPalette } from "react-icons/fa";
 import CustomDialog from "../../Components/CustomDialog/CustomDialog";
 import hireApi from "../../Model/Data/Hire/Hire_2";
 import { showToast } from "../../Components/Toaster/Toaster";
@@ -10,8 +11,16 @@ const MAKE_URL_ENDPOINT =
   "https://emp.veevotech.com/empleado_app/hiring/api/v1/organizations/make_url";
 const COMPANY_ABOUT_MAX_LENGTH = 448;
 const CARD_HEADING_MAX_LENGTH = 20;
-const CARD_BODY_MAX_LENGTH = 66;
+const CARD_BODY_MAX_LENGTH = 60;
 const SMALL_CARD_TEXT_MAX_LENGTH = 12;
+
+/** Career settings mock: 1px #D1D5DB outline, ~8px corners (rounded-lg) on panels + fields */
+const hirePanel = "rounded-lg border border-[#D1D5DB] bg-white";
+const hireInputSurface =
+  "!rounded-lg !border-[#D1D5DB] text-slate-800 placeholder:text-slate-400 focus:!border-slate-400 focus:!ring-1 focus:!ring-slate-300/70";
+
+/** MT outlined `label` sits on the border; hide it and use a normal `<label>` above the field */
+const hireInputLabelHidden = { className: "hidden" };
 
 /** Section preview screenshots (Elephant CDN). */
 const SECTION_PREVIEW = {
@@ -509,6 +518,7 @@ function stateFromHiringSetting(hs) {
         { id: 1, heading: "", body: "", visible: true },
         { id: 2, heading: "", body: "", visible: true },
         { id: 3, heading: "", body: "", visible: true },
+        { id: 4, heading: "", body: "", visible: true },
       ],
       smallCardText: emptySmallCards(),
     };
@@ -520,19 +530,36 @@ function stateFromHiringSetting(hs) {
     String(raw).trim() !== "" &&
     String(raw).trim().toLowerCase() !== "null";
 
-  // Load card data
-  const cards = hs.card_data && Array.isArray(hs.card_data)
-    ? hs.card_data.map((card, index) => ({
+  const MAX_CARD_DATA = 4;
+  const defaultCards = () =>
+    Array.from({ length: MAX_CARD_DATA }, (_, i) => ({
+      id: i + 1,
+      heading: "",
+      body: "",
+      visible: true,
+    }));
+
+  // Load card data (always up to 4 slots for UI)
+  const cardsFromApi = hs.card_data && Array.isArray(hs.card_data)
+    ? hs.card_data.slice(0, MAX_CARD_DATA).map((card, index) => ({
         id: index + 1,
-        heading: card.heading || "",
-        body: convertCardBodyFromApi(card.body || ""),
+        heading: String(card.heading || "").slice(0, CARD_HEADING_MAX_LENGTH),
+        body: String(convertCardBodyFromApi(card.body || "")).slice(
+          0,
+          CARD_BODY_MAX_LENGTH
+        ),
         visible: true,
       }))
-    : [
-        { id: 1, heading: "", body: "", visible: true },
-        { id: 2, heading: "", body: "", visible: true },
-        { id: 3, heading: "", body: "", visible: true },
-      ];
+    : [];
+
+  const cards =
+    cardsFromApi.length > 0
+      ? defaultCards().map((slot, i) =>
+          cardsFromApi[i]
+            ? { ...cardsFromApi[i], id: i + 1, visible: true }
+            : { ...slot, id: i + 1 }
+        )
+      : defaultCards();
 
   const smallCardText = hs.small_card_text && typeof hs.small_card_text === "object"
     ? {
@@ -595,6 +622,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     { id: 1, heading: "", body: "", visible: true },
     { id: 2, heading: "", body: "", visible: true },
     { id: 3, heading: "", body: "", visible: true },
+    { id: 4, heading: "", body: "", visible: true },
   ]);
   const [smallCardText, setSmallCardText] = useState({
     card1: { value: "", logo: "", visible: true },
@@ -608,6 +636,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     src: "",
     title: "",
   });
+  const [previewBodyMinPx, setPreviewBodyMinPx] = useState(null);
   const [uploadingSmallLogo, setUploadingSmallLogo] = useState(null);
   const smallCardLogoInputRefs = useRef({
     card1: null,
@@ -615,28 +644,130 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     card3: null,
     card4: null,
   });
+  const careerSettingsBodyScrollRef = useRef(0);
+  /** True while section preview is open — used to detect preview→form transition for scroll restore */
+  const lastSectionPreviewOpenRef = useRef(false);
 
   const openSectionPreview = (src, title) => {
+    // Capture scroll synchronously only. A follow-up requestAnimationFrame(capture) was
+    // overwriting the saved position with ~0 after the preview DOM replaced the form.
+    const getScrollEl = () => {
+      let el =
+        document.querySelector(".hire-career-settings-dialog-body") ||
+        document.querySelector('[class*="hire-career-settings"]');
+      if (!el) {
+        const dialog = document.querySelector('[role="dialog"]');
+        if (dialog) {
+          for (const node of dialog.querySelectorAll("div")) {
+            if (node.scrollHeight > node.clientHeight + 2) {
+              el = node;
+              break;
+            }
+          }
+        }
+      }
+      return el;
+    };
+
+    const el = getScrollEl();
+    if (el) {
+      const scrollTop = el.scrollTop;
+      careerSettingsBodyScrollRef.current = scrollTop;
+      try {
+        sessionStorage.setItem("careerSettingsScrollPos", String(scrollTop));
+      } catch {
+        /* ignore */
+      }
+      const h = Math.round(el.getBoundingClientRect().height);
+      const fallback = Math.min(620, Math.round(window.innerHeight * 0.72));
+      setPreviewBodyMinPx(h > 120 ? h : fallback);
+    } else {
+      setPreviewBodyMinPx(Math.min(620, Math.round(window.innerHeight * 0.72)));
+    }
+
     setSectionPreview({ open: true, src, title });
   };
   const closeSectionPreview = () => {
+    // Do NOT read scrollTop from the dialog body here — while preview is open the
+    // body shows short preview content, so scrollTop is often ~0 and would overwrite
+    // the position saved in openSectionPreview (careerSettingsBodyScrollRef).
+    setPreviewBodyMinPx(null);
     setSectionPreview((s) => ({ ...s, open: false }));
   };
 
   useEffect(() => {
-    if (!openDialog) setSectionPreview((s) => ({ ...s, open: false }));
+    if (!openDialog) {
+      setSectionPreview((s) => ({ ...s, open: false }));
+      setPreviewBodyMinPx(null);
+      lastSectionPreviewOpenRef.current = false;
+      careerSettingsBodyScrollRef.current = 0;
+    }
   }, [openDialog]);
+
+  /** Restore dialog body scroll after closing preview — layout effect runs before paint. */
+  useLayoutEffect(() => {
+    if (!openDialog) return undefined;
+
+    const wasPreviewOpen = lastSectionPreviewOpenRef.current;
+    lastSectionPreviewOpenRef.current = sectionPreview.open;
+
+    if (sectionPreview.open) return undefined;
+    if (!wasPreviewOpen) return undefined;
+
+    let y = careerSettingsBodyScrollRef.current;
+    if (!Number.isFinite(y) || y < 0) {
+      try {
+        const stored = sessionStorage.getItem("careerSettingsScrollPos");
+        const parsed = stored != null ? parseInt(stored, 10) : NaN;
+        y = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+      } catch {
+        y = 0;
+      }
+    }
+    const savedY = y;
+
+    const getBody = () =>
+      document.querySelector(".hire-career-settings-dialog-body") ||
+      document.querySelector('[class*="hire-career-settings"]');
+
+    const apply = () => {
+      const el = getBody();
+      if (!el || el.scrollHeight <= 0) return false;
+      el.style.scrollBehavior = "auto";
+      const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
+      el.scrollTop = Math.min(Math.max(0, savedY), maxScroll);
+      return true;
+    };
+
+    apply();
+    let innerRaf = 0;
+    const outerRaf = requestAnimationFrame(() => {
+      apply();
+      innerRaf = requestAnimationFrame(apply);
+    });
+
+    const t0 = setTimeout(apply, 0);
+    const t1 = setTimeout(apply, 50);
+    const t2 = setTimeout(apply, 150);
+    const t3 = setTimeout(apply, 400);
+
+    return () => {
+      cancelAnimationFrame(outerRaf);
+      cancelAnimationFrame(innerRaf);
+      clearTimeout(t0);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [sectionPreview.open, openDialog]);
 
   useEffect(() => {
     if (!sectionPreview.open) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e) => {
       if (e.key === "Escape") closeSectionPreview();
     };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKey);
     };
   }, [sectionPreview.open]);
@@ -660,6 +791,16 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     setCards(cards.map(card =>
       card.id === id ? { ...card, visible: false } : card
     ));
+  };
+
+  const handleAddCard = () => {
+    const hidden = cards.find((c) => !c.visible);
+    if (!hidden) return;
+    setCards((prev) =>
+      prev.map((card) =>
+        card.id === hidden.id ? { ...card, visible: true } : card
+      )
+    );
   };
 
   const handleSmallCardTextChange = (cardKey, value) => {
@@ -981,252 +1122,236 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     }));
   };
 
-  const renderSectionHeader = (title, previewSrc, previewTitle) => (
-    <div className="mb-5 flex flex-col gap-2 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
-      <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2 min-w-0">
-        <span className="w-1 h-5 shrink-0 rounded-full bg-[#8bc9f8]" />
-        {title}
+  const previewBtnClass =
+    "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 self-start sm:self-auto";
+
+  const iconsPreviewBtnClass =
+    "inline-flex shrink-0 items-center justify-center rounded-full border border-[#D1D5DB] bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 self-start sm:self-auto";
+
+  const renderSectionHeader = (
+    title,
+    previewSrc,
+    previewTitle,
+    accentBarClass = "bg-sky-500",
+    barWidthClass = "w-1"
+  ) => (
+    <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2.5 min-w-0">
+        <span
+          className={`${barWidthClass} self-stretch min-h-5 shrink-0 rounded-sm ${accentBarClass}`}
+          aria-hidden
+        />
+        <span className="min-w-0">{title}</span>
       </h3>
       <button
         type="button"
         onClick={() => openSectionPreview(previewSrc, previewTitle)}
-        className="inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 self-start sm:self-auto"
+        className={previewBtnClass}
       >
+        <HiOutlineEye className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
         Preview
       </button>
     </div>
   );
 
+  const renderSimpleSectionHeader = (title, accentBarClass = "bg-orange-500") => (
+    <div className="mb-5 flex flex-col gap-2">
+      <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2.5">
+        <span
+          className={`w-1 self-stretch min-h-5 shrink-0 rounded-sm ${accentBarClass}`}
+          aria-hidden
+        />
+        {title}
+      </h3>
+    </div>
+  );
+
   const body = (
-    <div className="flex flex-col min-w-0 overflow-x-hidden">
-      <div className="p-6 space-y-6 max-w-4xl mx-auto w-full">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden">
         {loading ? (
-          <p className="text-sm text-slate-500 py-6 text-center">Loading…</p>
+          <p className="text-sm text-slate-500 px-6 py-6 text-center">Loading…</p>
+        ) : sectionPreview.open && sectionPreview.src ? (
+          <div
+            className="flex min-h-0 w-full flex-1 flex-col bg-slate-50/95"
+            role="region"
+            aria-labelledby="section-preview-title"
+            style={
+              previewBodyMinPx != null
+                ? { minHeight: `${previewBodyMinPx}px` }
+                : undefined
+            }
+          >
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#D1D5DB] bg-white px-4 py-3 text-slate-800 shadow-sm">
+              <h2
+                id="section-preview-title"
+                className="min-w-0 flex-1 truncate font-poppins text-base font-semibold sm:text-lg"
+              >
+                {sectionPreview.title || "Preview"}
+              </h2>
+              <button
+                type="button"
+                aria-label="Close preview"
+                className="shrink-0 rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                onClick={closeSectionPreview}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="relative flex min-h-0 w-full flex-1 items-center justify-center px-3 py-6 sm:px-8">
+              <img
+                src={sectionPreview.src}
+                alt=""
+                className="max-h-full w-auto max-w-full rounded-lg border border-[#D1D5DB] bg-white object-contain object-center shadow-sm"
+                draggable={false}
+              />
+            </div>
+            <p className="shrink-0 border-t border-[#D1D5DB] bg-white px-4 py-2 text-center text-xs text-slate-500">
+              Press Escape to close preview
+            </p>
+          </div>
         ) : (
+          <div className="mx-auto w-full max-w-4xl p-6">
           <div className="space-y-6 w-full">
-            {/* Settings Section */}
-            <div className="bg-white p-5 rounded-xl w-full">
-              {renderSectionHeader(
-                "Career Page Settings",
-                SECTION_PREVIEW.careerSettings,
-                "Career Page Settings"
-              )}
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-lg">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium text-slate-800">OneID Login</label>
-                    <p className="text-xs text-slate-500">Require candidates to sign in with OneID before applying</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setOneidSetting(true)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        oneidSetting
-                          ? 'bg-[#8bc9f8] text-white shadow-md'
-                          : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-100'
-                      }`}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOneidSetting(false)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        !oneidSetting
-                          ? 'bg-[#8bc9f8] text-white shadow-md'
-                          : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-100'
-                      }`}
-                    >
-                      No
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-lg">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-medium text-slate-800">Contact Form</label>
-                    <p className="text-xs text-slate-500">Allow candidates to contact your organization</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => onContactFormToggle(true)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        contactFormEnabled
-                          ? 'bg-[#8bc9f8] text-white shadow-md'
-                          : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-100'
-                      }`}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onContactFormToggle(false)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        !contactFormEnabled
-                          ? 'bg-[#8bc9f8] text-white shadow-md'
-                          : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-100'
-                      }`}
-                    >
-                      No
-                    </button>
-                  </div>
-                </div>
-
-                {contactFormEnabled && (
-                  <div className="pt-2 w-full">
-                    <Input
-                      type="email"
-                      label="Contact Email"
-                      placeholder="name@company.com"
-                      value={contactFormEmail}
-                      onChange={(e) => setContactFormEmail(e.target.value)}
-                      className="text-slate-800"
-                      color="blue"
-                      labelProps={{ className: "text-slate-700 font-medium" }}
+            {/* Career Page Settings — top (Figma): title row + subtitle + Preview + toggle cards */}
+            <div className="w-full">
+              <div className="mb-4 border-b border-[#D1D5DB] pb-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start gap-2.5">
+                    <span
+                      className="mt-1 w-1 min-h-7 shrink-0 self-stretch rounded-sm bg-blue-600"
+                      aria-hidden
                     />
-                    <p className="text-xs text-slate-500 mt-2">
+                    <h2 className="font-poppins text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
+                      Career Page Settings
+                    </h2>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Customize your career page experience
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    openSectionPreview(
+                      SECTION_PREVIEW.careerSettings,
+                      "Career Page Settings"
+                    )
+                  }
+                  className={previewBtnClass}
+                >
+                  <HiOutlineEye className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+                  Preview
+                </button>
+                </div>
+              </div>
+              <div className="mt-4 space-y-3">
+                <div className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between ${hirePanel}`}>
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="text-sm font-semibold text-slate-900">OneID Login</span>
+                    <p className="text-xs text-slate-500">
+                      Require candidates to sign in with OneID before applying
+                    </p>
+                  </div>
+                  <Switch
+                    color="blue"
+                    checked={oneidSetting}
+                    onChange={(e) => setOneidSetting(!!e?.target?.checked)}
+                    className="h-full w-full checked:bg-[#2563eb]"
+                    containerProps={{ className: "w-11 h-6 shrink-0" }}
+                    circleProps={{ className: "before:hidden left-0.5 border-none" }}
+                  />
+                </div>
+                <div className={`flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between ${hirePanel}`}>
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="text-sm font-semibold text-slate-900">Contact Form</span>
+                    <p className="text-xs text-slate-500">
+                      Allow candidates to contact your organization
+                    </p>
+                  </div>
+                  <Switch
+                    color="blue"
+                    checked={contactFormEnabled}
+                    onChange={(e) => onContactFormToggle(!!e?.target?.checked)}
+                    className="h-full w-full checked:bg-[#2563eb]"
+                    containerProps={{ className: "w-11 h-6 shrink-0" }}
+                    circleProps={{ className: "before:hidden left-0.5 border-none" }}
+                  />
+                </div>
+                {contactFormEnabled ? (
+                  <div className={`space-y-2 p-4 ${hirePanel}`}>
+                    <div className="space-y-1.5">
+                      <label
+                        htmlFor="hire-career-contact-email"
+                        className="block text-sm font-semibold text-slate-900"
+                      >
+                        Contact Email
+                      </label>
+                      <Input
+                        id="hire-career-contact-email"
+                        type="email"
+                        placeholder="name@company.com"
+                        value={contactFormEmail}
+                        onChange={(e) => setContactFormEmail(e.target.value)}
+                        className={`text-slate-800 !py-2.5 ${hireInputSurface}`}
+                        color="blue"
+                        labelProps={hireInputLabelHidden}
+                        containerProps={{ className: "w-full min-w-0" }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500">
                       Candidates can reach your support team via this email
                     </p>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
 
-            {/* Branding Section */}
-            <div className="bg-white p-5 rounded-xl w-full">
-              {renderSectionHeader(
-                "Branding & Appearance",
-                SECTION_PREVIEW.branding,
-                "Branding & Appearance"
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    Background company logo
-                  </label>
-                  <p className="text-xs text-slate-500">
-                    Wide image shown behind the career header (same field as before:
-                    <span className="font-mono"> image</span> in hiring settings).
-                  </p>
-                  <input
-                    ref={imageFileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleUploadImage}
-                    className="hidden"
-                  />
-                  <div className="rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
-                    <div className="relative h-32 sm:h-40 w-full">
-                      {image ? (
-                        <img
-                          src={image}
-                          alt=""
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
-                          No background image
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent pointer-events-none" />
-                    </div>
-                    <div className="flex items-center justify-end gap-2 p-3 bg-slate-50 border-t border-slate-200">
-                      <Button
-                        size="sm"
-                        variant="outlined"
-                        className="border-slate-300 text-slate-700 normal-case"
-                        onClick={() => imageFileInputRef.current?.click()}
-                        disabled={uploadingImage}
-                      >
-                        {uploadingImage ? "Uploading…" : "Upload background image"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Header Color + Header Text — same label + bordered-field pattern so top borders align */}
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6 md:col-span-2">
-                  <div className="w-full min-w-0 space-y-2 md:flex-1">
-                    <div className="text-sm font-medium text-slate-700 leading-5">
-                      Header Color
-                    </div>
-                    <div className="relative flex min-h-[52px] items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <div className="relative h-10 w-10 shrink-0">
-                        <div
-                          className="h-10 w-10 rounded-lg border-2 border-slate-200"
-                          style={{ backgroundColor: headerColor }}
-                          aria-hidden
-                        />
-                        <input
-                          id="headerColorPicker"
-                          type="color"
-                          value={headerColor}
-                          onChange={(e) => setHeaderColor(e.target.value)}
-                          className="absolute inset-0 cursor-pointer opacity-0"
-                          title="Pick header color"
-                          aria-label="Choose header color"
-                        />
-                      </div>
-                      <span className="text-sm font-mono text-slate-600">
-                        {headerColor}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="w-full min-w-0 space-y-2 md:flex-1">
-                    <label
-                      htmlFor="career-header-text-field"
-                      className="text-sm font-medium text-slate-700 leading-5 block"
-                    >
-                      Header Text
-                    </label>
-                    <input
-                      id="career-header-text-field"
-                      type="text"
-                      placeholder="Join Our Team"
-                      value={headerText}
-                      onChange={(e) => setHeaderText(e.target.value)}
-                      className="min-h-[52px] w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#8bc9f8] focus:ring-1 focus:ring-[#8bc9f8]"
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
-
-                {/* Subheading */}
-                <div className="space-y-2 md:col-span-2">
-                  <Input
-                    type="text"
-                    label="Subheading"
-                    placeholder="Write subheading"
-                    value={sybHeading}
-                    onChange={(e) => setSybHeading(e.target.value)}
-                    className="text-slate-800"
-                    color="blue"
-                    labelProps={{ className: "text-slate-700" }}
-                  />
-                </div>
+            {/* Subheading */}
+            <div className={`w-full p-5 ${hirePanel}`}>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="hire-career-subheading"
+                  className="block text-sm font-semibold text-slate-800"
+                >
+                  Subheading
+                </label>
+                <Input
+                  id="hire-career-subheading"
+                  type="text"
+                  placeholder="BEST OPPORTUNITIES FOR BETTER FUTURE!"
+                  value={sybHeading}
+                  onChange={(e) => setSybHeading(e.target.value)}
+                  className={`text-slate-800 !py-2.5 ${hireInputSurface}`}
+                  color="blue"
+                  labelProps={hireInputLabelHidden}
+                  containerProps={{ className: "w-full min-w-0" }}
+                />
               </div>
             </div>
 
             {/* Content Section */}
-            <div className="bg-white p-5 rounded-xl w-full">
+            <div className={`w-full p-5 ${hirePanel}`}>
               {renderSectionHeader(
                 "Company Information",
                 SECTION_PREVIEW.companyInformation,
-                "Company Information"
+                "Company Information",
+                "bg-teal-500"
               )}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">About Company</label>
+                  <label className="text-sm font-semibold text-slate-800">About Company</label>
                   <p className="text-xs text-slate-500">
                     One bullet style (disc). Use “• Bullets” on plain text to add a list; use it again with the
                     caret on a bulleted line to remove that line’s bullet. Payload:{" "}
                     <span className="font-mono text-[11px]">&lt;bulit&gt;…&lt;/bulit&gt;</span> per line,{" "}
                     <span className="font-mono text-[11px]">&lt;i&gt;…&lt;/i&gt;</span> for italics.
                   </p>
-                  <div className="border border-slate-300 rounded-lg overflow-hidden">
-                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 p-2 bg-slate-50 border-b border-slate-200">
+                  <div className="overflow-hidden rounded-lg border border-[#D1D5DB]">
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 border-b border-[#D1D5DB] bg-slate-50 px-2 py-2">
                       <button
                         type="button"
                         onMouseDown={(e) => {
@@ -1234,7 +1359,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                           aboutEditorRef.current?.focus();
                           handleFormatText("bold");
                         }}
-                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700 font-bold"
+                        className="rounded border border-transparent p-2 text-slate-700 font-bold transition-colors hover:bg-slate-200"
                         title="Bold"
                       >
                         B
@@ -1246,7 +1371,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                           aboutEditorRef.current?.focus();
                           handleFormatText("italic");
                         }}
-                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700 italic"
+                        className="rounded border border-transparent p-2 text-slate-700 italic transition-colors hover:bg-slate-200"
                         title="Italic"
                       >
                         I
@@ -1258,7 +1383,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                           aboutEditorRef.current?.focus();
                           handleFormatText("underline");
                         }}
-                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700 underline"
+                        className="rounded border border-transparent p-2 text-slate-700 underline transition-colors hover:bg-slate-200"
                         title="Underline"
                       >
                         U
@@ -1270,7 +1395,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                           aboutEditorRef.current?.focus();
                           handleFormatText("strikeThrough");
                         }}
-                        className="p-2 rounded hover:bg-slate-200 transition-colors text-slate-700 line-through"
+                        className="rounded border border-transparent p-2 text-slate-700 line-through transition-colors hover:bg-slate-200"
                         title="Strikethrough"
                       >
                         S
@@ -1284,7 +1409,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                           aboutEditorRef.current?.focus();
                           if (v) handleFormatText("fontSize", v);
                         }}
-                        className="px-2 py-1.5 rounded border border-slate-300 text-sm text-slate-700 bg-white max-w-[120px]"
+                        className="max-w-[120px] rounded-lg border border-[#D1D5DB] bg-white px-2 py-1.5 text-sm text-slate-700"
                       >
                         <option value="">Font size</option>
                         {[10, 11, 12, 14, 16, 18, 20, 24].map((size) => (
@@ -1300,7 +1425,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                           e.preventDefault();
                           handleInsertBullet();
                         }}
-                        className="px-3 py-1.5 rounded border border-slate-300 text-sm text-slate-700 bg-white hover:bg-slate-100"
+                        className="rounded-lg border border-[#D1D5DB] bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
                         title="Add bullets on plain text; click again on a bullet line to remove it"
                       >
                         • Bullets
@@ -1311,7 +1436,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                       contentEditable
                       suppressContentEditableWarning
                       onInput={handleAboutInput}
-                      className="w-full px-4 py-3 text-sm text-slate-800 outline-none min-h-[120px] focus-visible:ring-1 focus-visible:ring-[#8bc9f8]"
+                      className="min-h-[120px] w-full px-4 py-3 text-sm text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-slate-300/70"
                       style={{ minHeight: "120px", direction: "ltr", unicodeBidi: "normal", textAlign: "left" }}
                       aria-label="About company — rich text"
                     />
@@ -1324,35 +1449,39 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
             </div>
 
             {/* Display Section */}
-            <div className="bg-white p-5 rounded-xl w-full">
-              <div className="mb-5 flex flex-col gap-2 border-b border-slate-100 pb-4">
-                <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                  <span className="w-1 h-5 shrink-0 rounded-full bg-[#8bc9f8]" />
-                  Display Settings
-                </h3>
-              </div>
+            <div className={`w-full p-5 ${hirePanel}`}>
+              {renderSimpleSectionHeader("Display Settings", "bg-orange-500")}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Input
-                    type="number"
-                    label="Vacancies per Career Page"
-                    placeholder="e.g. 10"
-                    value={limitNo}
-                    onChange={(e) => {
-                      const raw = String(e.target.value ?? "");
-                      if (raw === "") {
-                        setLimitNo("");
-                        return;
-                      }
-                      const digitsOnly = raw.replace(/\D/g, "").slice(0, 3);
-                      setLimitNo(digitsOnly);
-                    }}
-                    min={1}
-                    max={999}
-                    className="text-slate-800"
-                    color="blue"
-                    labelProps={{ className: "text-slate-700" }}
-                  />
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="hire-career-vacancies-limit"
+                      className="block text-sm font-semibold text-slate-800"
+                    >
+                      Vacancies per Career Page
+                    </label>
+                    <Input
+                      id="hire-career-vacancies-limit"
+                      type="number"
+                      placeholder="e.g. 10"
+                      value={limitNo}
+                      onChange={(e) => {
+                        const raw = String(e.target.value ?? "");
+                        if (raw === "") {
+                          setLimitNo("");
+                          return;
+                        }
+                        const digitsOnly = raw.replace(/\D/g, "").slice(0, 3);
+                        setLimitNo(digitsOnly);
+                      }}
+                      min={1}
+                      max={999}
+                      className={`text-slate-800 !py-2.5 ${hireInputSurface}`}
+                      color="blue"
+                      labelProps={hireInputLabelHidden}
+                      containerProps={{ className: "w-full min-w-0" }}
+                    />
+                  </div>
                   <p className="text-xs text-slate-500">
                     Number of vacancies displayed on each career page (1-999)
                   </p>
@@ -1360,16 +1489,121 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
               </div>
             </div>
 
-            {/* Card Data Section */}
-            <div className="bg-white p-5 rounded-xl w-full">
+            {/* Branding Section */}
+            <div className={`w-full p-5 ${hirePanel}`}>
+              {renderSectionHeader(
+                "Branding & Appearance",
+                SECTION_PREVIEW.branding,
+                "Branding & Appearance",
+                "bg-violet-600"
+              )}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-semibold text-slate-800">
+                    Background Company Logo
+                  </label>
+                  <p className="text-xs text-slate-500">
+                    Wide image is recommended (please keep image file size below 5MB).
+                  </p>
+                  <input
+                    ref={imageFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadImage}
+                    className="hidden"
+                  />
+                  <div className="overflow-hidden rounded-lg border border-[#D1D5DB] bg-slate-100">
+                    <div className="relative h-32 w-full sm:h-40">
+                      {image ? (
+                        <img
+                          src={image}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-start gap-2 bg-slate-900 p-4 text-sm text-slate-300">
+                          <span className="text-slate-400">Background</span>
+                        </div>
+                      )}
+                      {image ? (
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent" />
+                      ) : null}
+                    </div>
+                    <div className="flex items-center justify-start gap-2 border-t border-[#D1D5DB] bg-slate-50 p-3">
+                      <Button
+                        size="sm"
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-[#2563eb] to-[#7c3aed] text-white normal-case shadow-md hover:opacity-95"
+                        onClick={() => imageFileInputRef.current?.click()}
+                        disabled={uploadingImage}
+                      >
+                        <HiArrowUpTray className="h-4 w-4 shrink-0" aria-hidden />
+                        {uploadingImage ? "Uploading…" : "Upload Background Image"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-4 md:col-span-2 md:flex-row md:items-start md:gap-6">
+                  <div className="w-full min-w-0 space-y-2 md:flex-1">
+                    <div className="text-sm font-medium leading-5 text-slate-700">
+                      Header Color
+                    </div>
+                    <div className="relative flex h-[52px] items-center gap-3 rounded-lg border border-[#D1D5DB] bg-slate-50 px-3">
+                      <div className="relative h-10 w-10 shrink-0">
+                        <div
+                          className="h-10 w-10 rounded-lg border-2 border-[#D1D5DB]"
+                          style={{ backgroundColor: headerColor }}
+                          aria-hidden
+                        />
+                        <input
+                          id="headerColorPicker"
+                          type="color"
+                          value={headerColor}
+                          onChange={(e) => setHeaderColor(e.target.value)}
+                          className="absolute inset-0 cursor-pointer opacity-0"
+                          title="Pick header color"
+                          aria-label="Choose header color"
+                        />
+                      </div>
+                      <span className="min-w-0 flex-1 font-mono text-sm text-slate-600">{headerColor}</span>
+                      <span className="shrink-0 text-slate-400" aria-hidden title="Color">
+                        <FaPalette className="h-4 w-4" />
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full min-w-0 space-y-2 md:flex-1">
+                    <label
+                      htmlFor="career-header-text-field"
+                      className="block text-sm font-medium leading-5 text-slate-700"
+                    >
+                      Header Text
+                    </label>
+                    <input
+                      id="career-header-text-field"
+                      type="text"
+                      placeholder="JOIN THE VISIONARY CTN"
+                      value={headerText}
+                      onChange={(e) => setHeaderText(e.target.value)}
+                      className="h-[52px] w-full rounded-lg border border-[#D1D5DB] bg-white px-4 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-1 focus:ring-slate-300/70"
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card Data — outer shell borderless so only inner cards show edges (Figma) */}
+            <div className="w-full">
               {renderSectionHeader(
                 "Card Data",
                 SECTION_PREVIEW.cardData,
-                "Card Data"
+                "Card Data",
+                "bg-rose-700",
+                "w-1.5"
               )}
               <div className="space-y-4">
                 {cards.filter(card => card.visible).map((card, index) => (
-                  <div key={card.id} className="p-4 bg-slate-50 rounded-lg">
+                  <div key={card.id} className={`p-4 ${hirePanel}`}>
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-semibold text-slate-800">Card {index + 1}</h4>
                       <button
@@ -1385,28 +1619,37 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <Input
-                          type="text"
-                          label="Heading"
-                          placeholder="Enter card heading"
-                          value={card.heading}
-                          onChange={(e) => handleCardHeadingChange(card.id, e.target.value)}
-                          className="text-slate-800"
-                          color="blue"
-                          labelProps={{ className: "text-slate-700 font-medium" }}
-                        />
+                        <div className="space-y-1.5">
+                          <label
+                            htmlFor={`hire-career-card-heading-${card.id}`}
+                            className="block text-xs font-normal text-slate-500"
+                          >
+                            Heading
+                          </label>
+                          <Input
+                            id={`hire-career-card-heading-${card.id}`}
+                            type="text"
+                            placeholder="Enter card heading"
+                            value={card.heading}
+                            onChange={(e) => handleCardHeadingChange(card.id, e.target.value)}
+                            className={`text-slate-800 !py-2.5 ${hireInputSurface}`}
+                            color="blue"
+                            labelProps={hireInputLabelHidden}
+                            containerProps={{ className: "w-full min-w-0" }}
+                          />
+                        </div>
                         <p className="text-xs text-slate-500 text-right mt-1">
                           {card.heading.length}/{CARD_HEADING_MAX_LENGTH}
                         </p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-slate-700 block mb-2">Body</label>
+                        <label className="mb-2 block text-xs font-normal text-slate-500">Body</label>
                         <textarea
                           value={card.body}
                           onChange={(e) => handleCardBodyChange(card.id, e.target.value)}
                           placeholder="Enter card body text"
                           rows={3}
-                          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#8bc9f8] focus:ring-1 focus:ring-[#8bc9f8] resize-none"
+                          className="min-h-20 w-full resize-y rounded-lg border border-[#D1D5DB] px-4 py-3 text-sm text-slate-800 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300/70"
                         />
                         <p className="text-xs text-slate-500 text-right mt-1">
                           {card.body.length}/{CARD_BODY_MAX_LENGTH}
@@ -1415,15 +1658,27 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                     </div>
                   </div>
                 ))}
+                {cards.some((c) => !c.visible) ? (
+                  <button
+                    type="button"
+                    onClick={handleAddCard}
+                    className="w-full rounded-lg border border-rose-200 bg-rose-50/50 py-3 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50/80"
+                  >
+                    + Add Card
+                  </button>
+                ) : null}
               </div>
             </div>
 
             {/* Small Card Text Section */}
-            <div className="bg-white p-5 rounded-xl w-full">
-              <div className="mb-5 flex flex-col gap-2 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2 min-w-0">
-                  <span className="w-1 h-5 shrink-0 rounded-full bg-[#8bc9f8]" />
-                  Small Card Text
+            <div className={`w-full p-5 ${hirePanel}`}>
+              <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2.5 min-w-0">
+                  <span
+                    className="w-1.5 self-stretch min-h-5 shrink-0 rounded-sm bg-sky-600"
+                    aria-hidden
+                  />
+                  <span className="min-w-0">Small Card Text</span>
                 </h3>
                 <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
                   <button
@@ -1434,8 +1689,9 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                         "Small Card Text"
                       )
                     }
-                    className="inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                    className={previewBtnClass}
                   >
+                    <HiOutlineEye className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
                     Preview
                   </button>
                   <button
@@ -1443,10 +1699,10 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                     onClick={() =>
                       openSectionPreview(
                         SECTION_PREVIEW.smallCardIcons,
-                        "Small card icon strip"
+                        "Small Card Icons"
                       )
                     }
-                    className="inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                    className={iconsPreviewBtnClass}
                   >
                     Icons preview
                   </button>
@@ -1458,7 +1714,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                   if (!card.visible) return null;
                   const idx = cardKey.replace("card", "");
                   return (
-                    <div key={cardKey} className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/50 p-4">
+                    <div key={cardKey} className={`space-y-2 p-4 ${hirePanel}`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-semibold text-slate-800">
                           Card {idx}
@@ -1484,7 +1740,13 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                         onChange={(e) => handleSmallCardLogoUpload(cardKey, e)}
                       />
                       <div className="flex flex-col sm:flex-row gap-3 sm:items-start">
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                        <div
+                          className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg ${
+                            card.logo
+                              ? "border border-[#D1D5DB] bg-white"
+                              : "border border-dashed border-[#D1D5DB] bg-slate-50/80"
+                          }`}
+                        >
                           {card.logo ? (
                             <img
                               src={card.logo}
@@ -1498,24 +1760,31 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                           )}
                         </div>
                         <div className="min-w-0 flex-1 space-y-2 w-full">
-                          <Input
-                            type="text"
-                            label={`Label (${idx})`}
-                            placeholder="Enter small card text"
-                            value={card.value}
-                            onChange={(e) =>
-                              handleSmallCardTextChange(cardKey, e.target.value)
-                            }
-                            className="text-slate-800 w-full!"
-                            containerProps={{ className: "w-full min-w-0" }}
-                            color="blue"
-                            labelProps={{ className: "text-slate-700 font-medium" }}
-                          />
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="outlined"
-                              className="border-slate-300 text-slate-700 normal-case"
+                          <div className="space-y-1.5">
+                            <label
+                              htmlFor={`hire-career-small-label-${cardKey}`}
+                              className="block text-sm font-medium text-slate-700"
+                            >
+                              Label ({idx})
+                            </label>
+                            <Input
+                              id={`hire-career-small-label-${cardKey}`}
+                              type="text"
+                              placeholder="Enter small card text"
+                              value={card.value}
+                              onChange={(e) =>
+                                handleSmallCardTextChange(cardKey, e.target.value)
+                              }
+                              className={`text-slate-800 w-full! !py-2.5 ${hireInputSurface}`}
+                              containerProps={{ className: "w-full min-w-0" }}
+                              color="blue"
+                              labelProps={hireInputLabelHidden}
+                            />
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <button
+                              type="button"
+                              className="text-sm font-medium text-blue-600 underline decoration-blue-600/40 underline-offset-2 transition-colors hover:text-blue-700 disabled:opacity-50"
                               onClick={() =>
                                 smallCardLogoInputRefs.current[cardKey]?.click()
                               }
@@ -1524,16 +1793,15 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                               {uploadingSmallLogo === cardKey
                                 ? "Uploading…"
                                 : "Upload logo"}
-                            </Button>
+                            </button>
                             {card.logo ? (
-                              <Button
-                                size="sm"
-                                variant="text"
-                                className="normal-case text-slate-600"
+                              <button
+                                type="button"
+                                className="text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
                                 onClick={() => handleClearSmallCardLogo(cardKey)}
                               >
                                 Remove logo
-                              </Button>
+                              </button>
                             ) : null}
                           </div>
                           <p className="text-xs text-slate-500 text-right">
@@ -1547,13 +1815,14 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
               </div>
             </div>
           </div>
+          </div>
         )}
       </div>
 
-      <div className="flex flex-wrap justify-end gap-3 px-6 py-4 border-t border-slate-200/80 bg-slate-50/90 shrink-0">
+      <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t border-[#D1D5DB] bg-slate-50/90 px-6 py-4">
         <Button
           variant="outlined"
-          className="border-slate-300 text-slate-700 px-6 py-2.5"
+          className="border-[#D1D5DB] text-slate-700 px-6 py-2.5"
           onClick={onClose}
           disabled={saving}
         >
@@ -1562,7 +1831,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
         <Button
           className="bg-[#8bc9f8] text-white px-6 py-2.5"
           onClick={handleSave}
-          disabled={loading || saving}
+          disabled={loading || saving || sectionPreview.open}
         >
           {saving ? "Saving…" : "Save Settings"}
         </Button>
@@ -1570,69 +1839,21 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     </div>
   );
 
-  const sectionPreviewModal =
-    typeof document !== "undefined" &&
-    sectionPreview.open &&
-    sectionPreview.src &&
-    createPortal(
-      <div
-        className="fixed inset-0 z-99999 flex flex-col bg-black"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="section-preview-title"
-      >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 py-3 text-white">
-          <h2
-            id="section-preview-title"
-            className="min-w-0 flex-1 truncate font-poppins text-base font-semibold sm:text-lg"
-          >
-            {sectionPreview.title || "Preview"}
-          </h2>
-          <button
-            type="button"
-            aria-label="Close preview"
-            className="shrink-0 rounded-lg p-2 text-white/90 transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/40"
-            onClick={closeSectionPreview}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="flex min-h-0 flex-1 items-center justify-center px-3 py-4 sm:px-6">
-          <img
-            src={sectionPreview.src}
-            alt=""
-            className="max-h-[calc(100dvh-5rem)] w-auto max-w-full object-contain"
-            draggable={false}
-          />
-        </div>
-
-        <p className="shrink-0 px-4 pb-4 text-center text-xs text-white/50">
-          Escape to close · Settings reopen when preview closes
-        </p>
-      </div>,
-      document.body
-    );
-
-  /** Hide the Career page settings dialog while full-screen preview is active — only the image viewer is shown. */
-  const showSettingsDialog = openDialog && !sectionPreview.open;
-
   return (
     <>
-      {showSettingsDialog && (
+      {openDialog && (
         <CustomDialog
-          openDialog={showSettingsDialog}
+          openDialog={openDialog}
           handleOpen={onClose}
-          title="Career page settings"
+          title={<span className="sr-only">Career Page Settings</span>}
+          minimalHeader
           size="xl"
           footer={false}
           scrollableBody
+          bodyClassName="hire-career-settings-dialog-body"
           compo={body}
         />
       )}
-      {sectionPreviewModal}
     </>
   );
 };

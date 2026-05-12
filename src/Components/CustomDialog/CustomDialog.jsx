@@ -6,7 +6,7 @@ import { IoClose } from "react-icons/io5";
 const DEFAULT_DIALOG_SIZE = 'lg'
 
 const CustomDialog = (props) => {
-  const { openDialog , handleOpen, title, compo, handleConfirm, size: sizeProp = DEFAULT_DIALOG_SIZE, showBtns, confirmBtn, switchBtn=false, footer=true, outsidePress=true, backgroundColor, headerClassName, bodyClassName, scrollableBody = false} = props
+  const { openDialog , handleOpen, title, compo, handleConfirm, size: sizeProp = DEFAULT_DIALOG_SIZE, showBtns, confirmBtn, switchBtn=false, footer=true, outsidePress=true, backgroundColor, headerClassName, bodyClassName, scrollableBody = false, minimalHeader = false} = props
   const size = sizeProp
   
   // Check if size contains custom CSS classes
@@ -62,10 +62,14 @@ const CustomDialog = (props) => {
         ...(backgroundColor ? { backgroundColor: backgroundColor } : {})
       }}
     >
-        <DialogHeader className={`justify-between shrink-0 px-5 py-4 ${hasHeaderBg ? 'border-b border-white/20' : 'border-b border-slate-200/80 bg-gradient-to-b from-white via-slate-50/90 to-slate-100/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8)]'} ${headerClassName || ''} ${hasHeaderBg ? '!text-white !bg-transparent' : 'text-slate-800'}`}>
+        <DialogHeader className={`justify-between shrink-0 px-5 py-4 ${hasHeaderBg ? 'border-b border-white/20' : minimalHeader ? '!border-b-0 bg-white' : 'border-b border-slate-200/80 bg-gradient-to-b from-white via-slate-50/90 to-slate-100/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8)]'} ${headerClassName || ''} ${hasHeaderBg ? '!text-white !bg-transparent' : 'text-slate-800'}`}>
+          {!minimalHeader ? (
           <div className={`flex flex-1 items-center justify-center font-poppins text-lg sm:text-xl font-semibold tracking-tight ${hasHeaderBg ? '!text-white' : 'text-slate-800'}`}>
           {title}
           </div>
+          ) : (
+          <div className="flex min-w-0 flex-1" aria-hidden="true" />
+          )}
           <button
             type="button"
             onClick={handleOpen}
