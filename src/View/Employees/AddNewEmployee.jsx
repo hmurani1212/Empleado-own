@@ -1,6 +1,4 @@
 import {
-  Stepper,
-  Step,
   Button,
   Input,
   Popover,
@@ -8,6 +6,7 @@ import {
   PopoverContent,
   Radio,
 } from "@material-tailwind/react";
+import ThreeSegmentStepper from "../../Components/ThreeSegmentStepper/ThreeSegmentStepper";
 import React, { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { FaAngleLeft, FaAngleRight, FaChevronDown, FaChevronRight } from "react-icons/fa6";
 import { FaUser, FaInfoCircle } from "react-icons/fa";
@@ -728,6 +727,22 @@ const AddNewEmployee = () => {
     addEmpHandler();
   };
 
+  useEffect(() => {
+    handleFirstStep(activeStep === 0);
+    handleLastStep(activeStep === 2);
+  }, [activeStep, handleFirstStep, handleLastStep]);
+
+  const employeeStepCircleClass = (index) => {
+    const locked1 = index === 1 && !findEmployeeCompleted;
+    const locked2 = index === 2 && !completedSteps?.has(1);
+    if (locked1 || locked2) {
+      return "cursor-not-allowed border border-[#8bc9f8] bg-[#f2f6f9] text-[#474747]";
+    }
+    if (activeStep === index) return "bg-[#8bc9f8] text-white cursor-pointer";
+    if (activeStep > index) return "bg-bgBlue text-white cursor-pointer";
+    return "bg-gray-300 text-gray-900 cursor-pointer";
+  };
+
   /** Only step 0 (Find Employee) keeps Next disabled until mobile is present */
   const isPrimaryActionDisabled =
     (activeStep === 0 && !isStep0Valid) ||
@@ -739,71 +754,37 @@ const AddNewEmployee = () => {
     <form>
       <div className="w-full flex flex-col gap-4 py-4 px-[40px] bg-white drop-shadow-md rounded-[10px]">
         <div className="px-4">
-          <Stepper
+          <ThreeSegmentStepper
+            variant="employee"
             activeStep={activeStep}
-            isLastStep={(value) => handleLastStep(value)}
-            isFirstStep={(value) => handleFirstStep(value)}
-            lineClassName="bg-gray-200"
-            activeLineClassName="bg-bgBlue"
-          >
-            <Step
-              onClick={() => handleStepActive(0)}
-              activeClassName="bg-[#8bc9f8]"
-              completedClassName="text-white bg-bgBlue"
-              className="cursor-pointer bg-red-500"
-            >
-              <div className="flex items-center">
-                <MdOutlineFindReplace className="h-4 w-4" />
-                <div className={`absolute top-10 inset-x-0 w-full flex items-center justify-center`}>
-                  <span className="text-[#474747] text-[13px] text-center font-Urbanist font-medium whitespace-nowrap">
-                    Find Employee
-                  </span>
-                </div>
-              </div>
-            </Step>
-            <Step
-              onClick={
-                findEmployeeCompleted ? () => handleStepActive(1) : undefined
-              }
-              activeClassName="bg-[#8bc9f8] relative"
-              completedClassName="text-white bg-bgBlue"
-              className={
-                findEmployeeCompleted
-                  ? "cursor-pointer "
-                  : "cursor-not-allowed border border-[#8bc9f8] bg-[#f2f6f9]"
-              }
-            >
-              <div className="flex items-center">
-                <FaUser className="h-4 w-4" />
-                <div className="absolute top-10 inset-x-0 w-full flex items-center justify-center">
-                  <span className="text-[#474747] text-[13px] text-center font-Urbanist font-medium whitespace-nowrap">
-                    Personal Information
-                  </span>
-                </div>
-              </div>
-            </Step>
-            <Step
-              onClick={
-                completedSteps?.has(1) ? () => handleStepActive(2) : undefined
-              }
-              activeClassName="bg-[#8bc9f8]"
-              completedClassName="text-white bg-bgBlue"
-              className={
-                completedSteps?.has(1)
-                  ? "cursor-pointer"
-                  : "cursor-not-allowed border border-[#8bc9f8] bg-[#f2f6f9]"
-              }
-            >
-              <div className="flex items-center">
-                <FaBuildingUser className="h-4 w-4" />
-                <div className="absolute top-10 inset-x-0 w-full flex items-center justify-center">
-                  <span className="text-[#474747] text-[13px] text-center font-Urbanist font-medium whitespace-nowrap">
-                    Official Information
-                  </span>
-                </div>
-              </div>
-            </Step>
-          </Stepper>
+            steps={[
+              {
+                key: "find",
+                icon: <MdOutlineFindReplace className="h-4 w-4" />,
+                label: "Find Employee",
+                onClick: () => handleStepActive(0),
+                circleClassName: employeeStepCircleClass(0),
+              },
+              {
+                key: "personal",
+                icon: <FaUser className="h-4 w-4" />,
+                label: "Personal Information",
+                onClick: () => {
+                  if (findEmployeeCompleted) handleStepActive(1);
+                },
+                circleClassName: employeeStepCircleClass(1),
+              },
+              {
+                key: "official",
+                icon: <FaBuildingUser className="h-4 w-4" />,
+                label: "Official Information",
+                onClick: () => {
+                  if (completedSteps?.has(1)) handleStepActive(2);
+                },
+                circleClassName: employeeStepCircleClass(2),
+              },
+            ]}
+          />
         </div>
         <div className="w-full flex flex-col items-center justify-center">
           <p className="w-full mb-1 mt-10 text-center text-[#474747] text-[12px] font-Urbanist font-semibold px-2 whitespace-nowrap overflow-x-auto">

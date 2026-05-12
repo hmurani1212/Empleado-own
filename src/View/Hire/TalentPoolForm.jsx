@@ -14,6 +14,7 @@ const TalentPoolForm = (props) => {
                     name='labelTalent' 
                     value={addTalentPoolValues.labelTalent} 
                     onChange={handleChangeShortlist}
+                    placeholder="Talent Pool"
                 />
             </div>
 
@@ -24,7 +25,6 @@ const TalentPoolForm = (props) => {
                     name='talent' 
                     value={addTalentPoolValues.talent} 
                     onChange={handleChangeShortlist}
-                    placeholder="Enter talent description (e.g., Strong analytical skills with leadership potential)"
                 />
             </div>
         </div>

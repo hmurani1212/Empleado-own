@@ -5,8 +5,6 @@ import {
   PopoverContent,
   PopoverHandler,
   Radio,
-  Step,
-  Stepper,
   Textarea,
   Accordion,
   AccordionBody,
@@ -14,6 +12,7 @@ import {
   Select,
   Option,
 } from "@material-tailwind/react";
+import ThreeSegmentStepper from "../../Components/ThreeSegmentStepper/ThreeSegmentStepper";
 import CustomSelect from "../../Components/CustomSelect/CustomSelect";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -108,14 +107,8 @@ const CreateVacancy = () => {
     addOptionToQuestion,
   } = useHireNewVacancy();
 
-  const { create_vacancy, get_mark_def_data, get_mark_def } =
-    useHire_2();
+  const { create_vacancy } = useHire_2();
   const locationsLoading = useStore((state) => state.locationsLoading);
-  useEffect(() => {
-    get_mark_def();
-  }, []);
-
-  // console.log("get_mark_defget_mark_def", get_mark_def_data);
   const navigate = useNavigate();
 
   // State for selected cities
@@ -344,6 +337,33 @@ const CreateVacancy = () => {
     handleStepActive(step);
   };
 
+  useEffect(() => {
+    handleFirstStep(activeStep === 0);
+    handleLastStep(activeStep === 2);
+  }, [activeStep, handleFirstStep, handleLastStep]);
+
+  const hireStepCircleClass = (index) => {
+    if (index > 0 && !vacancyDetailsComplete) {
+      return "cursor-not-allowed opacity-45 bg-gray-300 text-gray-700";
+    }
+    if (activeStep === index) return "bg-[#61ADFF] text-white cursor-pointer";
+    if (activeStep > index) return "bg-bgBlue text-white cursor-pointer";
+    return "bg-gray-300 text-gray-900 cursor-pointer";
+  };
+
+  const hireStepButtonProps = (index) =>
+    index === 0
+      ? {}
+      : {
+          tabIndex: vacancyDetailsComplete ? 0 : -1,
+          "aria-disabled": !vacancyDetailsComplete,
+          title: vacancyDetailsComplete
+            ? undefined
+            : index === 1
+              ? "Complete all Vacancy Details fields to open Questionnaire"
+              : "Complete all Vacancy Details fields to open Interview Settings",
+        };
+
   const validateStep1 = async () => {
     try {
       if (accordions.length > 0) {
@@ -518,61 +538,16 @@ const CreateVacancy = () => {
         interview_rounds: accordionsInterview.length,
         interviews: accordionsInterview.map((interview) => {
           // Determine marks_def structure based on user input
-          let marksDef = [];
-
-          if (get_mark_def_data.length > 0 && interview.marks_def && interview.marks_def.length > 0) {
-            // User selected Available Definitions - send only IDs as numbers
-            const numbers = interview.marks_def.map(id => Number(id));
-            marksDef = [numbers]; // Wrap in array as per validation schema
-            console.log('Available Definitions selected, marksDef:', marksDef, 'Types:', marksDef[0].map(item => typeof item));
-          } else if (interview.marks_title && interview.marks_title.trim()) {
-            // User added custom marks - send marks_title only
-            marksDef = [[{
-              marks_title: interview.marks_title.trim()
-            }]]; // Wrap in array as per validation schema
-            console.log('Custom marks added, marksDef:', marksDef);
-          } else {
-            // If neither custom marks nor Available Definitions are provided, send empty array
-            marksDef = [[]]; // Wrap in array as per validation schema
-            console.log('No marks defined, marksDef:', marksDef);
+          let marksDef = [[]];
+          if (interview.marks_title && interview.marks_title.trim()) {
+            marksDef = [[{ marks_title: interview.marks_title.trim() }]];
           }
 
-          // Debug log to see what's being sent
-          console.log('Interview data being sent:', {
-            name: interview.name,
-            marks_title: interview.marks_title,
-            total_marks: interview.total_marks,
-            marks_def: marksDef,
-            original_marks_def: interview.marks_def,
-            marks_def_types: marksDef.map(item => typeof item)
-          });
-
-          // Final safety check - ensure marks_def contains only numbers for Available Definitions
-          let finalMarksDef = marksDef;
-          if (get_mark_def_data.length > 0 && interview.marks_def && interview.marks_def.length > 0) {
-            // Double-check that all items in the inner array are numbers
-            finalMarksDef = [marksDef[0].map(item => {
-              const num = Number(item);
-              if (isNaN(num)) {
-                console.error('Invalid number in marks_def:', item);
-                return 0; // fallback
-              }
-              return num;
-            })];
-          }
-
-          // Determine what to send based on whether Available Definitions are selected
-          let payload = {
+          return {
             name: interview.name || "",
-            marks_def: finalMarksDef,
+            marks_def: marksDef,
+            marks_title: interview.marks_title || "",
           };
-
-          // Only include marks_title if Available Definitions are NOT selected
-          if (!(get_mark_def_data.length > 0 && interview.marks_def && interview.marks_def.length > 0)) {
-            payload.marks_title = interview.marks_title || "";
-          }
-
-          return payload;
         }),
         questionnaire: accordions
           .map((accordion) => {
@@ -658,85 +633,36 @@ const CreateVacancy = () => {
         <div className="gap-2 pb-3  bg-white rounded-lg drop-shadow mt-[20px]">
           <form>
             <div className="w-full flex flex-col gap-4  py-4 px-[40px]">
-              <div>
-                <Stepper
-                  activeStep={activeStep}
-                  isLastStep={(value) => handleLastStep(value)}
-                  isFirstStep={(value) => handleFirstStep(value)}
-                  lineClassName="bg-[#3DA5F4]"
-                  activeLineClassName="bg-[#3DA5F4]"
-                >
-                  <Step
-                    onClick={() => handleStepActive(0)}
-                    activeClassName="bg-[#61ADFF]"
-                    completedClassName="text-white"
-                  >
-                    <div className="flex items-center">
-                      <TbListDetails className="h-4 w-4" />
-                      <div className="absolute top-10 inset-x-0 w-full flex items-center justify-center">
-                        <span className="text-[#818a90] text-[13px] text-center">
-                          Vacancy Details
-                        </span>
-                      </div>
-                    </div>
-                  </Step>
-
-                  <Step
-                    role="button"
-                    tabIndex={vacancyDetailsComplete ? 0 : -1}
-                    aria-disabled={!vacancyDetailsComplete}
-                    title={
-                      vacancyDetailsComplete
-                        ? undefined
-                        : "Complete all Vacancy Details fields to open Questionnaire"
-                    }
-                    className={
-                      vacancyDetailsComplete
-                        ? ""
-                        : "opacity-45 cursor-not-allowed"
-                    }
-                    onClick={() => goToStepFromTab(1)}
-                    activeClassName="bg-[#61ADFF] relative"
-                    completedClassName="text-white"
-                  >
-                    <div className="flex items-center">
-                      <RiQuestionnaireLine className="h-4 w-4" />
-                      <div className="absolute top-10 inset-x-0 w-full flex items-center justify-center">
-                        <span className="text-[#818a90] text-[13px] text-center">
-                          Questionnaire
-                        </span>
-                      </div>
-                    </div>
-                  </Step>
-
-                  <Step
-                    role="button"
-                    tabIndex={vacancyDetailsComplete ? 0 : -1}
-                    aria-disabled={!vacancyDetailsComplete}
-                    title={
-                      vacancyDetailsComplete
-                        ? undefined
-                        : "Complete all Vacancy Details fields to open Interview Settings"
-                    }
-                    className={
-                      vacancyDetailsComplete
-                        ? ""
-                        : "opacity-45 cursor-not-allowed"
-                    }
-                    onClick={() => goToStepFromTab(2)}
-                    activeClassName="bg-[#61ADFF]"
-                    completedClassName="text-white"
-                  >
-                    <div className="flex items-center">
-                      <GrUserSettings className="h-4 w-4" />
-                      <div className="absolute top-10 inset-x-0 w-full flex items-center justify-center">
-                        <span className="text-[#818a90] text-[13px] text-center">
-                          Interview Settings
-                        </span>
-                      </div>
-                    </div>
-                  </Step>
-                </Stepper>
+              <ThreeSegmentStepper
+                variant="hire"
+                activeStep={activeStep}
+                steps={[
+                  {
+                    key: "vd",
+                    icon: <TbListDetails className="h-4 w-4" />,
+                    label: "Vacancy Details",
+                    onClick: () => goToStepFromTab(0),
+                    circleClassName: hireStepCircleClass(0),
+                    buttonProps: hireStepButtonProps(0),
+                  },
+                  {
+                    key: "q",
+                    icon: <RiQuestionnaireLine className="h-4 w-4" />,
+                    label: "Questionnaire",
+                    onClick: () => goToStepFromTab(1),
+                    circleClassName: hireStepCircleClass(1),
+                    buttonProps: hireStepButtonProps(1),
+                  },
+                  {
+                    key: "iv",
+                    icon: <GrUserSettings className="h-4 w-4" />,
+                    label: "Interview Settings",
+                    onClick: () => goToStepFromTab(2),
+                    circleClassName: hireStepCircleClass(2),
+                    buttonProps: hireStepButtonProps(2),
+                  },
+                ]}
+              />
 
                 <div className="mt-10">
                   {activeStep === 0 ? (
@@ -1155,11 +1081,6 @@ const CreateVacancy = () => {
                                           )
                                         }
                                       />
-                                      {get_mark_def_data && get_mark_def_data.length > 0 && (
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          Marks title and total marks are optional when Available Definitions are selected
-                                        </p>
-                                      )}
                                     </div>
                                     <div>
                                       <Input
@@ -1183,74 +1104,6 @@ const CreateVacancy = () => {
                                     </div>
                                   </div>
 
-                                  <div className="flex flex-col">
-                                    <span className="text-[14px] text-[#3da5f4] font-semibold">
-                                      Available Definitions
-                                    </span>
-                                    <span className="text-[10px]">
-                                      Select all the applicable definitions
-                                    </span>
-                                    {get_mark_def_data &&
-                                      get_mark_def_data.length > 0 ? (
-                                      get_mark_def_data.map((data) => (
-                                        <div
-                                          key={data.id}
-                                          className="flex items-center gap-2 mt-2 p-2 bg-gray-50 rounded"
-                                        >
-                                          <input
-                                            type="checkbox"
-                                            className="text-[#3da5f4]"
-                                            onChange={(e) => {
-                                              const updatedAccordions =
-                                                accordionsInterview.map(
-                                                  (acc) => {
-                                                    if (
-                                                      acc.id === accordion.id
-                                                    ) {
-                                                      return {
-                                                        ...acc,
-                                                        marks_def: e.target
-                                                          .checked
-                                                          ? [
-                                                            ...(acc.marks_def ||
-                                                              []),
-                                                            parseInt(data.id),
-                                                          ]
-                                                          : (
-                                                            acc.marks_def ||
-                                                            []
-                                                          ).filter(
-                                                            (id) =>
-                                                              id !== parseInt(data.id)
-                                                          ),
-                                                      };
-                                                    }
-                                                    return acc;
-                                                  }
-                                                );
-                                              setAccordionsInterview(
-                                                updatedAccordions
-                                              );
-                                            }}
-                                            checked={(
-                                              accordion.marks_def || []
-                                            ).includes(parseInt(data.id))}
-                                          />
-                                          <span className="text-sm font-medium">
-                                            {data.marks_title}
-                                          </span>
-                                          <span className="text-xs text-gray-500 ml-auto">
-                                            ID: {data.id}
-                                          </span>
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <div className="text-sm text-gray-500 mt-2 p-2 bg-gray-50 rounded">
-                                        No mark definitions available. Add one
-                                        above to get started.
-                                      </div>
-                                    )}
-                                  </div>
                                 </div>
                               </AccordionBody>
                             </Accordion>
@@ -1282,7 +1135,6 @@ const CreateVacancy = () => {
                     </Button>
                   </div>
                 </div>
-              </div>
             </div>
           </form>
         </div>
