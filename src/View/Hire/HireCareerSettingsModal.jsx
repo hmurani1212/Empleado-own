@@ -818,6 +818,34 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     }));
   };
 
+  const getAboutPlainLength = (el) =>
+    (el?.innerText || "").replace(/\uFEFF/g, "").length;
+
+  /** Hard-cap plain text at 448; sync counter + React state. May strip rich formatting if content had to be clipped. */
+  const finalizeAboutEditorChange = (options = {}) => {
+    const { silent = false } = options;
+    const ed = aboutEditorRef.current;
+    if (!ed) return;
+    let plain = (ed.innerText || "").replace(/\uFEFF/g, "");
+    if (plain.length > COMPANY_ABOUT_MAX_LENGTH) {
+      ed.textContent = plain.slice(0, COMPANY_ABOUT_MAX_LENGTH);
+      if (silent) {
+        aboutLimitToastShownRef.current = false;
+      } else if (!aboutLimitToastShownRef.current) {
+        showToast(
+          `About Company cannot exceed ${COMPANY_ABOUT_MAX_LENGTH} characters.`,
+          "error"
+        );
+        aboutLimitToastShownRef.current = true;
+      }
+    } else {
+      aboutLimitToastShownRef.current = false;
+    }
+    plain = (ed.innerText || "").replace(/\uFEFF/g, "");
+    setAboutPlainLength(plain.length);
+    setCompanyAbout(ed.innerHTML);
+  };
+
   const handleFormatText = (command, value = null) => {
     if (aboutEditorRef.current) {
       document.execCommand("styleWithCSS", false, true);
@@ -836,14 +864,11 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
           range.setEndAfter(span);
           selection.removeAllRanges();
           selection.addRange(range);
-          setCompanyAbout(aboutEditorRef.current.innerHTML);
-          setAboutPlainLength(aboutEditorRef.current.innerText?.length || 0);
         }
       } else {
         document.execCommand(command, false, value);
-        setCompanyAbout(aboutEditorRef.current.innerHTML);
-        setAboutPlainLength(aboutEditorRef.current.innerText?.length || 0);
       }
+      finalizeAboutEditorChange();
     }
   };
 
@@ -851,36 +876,93 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
     const ed = aboutEditorRef.current;
     if (!ed) return;
     insertAboutBullet(ed);
-    const len = ed.innerText?.length || 0;
-    if (len > COMPANY_ABOUT_MAX_LENGTH) {
-      showToast(
-        `About Company cannot exceed ${COMPANY_ABOUT_MAX_LENGTH} characters.`,
-        "error"
-      );
-      return;
-    }
-    setCompanyAbout(ed.innerHTML);
-    setAboutPlainLength(len);
+    finalizeAboutEditorChange();
   };
 
   const handleAboutInput = () => {
-    if (aboutEditorRef.current) {
-      const plain = aboutEditorRef.current.innerText || "";
+    finalizeAboutEditorChange();
+  };
 
-      if (plain.length > COMPANY_ABOUT_MAX_LENGTH) {
-        if (!aboutLimitToastShownRef.current) {
-          showToast(
-            `About Company cannot exceed ${COMPANY_ABOUT_MAX_LENGTH} characters.`,
-            "error"
-          );
-          aboutLimitToastShownRef.current = true;
+  const handleAboutBeforeInput = (e) => {
+    const ed = aboutEditorRef.current;
+    if (!ed) return;
+
+    const currentLen = getAboutPlainLength(ed);
+    const sel = window.getSelection();
+    const selInEditor =
+      sel.rangeCount > 0 &&
+      (ed.contains(sel.anchorNode) || ed === sel.anchorNode);
+    const selLen = selInEditor ? sel.toString().length : 0;
+    const eff = Math.max(0, currentLen - selLen);
+
+    if (e.inputType === "insertText" && e.data != null) {
+      if (eff + e.data.length > COMPANY_ABOUT_MAX_LENGTH) {
+        e.preventDefault();
+        const room = COMPANY_ABOUT_MAX_LENGTH - eff;
+        if (room > 0) {
+          document.execCommand("insertText", false, e.data.slice(0, room));
+          finalizeAboutEditorChange();
         }
-        return;
       }
-      aboutLimitToastShownRef.current = false;
-      setCompanyAbout(aboutEditorRef.current.innerHTML);
-      setAboutPlainLength(plain.length);
+      return;
     }
+
+    if (
+      e.inputType === "insertLineBreak" ||
+      e.inputType === "insertParagraph"
+    ) {
+      if (eff >= COMPANY_ABOUT_MAX_LENGTH) {
+        e.preventDefault();
+      }
+    }
+  };
+
+  const insertPlainAtSelection = (text) => {
+    const ed = aboutEditorRef.current;
+    if (!ed || !text) return;
+    ed.focus();
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    let inserted = false;
+    try {
+      inserted = document.execCommand("insertText", false, text);
+    } catch {
+      inserted = false;
+    }
+    if (!inserted) {
+      const r = sel.getRangeAt(0);
+      r.deleteContents();
+      const tn = document.createTextNode(text);
+      r.insertNode(tn);
+      r.setStartAfter(tn);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+  };
+
+  const handleAboutPaste = (e) => {
+    e.preventDefault();
+    const ed = aboutEditorRef.current;
+    if (!ed) return;
+
+    const pastedRaw = e.clipboardData?.getData("text/plain") ?? "";
+    const pasted = pastedRaw.replace(/\r\n/g, "\n");
+
+    const currentLen = getAboutPlainLength(ed);
+    const sel = window.getSelection();
+    const selInEditor =
+      sel.rangeCount > 0 &&
+      (ed.contains(sel.anchorNode) || ed === sel.anchorNode);
+    const selLen = selInEditor ? sel.toString().length : 0;
+    const eff = Math.max(0, currentLen - selLen);
+    const room = Math.max(0, COMPANY_ABOUT_MAX_LENGTH - eff);
+    const insertText = pasted.slice(0, room);
+
+    if (insertText.length > 0) {
+      insertPlainAtSelection(insertText);
+    }
+    finalizeAboutEditorChange();
   };
 
   useEffect(() => {
@@ -893,7 +975,7 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
       if (cleaned !== raw) {
         setCompanyAbout(cleaned);
       }
-      setAboutPlainLength(aboutEditorRef.current.innerText?.length || 0);
+      finalizeAboutEditorChange({ silent: true });
     }
   }, [openDialog, loading, aboutEditorTick]);
 
@@ -1436,6 +1518,9 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                       contentEditable
                       suppressContentEditableWarning
                       onInput={handleAboutInput}
+                      onBeforeInput={handleAboutBeforeInput}
+                      onCompositionEnd={() => finalizeAboutEditorChange()}
+                      onPaste={handleAboutPaste}
                       className="min-h-[120px] w-full px-4 py-3 text-sm text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-slate-300/70"
                       style={{ minHeight: "120px", direction: "ltr", unicodeBidi: "normal", textAlign: "left" }}
                       aria-label="About company — rich text"
@@ -1693,18 +1778,6 @@ const HireCareerSettingsModal = ({ openDialog, onClose }) => {
                   >
                     <HiOutlineEye className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
                     Preview
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openSectionPreview(
-                        SECTION_PREVIEW.smallCardIcons,
-                        "Small Card Icons"
-                      )
-                    }
-                    className={iconsPreviewBtnClass}
-                  >
-                    Icons preview
                   </button>
                 </div>
               </div>
