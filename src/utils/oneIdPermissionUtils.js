@@ -1,6 +1,10 @@
 import { SIDEBAR_TAB_PERMISSION_PREFIXES } from "../constants/employeeSidebarPermissionMap";
 import { isFullAdmin } from "../Authentication/roleHelpers";
-import { SIDEBAR_TAB_ID_ATTENDANCE_ADMIN } from "../Components/SideMenu/data";
+import {
+  SIDEBAR_TAB_ID_ATTENDANCE_ADMIN,
+  SIDEBAR_TAB_ID_MY_ATTENDANCE,
+} from "../Components/SideMenu/data";
+import { isMyAttendanceReportUser } from "./myAttendanceReportAccess";
 
 /** Backend typo in some responses */
 export function normalizePermissionTag(tag) {
@@ -55,6 +59,10 @@ export function isSidebarTabVisibleForPermissions(tab, ctx) {
     permissionTags,
     hasLoadedPermissions,
   } = ctx;
+
+  if (tab.id === SIDEBAR_TAB_ID_MY_ATTENDANCE) {
+    return isMyAttendanceReportUser();
+  }
 
   if (isFullAdmin(rawRoleId)) {
     return tab.roles.includes("Admin");

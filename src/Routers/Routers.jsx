@@ -101,6 +101,7 @@ import {
 import { useEmployeeRolePermissions } from "../hooks/useEmployeeRolePermissions";
 import { buildRoutePermissionAccess } from "../utils/routePermissionAccess";
 import { getModuleAccessLevel } from "../utils/oneIdPermissionUtils";
+import { isMyAttendanceReportUser } from "../utils/myAttendanceReportAccess";
 import EmpDashboard from "../View/EmployeeView/EmpDashboard/EmpDashboard";
 import EmpAttendance from "../View/EmployeeView/EmpAttendance/EmpAttendance";
 import EmpNotices from "../View/EmployeeView/EmpNotices/EmpNotices";
@@ -179,6 +180,7 @@ const Routers = () => {
   const showPayrollAdmin = isAdmin || perm.payroll;
   const showHrPoliciesAdmin = isAdmin || perm.hrPolicies;
   const showNoticesAdmin = isAdmin || perm.notices;
+  const canAccessMyAttendanceReport = isMyAttendanceReportUser();
   const showAttendanceAdmin = isAdmin || perm.attendanceAdmin;
   const showShiftPlanner = isAdmin || perm.shiftPlanner;
   const showHire = isAdmin || perm.hire;
@@ -415,6 +417,19 @@ const Routers = () => {
                   path="detail_card/:id"
                   element={<DetailTimeAdjRequest />}
                 ></Route>
+              </Route>
+            </Route>
+          )}
+          {canAccessMyAttendanceReport && !showAttendanceAdmin && (
+            <Route path="/attendance" element={<Attendance />}>
+              <Route
+                path="individual-attendance"
+                element={<IndividualAttendance />}
+              >
+                <Route
+                  path="individual_attendance_report"
+                  element={<IndividualAttendanceReport />}
+                />
               </Route>
             </Route>
           )}
